@@ -1,4 +1,4 @@
 DDT-Driver
 ==========
 
-Driver for the Duckbox Development Toolchain
+Driver for the Audioniek's Duckbox Development Toolchain
