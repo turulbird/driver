@@ -1761,6 +1761,9 @@ int NUVOTONdev_close(struct inode *inode, struct file *filp)
 static int NUVOTONdev_ioctl(struct inode *Inode, struct file *File, unsigned int cmd, unsigned long arg)
 {
 	static int mode = 0;
+#if defined(FORTIS_HDBOX) || defined(OCTAGON1008)
+	int icon_nr, on, i;
+#endif
 	struct nuvoton_ioctl_data * nuvoton = (struct nuvoton_ioctl_data *) arg;
 	struct vfd_ioctl_data *data = (struct vfd_ioctl_data *) arg;
 	int res = 0;
@@ -1869,7 +1872,7 @@ static int NUVOTONdev_ioctl(struct inode *Inode, struct file *File, unsigned int
 				}
 				else
 				{
-					for (i=ICON_MIN+1; i<ICON_MAX; i++)
+					for (i = ICON_MIN+1; i<ICON_MAX; i++)
 					{
 						res = nuvotonSetIcon(i, on);
 					}
