@@ -536,11 +536,6 @@ static int zero_read(char *page, char **start, off_t off, int count, int *eof, v
 	return len;
 }
 
-static int default_read_proc(char *page, char **start, off_t off, int count, int *eof, void *data)
-{
-	return 0;
-}
-
 static int default_write_proc(struct file *file, const char __user *buf, unsigned long count, void *data)
 {
 	return count;
@@ -710,7 +705,7 @@ struct ProcStructure_s e2Proc[] =
 #endif
 
 #if defined(IPBOX9900) || defined(IPBOX99)
-	{cProcEntry, "stb/misc/fan"                                                             , NULL, NULL, NULL, NULL, ""},
+	{cProcEntry, "stb/misc/fan"                                                     , NULL, NULL, NULL, NULL, ""},
 #endif
 
 #if defined(ADB_BOX) || defined(SAGEMCOM88)
@@ -803,7 +798,7 @@ char *dirname(char *name)
 	int i = 0;
 	int pos = 0;
 
-	while ((name[i] != 0) && (i < sizeof(path)))
+	while ((i < sizeof(path)) && (name[i] != 0))
 	{
 		if (name[i] == '/')
 			pos = i;
