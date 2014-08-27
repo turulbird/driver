@@ -49,7 +49,7 @@
 	 || defined(HS7810A) \
 	 || defined(HS7819)
 		#define ASC3BaseAddress 0xfd034000
-	#else
+	#else //ATEVIO7500
 		#define ASC3BaseAddress 0xfd033000
 	#endif
 #else

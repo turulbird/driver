@@ -15,11 +15,19 @@ ifdef UFS913
 EXTRA_CFLAGS	+= -DSTx7105
 endif
 
+ifdef HS7110
+EXTRA_CFLAGS	+= -DSTx7111
+endif
+
+ifdef HS7119
+EXTRA_CFLAGS	+= -DSTx7111
+endif
+
 ifdef HS7810A
 EXTRA_CFLAGS	+= -DSTx7111
 endif
 
-ifdef HS7110
+ifdef HS7819
 EXTRA_CFLAGS	+= -DSTx7111
 endif
 

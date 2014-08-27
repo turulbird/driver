@@ -76,7 +76,7 @@
 	#define DISP_SIZE 12
 #elif defined(HS7810A) || defined(HS7119) || defined(HS7819)
 	#define DISP_SIZE 4
-#elif defined(HS7110) || defined(WHITEBOX)
+#elif defined(HS7110)
 	#define DISP_SIZE 0
 #endif
 
@@ -575,8 +575,7 @@ struct iconToInternal
 #elif defined(HS7110) \
    || defined(HS7119) \
    || defined(HS7810A) \
-   || defined(HS7819) \
-   || defined(WHITEBOX)
+   || defined(HS7819)
         #define cCommandSetVFD        0x24 // 05 1:data pos1 2:data pos2 3:data pos3 4:data pos4
 #else
         #define cCommandSetVFD        0xce // 14 1:0x11 2-13 characters /* 0xc0 */
@@ -588,8 +587,7 @@ struct iconToInternal
  || defined(HS7110) \
  || defined(HS7119) \
  || defined(HS7810A) \
- || defined(HS7819) \
- || defined(WHITEBOX)
+ || defined(HS7819)
 	#define cCommandGetFrontInfo  0xd0
 #else
 	#define cCommandGetFrontInfo  0xe0
@@ -826,7 +824,7 @@ int nuvotonSetLED(int which, int level)
 	#define MAX_BRIGHT 7
 #endif
 
-#if defined(HS7110) || defined(WHITEBOX)
+#if defined(HS7110)
 	printk("[nuvoton] Function %s is not supported on HS7110 (yet)\n", __func__);
 	return -EINVAL;
 #elif defined(HS7119)
@@ -875,7 +873,6 @@ int nuvotonSetBrightness(int level)
  && !defined(HS7119) \
  && !defined(HS7810A) \
  && !defined(HS7819) \
- && !defined(WHITEBOX) \
  && !defined(ATEMIO530)
 	if (level < 0 || level > 7)
 	{
@@ -1381,30 +1378,23 @@ int nuvoton_init_func(void)
 #endif
 	int  vLoop;
 	int  res = 0;
-	/*
-	write (count=5, fd = 28): SOP cCommandSetIconI 0x22 0x20 EOP // wrong command format! 1080i on?
-	write (count=5, fd = 28): SOP cCommandSetIconI 0x23 0x04 EOP // wrong command format! TV on?
-	write (count=5, fd = 28): SOP cCommandSetIconI 0x20 0x04 EOP // wrong command format! SAT on?
-	*/
 
 	dprintk(100, "%s >\n", __func__);
 
 	sema_init(&write_sem, 1);
 
   #if defined(OCTAGON1008)
-	printk("Fortis HS9510\n");
+	printk("Fortis HS9510");
   #elif defined(FORTIS_HDBOX)
-	printk("Fortis FS9000/9200\n");
+	printk("Fortis FS9000/9200");
   #elif defined(HS7110)
-	printk("Fortis HS7110\n");
+	printk("Fortis HS7110");
   #elif defined(HS7119)
-	printk("Fortis HS7119\n");
+	printk("Fortis HS7119");
   #elif defined(HS7810A)
-	printk("Fortis HS7810\n");
+	printk("Fortis HS7810");
   #elif defined(HS7819)
-	printk("Fortis HS7819\n");
-  #elif defined(WHITEBOX)
-	printk("Whitebox\n");
+	printk("Fortis HS7819");
   #else
 	printk("Fortis\n");
   #endif
@@ -1425,7 +1415,7 @@ int nuvoton_init_func(void)
 		regs[vLoop] = 0x00;  //initialize local shadow registers
 	}
 
-  #if !defined(HS7810A) && !defined(HS7819) && !defined(HS7110) && !defined(HS7119) && !defined(WHITEBOX)
+  #if !defined(HS7810A) && !defined(HS7819) && !defined(HS7110) && !defined(HS7119)
 	res |= nuvotonSetBrightness(7);
 
 	res |= nuvotonWriteString("T.-Ducktales", strlen("T.-Ducktales"));
@@ -1997,7 +1987,7 @@ static int NUVOTONdev_ioctl(struct inode *Inode, struct file *File, unsigned int
 		}
 		case VFDDISPLAYCHARS:
 		{
-#if !defined (HS7110) && !defined(WHITEBOX)
+#if !defined (HS7110)
 			if (mode == 0)
 			{
 				dprintk(5, "Write string (mode 0): %s (length = %d)\n", data->data, data->length);
@@ -2029,6 +2019,10 @@ static int NUVOTONdev_ioctl(struct inode *Inode, struct file *File, unsigned int
 			break;
 		}
 		case 0x5305:
+		{
+			mode = 0; //go back to vfd mode
+			break;
+		}
 		case 0x5401:
 		case VFDGETBLUEKEY:
 		case VFDSETBLUEKEY:
