@@ -547,7 +547,7 @@ void stm_tsm_init(int use_cimax)
 	int n;
 	int reinit = 0;
 #if !defined(FORTIS_HDBOX) && !defined(UFS912) && !defined(UFS913) && !defined(SPARK) && !defined(OCTAGON1008) && !defined(HOMECAST5101) && \
-    !defined(ATEVIO7500) && && !defined(HS7110) !defined(HS7810A) && !defined(HS7119) && !defined(HS7819) && !defined(ATEMIO520) && !defined(ATEMIO530) && !defined(CUBEREVO) && !defined(CUBEREVO_MINI2) && \
+    !defined(ATEVIO7500) && !defined(HS7110) && !defined(HS7810A) && !defined(HS7119) && !defined(HS7819) && !defined(ATEMIO520) && !defined(ATEMIO530) && !defined(CUBEREVO) && !defined(CUBEREVO_MINI2) && \
     !defined(CUBEREVO_MINI) && !defined(CUBEREVO_250HD) && !defined(CUBEREVO_2000HD) && \
     !defined(CUBEREVO_9500HD) && !defined(CUBEREVO_MINI_FTA) && !defined(VITAMIN_HD5000)
 	unsigned int stream_sync = 0xbc4733;

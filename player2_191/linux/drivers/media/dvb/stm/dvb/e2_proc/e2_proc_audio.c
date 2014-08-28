@@ -201,7 +201,7 @@ void spdif_out_mute(int mute)
 {
 	unsigned long val;
 	unsigned long* RegMap;
-#if defined(UFS912) || defined(SPARK) || defined (SPARK7162) || defined(ATEVIO7500) || defined(HS7110) || defined(HS7810A) || defined(HS7190) || defined(HS7819) || defined(ATEMIO520) || defined(ATEMIO530) || defined(UFS913) || defined(VITAMIN_HD5000) || defined(SAGEMCOM88)
+#if defined(UFS912) || defined(SPARK) || defined (SPARK7162) || defined(ATEVIO7500) || defined(HS7110) || defined(HS7810A) || defined(HS7119) || defined(HS7819) || defined(ATEMIO520) || defined(ATEMIO530) || defined(UFS913) || defined(VITAMIN_HD5000) || defined(SAGEMCOM88)
 	RegMap = (unsigned long*)ioremap(STb7105_AUDIO_BASE, 0x10);
 #else
 	RegMap = (unsigned long*)ioremap(STb7100_REGISTER_BASE, STb7100_REG_ADDR_SIZE);
