@@ -1355,10 +1355,13 @@ int nuvotonWriteString(unsigned char* aBuf, int len)
 	dprintk(100, "%s <\n", __func__);
 	return res;
 }
-#else // not HS7110, HS7119, HS7810A, HS7819, OCTAGON1008, FORTIS_HDBOX or ATEVIO7500
+#else // not HS7119, HS7810A, HS7819, OCTAGON1008, FORTIS_HDBOX or ATEVIO7500
+int nuvotonWriteString(unsigned char* aBuf, int len)
+{
 	dprintk(100, "%s >\n", __func__);
 	dprintk(100, "%s <\n", __func__);
 	return -EFAULT;
+}
 #endif
 
 #if !defined(ATEVIO7500)
