@@ -39,9 +39,9 @@
 #include <linux/kernel.h>
 #include <linux/mm.h>
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,17)
-	#include <linux/stm/pio.h>
+#include <linux/stm/pio.h>
 #else
-	#include <linux/stpio.h>
+#include <linux/stpio.h>
 #endif
 #include <linux/interrupt.h>
 #include <linux/time.h>
@@ -53,19 +53,19 @@
 //-------------------------------------
 
 #if defined(ATEVIO7500)
-	unsigned int InterruptLine = 120;
-	unsigned int ASCXBaseAddress = ASC3BaseAddress;
+unsigned int InterruptLine = 120;
+unsigned int ASCXBaseAddress = ASC3BaseAddress;
 #elif defined(HS7110) || defined(HS7119)|| defined(HS7810A) || defined(HS7819)
-	unsigned int InterruptLine = 274;
-	unsigned int ASCXBaseAddress = ASC3BaseAddress;
+unsigned int InterruptLine = 274;
+unsigned int ASCXBaseAddress = ASC3BaseAddress;
 #else
-	unsigned int InterruptLine = 121;
-	unsigned int ASCXBaseAddress = ASC2BaseAddress;
+unsigned int InterruptLine = 121;
+unsigned int ASCXBaseAddress = ASC2BaseAddress;
 #endif
 
 //-------------------------------------
 
-void serial_init (void)
+void serial_init(void)
 {
 #ifdef OCTAGON1008
 	/* Configure the PIO pins */
@@ -74,18 +74,18 @@ void serial_init (void)
 #endif
 
 	// Configure the asc input/output settings
-	*(unsigned int*)(ASCXBaseAddress + ASC_INT_EN)   = 0x00000000; // TODO: Why do we set here the INT_EN again ???
-	*(unsigned int*)(ASCXBaseAddress + ASC_CTRL)     = 0x00001589;
-	*(unsigned int*)(ASCXBaseAddress + ASC_TIMEOUT)  = 0x00000010;
-	*(unsigned int*)(ASCXBaseAddress + ASC_BAUDRATE) = 0x000000c9;
-	*(unsigned int*)(ASCXBaseAddress + ASC_TX_RST)   = 0;
-	*(unsigned int*)(ASCXBaseAddress + ASC_RX_RST)   = 0;
+	*(unsigned int *)(ASCXBaseAddress + ASC_INT_EN)   = 0x00000000; // TODO: Why do we set here the INT_EN again ???
+	*(unsigned int *)(ASCXBaseAddress + ASC_CTRL)     = 0x00001589;
+	*(unsigned int *)(ASCXBaseAddress + ASC_TIMEOUT)  = 0x00000010;
+	*(unsigned int *)(ASCXBaseAddress + ASC_BAUDRATE) = 0x000000c9;
+	*(unsigned int *)(ASCXBaseAddress + ASC_TX_RST)   = 0;
+	*(unsigned int *)(ASCXBaseAddress + ASC_RX_RST)   = 0;
 }
 
-int serial_putc (char Data)
+int serial_putc(char Data)
 {
-	char          *ASCn_TX_BUFF = (char*)(ASCXBaseAddress + ASC_TX_BUFF);
-	unsigned int  *ASCn_INT_STA = (unsigned int*)(ASCXBaseAddress + ASC_INT_STA);
+	char          *ASCn_TX_BUFF = (char *)(ASCXBaseAddress + ASC_TX_BUFF);
+	unsigned int  *ASCn_INT_STA = (unsigned int *)(ASCXBaseAddress + ASC_INT_STA);
 	unsigned long Counter = 200000;
 
 	while (((*ASCn_INT_STA & ASC_INT_STA_THE) == 0) && --Counter)

@@ -1,6 +1,6 @@
 /*
  * nuvoton.h
- * 
+ *
  * Frontpanel driver for Fortis HDBOX and Octagon 1008
  *
  * (c) 2009 Dagobert@teamducktales
@@ -27,7 +27,7 @@
  *
  * Date     By              Description
  * --------------------------------------------------------------------------------------
- * 20130929 Audioniek       
+ * 20130929 Audioniek
  *
  ****************************************************************************************/
 
@@ -39,36 +39,36 @@ extern short paramDebug;
 
 #ifndef dprintk
 #define dprintk(level, x...) do { \
-	if ((paramDebug) && (paramDebug >= level)) printk(TAGDEBUG x); \
-	} while (0)
+        if ((paramDebug) && (paramDebug >= level)) printk(TAGDEBUG x); \
+    } while (0)
 #endif
 
 extern int nuvoton_init_func(void);
-extern void copyData(unsigned char* data, int len);
-extern void getRCData(unsigned char* data, int* len);
+extern void copyData(unsigned char *data, int len);
+extern void getRCData(unsigned char *data, int *len);
 void dumpValues(void);
 
 extern int errorOccured;
-extern struct file_operations  vfd_fops;
+extern struct file_operations vfd_fops;
 
 /****************************************************************************************/
 
 typedef struct
 {
-	struct file*     fp;
+	struct file     *fp;
 	int              read;
 	struct semaphore sem;
 
 } tFrontPanelOpen;
 
-#define FRONTPANEL_MINOR_RC 1
-#define LASTMINOR           2
+#define FRONTPANEL_MINOR_RC   1
+#define LASTMINOR             2
 
 extern tFrontPanelOpen FrontPanelOpen[LASTMINOR];
 
-#define VFD_MAJOR           147
-#define SOP                 0x02
-#define EOP                 0x03
+#define VFD_MAJOR             147
+#define SOP                   0x02
+#define EOP                   0x03
 
 /* ioctl numbers ->hacky */
 #define VFDDISPLAYCHARS       0xc0425a00
@@ -182,9 +182,9 @@ struct nuvoton_ioctl_data
 
 struct vfd_ioctl_data
 {
-    unsigned char start_address;
-    unsigned char data[64];
-    unsigned char length;
+	unsigned char start_address;
+	unsigned char data[64];
+	unsigned char length;
 };
 
 /****************************************************************************************/
