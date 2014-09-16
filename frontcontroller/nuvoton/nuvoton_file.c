@@ -45,6 +45,7 @@
  * 20140403 Audioniek       SetLED for ATEVIO7500 added.
  * 20140415 Audioniek       ATEVIO7500 finished; yet to do: icons.
  * 20140426 Audioniek       HS7119/7810A/7819 work completed.
+ * 20140916 Audioniek       Fixed compiler warnings with HS7119/7810A/7819.
  *
  *****************************************************************************/
 
@@ -382,7 +383,7 @@ ICON_ARROW   is byte_3, bit 7 (128) (RC feedback)
 #endif //Octagon1008
 
 #if defined(HS7119) || defined(HS7810A) || defined(HS7819)
-static _7seg_fonts[] =
+static int _7seg_fonts[] =
 /* character layout:
 
     aaaaaaaaa
@@ -856,17 +857,17 @@ int nuvotonSetLED(int which, int level)
 /* export for later use in e2_proc */
 EXPORT_SYMBOL(nuvotonSetLED);
 
+#if !defined(HS7110) \
+ && !defined(HS7119) \
+ && !defined(HS7810A) \
+ && !defined(HS7819) \
+ && !defined(ATEMIO530)
 int nuvotonSetBrightness(int level)
 {
 	char buffer[5];
 	int res = -1;
 
 	dprintk(100, "%s > %d\n", __func__, level);
-#if !defined(HS7110) \
- && !defined(HS7119) \
- && !defined(HS7810A) \
- && !defined(HS7819) \
- && !defined(ATEMIO530)
 	if (level < 0 || level > 7)
 	{
 		printk("[nuvoton] VFD brightness level %d out of range (0-%d)\n", level, 7);
@@ -882,13 +883,13 @@ int nuvotonSetBrightness(int level)
 	buffer[4] = EOP;
 
 	res = nuvotonWriteCommand(buffer, 5, 0);
-#endif
 
 	dprintk(100, "%s <\n", __func__);
 	return res;
 }
 /* export for later use in e2_proc */
 EXPORT_SYMBOL(nuvotonSetBrightness);
+#endif
 
 int nuvotonSetStandby(char *time)
 {
@@ -1461,6 +1462,7 @@ int nuvoton_init_func(void)
 #endif
 
 //code for writing to /dev/vfd
+#if !defined(HS7119) && !defined(HS7810A) && !defined(HS7819)
 static void clear_display(void)
 {
 	unsigned char bBuf[12];
@@ -1471,16 +1473,19 @@ static void clear_display(void)
 	memset(bBuf, ' ', 12);
 	res = nuvotonWriteString(bBuf, DISP_SIZE);
 }
+#endif
 
 static ssize_t NUVOTONdev_write(struct file *filp, const char *buff, size_t len, loff_t *off)
 {
 	char *kernel_buf;
 	int minor, vLoop, res = 0;
-	char buf[64];
-	int offset = 0;
-//	int saved = 0;
-	int pos;
 	int llen;
+//	int saved = 0;
+#if !defined(HS7119) && !defined(HS7810A) && !defined(HS7819)
+	int pos;
+	int offset = 0;
+	char buf[64];
+#endif
 
 	dprintk(100, "%s > (len %d, offs %d)\n", __func__, len, (int) *off);
 
