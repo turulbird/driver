@@ -86,7 +86,7 @@ extern int  ack_sem_down(void);
 int nuvotonWriteString(unsigned char *aBuf, int len);
 extern void nuvoton_putc(unsigned char data);
 
-struct semaphore  write_sem;
+struct semaphore write_sem;
 int errorOccured = 0;
 static char ioctl_data[8];
 
@@ -857,11 +857,7 @@ int nuvotonSetLED(int which, int level)
 /* export for later use in e2_proc */
 EXPORT_SYMBOL(nuvotonSetLED);
 
-#if !defined(HS7110) \
- && !defined(HS7119) \
- && !defined(HS7810A) \
- && !defined(HS7819) \
- && !defined(ATEMIO530)
+#if !defined(HS7110) && !defined(HS7119) && !defined(HS7810A) && !defined(HS7819)
 int nuvotonSetBrightness(int level)
 {
 	char buffer[5];

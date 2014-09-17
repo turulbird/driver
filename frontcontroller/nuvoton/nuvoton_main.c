@@ -167,7 +167,7 @@ void nuvoton_putc(unsigned char data)
 
 void ack_sem_up(void)
 {
-	dataReady = 1; 
+	dataReady = 1;
 	wake_up_interruptible(&ack_wq);
 }
 
