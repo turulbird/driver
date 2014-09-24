@@ -59,14 +59,14 @@ enum stv090x_clkmode {
 };
 
 enum stv090x_i2crpt {
-	STV090x_RPTLEVEL_256	= 0,
-	STV090x_RPTLEVEL_128	= 1,
-	STV090x_RPTLEVEL_64		= 2,
-	STV090x_RPTLEVEL_32		= 3,
-	STV090x_RPTLEVEL_16		= 4,
-	STV090x_RPTLEVEL_8		= 5,
-	STV090x_RPTLEVEL_4		= 6,
-	STV090x_RPTLEVEL_2		= 7,
+	STV090x_RPTLEVEL_256 = 0,
+	STV090x_RPTLEVEL_128 = 1,
+	STV090x_RPTLEVEL_64  = 2,
+	STV090x_RPTLEVEL_32  = 3,
+	STV090x_RPTLEVEL_16  = 4,
+	STV090x_RPTLEVEL_8   = 5,
+	STV090x_RPTLEVEL_4   = 6,
+	STV090x_RPTLEVEL_2   = 7,
 };
 
 enum stv090x_adc_range {
@@ -75,9 +75,9 @@ enum stv090x_adc_range {
 };
 
 struct stv090x_config {
-	enum stv090x_device		device;
-	enum stv090x_mode		demod_mode;
-	enum stv090x_clkmode	clk_mode;
+	enum stv090x_device  device;
+	enum stv090x_mode    demod_mode;
+	enum stv090x_clkmode clk_mode;
 
 	u32 xtal; /* default: 8000000 */
 	u8 address; /* default: 0x68 */
@@ -91,13 +91,13 @@ struct stv090x_config {
 
 	enum stv090x_i2crpt		repeater_level;
 
-	u8						tuner_bbgain; /* default: 10db */
-	enum stv090x_adc_range	adc1_range; /* default: 2Vpp */
-	enum stv090x_adc_range	adc2_range; /* default: 2Vpp */
-    bool 					diseqc_envelope_mode;
+	u8   tuner_bbgain; /* default: 10db */
+	enum stv090x_adc_range adc1_range; /* default: 2Vpp */
+	enum stv090x_adc_range adc2_range; /* default: 2Vpp */
+	bool diseqc_envelope_mode;
 
 	int (*tuner_init) (struct dvb_frontend *fe);
-    int (*tuner_sleep) (struct dvb_frontend *fe);
+	int (*tuner_sleep) (struct dvb_frontend *fe);
 	int (*tuner_set_mode) (struct dvb_frontend *fe, enum tuner_mode mode);
 	int (*tuner_set_frequency) (struct dvb_frontend *fe, u32 frequency);
 	int (*tuner_get_frequency) (struct dvb_frontend *fe, u32 *frequency);
@@ -105,13 +105,13 @@ struct stv090x_config {
 	int (*tuner_get_bandwidth) (struct dvb_frontend *fe, u32 *bandwidth);
 	int (*tuner_set_bbgain) (struct dvb_frontend *fe, u32 gain);
 	int (*tuner_get_bbgain) (struct dvb_frontend *fe, u32 *gain);
-	int (*tuner_set_refclk)  (struct dvb_frontend *fe, u32 refclk);
+	int (*tuner_set_refclk) (struct dvb_frontend *fe, u32 refclk);
 	int (*tuner_get_status) (struct dvb_frontend *fe, u32 *status);
 };
 
 extern struct dvb_frontend *stv090x_attach(const struct stv090x_config *config,
-					   struct i2c_adapter *i2c,
-					   enum stv090x_demodulator demod,
-					   enum stv090x_tuner tuner);
+                                           struct i2c_adapter *i2c,
+                                           enum stv090x_demodulator demod,
+                                           enum stv090x_tuner tuner);
 
 #endif /* __STV090x_H */
