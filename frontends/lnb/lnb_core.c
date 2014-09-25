@@ -1,15 +1,8 @@
 /*
- *   lnb_core.c - lnb power control driver
+ *   lnb_core.c - LNB power control driver
  */
 
 #include "lnb_core.h"
-
-int paramDebug;
-#define TAGDEBUG "[LNB] "
-
-#define dprintk(level, x...) do { \
-	if ((paramDebug) && (paramDebug > level)) printk(TAGDEBUG x); \
-} while (0)
 
 enum
 {
@@ -19,16 +12,16 @@ enum
 };
 
 static const struct i2c_device_id lnb_id[] = {
-	{ "a8293", A8293 },
-	{ "lnb24", LNB24 },
-	{ "pio", LNB_PIO },
-	{ }
+        { "a8293", A8293 },
+        { "lnb24", LNB24 },
+        { "pio", LNB_PIO },
+        { }
 };
 MODULE_DEVICE_TABLE(i2c, lnb_id);
 
 static int devType;
 static char *type = "a8293";
-short debug = 0;
+short paramDebug = 0;
 
 /*
  * Addresses to scan
@@ -50,11 +43,11 @@ static int lnb_newprobe(struct i2c_client *client, const struct i2c_device_id *i
 {
 	if (lnb_client)
 	{
-		dprintk(10, "failure, client already registered\n");
+		dprintk(10, "Failure, client already registered\n");
 		return -ENODEV;
 	}
 
-	printk("[LNB]: chip found @ 0x%x\n", client->addr);
+	dprintk(10, "I2C chip found @ 0x%02x\n", client->addr);
 
 	switch(devType)
 	{
@@ -85,7 +78,7 @@ static int lnb_newprobe(struct i2c_client *client, const struct i2c_device_id *i
 static int lnb_remove(struct i2c_client *client)
 {
 	lnb_client = NULL;
-	dprintk(10, "remove\n");
+	dprintk(10, "Remove\n");
 	return 0;
 }
 
@@ -103,13 +96,12 @@ static int lnb_command_ioctl(struct i2c_client *client, unsigned int cmd, void *
 	{
 		return -1;
 	}
-
 	switch(devType)
 	{
 		case A8293:
 		{
 			err = a8293_command(client, cmd, arg);
-		   	break;
+			break;
 		}
 		case LNB24:
 		{
@@ -130,13 +122,12 @@ int lnb_command_kernel(unsigned int cmd, void *arg)
 	int err = 0;
 	struct i2c_client *client = lnb_client;
 
-	dprintk(10, "[LNB]: %s (%x)\n", __func__, cmd);
+	dprintk(10, "%s (%x)\n", __func__, cmd);
 
 	if (!client && (devType != LNB_PIO))
 	{
 		return -1;
 	}
-
 	switch(devType)
 	{
 		case A8293:
@@ -162,7 +153,7 @@ EXPORT_SYMBOL(lnb_command_kernel); // export to use in other drivers
 
 static int lnb_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsigned long arg)
 {
-	dprintk(5, "IOCTL\n");
+	dprintk(10, "IOCTL: %08x\n", cmd);
 	return lnb_command_ioctl(lnb_client, cmd, (void *) arg);
 }
 
@@ -177,10 +168,10 @@ static int lnb_close (struct inode *inode, struct file *filp)
 }
 
 static struct file_operations lnb_fops = {
-	.owner 		= THIS_MODULE,
-	.ioctl 		= lnb_ioctl,
-	.open  		= lnb_open,
-	.release  	= lnb_close
+	.owner   = THIS_MODULE,
+	.ioctl   = lnb_ioctl,
+	.open    = lnb_open,
+	.release = lnb_close
 };
 
 static int lnb_detect(struct i2c_client *client, int kind, struct i2c_board_info *info)
@@ -188,10 +179,9 @@ static int lnb_detect(struct i2c_client *client, int kind, struct i2c_board_info
 	const char *name = "";
 	if (kind == 0)
 	{
-		name = "a8293";
-		kind = A8293;
+	    	name = "a8293";
+	    	kind = A8293;
 	}
-
 	if (kind < 0)
 	{
 		/* detection and identification */
@@ -212,6 +202,7 @@ static int lnb_detect(struct i2c_client *client, int kind, struct i2c_board_info
 			return -ENODEV;
 		}
 	}
+
 	switch (kind)
 	{
 		case A8293:
@@ -226,7 +217,7 @@ static int lnb_detect(struct i2c_client *client, int kind, struct i2c_board_info
 		}
 		case LNB_PIO:
 		{
-			name = "lnp-pio";
+			name = "lnb-pio";
 			break;
 		}
 		default:
@@ -242,7 +233,6 @@ static int lnb_detect(struct i2c_client *client, int kind, struct i2c_board_info
 /*
  * i2c
  */
-
 static struct i2c_driver lnb_i2c_driver = {
 	.class = I2C_CLASS_TV_DIGITAL,
 	.driver = {
@@ -252,6 +242,7 @@ static struct i2c_driver lnb_i2c_driver = {
 	.probe        = lnb_newprobe,
 	.detect       = lnb_detect,
 	.remove       = lnb_remove,
+	.id_table     = lnb_id,
 	.address_data = &addr_data,
 	.command      = lnb_command_ioctl
 };
@@ -271,36 +262,36 @@ int __init lnb_init(void)
 
 	if (err)
 	{
-		printk("[LNB]: Error detecting LNB type!\n");
+		printk("[LNB] Error detecting LNB type!\n");
 		return err;
 	}
 
-	dprintk(10, "LNB power control handling, type: %s\n", name);
+//	dprintk(20, "LNB power control handling, type: %s\n", name);
 
 	if (devType == LNB_PIO)
 	{
-		if ((res = lnb_pio_init()))
+		if (res = lnb_pio_init())
 		{
-			printk("[LNB] init lnb pio failed\n");
+			dprintk(1, "Init LNB PIO failed\n");
 			return res;
 		}
 	}
-	else if ((res = i2c_add_driver(&lnb_i2c_driver)))
+	else if (res = i2c_add_driver(&lnb_i2c_driver))
 	{
-		printk("[LNB] i2c add driver failed\n");
+		dprintk(1, "Adding i2c driver failed\n");
 		return res;
-	
-		if (!lnb_client)
-		{
-			printk(KERN_ERR "[LNB] no client found\n");
-			i2c_del_driver(&lnb_i2c_driver);
-			return -EIO;
-		}
 	}
 
-	if (register_chrdev(LNB_MAJOR,"LNB",&lnb_fops)<0)
+	if (!lnb_client)
 	{
-		printk(KERN_ERR "[LNB] unable to register device\n");
+		printk(KERN_ERR "[LNB] No client found\n");
+		i2c_del_driver(&lnb_i2c_driver);
+		return -EIO;
+	}
+	
+	if (register_chrdev(LNB_MAJOR, "LNB", &lnb_fops) < 0)
+	{
+		printk(KERN_ERR "[LNB] Unable to register device\n");
 		if (devType == LNB_PIO)
 		{
 			lnb_pio_exit();
@@ -311,6 +302,7 @@ int __init lnb_init(void)
 		}
 		return -EIO;
 	}
+	printk("[LNB] module lnb loaded, type: %s\n", name);
 	return 0;
 }
 
@@ -318,6 +310,7 @@ void __exit lnb_exit(void)
 {
 	unregister_chrdev(LNB_MAJOR,"LNB");
 	i2c_del_driver(&lnb_i2c_driver);
+	printk("[LNB] module lnb unloaded\n");
 }
 
 module_init(lnb_init);

@@ -22,61 +22,42 @@ static struct stv090x_config tt1600_stv090x_config = {
 #if defined(FORTIS_HDBOX)
 	.device			= STV0903,
 	.demod_mode		= STV090x_DUAL	/*STV090x_SINGLE*/,
+	.xtal			= 8000000,
+	.ts1_mode		= STV090x_TSMODE_DVBCI	/*STV090x_TSMODE_SERIAL_CONTINUOUS*/,
+	.ts2_mode		= STV090x_TSMODE_NOTSET,
+	.repeater_level		= STV090x_RPTLEVEL_16,
 #elif defined(UFS912) || defined(HS7110) || defined(HS7810A) || defined(HS7119) || defined(HS7819) || defined(ATEMIO520) || defined(ATEMIO530) || defined(SPARK)
 	.device			= STX7111,
 	.demod_mode		= STV090x_DUAL,
+	.xtal			= 30000000,
+	.ts1_mode		= STV090x_TSMODE_DVBCI,
+	.ts2_mode		= STV090x_TSMODE_SERIAL_CONTINUOUS,
+	.repeater_level		= STV090x_RPTLEVEL_64,
 #else
 #warning Architecture not supported
 #endif
 	.clk_mode		= STV090x_CLK_EXT,
-
-#if defined(FORTIS_HDBOX)
-	.xtal			= 8000000,
-#elif defined(UFS912) || defined(HS7110) || defined(HS7810A) || defined(HS7119) || defined(HS7819) || defined(ATEMIO520) || defined(ATEMIO530) || defined(SPARK)
-	.xtal			= 30000000,
-#else
-#warning  not supported architechture
-#endif
 	.address		= 0x68,
 	.ref_clk		= 16000000,
-
-#if defined(FORTIS_HDBOX)
-	.ts1_mode		= STV090x_TSMODE_DVBCI	/*STV090x_TSMODE_SERIAL_CONTINUOUS*/,
-	.ts2_mode		= STV090x_TSMODE_NOTSET,
-#elif defined(UFS912) || defined(HS7110) || defined(HS7810A) || defined(HS7119) || defined(HS7819) || defined(ATEMIO520) || defined(ATEMIO530) || defined(SPARK)
-	.ts1_mode		= STV090x_TSMODE_DVBCI,
-	.ts2_mode		= STV090x_TSMODE_SERIAL_CONTINUOUS,
-#else
-#warning  not supported architechture
-#endif
-	.ts1_clk		= 0, /* diese regs werden in orig nicht gesetzt */
-	.ts2_clk		= 0, /* diese regs werden in orig nicht gesetzt */
-
-#if defined(FORTIS_HDBOX)
-	.repeater_level		= STV090x_RPTLEVEL_16,
-#elif defined(UFS912) || defined(HS7110) || defined(HS7810A) || defined(HS7119) || defined(HS7819) || defined(ATEMIO520) || defined(ATEMIO530) || defined(SPARK)
-	.repeater_level		= STV090x_RPTLEVEL_64,
-#else
-#warning  not supported architechture
-#endif
+	.ts1_clk		= 0, /* these regs are not set in orig */
+	.ts2_clk		= 0, /* these regs are not set in orig */
 
 #if !defined(SPARK)
-    .tuner_bbgain = 10,
-	.adc1_range	= STV090x_ADC_1Vpp,
-	.adc2_range	= STV090x_ADC_2Vpp,
-
-	.diseqc_envelope_mode = false,
+	.tuner_bbgain           = 10,
+	.adc1_range             = STV090x_ADC_1Vpp,
+	.adc2_range             = STV090x_ADC_2Vpp,
+	.diseqc_envelope_mode   = false,
 #endif
-	.tuner_init          = NULL,
-	.tuner_set_mode      = NULL,
-	.tuner_set_frequency = NULL,
-	.tuner_get_frequency = NULL,
-	.tuner_set_bandwidth = NULL,
-	.tuner_get_bandwidth = NULL,
-	.tuner_set_bbgain    = NULL,
-	.tuner_get_bbgain    = NULL,
-	.tuner_set_refclk    = NULL,
-	.tuner_get_status    = NULL,
+	.tuner_init             = NULL,
+	.tuner_set_mode         = NULL,
+	.tuner_set_frequency    = NULL,
+	.tuner_get_frequency    = NULL,
+	.tuner_set_bandwidth    = NULL,
+	.tuner_get_bandwidth    = NULL,
+	.tuner_set_bbgain       = NULL,
+	.tuner_get_bbgain       = NULL,
+	.tuner_set_refclk       = NULL,
+	.tuner_get_status       = NULL,
 };
 
 static struct stv6110x_config stv6110x_config = {
@@ -97,7 +78,7 @@ static struct dvb_frontend *frontend_init(struct core_config *cfg, int i)
 	struct tuner_devctl *ctl = NULL;
 	struct dvb_frontend *frontend = NULL;
 
-	printk (KERN_INFO "%s >\n", __FUNCTION__);
+	printk (KERN_INFO "[stv090x] %s >\n", __FUNCTION__);
 	
 #if defined(UFS912) || defined(HS7110) || defined(HS7810A) || defined(HS7119) || defined(HS7819) || defined(ATEMIO520) || defined(ATEMIO530) || defined(SPARK)
 	frontend = stv090x_attach(&tt1600_stv090x_config, cfg->i2c_adap, STV090x_DEMODULATOR_0, STV090x_TUNER1);
@@ -114,7 +95,7 @@ static struct dvb_frontend *frontend_init(struct core_config *cfg, int i)
 #endif
 	if (frontend)
 	{
-		printk("%s: attached\n", __FUNCTION__);
+		printk("[stv090x] %s: attached frontend\n", __FUNCTION__);
 		
 		switch (tunerType)
 		{
@@ -132,11 +113,11 @@ static struct dvb_frontend *frontend_init(struct core_config *cfg, int i)
 			}
 		}
 
-		if(ctl)
+		if (ctl)
 		{
-			printk("%s: %s attached\n", __FUNCTION__, tuner);
+			printk("[stv090x] %s: %s attached\n", __FUNCTION__, tuner);
 			tt1600_stv090x_config.tuner_init          = ctl->tuner_init;
-			tt1600_stv090x_config.tuner_set_mode      = ctl->tuner_set_mode;
+			tt1600_stv090x_config.tuner_set_mode      = ctl->tuner_set_mode; //warning: incompatible pointer type
 			tt1600_stv090x_config.tuner_set_frequency = ctl->tuner_set_frequency;
 			tt1600_stv090x_config.tuner_get_frequency = ctl->tuner_get_frequency;
 			tt1600_stv090x_config.tuner_set_bandwidth = ctl->tuner_set_bandwidth;
@@ -148,19 +129,18 @@ static struct dvb_frontend *frontend_init(struct core_config *cfg, int i)
 		}
 		else
 		{
-			printk (KERN_INFO "%s: error attaching %s\n", __FUNCTION__, tuner);
+			printk (KERN_INFO "[stv090x] %s: error attaching %s\n", __FUNCTION__, tuner);
 			goto error_out;
 		}
 	}
 	else
 	{
-		printk (KERN_INFO "%s: error attaching\n", __FUNCTION__);
+		printk (KERN_INFO "[stv090x] %s: error attaching frontend\n", __FUNCTION__);
 		goto error_out;
 	}
 	return frontend;
-
 error_out:
-	printk("core: Frontend registration failed!\n");
+	printk("[stv090x] Frontend registration failed!\n");
 	if (frontend)
 	{
 		dvb_frontend_detach(frontend);
@@ -168,18 +148,17 @@ error_out:
 	return NULL;
 }
 
-static struct dvb_frontend *
-init_stv090x_device (struct dvb_adapter *adapter, struct plat_tuner_config *tuner_cfg, int i)
+static struct dvb_frontend *init_stv090x_device (struct dvb_adapter *adapter, struct plat_tuner_config *tuner_cfg, int i)
 {
 	struct dvb_frontend *frontend;
 	struct core_config *cfg;
 
-	printk ("> (bus = %d) %s\n", tuner_cfg->i2c_bus,__FUNCTION__);
+	printk ("[stv090x] > (bus = %d) %s\n", tuner_cfg->i2c_bus,__FUNCTION__);
 
 	cfg = kmalloc (sizeof (struct core_config), GFP_KERNEL);
 	if (cfg == NULL)
 	{
-		printk ("stv090x: kmalloc failed\n");
+		printk ("[stv090x] kmalloc failed\n");
 		return NULL;
 	}
 
@@ -187,24 +166,23 @@ init_stv090x_device (struct dvb_adapter *adapter, struct plat_tuner_config *tune
 	cfg->tuner_enable_pin = NULL;
 	cfg->i2c_adap = i2c_get_adapter (tuner_cfg->i2c_bus);
 
-	printk("i2c adapter = 0x%0x\n", cfg->i2c_adap);
+	printk("[stv090x] I2C adapter = 0x%0x\n", cfg->i2c_adap);
 
 	cfg->i2c_addr = tuner_cfg->i2c_addr;
 
-	printk("i2c addr = %02x\n", cfg->i2c_addr);
+	printk("[stv090x] I2C addr = 0x%02x\n", cfg->i2c_addr);
 
 #if !defined(SPARK)
-	printk("tuner enable = %d.%d\n", tuner_cfg->tuner_enable[0], tuner_cfg->tuner_enable[1]);
+	printk("[stv090x] tuner enable = %d.%d\n", tuner_cfg->tuner_enable[0], tuner_cfg->tuner_enable[1]);
 
 	cfg->tuner_enable_pin = stpio_request_pin (tuner_cfg->tuner_enable[0], tuner_cfg->tuner_enable[1], "tuner enable", STPIO_OUT);
 
 	if (cfg->tuner_enable_pin == NULL)
 	{
-		printk ("[stv090x] failed to allocate resources (tuner enable pin)\n");
+		printk ("[stv090x] Failed to allocate resources (tuner enable pin)\n");
 		goto error;
 	}
 #endif
-
 	if (cfg->i2c_adap == NULL)
 	{
 		printk ("[stv090x] failed to allocate resources (i2c adapter)\n");
@@ -234,7 +212,7 @@ init_stv090x_device (struct dvb_adapter *adapter, struct plat_tuner_config *tune
 		goto error;
 	}
 
-	printk (KERN_INFO "%s: Call dvb_register_frontend (adapter = 0x%x)\n", __FUNCTION__, (unsigned int) adapter);
+	printk (KERN_INFO "[stv090x] %s: Call dvb_register_frontend (adapter = 0x%x)\n", __FUNCTION__, (unsigned int) adapter);
 
 	if (dvb_register_frontend (adapter, frontend))
 	{
@@ -305,7 +283,7 @@ void stv090x_register_frontend(struct dvb_adapter *dvb_adap)
 	int i = 0;
 	int vLoop = 0;
 
-	printk (KERN_INFO "%s: stv090x DVB: 0.11 \n", __FUNCTION__);
+	printk (KERN_INFO "[stv090x] %s: stv090x DVB: 0.11 \n", __FUNCTION__);
 
 	core[i] = (struct core*) kmalloc(sizeof(struct core),GFP_KERNEL);
 	if (!core[i])
@@ -317,18 +295,18 @@ void stv090x_register_frontend(struct dvb_adapter *dvb_adap)
 	core[i]->dvb_adapter = dvb_adap;
 	dvb_adap->priv = core[i];
 
-	printk("tuner = %d\n", ARRAY_SIZE(tuner_resources));
+	printk("[stv090x] tuner = %d\n", ARRAY_SIZE(tuner_resources));
 	
 	for (vLoop = 0; vLoop < ARRAY_SIZE(tuner_resources); vLoop++)
 	{
 		if (core[i]->frontend[vLoop] == NULL)
 		{
-			printk("%s: init tuner %d\n", __FUNCTION__, vLoop);
+			printk("[stv090x] %s: init tuner %d\n", __FUNCTION__, vLoop);
 			core[i]->frontend[vLoop] = init_stv090x_device (core[i]->dvb_adapter, &tuner_resources[vLoop], vLoop);
 		}
 	}
 
-	printk (KERN_INFO "%s: <\n", __FUNCTION__);
+	printk (KERN_INFO "[stv090x] %s: <\n", __FUNCTION__);
 	return;
 }
 
@@ -345,13 +323,13 @@ int __init stv090x_init(void)
 		tunerType = SHARP7306;
 	}
 
-	printk("stv090x loaded, tuner: %s\n", tuner);
+	printk("[stv090x] module stv090x loaded, tuner: %s\n", tuner);
 	return 0;
 }
 
 static void __exit stv090x_exit(void) 
 {  
-	printk("stv090x unloaded\n");
+	printk("[stv090x] module stv090x unloaded\n");
 }
 
 module_init (stv090x_init);
@@ -369,4 +347,3 @@ MODULE_PARM_DESC(tuner, "tuner type: stv6110x, sharp7306 (default stv6110x");
 MODULE_DESCRIPTION ("Tunerdriver");
 MODULE_AUTHOR      ("Manu Abraham; adapted by TDT");
 MODULE_LICENSE     ("GPL");
-

@@ -46,7 +46,7 @@ enum stv090x_mode {
 };
 
 enum stv090x_tsmode {
-    STV090x_TSMODE_NOTSET = 0,
+	STV090x_TSMODE_NOTSET = 0,
 	STV090x_TSMODE_SERIAL_PUNCTURED	= 1,
 	STV090x_TSMODE_SERIAL_CONTINUOUS,
 	STV090x_TSMODE_PARALLEL_PUNCTURED,
@@ -55,7 +55,7 @@ enum stv090x_tsmode {
 
 enum stv090x_clkmode {
 	STV090x_CLK_INT = 0, /* Clk i/p = CLKI */
-	STV090x_CLK_EXT = 2 /* Clk i/p = XTALI */
+	STV090x_CLK_EXT = 2  /* Clk i/p = XTALI */
 };
 
 enum stv090x_i2crpt {
@@ -70,8 +70,8 @@ enum stv090x_i2crpt {
 };
 
 enum stv090x_adc_range {
-	STV090x_ADC_2Vpp	= 0,
-	STV090x_ADC_1Vpp	= 1
+	STV090x_ADC_2Vpp     = 0,
+	STV090x_ADC_1Vpp     = 1
 };
 
 struct stv090x_config {
