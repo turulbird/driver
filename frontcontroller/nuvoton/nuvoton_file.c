@@ -48,6 +48,10 @@
  * 20140916 Audioniek       Fixed compiler warnings with HS7119/7810A/7819.
  * 20140921 Audioniek       No special handling of periods and colons for
  *                          HS7119: receiver has not got these segments.
+ * 20141010 Audioniek       Special handling of colons for HS7119 added:
+ *                          DOES have a colon, but no periods.
+ * 20141010 Audioniek       HS7119/HS7810A/HS7819 scroll texts longer than
+ *                          4 once.
  *
  *****************************************************************************/
 
@@ -407,7 +411,7 @@ segment d is bit 3 (  8)
 segment e is bit 4 ( 16, 0x10)
 segment f is bit 5 ( 32, 0x20)
 segment g is bit 6 ( 64, 0x40)
-segment h is bit 7 (128, 0x80, positions 2, 3 & 4, cmd byte 2, 3 & 5)
+segment h is bit 7 (128, 0x80, positions 2, 3 & 4, cmd byte 2, 3 & 5, not on HS7119)
 segment i is bit 7 (128, 0x80, position 3 only, cmd byte 4)
 NOTE: period on 1st position cannot be controlled */
 
@@ -1154,6 +1158,10 @@ int nuvotonWriteString(unsigned char *aBuf, int len)
 	cmd_buf[6] = EOP;
 	res = nuvotonWriteCommand(cmd_buf, 7, 0);
 
+	/* save last string written to fp */
+	memcpy(&lastdata.data, aBuf, 128);
+	lastdata.length = len;
+
 	dprintk(100, "%s <\n", __func__);
 	return res;
 }
@@ -1161,20 +1169,36 @@ int nuvotonWriteString(unsigned char *aBuf, int len)
 int nuvotonWriteString(unsigned char *aBuf, int len)
 {
 	int i, res;
-	unsigned char cmd_buf[7];
+	int buflen;
+	unsigned char cmd_buf[7], bBuf[5];
 
-	dprintk(100, "%s > %d\n", __func__, len);
+	dprintk(10, "%s > %d\n", __func__, len);
 
 	memset(cmd_buf, 0, 7);
+	buflen = len;
+	bBuf[0] = aBuf[0];
+	bBuf[1] = aBuf[1];
 
-	if (len > 4)
+	if (aBuf[2] == ':') // if 3rd character is a colon
 	{
-		len = 4;
+		cmd_buf[3] = 0x80; // switch colon on
+		bBuf[2] = aBuf[3]; // shift rest of buffer
+		bBuf[3] = aBuf[4]; // forward
+	}
+	else
+	{
+		bBuf[2] = aBuf[2];
+		bBuf[3] = aBuf[3];
 	}
 
-	for (i = 0; i < 4; i++)
+	if (buflen > 4)
 	{
-		cmd_buf[i + 2] = _7seg_fonts[(aBuf[i] - 0x20)];
+		buflen = 4;
+	}
+
+	for (i = 0; i < buflen; i++)
+	{
+		cmd_buf[i + 2] |= _7seg_fonts[(bBuf[i] - 0x20)];
 	}
 
 	cmd_buf[0] = SOP;
@@ -1182,11 +1206,14 @@ int nuvotonWriteString(unsigned char *aBuf, int len)
 	cmd_buf[6] = EOP;
 	res = nuvotonWriteCommand(cmd_buf, 7, 0);
 
-	dprintk(100, "%s <\n", __func__);
+	/* save last string written to fp */
+	memcpy(&lastdata.data, aBuf, 128);
+	lastdata.length = len;
+
+	dprintk(10, "%s <\n", __func__);
 	return res;
 }
 #elif defined(OCTAGON1008)
-
 int nuvotonWriteString(unsigned char *aBuf, int len)
 {
 	unsigned char bBuf[7];
@@ -1221,7 +1248,6 @@ int nuvotonWriteString(unsigned char *aBuf, int len)
 				break;
 			}
 		}
-		//printk(" 0x%02x,0x%02x,0x%02x\n",vfdbuf[7 - i].pos,vfdbuf[7 - i].buf1,vfdbuf[7 - i].buf2);
 	}
 	/* save last string written to fp */
 	memcpy(&lastdata.data, aBuf, 8);
@@ -1391,7 +1417,7 @@ int nuvoton_init_func(void)
 {
 	char standby_disable[] = {SOP, cCommandPowerOffReplay, 0x02, EOP};
 	char init1[] = {SOP, cCommandSetBootOn, EOP};
-	char init2[] = {SOP, cCommandSetTimeFormat, 0x81, EOP};       //set 24h clock format
+	char init2[] = {SOP, cCommandSetTimeFormat, 0x81, EOP};       //set 24h clock format ?
 	char init3[] = {SOP, cCommandSetWakeupTime, 0xff, 0xff, EOP}; /* delete/invalidate wakeup time ? */
 	char init4[] = {SOP, cCommandSetLed, 0x01, 0x00, 0x08, EOP};  //power LED (red) off
 #if defined(FORTIS_HDBOX)
@@ -1491,7 +1517,7 @@ int nuvoton_init_func(void)
 #endif
 
 //code for writing to /dev/vfd
-#if !defined(HS7119) && !defined(HS7810A) && !defined(HS7819)
+//#if !defined(HS7119) && !defined(HS7810A) && !defined(HS7819)
 static void clear_display(void)
 {
 	unsigned char bBuf[12];
@@ -1502,7 +1528,7 @@ static void clear_display(void)
 	memset(bBuf, ' ', 12);
 	res = nuvotonWriteString(bBuf, DISP_SIZE);
 }
-#endif
+//#endif
 
 static ssize_t NUVOTONdev_write(struct file *filp, const char *buff, size_t len, loff_t *off)
 {
@@ -1510,11 +1536,11 @@ static ssize_t NUVOTONdev_write(struct file *filp, const char *buff, size_t len,
 	int minor, vLoop, res = 0;
 	int llen;
 //	int saved = 0;
-#if !defined(HS7119) && !defined(HS7810A) && !defined(HS7819)
+//#if !defined(HS7119) && !defined(HS7810A) && !defined(HS7819)
 	int pos;
 	int offset = 0;
 	char buf[64];
-#endif
+//#endif
 
 	dprintk(100, "%s > (len %d, offs %d)\n", __func__, len, (int) *off);
 
@@ -1562,20 +1588,24 @@ static ssize_t NUVOTONdev_write(struct file *filp, const char *buff, size_t len,
 
 	llen = len;
 
+#if defined(HS7119) || defined(HS7810A) || defined(HS7819)
+	if (kernel_buf[2] == ':')
+	{
+		llen--; // correct scroll when 2nd char is a colon
+	}
+#endif
 	if (llen >= 64) //do not display more than 64 characters
 	{
 		llen = 64;
 	}
 
 	/* Dagobert: echo add a \n which will not be counted as a char */
+	/* Audioniek: Does not add a \n but compensates string length as not to count it */
 	if (kernel_buf[len - 1] == '\n')
 	{
 		llen--;
 	}
 
-#if defined(HS7119) || defined(HS7810A) || defined(HS7819)
-	res = nuvotonWriteString(kernel_buf, llen);
-#else
 	if (llen <= DISP_SIZE) //no scroll
 	{
 		res = nuvotonWriteString(kernel_buf, llen);
@@ -1602,8 +1632,8 @@ static ssize_t NUVOTONdev_write(struct file *filp, const char *buff, size_t len,
 			for (pos = 0; pos < llen; pos++)
 			{
 				res = nuvotonWriteString(b + pos, DISP_SIZE);
-				// sleep 200 ms
-				msleep(200);
+				// sleep 300 ms
+				msleep(300);
 			}
 		}
 
@@ -1614,12 +1644,11 @@ static ssize_t NUVOTONdev_write(struct file *filp, const char *buff, size_t len,
 			res = nuvotonWriteString(buf + offset, DISP_SIZE);
 		}
 	}
-#endif
 	kfree(kernel_buf);
 
 	write_sem_up();
 
-	dprintk(70, "%s < res %d len %d\n", __func__, res, len);
+	dprintk(70, "%s < res=%d len=%d\n", __func__, res, len);
 
 	if (res < 0)
 	{
@@ -1631,7 +1660,7 @@ static ssize_t NUVOTONdev_write(struct file *filp, const char *buff, size_t len,
 	}
 }
 
-//code for read from /dev/vfd (remote control codes)
+//code for read from /dev/vfd
 static ssize_t NUVOTONdev_read(struct file *filp, char __user *buff, size_t len, loff_t *off)
 {
 	int minor, vLoop;
