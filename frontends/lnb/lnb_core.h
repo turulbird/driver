@@ -27,7 +27,6 @@
 #define LNB_VOLTAGE_HOR 0x2b0012
 
 extern short paramDebug;
-#define TAGDEBUG "[LNB] "
 
 #define dprintk(level, x...) do { \
 	if ((paramDebug) && (level <= paramDebug)) printk(TAGDEBUG x); \

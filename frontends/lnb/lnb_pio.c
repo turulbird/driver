@@ -23,6 +23,7 @@
 #endif
 
 #include "lnb_core.h"
+#define TAGDEBUG "[LNB-PIO] "
 
 static struct stpio_pin	*lnb_power;
 static struct stpio_pin	*lnb_13_18;
@@ -42,7 +43,7 @@ int lnb_pio_command_kernel(unsigned int cmd, void *arg)
 	{
 		case LNB_VOLTAGE_OFF:
 		{
-			dprintk(10, "Switch LNB voltage off\n");
+			dprintk(10, "Switch LNB power off\n");
 
 			if(_12v_isON == 0)
 			{
