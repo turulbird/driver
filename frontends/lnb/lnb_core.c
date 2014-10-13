@@ -180,8 +180,8 @@ static int lnb_detect(struct i2c_client *client, int kind, struct i2c_board_info
 	const char *name = "";
 	if (kind == 0)
 	{
-	    	name = "a8293";
-	    	kind = A8293;
+		name = "a8293";
+		kind = A8293;
 	}
 	if (kind < 0)
 	{

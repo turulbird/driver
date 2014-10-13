@@ -75,7 +75,7 @@ int a8293_command_kernel(struct i2c_client *client, unsigned int cmd, void *arg 
 			}
 			else
 			{
- 				return 0;
+				return 0;
 			}
 		}
 		case LNB_VOLTAGE_VER:
@@ -95,14 +95,14 @@ int a8293_command_kernel(struct i2c_client *client, unsigned int cmd, void *arg 
 	}
 	return 0;
 }
- 
+
 int a8293_command(struct i2c_client *client, unsigned int cmd, void *arg)
 {
 	return a8293_command_kernel(client, cmd, NULL);
 }
 
 int a8293_init(struct i2c_client *client)
-{    
+{
 	unsigned char reg;
 	int res;
 
@@ -114,7 +114,7 @@ int a8293_init(struct i2c_client *client)
 	dprintk(20, "%s -> 0x%02X\n", __func__, reg);
 
 	res = a8293_write(client, 0x82);
-    
+
 	if (res == 0)
 	{
 		/* setup pio6 */
@@ -131,7 +131,7 @@ int a8293_init(struct i2c_client *client)
 		ctrl_outl(reg, 0xfd026030);
 
 		reg = ctrl_inl(0xfd026000);
-       
+
 		dprintk(50, "%s reg = 0x%08x\n", __func__, reg);
 
 		reg &= ~(0x0000001);

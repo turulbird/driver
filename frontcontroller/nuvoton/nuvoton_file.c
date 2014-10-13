@@ -814,13 +814,15 @@ int nuvotonSetLED(int which, int level)
                      //                           (0xf2 = full cross plus blue)
                      // TODO: Buggy on ATEVIO7500, fp seems to have a life of its own
 #define MAX_BRIGHT 31
-#elif defined(HS7810A) || defined(HS7819) // LED number is a bit mask:
+#elif defined(HS7810A) || defined(HS7819)
+                     // LED number is a bit mask:
                      // bit 0 = standby (red),
                      // bit 1 = logo,
                      // bit 2(?) = RC feedback (green) seems to be not controllable (off when red is on)
 #define MAX_LED 2
 #define MAX_BRIGHT 7
-#elif defined(HS7110) || defined(HS7119) // LED number is a bit mask:
+#elif defined(HS7110) || defined(HS7119)
+                     // LED number is a bit mask:
                      // bit 0 = standby (red),
                      // bit 1(?) = RC feedback (green) seems to be not controllable (off when red is on)
 #define MAX_LED 1
