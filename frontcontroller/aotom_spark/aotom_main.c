@@ -53,6 +53,8 @@
  * 20140612 Audioniek       UTF8 support added (thnx martii).
  * 20140616 Audioniek       Spinner (icon 47) added on Spark7162, based on
  *                          an idea by martii. Arg2 controls spinning speed.
+ * 20141113 Audioniek       Fixed: local keypress feed feedback did not work
+ *                          on Spark7162.
  * 
  ****************************************************************************/
 
@@ -803,8 +805,8 @@ static int AOTOMdev_ioctl(struct inode *Inode, struct file *File, unsigned int c
 					}
 					default:
 					{
-						printk("[aotom] Tried to set unknown icon number %d, showing ALERT instead.\n", icon_nr);
-						icon_nr = 29; //no additional symbols at the moment: show alert instead
+						printk("[aotom] Tried to set unknown icon number %d.\n", icon_nr);
+//						icon_nr = 29; //no additional symbols at the moment: show alert instead
 						break;
 					}
 				}
@@ -1116,7 +1118,7 @@ static void button_bad_polling(struct work_struct *work)
 		{
 			dprintk(5, "Got button: %02X\n", button_value);
 			#if defined(SPARK7162)
-			VFD_Show_Icon(ICON_DOT2, LOG_ON);
+			aotomSetIcon(ICON_DOT2, LOG_ON);
 			#elif defined(SPARK)
 			YWPANEL_FP_SetLed(LED_GREEN, LOG_ON);
 			#else
@@ -1160,7 +1162,7 @@ static void button_bad_polling(struct work_struct *work)
 			{
 				btn_pressed = 0;
 				#if defined(SPARK7162)
-				VFD_Show_Icon(ICON_DOT2, LOG_OFF);
+				aotomSetIcon(ICON_DOT2, LOG_OFF);
 				#elif defined(SPARK)
 				YWPANEL_FP_SetLed(LED_GREEN, LOG_OFF);
 //				#else
