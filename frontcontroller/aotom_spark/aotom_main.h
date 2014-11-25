@@ -21,6 +21,8 @@ typedef unsigned int u32;
 #elif defined(SPARK7162)
 #define LASTLED                       1
 #define LED_SPINNER                   1
+/* Uncomment next line to enable lower case letters on Spark 7162 (D)VFD */
+//#define LOWER_CASE                   1
 #endif
 
 #define VFDDISPLAYCHARS               0xc0425a00

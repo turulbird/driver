@@ -53,6 +53,8 @@
  * 20140612 Audioniek       UTF8 support added (thnx martii).
  * 20140616 Audioniek       Spinner (icon 47) added on Spark7162, based on
  *                          an idea by martii. Arg2 controls spinning speed.
+ * 20141113 Audioniek       Fixed: local keypress feed feedback did not work
+ *                          on Spark7162.
  * 
  ****************************************************************************/
 
@@ -193,11 +195,10 @@ static void VFD_clr(void)
 #if defined(SPARK7162)
 	VFD_set_all_icons(LOG_OFF);
 	aotomSetIcon(ICON_SPINNER, LOG_OFF);
-#endif
-	YWPANEL_FP_SetLed(LED_RED, LOG_OFF);
-#if defined(SPARK)
+#elif defined(SPARK)
 	YWPANEL_FP_SetLed(LED_GREEN, LOG_OFF);
 #endif
+	YWPANEL_FP_SetLed(LED_RED, LOG_OFF);
 }
 
 int utf8charlen(unsigned char c)
@@ -666,10 +667,7 @@ static int AOTOMdev_ioctl(struct inode *Inode, struct file *File, unsigned int c
 		case VFDSETLED:
 		{
 			int led_nr = aotom_data.u.led.led_nr;
-//			if (led_nr >= 256) // if LED number from VFD thread
-//			{
-//				led_nr >> 8;  //get high byte
-//			}
+
 			if (led_nr > -1 && led_nr < LED_MAX)
 			{
 				switch (aotom_data.u.led.on)
@@ -803,8 +801,8 @@ static int AOTOMdev_ioctl(struct inode *Inode, struct file *File, unsigned int c
 					}
 					default:
 					{
-						printk("[aotom] Tried to set unknown icon number %d, showing ALERT instead.\n", icon_nr);
-						icon_nr = 29; //no additional symbols at the moment: show alert instead
+						printk("[aotom] Tried to set unknown icon number %d.\n", icon_nr);
+//						icon_nr = 29; //no additional symbols at the moment: show alert instead
 						break;
 					}
 				}
@@ -1036,11 +1034,11 @@ static int AOTOMdev_ioctl(struct inode *Inode, struct file *File, unsigned int c
 			if (YWPANEL_FP_GetVersion(&fpanel_version))
 //			#if defined(SPARK) || defined(SPARK7162)
 			{
-				dprintk(1, "%s Frontpanel CPU type                          : %d\n", __func__, fpanel_version.CpuType);
-				dprintk(1, "%s Frontpanel software version                  : %d.%d\n", __func__, fpanel_version.swMajorVersion, fpanel_version.swSubVersion);
-				dprintk(1, "%s Frontpanel displaytype (1=VFD, 3=DVFD, 4=LED): %d\n", __func__, fpanel_version.DisplayInfo);
-				dprintk(1, "%s Frontpanel # of keys                         : %d\n", __func__, fpanel_version.scankeyNum);
-				dprintk(1, "%s Number of version bytes                      : %d\n", __func__, sizeof(fpanel_version));
+				dprintk(1, "%s Frontpanel CPU type         : %d\n", __func__, fpanel_version.CpuType);
+				dprintk(1, "%s Frontpanel software version : %d.%d\n", __func__, fpanel_version.swMajorVersion, fpanel_version.swSubVersion);
+				dprintk(1, "%s Frontpanel displaytype      : %d (1=VFD, 3=DVFD, 4=LED)\n", __func__, fpanel_version.DisplayInfo);
+				dprintk(1, "%s Frontpanel # of keys        : %d\n", __func__, fpanel_version.scankeyNum);
+				dprintk(1, "%s Number of version bytes     : %d\n", __func__, sizeof(fpanel_version));
 				put_user(fpanel_version.CpuType, (int *) arg);
 				res = copy_to_user((char *)arg, &fpanel_version, sizeof(fpanel_version));
 			}
@@ -1116,7 +1114,7 @@ static void button_bad_polling(struct work_struct *work)
 		{
 			dprintk(5, "Got button: %02X\n", button_value);
 			#if defined(SPARK7162)
-			VFD_Show_Icon(ICON_DOT2, LOG_ON);
+			aotomSetIcon(ICON_DOT2, LOG_ON);
 			#elif defined(SPARK)
 			YWPANEL_FP_SetLed(LED_GREEN, LOG_ON);
 			#else
@@ -1160,7 +1158,7 @@ static void button_bad_polling(struct work_struct *work)
 			{
 				btn_pressed = 0;
 				#if defined(SPARK7162)
-				VFD_Show_Icon(ICON_DOT2, LOG_OFF);
+				aotomSetIcon(ICON_DOT2, LOG_OFF);
 				#elif defined(SPARK)
 				YWPANEL_FP_SetLed(LED_GREEN, LOG_OFF);
 //				#else
