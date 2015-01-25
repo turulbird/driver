@@ -670,30 +670,22 @@ void Mixer_Mme_c::CallbackFromMME(MME_Event_t Event, MME_Command_t *Command)
 	switch (Event)
 	{
 		case MME_COMMAND_COMPLETED_EVT:
+			switch (Command->CmdCode)
 			{
-				switch (Command->CmdCode)
-				{
-					case MME_TRANSFORM:
-						{
-							OS_SemaphoreSignal(&MMECallbackSemaphore);
-						}
-						break;
-					case MME_SET_GLOBAL_TRANSFORM_PARAMS:
-						{
-							OS_SemaphoreSignal(&MMEParamCallbackSemaphore);
-							if (!MMECallbackThreadBoosted)
-							{
-								OS_SetPriority(AudioConfiguration.MixerPriority);
-								MMECallbackThreadBoosted = true;
-							}
-						}
-						break;
-					default:
-						{
-							MIXER_ERROR("Unexpected MME CmdCode (%d)\n", Command->CmdCode);
-						}
-						break;
-				}
+				case MME_TRANSFORM:
+					OS_SemaphoreSignal(&MMECallbackSemaphore);
+					break;
+				case MME_SET_GLOBAL_TRANSFORM_PARAMS:
+					OS_SemaphoreSignal(&MMEParamCallbackSemaphore);
+					if (!MMECallbackThreadBoosted)
+					{
+						OS_SetPriority(AudioConfiguration.MixerPriority);
+						MMECallbackThreadBoosted = true;
+					}
+					break;
+				default:
+					MIXER_ERROR("Unexpected MME CmdCode (%d)\n", Command->CmdCode);
+					break;
 			}
 			break;
 		default:
@@ -1725,8 +1717,16 @@ PlayerStatus_t Mixer_Mme_c::InitializeMMETransformer(void)
 	MME_ERROR MMEStatus;
 	MME_TransformerCapability_t Capability = { 0 };
 	MME_LxMixerTransformerInfo_t MixerInfo = { 0 };
-	MME_TransformerInitParams_t InitParams = { 0 };
-	MME_LxMixerTransformerInitBDParams_Extended_t MixerParams = { 0 };
+	// Ensure that we clear down the MMEInitParams
+	MMEInitParams = (MME_TransformerInitParams_t)
+	{
+		0
+	};
+	// Ensure that we clear down the MixerParams
+	MixerParams = (MME_LxMixerTransformerInitBDParams_Extended_t)
+	{
+		0
+	};
 	ParsedAudioParameters_t &PrimaryAudioParameters = Clients[PrimaryClient].Parameters;
 	//
 	// Obtain the capabilities of the mixer
@@ -1773,12 +1773,12 @@ PlayerStatus_t Mixer_Mme_c::InitializeMMETransformer(void)
 	//
 	// Initialize the transformer
 	//
-	InitParams.StructSize = sizeof(InitParams);
-	InitParams.Priority = MME_PRIORITY_ABOVE_NORMAL;    // we are more important than a decode...
-	InitParams.Callback = MMECallbackStub;
-	InitParams.CallbackUserData = (void *) this;
-	InitParams.TransformerInitParamsSize = sizeof(MixerParams);
-	InitParams.TransformerInitParams_p = &MixerParams;
+	MMEInitParams.StructSize = sizeof(MMEInitParams);
+	MMEInitParams.Priority = MME_PRIORITY_ABOVE_NORMAL; // we are more important than a decode...
+	MMEInitParams.Callback = MMECallbackStub;
+	MMEInitParams.CallbackUserData = static_cast<void*>(this);
+	MMEInitParams.TransformerInitParamsSize = sizeof(MixerParams);
+	MMEInitParams.TransformerInitParams_p = &MixerParams;
 	MixerParams.StructSize = sizeof(MixerParams);
 	MixerParams.CacheFlush = ACC_MME_ENABLED;
 	MixerParams.NbInput = MIXER_MAX_INPUTS;
@@ -1810,8 +1810,8 @@ PlayerStatus_t Mixer_Mme_c::InitializeMMETransformer(void)
 	}
 	//As dynamic, we need to fixup the sizes we've declared
 	MixerParams.StructSize -= (sizeof(MixerParams.GlobalParams) - MixerParams.GlobalParams.StructSize);
-	InitParams.TransformerInitParamsSize = MixerParams.StructSize;
-	MMEStatus = MME_InitTransformer(AudioConfiguration.TransformName, &InitParams, &MMEHandle);
+	MMEInitParams.TransformerInitParamsSize = MixerParams.StructSize;
+	MMEStatus = MME_InitTransformer(AudioConfiguration.TransformName, &MMEInitParams, &MMEHandle);
 	if (MMEStatus != MME_SUCCESS)
 	{
 		MIXER_ERROR("Failed to initialize %s (%08x).\n", AudioConfiguration.TransformName, MMEStatus);
@@ -1835,13 +1835,13 @@ PlayerStatus_t Mixer_Mme_c::InitializeMMETransformer(void)
 PlayerStatus_t Mixer_Mme_c::TerminateMMETransformer(void)
 {
 	MME_ERROR Status;
-	int TimeToWait;
 	if (MMEInitialized)
 	{
 		//
 		// Wait a reasonable time for all mme transactions to terminate
 		//
-		TimeToWait = MIXER_MAX_WAIT_FOR_MME_COMMAND_COMPLETION;
+		// CAUTION about signed int !!
+		int32_t TimeToWait(MIXER_MAX_WAIT_FOR_MME_COMMAND_COMPLETION);
 		for (;;)
 		{
 			Status = MME_TermTransformer(MMEHandle);
@@ -2535,7 +2535,7 @@ inline void Mixer_Mme_c::FillOutDeviceDownmixParameters(
 	if (CurrentSortValue == TargetSortValue)
 	{
 		struct snd_pseudo_mixer_downmix_index *index = DownmixFirmware->index + min_index;
-		snd_pseudo_mixer_downmix_Q15* data = (snd_pseudo_mixer_downmix_Q15*)(DownmixFirmware->index +
+		snd_pseudo_mixer_downmix_Q15 *data = (snd_pseudo_mixer_downmix_Q15 *)(DownmixFirmware->index +
 											 DownmixFirmware->header.num_index_entries);
 		snd_pseudo_mixer_downmix_Q15 *table = data + index->offset;
 		DMix.Config[DMIX_USER_DEFINED] = ACC_MME_TRUE;
@@ -2806,7 +2806,7 @@ PlayerStatus_t Mixer_Mme_c::FillOutDevicePcmParameters(MME_LxPcmPostProcessingGl
 	memset(&PcmParams, 0, sizeof(PcmParams));
 	PcmParams.Id = ACC_RENDERER_MIXER_POSTPROCESSING_ID;
 	PcmParams.StructSize = 8; //sizeof( PcmParams ); Just the header - we'll increment as go along
-//these next two would be relevant if doing a single card
+	// These next two would be relevant if doing a single card
 	PcmParams.NbPcmProcessings = 0; //!< NbPcmProcessings on main[0..3] and aux[4..7]
 	PcmParams.AuxSplit = SPLIT_AUX;     //! Point of split between Main output and Aux output
 	MME_BassMgtGlobalParams_t & BassMgt = PcmParams.BassMgt;
@@ -3004,7 +3004,7 @@ PlayerStatus_t Mixer_Mme_c::FillOutDevicePcmParameters(MME_LxPcmPostProcessingGl
 			}
 #endif
 #ifndef BUG_4518
-			// The mixer doesn't support auxilliary outputs in the current firmware
+			// The mixer doesn't support auxiliary outputs in the current firmware
 			CMC.Config[CMC_OUTMODE_AUX] = ACC_MODE_ID;
 #else
 			CMC.Config[CMC_OUTMODE_AUX] = TranslateDownstreamCardToAuxAudioMode(&ActualTopology.card[dev_num]);
@@ -3392,7 +3392,7 @@ void Mixer_Mme_c::UpdateMixingMetadata()
 			for (int MixConfig = 0; MixConfig < StreamMetadata->NbOutMixConfig; MixConfig++)
 			{
 				// check if this mix config is the same as the primary stream one,
-				// if    so, the secondary panning coeef metadata will be applied
+				// if so, the secondary panning coef metadata will be applied
 				if (StreamMetadata->MixOutConfig[MixConfig].AudioMode == Clients[PrimaryClient].Parameters.Organisation)
 				{
 					for (int i = 0; i < SND_PSEUDO_MIXER_CHANNELS; i++)
@@ -3445,8 +3445,10 @@ SamplingFrequencyLookupTable[] =
 enum eAccFsCode Mixer_Mme_c::TranslateIntegerSamplingFrequencyToDiscrete(unsigned int IntegerFrequency)
 {
 	int i;
+
 	for (i = 0; IntegerFrequency < SamplingFrequencyLookupTable[i].Integer; i++)
 		; // do nothing
+
 	return SamplingFrequencyLookupTable[i].Discrete;
 }
 
@@ -3459,11 +3461,11 @@ enum eAccFsCode Mixer_Mme_c::TranslateIntegerSamplingFrequencyToDiscrete(unsigne
 unsigned int Mixer_Mme_c::TranslateDiscreteSamplingFrequencyToInteger(enum eAccFsCode DiscreteFrequency)
 {
 	int i;
+
 	for (i = 0; DiscreteFrequency != SamplingFrequencyLookupTable[i].Discrete; i++)
-	{
 		if (0 == SamplingFrequencyLookupTable[i].Integer)
 			break;
-	}
+
 	return SamplingFrequencyLookupTable[i].Integer;
 }
 
@@ -3482,10 +3484,13 @@ enum eFsRange Mixer_Mme_c::TranslateIntegerSamplingFrequencyToRange(unsigned int
 			return ACC_FSRANGE_24k;
 		return ACC_FSRANGE_12k;
 	}
+
 	if (IntegerFrequency < 128000)
 		return ACC_FSRANGE_96k;
+
 	if (IntegerFrequency < 256000)
 		return ACC_FSRANGE_192k;
+
 	return ACC_FSRANGE_384k;
 }
 
