@@ -10,18 +10,16 @@ typedef unsigned int u32;
 #endif
 
 #define YWPANEL_MAX_LED_LENGTH        4
-#define YWPANEL_MAX_VFD_LENGTH        8
-#define YWPANEL_MAX_DVFD_LENGTH       16
+#define YWPANEL_MAX_VFD_LENGTH        8  //note: this is the length of the text part
+#define YWPANEL_MAX_DVFD_LENGTH       10 //note: this is the length not used by the clock
 #define LOG_OFF                       0
 #define LOG_ON                        1
 #define LED_RED                       0
-#if defined(SPARK)
-#define LASTLED                       2
 #define LED_GREEN                     1
-#elif defined(SPARK7162)
-#define LASTLED                       1
+#define LASTLED                       2
+#if defined(SPARK7162)
 #define LED_SPINNER                   1
-/* Uncomment next line to enable lower case letters on Spark 7162 (D)VFD */
+/* Uncomment next line to enable lower case letters on Spark 7162 VFD */
 //#define LOWER_CASE                   1
 #endif
 
@@ -147,7 +145,7 @@ struct vfd_ioctl_data
 	unsigned char length;
 };
 
-// Icon names for Spark7162
+// Icon names for Spark7162 VFD
 enum
 {
 /*----------------------------------11G-------------------------------------*/
@@ -205,6 +203,26 @@ enum
 /*----------------------------------End-------------------------------------*/
 	ICON_ALL, //Table count = 46
 	ICON_SPINNER, // 47
+};
+
+// Icon names for Spark7162 DVFD
+enum
+{
+	ICON_CA2 = 1,
+	ICON_CI2,
+	ICON_USB2,
+	ICON_DOUBLESCREEN2,
+	ICON_WIFI,
+	ICON_3G,
+	ICON_BLUETOOTH,
+	ICON_DNLA,
+	ICON_HD,
+	ICON_MUTE2,
+	ICON_DOLBY_PLUS,
+	ICON_DTS,
+	ICON_HBBTV,
+	ICON_HOME,
+	ICON_INTERNET
 };
 
 typedef enum FPMode_e

@@ -46,15 +46,17 @@
  * 20130911 Audioniek       VFDGETWAKEUPTIME added.
  * 20130912 Audioniek       VFD_Show_Time and aotomSetTime now handle seconds.
  * 20130917 Audioniek       VFDDISPLAYWRITEONOFF 0 switches display off in
- *                          stead of setting brightness level zero.
+ *                          stead of setting brightness level to zero.
  * 20130923 Audioniek       aotom_rtc_read_alarm made functional.
  * 20140604 Audioniek       DVFD front panel support added.
  * 20140609 Audioniek       VFDDISPLAYWRITEONOFF also handles the LEDs.
  * 20140612 Audioniek       UTF8 support added (thnx martii).
  * 20140616 Audioniek       Spinner (icon 47) added on Spark7162, based on
  *                          an idea by martii. Arg2 controls spinning speed.
- * 20141113 Audioniek       Fixed: local keypress feed feedback did not work
+ * 20141113 Audioniek       Fixed: local keypress feedback did not work
  *                          on Spark7162.
+ * 20150325 Audioniek       Local keyboard press and RC feedback through
+ *                          green LED on DVFD.
  * 
  ****************************************************************************/
 
@@ -86,8 +88,6 @@ static short paramDebug = 0;  //debug print level is zero as default (0=nothing,
 #define dprintk(level, x...) do { \
 if ((paramDebug) && (paramDebug > level)) printk(TAGDEBUG x); \
 } while (0)
-
-#define DISPLAYWIDTH_MAX  8 //delete and replace by YWPANEL_width?
 
 #define NO_KEY_PRESS     -1
 #define KEY_PRESS_DOWN    1
@@ -177,7 +177,7 @@ static void VFD_set_all_icons(int onoff)
 
 void clear_display(void)
 {
-	YWPANEL_FP_ShowString("        ");
+	YWPANEL_FP_ShowString("          ");
 }
 #endif
 
@@ -195,9 +195,8 @@ static void VFD_clr(void)
 #if defined(SPARK7162)
 	VFD_set_all_icons(LOG_OFF);
 	aotomSetIcon(ICON_SPINNER, LOG_OFF);
-#elif defined(SPARK)
-	YWPANEL_FP_SetLed(LED_GREEN, LOG_OFF);
 #endif
+	YWPANEL_FP_SetLed(LED_GREEN, LOG_OFF);
 	YWPANEL_FP_SetLed(LED_RED, LOG_OFF);
 }
 
@@ -260,7 +259,7 @@ int utf8strlen(char *s, int len)
 static int draw_thread(void *arg)
 {
 	struct vfd_ioctl_data *data = (struct vfd_ioctl_data *)arg;
-	unsigned char buf[sizeof(data->data) + 2 * DISPLAYWIDTH_MAX];
+	unsigned char buf[sizeof(data->data) + 2 * YWPANEL_width];
 	int len = data->length;
 	int off = 0;
 	int saved = 0;
@@ -693,6 +692,7 @@ static int AOTOMdev_ioctl(struct inode *Inode, struct file *File, unsigned int c
 		case VFDBRIGHTNESS:
 		{
 #if defined(SPARK7162)
+// TODO: fix DVFD
 			if (aotom_data.u.brightness.level < 0)
 			{
 				aotom_data.u.brightness.level = 0;
@@ -711,6 +711,7 @@ static int AOTOMdev_ioctl(struct inode *Inode, struct file *File, unsigned int c
 		case VFDICONDISPLAYONOFF:
 		{
 #if defined(SPARK)
+
 			switch (aotom_data.u.icon.icon_nr)
 			{
 				case 0: //icon number is the same as the LED number
@@ -741,76 +742,91 @@ static int AOTOMdev_ioctl(struct inode *Inode, struct file *File, unsigned int c
 				}
 			}
 #elif defined(SPARK7162)
+// TODO: fix DVFD
 			int icon_nr = aotom_data.u.icon.icon_nr;
 			//e2 icons work around
 			if (icon_nr >= 256)
 			{
 				icon_nr >>= 8;
-				switch (icon_nr)
-				{
-					case 17:
-					{
-						icon_nr = ICON_DOUBLESCREEN; //widescreen
-						break;
-					}
-					case 19:
-					{
-						icon_nr = ICON_CA;
-						break;
-					}
-					case 21:
-					{
-						icon_nr = ICON_MP3;
-						break;
-					}
-					case 23:
-					{
-						icon_nr = ICON_AC3;
-						break;
-					}
-					case 26:
-					{
-						icon_nr = ICON_PLAY_LOG; //Play
-						break;
-					}
-					case 30:
-					{
-						icon_nr = ICON_REC1;
-						break;
-					}
-					case 38:
-					{
-//						icon_nr = ICON_DISK_S3; //cd part1
-						break;
-					}
-					case 39:
-					{
-//						icon_nr = ICON_DISK_S2; //cd part2
-						break;
-					}
-					case 40:
-					{
-//						icon_nr = ICON_DISK_S1; //cd part3
-						break;
-					}
-					case 41:
-					{
-//						icon_nr = ICON_DISK_CIRCLE; //cd circle
-//						icon_nr = -1;
-						break;
-					}
-					default:
-					{
-						printk("[aotom] Tried to set unknown icon number %d.\n", icon_nr);
-//						icon_nr = 29; //no additional symbols at the moment: show alert instead
-						break;
-					}
-				}
+//				switch (YWPANEL_width)
+//				{
+//					case YWPANEL_MAX_VFD_LENGTH:
+//					{
+						switch (icon_nr)
+						{
+							case 17:
+							{
+								icon_nr = ICON_DOUBLESCREEN; //widescreen
+								break;
+							}
+							case 19:
+							{
+								icon_nr = ICON_CA;
+								break;
+							}
+							case 21:
+							{
+								icon_nr = ICON_MP3;
+								break;
+							}
+							case 23:
+							{
+								icon_nr = ICON_AC3;
+								break;
+							}
+							case 26:
+							{
+								icon_nr = ICON_PLAY_LOG; //Play
+								break;
+							}
+							case 30:
+							{
+								icon_nr = ICON_REC1;
+								break;
+							}
+							case 38:
+							{
+		//						icon_nr = ICON_DISK_S3; //cd part1
+								break;
+							}
+							case 39:
+							{
+		//						icon_nr = ICON_DISK_S2; //cd part2
+								break;
+							}
+							case 40:
+							{
+		//						icon_nr = ICON_DISK_S1; //cd part3
+								break;
+							}
+							case 41:
+							{
+		//						icon_nr = ICON_DISK_CIRCLE; //cd circle
+		//						icon_nr = -1;
+								break;
+							}
+							default:
+							{
+								printk("[aotom] Tried to set unknown icon number %d.\n", icon_nr);
+		//						icon_nr = 29; //no additional symbols at the moment: show alert instead
+								break;
+							}
+						}
+//					}
+//					case YWPANEL_MAX_DVFD_LENGTH:
+//					{
+//						default:
+//						{
+//							break;
+//						}
+//					}
+//				}
 			}
 			if (aotom_data.u.icon.on != LOG_OFF && icon_nr != ICON_SPINNER)
 			{
 				aotom_data.u.icon.on = LOG_ON;
 			}
+// TODO: translate VFD icons that also exist on DVFD to DVFD numbers
 			switch (icon_nr)
 			{
 				case ICON_ALL:
@@ -827,6 +843,19 @@ static int AOTOMdev_ioctl(struct inode *Inode, struct file *File, unsigned int c
 						flashLED(LED_SPINNER, aotom_data.u.icon.on * 10); // start spinner thread
 					}
 					res = 0;
+					break;
+				}
+				case ICON_DOT2: // RC feedback
+				{
+					if (YWPANEL_width == YWPANEL_MAX_DVFD_LENGTH)
+					{
+						res = YWPANEL_FP_SetLed(LED_GREEN, aotom_data.u.icon.on);
+						led_state[LED_GREEN].state = aotom_data.u.icon.on;
+					}
+					else
+					{
+						res = aotomSetIcon(icon_nr, aotom_data.u.icon.on);
+					}
 					break;
 				}
 				case -1:
@@ -949,9 +978,7 @@ static int AOTOMdev_ioctl(struct inode *Inode, struct file *File, unsigned int c
 				case 0: //whole display off
 				{
 					YWPANEL_FP_SetLed(LED_RED, LOG_OFF);
-#if defined(SPARK)
 					YWPANEL_FP_SetLed(LED_GREEN, LOG_OFF);
-#endif
 					res = YWPANEL_FP_ShowContentOff();
 					break;
 				}
@@ -959,9 +986,7 @@ static int AOTOMdev_ioctl(struct inode *Inode, struct file *File, unsigned int c
 				{
 					res = YWPANEL_FP_ShowContent();
 					YWPANEL_FP_SetLed(LED_RED, led_state[LED_RED].state);
-#if defined(SPARK)
 					YWPANEL_FP_SetLed(LED_GREEN, led_state[LED_GREEN].state);
-#endif
 					break;
 				}
 #if 0
@@ -1094,7 +1119,6 @@ static struct file_operations vfd_fops =
 };
 
 /*----- Button driver -------*/
-
 static char *button_driver_name = "Fulan front panel button driver";
 static struct input_dev *button_dev;
 static int bad_polling = 1;
@@ -1113,10 +1137,15 @@ static void button_bad_polling(struct work_struct *work)
 		if (button_value != INVALID_KEY)
 		{
 			dprintk(5, "Got button: %02X\n", button_value);
-			#if defined(SPARK7162)
-			aotomSetIcon(ICON_DOT2, LOG_ON);
-			#elif defined(SPARK)
-			YWPANEL_FP_SetLed(LED_GREEN, LOG_ON);
+			#if defined(SPARK7162) || defined(SPARK)
+			if (YWPANEL_width == YWPANEL_MAX_VFD_LENGTH)
+			{
+				aotomSetIcon(ICON_DOT2, LOG_ON);
+			}
+			else
+			{
+				YWPANEL_FP_SetLed(LED_GREEN, LOG_ON);
+			}
 			#else
 			flashLED(LED_GREEN, 100);
 			#endif
@@ -1157,12 +1186,14 @@ static void button_bad_polling(struct work_struct *work)
 			if (btn_pressed)
 			{
 				btn_pressed = 0;
-				#if defined(SPARK7162)
-				aotomSetIcon(ICON_DOT2, LOG_OFF);
-				#elif defined(SPARK)
-				YWPANEL_FP_SetLed(LED_GREEN, LOG_OFF);
-//				#else
-				#endif
+				if (YWPANEL_width == YWPANEL_MAX_VFD_LENGTH)
+				{
+					aotomSetIcon(ICON_DOT2, LOG_OFF);
+				}
+				else
+				{
+					YWPANEL_FP_SetLed(LED_GREEN, LOG_OFF);
+				}
 				input_report_key(button_dev, report_key, 0);
 				input_sync(button_dev);
 			}
@@ -1520,5 +1551,7 @@ module_param(gmt, charp, 0);
 MODULE_PARM_DESC(gmt, "GMT offset (default +0000");
 
 MODULE_DESCRIPTION("VFD module for Fulan receivers");
-MODULE_AUTHOR("Spider-Team, oSaoYa");
+MODULE_AUTHOR("Spider-Team, oSaoYa, Audioniek");
 MODULE_LICENSE("GPL");
+
+// vim:ts=4

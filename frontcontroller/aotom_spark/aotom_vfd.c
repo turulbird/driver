@@ -33,9 +33,11 @@
  * 20140603 Audioniek       LED lower case changed, more characters added.
  * 20140604 Audioniek       DVFD panel support added.
  * 20140612 Audioniek       UTF8 support added (thnx martii).
- * 20141125 Audioniek       Uppercase only letters on spark7162 (D)VFD made
+ * 20141125 Audioniek       Uppercase only letters on spark7162 VFD made
  *                          switchable through #define LOWER_CASE (in
  *                          aotom_main.h).
+ * 20150325 Audioniek       Text output on DVFD did not work; fixed.
+ * 20150325 Audioniek       Uppercase only option on DVFD removed.
  *
  ****************************************************************************/
 
@@ -53,6 +55,7 @@
 #include <linux/stm/pio.h>
 #include <linux/input.h>
 
+#include "aotom_ywdefs.h"
 #include "aotom_i2csoft.h"
 #include "aotom_trace.h"
 #include "aotom_main.h"
@@ -219,8 +222,8 @@ static u8 CharLib[0x60][2] =
 	{0x4A, 0x00},	// ^
 	{0x00, 0x40},	// _
 
-#if defined(LOWER_CASE)
 	{0x00, 0x01},	// `
+#if defined(LOWER_CASE)
 	{0x78, 0x70},	// a
 	{0xF1, 0x48},	// b
 	{0xE1, 0x40},	// c
@@ -248,12 +251,7 @@ static u8 CharLib[0x60][2] =
 	{0x4A, 0x05},	// x
 	{0xF0, 0x58},	// y
 	{0x48, 0x64},	// z
-	{0x42, 0x04},	// {
-	{0x04, 0x02},	// |
-	{0x48, 0x01},	// }
-	{0x00, 0x00}    //DEL (or end of table l=0x60)
 #else
-	{0x00, 0x01},	// `
 	{0xF1, 0x38},	// A
 	{0x74, 0x72},	// B
 	{0x01, 0x68},	// C
@@ -281,11 +279,11 @@ static u8 CharLib[0x60][2] =
 	{0x4A, 0x05},	// X
 	{0x44, 0x05},	// Y
 	{0x48, 0x64},	// Z
+#endif
 	{0x42, 0x04},	// {
 	{0x04, 0x02},	// |
 	{0x48, 0x01},	// }
 	{0x00, 0x00}    //DEL (or end of table l=0x60)
-#endif
 };
 
 // Segment table 2 for VFD clock display on text part
@@ -319,9 +317,23 @@ static u8 NumLib[10][2] =
 };
 
 #if defined(SPARK7162)
-// dvfd_bitmap: Segment table for dot VFD display
-static char dvfd_bitmap[95][5] =
-{ // format seems to be 5 rows/bytes by 8 columns/bits
+/* dvfd_bitmap: Segment table for DVFD display
+
+   Character size is 5 columns by 7 rows
+   Character format is (byte, bit):
+    1,2  1,3  1,4  1,5  1,6
+    1,7  2,0  2,1  2,2  2,3
+    2,4  2,5  2,6  2,7  3,0
+    3,1  3,2  3,3  3,4  3,5
+    3,6  3,7  4,0  4,1  4,2
+    4,3  4,4  4,5  4,6  4,7
+    5,0  5,1  5,2  5,3  5,4
+
+  Unused: Byte 1 bits 0 and 1, byte 5 bits 5, 6 and 7
+  TODO: are any of these used for icon control?
+*/
+static char dvfd_bitmap[96][5] =
+{
 	{0x00, 0x00, 0x00, 0x00, 0x00, }, //' ' 0x20 032
 	{0x10, 0x42, 0x08, 0x01, 0x04, }, //'!' 0x21 033
 	{0x68, 0xad, 0x00, 0x00, 0x00, }, //'"' 0x22 034
@@ -386,7 +398,6 @@ static char dvfd_bitmap[95][5] =
 	{0x18, 0x42, 0x08, 0x21, 0x06, }, //']' 0x5d 093
 	{0x00, 0xa2, 0x22, 0x00, 0x00, }, //'^' 0x5e 094
 	{0x00, 0x00, 0x00, 0xf8, 0x00, }, //'_' 0x5f 095
-#if defined(LOWER_CASE)
 	{0x00, 0x02, 0x00, 0x00, 0x00, }, //'`' 0x60 096
 	{0x00, 0x07, 0x7d, 0xf4, 0x00, }, //'a' 0x61 097
 	{0x08, 0xe1, 0xa4, 0x74, 0x00, }, //'b' 0x62 098
@@ -418,39 +429,7 @@ static char dvfd_bitmap[95][5] =
 	{0x10, 0x42, 0x08, 0x21, 0x04, }, //'|' 0x7c 124
 	{0x0c, 0x42, 0x10, 0x21, 0x03, }, //'}' 0x7d 125
 	{0x00, 0x20, 0x2a, 0x02, 0x00, }, //'~' 0x7e 126
-#else
-	{0x00, 0x02, 0x00, 0x00, 0x00, }, //'`' 0x60 096
-	{0x08, 0x93, 0xe2, 0x8f, 0x11, }, //'A' 0x61 095
-	{0xbc, 0x18, 0x5f, 0x8c, 0x0f, }, //'B' 0x62 076
-	{0xb8, 0x18, 0x42, 0x88, 0x0e, }, //'C' 0x63 087
-	{0xbc, 0x18, 0x63, 0x8c, 0x0f, }, //'D' 0x64 099
-	{0xfc, 0x18, 0x4e, 0x89, 0x1f, }, //'E' 0x65 100
-	{0x78, 0x21, 0x9c, 0x12, 0x06, }, //'F' 0x66 101
-	{0xf8, 0x10, 0x42, 0x8e, 0x1e, }, //'G' 0x67 102
-	{0xc4, 0x18, 0x7f, 0x8c, 0x11, }, //'H' 0x68 103
-	{0x38, 0x42, 0x08, 0x21, 0x0e, }, //'I' 0x69 104
-	{0x70, 0x08, 0x61, 0x8c, 0x0e, }, //'J' 0x6a 105
-	{0xec, 0x54, 0x4e, 0x4a, 0x13, }, //'K' 0x6b 106
-	{0x1c, 0x21, 0x84, 0x10, 0x1f, }, //'L' 0x6c 107
-	{0xc4, 0xbd, 0x6b, 0x8d, 0x1b, }, //'M' 0x6d 108
-	{0xe4, 0x39, 0x6b, 0xce, 0x13, }, //'N' 0x6e 109
-	{0xb8, 0x18, 0x63, 0x8c, 0x0e, }, //'O' 0x6f 110
-	{0xbc, 0x18, 0x5f, 0x08, 0x03, }, //'P' 0x70 111
-	{0xb8, 0x18, 0x63, 0x4d, 0x16, }, //'Q' 0x71 112
-	{0xbc, 0x18, 0x5f, 0x49, 0x13, }, //'R' 0x72 114
-	{0xb8, 0x18, 0x1c, 0x8c, 0x0e, }, //'S' 0x73 115
-	{0xfc, 0x4a, 0x08, 0x21, 0x0e, }, //'T' 0x74 116
-	{0xec, 0x18, 0x63, 0x8c, 0x0e, }, //'U' 0x75 117
-	{0xc4, 0x18, 0xa5, 0x52, 0x04, }, //'V' 0x76 118
-	{0xc4, 0x58, 0x6b, 0x55, 0x0a, }, //'W' 0x77 119
-	{0x44, 0xa9, 0x88, 0xca, 0x11, }, //'X' 0x78 120
-	{0x44, 0xa9, 0x08, 0x21, 0x0e, }, //'Y' 0x79 121
-	{0xfc, 0x88, 0x88, 0x88, 0x1f, }, //'Z' 0x7a 122
-	{0x60, 0x42, 0x04, 0x21, 0x18, }, //'{' 0x7b 123
-	{0x10, 0x42, 0x08, 0x21, 0x04, }, //'|' 0x7c 124
-	{0x0c, 0x42, 0x10, 0x21, 0x03, }, //'}' 0x7d 125
-	{0x00, 0x20, 0x2a, 0x02, 0x00, }, //'~' 0x7e 126
-#endif
+	{0xfc, 0xff, 0xff, 0xff, 0x1f, }, //DEL 0x7f 127
 };
 #endif
 
@@ -487,7 +466,7 @@ static u8 ywpanel_led_map[0x80] =
 	//P     Q     R     S     T     U     V     W     X     Y     Z     [     \     ]     ^     _
 	0x04, 0xfa, 0x3e, 0x1a, 0x7a, 0xde, 0x8e, 0xf6, 0x2e, 0x20, 0x70, 0x0e, 0x1c, 0xaa, 0x2a, 0x3a, /*60-6f*/
 	//`     a     b     c     d     e     f     g     h     i     j     k     l     m     n     o
-	0xce, 0xe6, 0x0a, 0xb6, 0x1e, 0x38, 0x38, 0x56, 0x6e, 0x76, 0xda, 0x9c, 0x0c, 0xf0, 0x02, 0x00  /*70-7f*/
+	0xce, 0xe6, 0x0a, 0xb6, 0x1e, 0x38, 0x38, 0x56, 0x6e, 0x76, 0xda, 0x9c, 0x0c, 0xf0, 0x02, 0x3a  /*70-7f*/
 	//p     q     r     s     t     u     v     w     x     y     z     {     |     }     ~    DEL
 };
 //lwj add end
@@ -512,47 +491,47 @@ enum
 	YWPANEL_INIT_INSTR_SETSTBYKEY4,
 	YWPANEL_INIT_INSTR_SETSTBYKEY5,
 
-	YWPANEL_INIT_INSTR_GETIRCODE,             /* 0x5e */
+	YWPANEL_INIT_INSTR_GETIRCODE,              /* 0x5e */
 	YWPANEL_INIT_INSTR_SETIRCODE,
 
-	YWPANEL_INIT_INSTR_GETENCRYPTMODE,        /* 0x60 */
+	YWPANEL_INIT_INSTR_GETENCRYPTMODE,         /* 0x60 */
 	YWPANEL_INIT_INSTR_SETENCRYPTMODE,
 
-	YWPANEL_INIT_INSTR_GETENCRYPTKEY,         /* 0x62 */
+	YWPANEL_INIT_INSTR_GETENCRYPTKEY,          /* 0x62 */
 	YWPANEL_INIT_INSTR_SETENCRYPTKEY,
 
-	YWPANEL_INIT_INSTR_GETVERIFYSTATE,        /* 0x64 */
+	YWPANEL_INIT_INSTR_GETVERIFYSTATE,         /* 0x64 */
 	YWPANEL_INIT_INSTR_SETVERIFYSTATE,
 
-	YWPANEL_INIT_INSTR_GETTIME = 0x66,        /* 0x66 */
-	YWPANEL_INIT_INSTR_SETTIME,               /* 0x67 */
-	YWPANEL_INIT_INSTR_CONTROLTIMER,          /* 0x68 */
-	YWPANEL_INIT_INSTR_SETPOWERONTIME,        /* 0x69 */
-	YWPANEL_INIT_INSTR_GETPOWERONTIME,        /* 0x6a */
+	YWPANEL_INIT_INSTR_GETTIME = 0x66,         /* 0x66 */
+	YWPANEL_INIT_INSTR_SETTIME,                /* 0x67 */
+	YWPANEL_INIT_INSTR_CONTROLTIMER,           /* 0x68 */
+	YWPANEL_INIT_INSTR_SETPOWERONTIME,         /* 0x69 */
+	YWPANEL_INIT_INSTR_GETPOWERONTIME,         /* 0x6a */
 
-	YWPANEL_INIT_INSTR_GETFPSTANDBYSTATE,     /* 0x6b */
-	YWPANEL_INIT_INSTR_SETFPSTANDBYSTATE,     /* 0x6c */
+	YWPANEL_INIT_INSTR_GETFPSTANDBYSTATE,      /* 0x6b */
+	YWPANEL_INIT_INSTR_SETFPSTANDBYSTATE,      /* 0x6c */
 
-	YWPANEL_INIT_INSTR_GETBLUEKEY1,           /* 0x6d */
+	YWPANEL_INIT_INSTR_GETBLUEKEY1,            /* 0x6d */
 	YWPANEL_INIT_INSTR_GETBLUEKEY2,
 	YWPANEL_INIT_INSTR_GETBLUEKEY3,
-	YWPANEL_INIT_INSTR_GETBLUEKEY4,           /* 0x70 */
+	YWPANEL_INIT_INSTR_GETBLUEKEY4,            /* 0x70 */
 	YWPANEL_INIT_INSTR_GETBLUEKEY5,
 
-	YWPANEL_INIT_INSTR_SETBLUEKEY1,           /* 0x72 */
+	YWPANEL_INIT_INSTR_SETBLUEKEY1,            /* 0x72 */
 	YWPANEL_INIT_INSTR_SETBLUEKEY2,
 	YWPANEL_INIT_INSTR_SETBLUEKEY3,
 	YWPANEL_INIT_INSTR_SETBLUEKEY4,
-	YWPANEL_INIT_INSTR_SETBLUEKEY5,           /* 0x76 */
+	YWPANEL_INIT_INSTR_SETBLUEKEY5,            /* 0x76 */
 
-	YWPANEL_INIT_INSTR_GETPOWERONSTATE,       /* 0x77 */
-	YWPANEL_INIT_INSTR_SETPOWERONSTATE,       /* 0x78 */
+	YWPANEL_INIT_INSTR_GETPOWERONSTATE = 0x77, /* 0x77 */
+	YWPANEL_INIT_INSTR_SETPOWERONSTATE,        /* 0x78 */
 
-	YWPANEL_INIT_INSTR_GETSTARTUPSTATE,       /* 0x79 */
-	YWPANEL_INIT_INSTR_GETLOOPSTATE = 0x7a,   /* 0x7a */
-	YWPANEL_INIT_INSTR_SETLOOPSTATE,          /* 0x7b */
+	YWPANEL_INIT_INSTR_GETSTARTUPSTATE,        /* 0x79 */
+	YWPANEL_INIT_INSTR_GETLOOPSTATE = 0x7a,    /* 0x7a */
+	YWPANEL_INIT_INSTR_SETLOOPSTATE,           /* 0x7b */
 
-	YWPANEL_INIT_INSTR_SETDVFDDISPLAY = 0x80, /* 0x80 */
+	YWPANEL_INIT_INSTR_SETDVFDDISPLAY = 0x80,  /* 0x80 */
 	YWPANEL_INIT_INSTR_STRDVFDBRIGHTNESS,
 	YWPANEL_INIT_INSTR_SETDVFDTIMEMODE,
 	YWPANEL_INIT_INSTR_GETDVFDTIMEMODE
@@ -580,15 +559,15 @@ enum YWPANL_WRITE_INSTR_e
 #define FP_CS_SET() {udelay(10);stpio_set_pin(pio_cs, 1);}
 
 static SegAddrVal_T VfdSegAddr[15];
-static struct i2c_adapter* panel_i2c_adapter;
-// const u16 cnCRC_16 = 0x8005;
+static struct i2c_adapter *panel_i2c_adapter;
+static const u16 cnCRC_16 = 0x8005;
 // CRC-16 = X16 + X15 + X2 + X0
-const u16 cnCRC_CCITT = 0x1021;
+static const u16 cnCRC_CCITT = 0x1021;
 // CRC-CCITT = X16 + X12 + X5 + X0
 
-u32 Table_CRC[256]; // CRC
+static u32 Table_CRC[256]; // CRC
 
-void YWPANEL_BuildTable16(u16 aPoly)
+static void YWPANEL_BuildTable16(u16 aPoly)
 {
 	u16 i, j;
 	u16 nData;
@@ -610,14 +589,14 @@ void YWPANEL_BuildTable16(u16 aPoly)
 			nData <<= 1;
 		}
 		Table_CRC[i] = (u32)nAccum;
-	 }
+	}
 }
 
 u16 YWPANEL_GenerateCRC16(u8 * buffer, u32 bufLength)
 {
 	u32 i;
 	u16 nAccum = 0;
-	YWPANEL_BuildTable16(cnCRC_CCITT);
+	YWPANEL_BuildTable16(cnCRC_CCITT);   // or cnCRC_CCITT
 	for (i = 0; i < bufLength; i++)
 	{
 		nAccum = (nAccum << 8) ^ (u16)Table_CRC[(nAccum >> 8) ^ *buffer++];
@@ -627,7 +606,7 @@ u16 YWPANEL_GenerateCRC16(u8 * buffer, u32 bufLength)
 
 #if defined(SPARK7162)
 // Code for dot VFD
-bool YWPANEL_FP_DvfdFillCmd(YWPANEL_FPData_t *data, YWPANEL_I2CData_t *I2CData)
+static void YWPANEL_FP_DvfdFillCmd(YWPANEL_FPData_t *data, YWPANEL_I2CData_t *I2CData)
 {
 	switch (data->data.dvfdData.type)
 	{
@@ -649,17 +628,15 @@ bool YWPANEL_FP_DvfdFillCmd(YWPANEL_FPData_t *data, YWPANEL_I2CData_t *I2CData)
 		case YWPANEL_DVFD_GETTIMEMODE:
 		{
 			I2CData->writeBuff[0] = YWPANEL_INIT_INSTR_GETDVFDTIMEMODE;
-//			break;
 		}
 		default:
 		{
 			break;
 		}
 	}
-	return true;
 }
 
-bool YWPANEL_FP_DvfdFillLen(YWPANEL_FPData_t *data, YWPANEL_I2CData_t *I2CData)
+static void YWPANEL_FP_DvfdFillLen(YWPANEL_FPData_t *data, YWPANEL_I2CData_t *I2CData)
 {
 	if (data->data.dvfdData.type == YWPANEL_DVFD_DISPLAYSTRING)
 	{
@@ -669,12 +646,11 @@ bool YWPANEL_FP_DvfdFillLen(YWPANEL_FPData_t *data, YWPANEL_I2CData_t *I2CData)
 	{
 		I2CData->writeBuff[1] = 0x04;
 	}
-	return true;
 }
 
-void YWPANEL_FP_DvfdFillString(YWPANEL_FPData_t *data, YWPANEL_I2CData_t *I2CData, u8 uMax)
+static void YWPANEL_FP_DvfdFillString(YWPANEL_FPData_t *data, YWPANEL_I2CData_t *I2CData, u8 uMax)
 {
-	int i;
+	u8 i;
 
 	for (i = 0; i < uMax; i++)
 	{
@@ -687,16 +663,18 @@ void YWPANEL_FP_DvfdFillString(YWPANEL_FPData_t *data, YWPANEL_I2CData_t *I2CDat
 	}
 }
 
-bool YWPANEL_FP_DvfdFillData(YWPANEL_FPData_t *data, YWPANEL_I2CData_t *I2CData)
+static void YWPANEL_FP_DvfdFillData(YWPANEL_FPData_t *data, YWPANEL_I2CData_t *I2CData)
 {
+	u8 uMax;
+
 	switch (data->data.dvfdData.type)
 	{
 		case YWPANEL_DVFD_DISPLAYSTRING:
 		{
-			u8 uMax = data->data.dvfdData.ulen;
+			uMax = data->data.dvfdData.ulen;
 			if (uMax > 4)
 			{
-			    uMax = 4;
+				uMax = 4;
 			}
 			I2CData->writeBuff[2] = uMax;
 			YWPANEL_FP_DvfdFillString(data, I2CData, uMax);
@@ -705,17 +683,15 @@ bool YWPANEL_FP_DvfdFillData(YWPANEL_FPData_t *data, YWPANEL_I2CData_t *I2CData)
 		case YWPANEL_DVFD_SETTIMEMODE:
 		{
 			I2CData->writeBuff[2] = data->data.dvfdData.setValue;
-//			break;
 		}
 		default:
 		{
 			break;
 		}
 	}
-	return true;
 }
 
-bool YWPANEL_FP_DvfdFillCrc(YWPANEL_FPData_t *data, YWPANEL_I2CData_t *I2CData)
+static void YWPANEL_FP_DvfdFillCrc(YWPANEL_FPData_t *data, YWPANEL_I2CData_t *I2CData)
 {
 	u16 usCRC16 = 0;
 
@@ -733,11 +709,10 @@ bool YWPANEL_FP_DvfdFillCrc(YWPANEL_FPData_t *data, YWPANEL_I2CData_t *I2CData)
 		I2CData->writeBuff[7] = ((usCRC16 >> 8) & 0xff);
 		I2CData->writeBuffLen = 8;
 	}
-	return true;
 }
 #endif //defined(SPARK7162)
 
-int YWPANEL_FP_SetI2cData(YWPANEL_FPData_t *data,YWPANEL_I2CData_t *I2CData)
+static int YWPANEL_FP_SetI2cData(YWPANEL_FPData_t *data, YWPANEL_I2CData_t *I2CData)
 {
 	u16 usCRC16 = 0;
 
@@ -760,16 +735,15 @@ int YWPANEL_FP_SetI2cData(YWPANEL_FPData_t *data,YWPANEL_I2CData_t *I2CData)
 #if defined(SPARK)
 		case YWPANEL_DATATYPE_LED:
 		{
-			I2CData->writeBuff[0] = YWPANEL_DISPLAY_INSTR_LED;  //d48zm modify
+			I2CData->writeBuff[0] = YWPANEL_DISPLAY_INSTR_LED;
 			break;
 		}
-#elif 1
+#else
 		case YWPANEL_DATATYPE_VFD:
 		{
 			I2CData->writeBuff[0] = YWPANEL_DISPLAY_INSTR_VFD;
 			break;
 		}
-#elif defined(SPARK7162)
 		case YWPANEL_DATATYPE_DVFD:
 		{
 			YWPANEL_FP_DvfdFillCmd(data, I2CData);
@@ -1070,8 +1044,8 @@ int YWPANEL_FP_SetI2cData(YWPANEL_FPData_t *data,YWPANEL_I2CData_t *I2CData)
 			if (data->data.vfdData.type == YWPANEL_VFD_DISPLAYSTRING)
 			{
 				usCRC16 = YWPANEL_GenerateCRC16(I2CData->writeBuff, 36);
-				I2CData->writeBuff[36] =  (usCRC16 &0xff);
-				I2CData->writeBuff[37] =  ((usCRC16>>8) &0xff);
+				I2CData->writeBuff[36] = (usCRC16 & 0xff);
+				I2CData->writeBuff[37] = ((usCRC16 >> 8) & 0xff);
 				I2CData->writeBuffLen = 38;
 				break;
 			}
@@ -1100,16 +1074,16 @@ int YWPANEL_FP_ParseI2cData(YWPANEL_FPData_t *data,YWPANEL_I2CData_t *I2CData)
 		ywtrace_print(TRACE_ERROR,"%s::error at %d\n",__func__,__LINE__);
 		return false;
 	}
-	receiveCode =((u16)(I2CData->readBuff[7] << 8) & 0xff00) | ((u16)(I2CData->readBuff[6]) & 0xff);
+	receiveCode = ((u16)(I2CData->readBuff[7] << 8) & 0xff00) | ((u16)(I2CData->readBuff[6]) & 0xff);
 	crc16Code = YWPANEL_GenerateCRC16(I2CData->readBuff, 6);
 
 	if (receiveCode != crc16Code)
 	{
-		ywtrace_print(TRACE_ERROR,"CRC16 check is wrong at line %d. \n",__LINE__);
+		ywtrace_print(TRACE_ERROR,"CRC16 check is wrong at line %d. \n", __LINE__);
 		// return false;  //YWDRIVER_MODI lwj remove
 	}
 
-	//ywtrace_print(TRACE_INFO,"%s::date->dateType=[0x%x]\n",__func__,data->dataType);
+	//ywtrace_print(TRACE_INFO,"%s::date->dateType=[0x%x]\n",__func__, data->dataType);
 	dataType = I2CData->readBuff[0];
 	datalength = I2CData->readBuff[1];
 
@@ -1140,7 +1114,7 @@ int YWPANEL_FP_ParseI2cData(YWPANEL_FPData_t *data,YWPANEL_I2CData_t *I2CData)
 		{
 			if (dataType != YWPANEL_READ_INSTR_ACK)
 			{
-				ywtrace_print(TRACE_ERROR,"%s: Error at %d\n",__func__,__LINE__);
+				ywtrace_print(TRACE_ERROR, "%s: Error at %d\n", __func__, __LINE__);
 				return false;
 			}
 			break;
@@ -1149,7 +1123,7 @@ int YWPANEL_FP_ParseI2cData(YWPANEL_FPData_t *data,YWPANEL_I2CData_t *I2CData)
 		{
 			if (dataType != YWPANEL_READ_INSTR_SCANKEY)
 			{
-				ywtrace_print(TRACE_ERROR,"%s: Error at %d, dataType = %d\n",__func__,__LINE__, dataType);
+				ywtrace_print(TRACE_ERROR,"%s: Error at %d, dataType = %d\n", __func__, __LINE__, dataType);
 				return false;
 			}
 			break;
@@ -1160,7 +1134,7 @@ int YWPANEL_FP_ParseI2cData(YWPANEL_FPData_t *data,YWPANEL_I2CData_t *I2CData)
 			{
 				if (dataType != YWPANEL_READ_INSTR_VFDKEY)
 				{
-					ywtrace_print(TRACE_ERROR,"%s: Error at %d, dataType = %d\n",__func__,__LINE__, dataType);
+					ywtrace_print(TRACE_ERROR, "%s: Error at %d, dataType = %d\n", __func__, __LINE__, dataType);
 					return false;
 				}
 			}
@@ -1168,7 +1142,7 @@ int YWPANEL_FP_ParseI2cData(YWPANEL_FPData_t *data,YWPANEL_I2CData_t *I2CData)
 			{
 				if (dataType != YWPANEL_READ_INSTR_ACK)
 				{
-					ywtrace_print(TRACE_ERROR,"%s: Error at %d\n",__func__,__LINE__);
+					ywtrace_print(TRACE_ERROR, "%s: Error at %d\n", __func__, __LINE__);
 					return false;
 				}
 			}
@@ -1181,7 +1155,7 @@ int YWPANEL_FP_ParseI2cData(YWPANEL_FPData_t *data,YWPANEL_I2CData_t *I2CData)
 			{
 				if (dataType != YWPANEL_READ_INSTR_ACK)
 				{
-					ywtrace_print(TRACE_ERROR,"%s: Error at %d\n",__func__,__LINE__);
+					ywtrace_print(TRACE_ERROR, "%s: Error at %d\n", __func__, __LINE__);
 					return false;
 				}
 			}
@@ -1189,7 +1163,7 @@ int YWPANEL_FP_ParseI2cData(YWPANEL_FPData_t *data,YWPANEL_I2CData_t *I2CData)
 			{
 				if (dataType != YWPANEL_READ_INSTR_ACK)
 				{
-					ywtrace_print(TRACE_ERROR,"%s: Error at %d\n",__func__,__LINE__);
+//					ywtrace_print(TRACE_ERROR, "%s: Error at %d\n", __func__, __LINE__);
 					return false;
 				}
 			}
@@ -1197,17 +1171,14 @@ int YWPANEL_FP_ParseI2cData(YWPANEL_FPData_t *data,YWPANEL_I2CData_t *I2CData)
 			{
 				if (dataType != YWPANEL_INIT_INSTR_GETDVFDTIMEMODE)
 				{
-					ywtrace_print(TRACE_ERROR,"%s: Error at %d\n",__func__,__LINE__);
+//					ywtrace_print(TRACE_ERROR, "%s: Error at %d\n", __func__, __LINE__);
 					return false;
 				}
 			}
-			else
+			else if (dataType != YWPANEL_READ_INSTR_ACK)
 			{
-				if (dataType != YWPANEL_READ_INSTR_ACK)
-				{
-					ywtrace_print(TRACE_ERROR,"%s: Error at %d\n",__func__,__LINE__);
-					return false;
-				}
+//				ywtrace_print(TRACE_ERROR, "%s: Error at %d\n", __func__, __LINE__);
+				return false;
 			}
 			break;
 		}
@@ -1238,6 +1209,7 @@ int YWPANEL_FP_ParseI2cData(YWPANEL_FPData_t *data,YWPANEL_I2CData_t *I2CData)
 		}
 		case YWPANEL_DATATYPE_GETLOOPSTATE:
 		{
+			printk("%s:%d: dataType == %d\n", __FUNCTION__, __LINE__, dataType);
 			if (dataType != YWPANEL_INIT_INSTR_GETLOOPSTATE)
 			{
 				return false;
@@ -1248,7 +1220,7 @@ int YWPANEL_FP_ParseI2cData(YWPANEL_FPData_t *data,YWPANEL_I2CData_t *I2CData)
 		{
 			if (dataType != YWPANEL_INIT_INSTR_GETTIME)
 			{
-				ywtrace_print(TRACE_ERROR,"%s: Error at %d\n",__func__,__LINE__);
+				ywtrace_print(TRACE_ERROR, "%s: Error at %d\n", __func__, __LINE__);
 				return false;
 			}
 			break;
@@ -1259,9 +1231,9 @@ int YWPANEL_FP_ParseI2cData(YWPANEL_FPData_t *data,YWPANEL_I2CData_t *I2CData)
 		case YWPANEL_DATATYPE_GETSTBYKEY4:
 		case YWPANEL_DATATYPE_GETSTBYKEY5:
 		{
-			if (dataType != (YWPANEL_INIT_INSTR_GETSTBYKEY1 + data->dataType -YWPANEL_DATATYPE_GETSTBYKEY1))
+			if (dataType != (YWPANEL_INIT_INSTR_GETSTBYKEY1 + data->dataType - YWPANEL_DATATYPE_GETSTBYKEY1))
 			{
-				ywtrace_print(TRACE_ERROR,"%s: Error at %d\n",__func__,__LINE__);
+				ywtrace_print(TRACE_ERROR, "%s: Error at %d\n", __func__, __LINE__);
 				return false;
 			}
 			break;
@@ -1272,9 +1244,9 @@ int YWPANEL_FP_ParseI2cData(YWPANEL_FPData_t *data,YWPANEL_I2CData_t *I2CData)
 		case YWPANEL_DATATYPE_GETBLUEKEY4:
 		case YWPANEL_DATATYPE_GETBLUEKEY5:
 		{
-			if (dataType != (YWPANEL_INIT_INSTR_GETBLUEKEY1 + data->dataType -YWPANEL_DATATYPE_GETBLUEKEY1))
+			if (dataType != (YWPANEL_INIT_INSTR_GETBLUEKEY1 + data->dataType - YWPANEL_DATATYPE_GETBLUEKEY1))
 			{
-				ywtrace_print(TRACE_ERROR,"%s: Error at %d\n",__func__,__LINE__);
+				ywtrace_print(TRACE_ERROR, "%s: Error at %d\n", __func__, __LINE__);
 				return false;
 			}
 			break;
@@ -1284,7 +1256,7 @@ int YWPANEL_FP_ParseI2cData(YWPANEL_FPData_t *data,YWPANEL_I2CData_t *I2CData)
 		case YWPANEL_DATATYPE_GETVERIFYSTATE:
 		default:
 		{
-			break;
+//!			break;
 		}
 	}
 
@@ -1297,7 +1269,7 @@ int YWPANEL_FP_ParseI2cData(YWPANEL_FPData_t *data,YWPANEL_I2CData_t *I2CData)
 		}
 		case YWPANEL_READ_INSTR_SCANKEY:  //scan key
 		{
-			data->data.ScanKeyData.keyValue= I2CData->readBuff[2];
+			data->data.ScanKeyData.keyValue = I2CData->readBuff[2];
 			data->ack = true;
 			break;
 		}
@@ -1311,7 +1283,7 @@ int YWPANEL_FP_ParseI2cData(YWPANEL_FPData_t *data,YWPANEL_I2CData_t *I2CData)
 		{
 			if (data->dataType != YWPANEL_DATATYPE_GETVERSION)
 			{
-				ywtrace_print(TRACE_ERROR,"%s: Error at %d\n",__func__,__LINE__);
+				ywtrace_print(TRACE_ERROR, "%s: Error at %d\n", __func__, __LINE__);
 				return false;
 			}
 			data->data.version.CpuType        = I2CData->readBuff[2];
@@ -1319,7 +1291,6 @@ int YWPANEL_FP_ParseI2cData(YWPANEL_FPData_t *data,YWPANEL_I2CData_t *I2CData)
 			data->data.version.scankeyNum     = I2CData->readBuff[3] & 0x0f;
 			data->data.version.swMajorVersion = I2CData->readBuff[4];
 			data->data.version.swSubVersion   = I2CData->readBuff[5];
-
 			data->ack = true;
 			break;
 		}
@@ -1332,12 +1303,12 @@ int YWPANEL_FP_ParseI2cData(YWPANEL_FPData_t *data,YWPANEL_I2CData_t *I2CData)
 			}
 			else
 			{
-				ywtrace_print(TRACE_ERROR,"%s: Error at %d\n",__func__,__LINE__);
+				ywtrace_print(TRACE_ERROR, "%s: Error at %d\n", __func__, __LINE__);
 				return false;
 			}
 			break;
 		}
-		case YWPANEL_INIT_INSTR_GETFPSTANDBYSTATE: /* get VFD state */
+		case YWPANEL_INIT_INSTR_GETFPSTANDBYSTATE: /* get front panel state */
 		{
 			data->data.FpStandbyState.On = I2CData->readBuff[2];
 			data->ack = true;
@@ -1352,21 +1323,21 @@ int YWPANEL_FP_ParseI2cData(YWPANEL_FPData_t *data,YWPANEL_I2CData_t *I2CData)
 			}
 			else
 			{
-				ywtrace_print(TRACE_ERROR,"%s: Error at %d\n",__func__,__LINE__);
+				ywtrace_print(TRACE_ERROR, "%s: Error at %d\n", __func__, __LINE__);
 				return false;
 			}
 			break;
 		}
-		case YWPANEL_INIT_INSTR_GETSTBYKEY1: /* get standby key */
-		case YWPANEL_INIT_INSTR_GETSTBYKEY2:
-		case YWPANEL_INIT_INSTR_GETSTBYKEY3:
-		case YWPANEL_INIT_INSTR_GETSTBYKEY4:
-		case YWPANEL_INIT_INSTR_GETSTBYKEY5:
 		case YWPANEL_INIT_INSTR_GETBLUEKEY1: /* get blue key */
 		case YWPANEL_INIT_INSTR_GETBLUEKEY2:
 		case YWPANEL_INIT_INSTR_GETBLUEKEY3:
 		case YWPANEL_INIT_INSTR_GETBLUEKEY4:
 		case YWPANEL_INIT_INSTR_GETBLUEKEY5:
+		case YWPANEL_INIT_INSTR_GETSTBYKEY1: /* get standby key */
+		case YWPANEL_INIT_INSTR_GETSTBYKEY2:
+		case YWPANEL_INIT_INSTR_GETSTBYKEY3:
+		case YWPANEL_INIT_INSTR_GETSTBYKEY4:
+		case YWPANEL_INIT_INSTR_GETSTBYKEY5:
 		{
 			data->data.stbyKey.key = ((I2CData->readBuff[2] <<24) & 0xff000000)
 			                       | ((I2CData->readBuff[3] <<16) & 0x00ff0000)
@@ -1381,7 +1352,7 @@ int YWPANEL_FP_ParseI2cData(YWPANEL_FPData_t *data,YWPANEL_I2CData_t *I2CData)
 			data->ack = true;
 			break;
 		}
-		case YWPANEL_INIT_INSTR_GETLOOPSTATE: /* get loopstate */
+		case YWPANEL_INIT_INSTR_GETLOOPSTATE: /* get loop state */
 		{
 			data->data.LoopState.state = I2CData->readBuff[2];
 			data->ack = true;
@@ -1404,7 +1375,7 @@ int YWPANEL_FP_ParseI2cData(YWPANEL_FPData_t *data,YWPANEL_I2CData_t *I2CData)
 		}
 		default:
 		{
-			ywtrace_print(TRACE_ERROR,"%s: Error at line %d\n",__func__,__LINE__);
+			ywtrace_print(TRACE_ERROR, "%s: Error at line %d\n", __func__, __LINE__);
 			return false;
 		}
 	}
@@ -1412,7 +1383,7 @@ int YWPANEL_FP_ParseI2cData(YWPANEL_FPData_t *data,YWPANEL_I2CData_t *I2CData)
 }
 
 #ifdef CONFIG_CPU_SUBTYPE_STX7105
-static int YWPANEL_FPWriteDataToI2c(struct i2c_adapter* I2CHandle, u8 * writeBuffer, u32 writeBufLen, u8 *readBuffer, u32 readBufLen)
+static int YWPANEL_FPWriteDataToI2c(struct i2c_adapter *I2CHandle, u8 *writeBuffer, u32 writeBufLen, u8 *readBuffer, u32 readBufLen)
 {
 	if (!isofti2c_write(writeBuffer, writeBufLen))
 	{
@@ -1426,7 +1397,7 @@ static int YWPANEL_FPWriteDataToI2c(struct i2c_adapter* I2CHandle, u8 * writeBuf
 	return true;
 }
 #else
-static int YWPANEL_FPWriteDataToI2c(struct i2c_adapter* I2CHandle, u8 * writeBuffer, u32 writeBufLen, u8 *readBuffer, u32 readBufLen)
+static int YWPANEL_FPWriteDataToI2c(struct i2c_adapter *I2CHandle, u8 * writeBuffer, u32 writeBufLen, u8 *readBuffer, u32 readBufLen)
 {
 	int ret = 0;
 	struct i2c_msg i2c_msg[] = {{ .addr = I2C_BUS_ADD, .flags = 0, .buf = writeBuffer, .len = writeBufLen},
@@ -1442,7 +1413,7 @@ static int YWPANEL_FPWriteDataToI2c(struct i2c_adapter* I2CHandle, u8 * writeBuf
 
 	if (ret != 1)
 	{
-		ywtrace_print(TRACE_ERROR,"I2C read error at %d\n", __LINE__);
+		ywtrace_print(TRACE_ERROR, "I2C read error at %d\n", __LINE__);
 		return false;
 	}
 
@@ -1452,7 +1423,7 @@ static int YWPANEL_FPWriteDataToI2c(struct i2c_adapter* I2CHandle, u8 * writeBuf
 
 	if (ret != 1)
 	{
-		ywtrace_print(TRACE_ERROR,"I2C read error at %d\n", __LINE__);
+		ywtrace_print(TRACE_ERROR, "I2C read error at %d\n", __LINE__);
 		return false;
 	}
 	return true;
@@ -1466,13 +1437,13 @@ int YWPANEL_FP_SendData(YWPANEL_FPData_t *data)
 
 	if (down_interruptible(&vfd_sem_rw))
 	{
-		ywtrace_print(TRACE_ERROR,"SendData is busy, you will be next!\n");
+		ywtrace_print(TRACE_ERROR, "SendData is busy, you will be next!\n");
 		return false;
 	}
 
 	if (data == NULL)
 	{
-		ywtrace_print(TRACE_ERROR,"Bad parameter at line %d\n",__LINE__);
+		ywtrace_print(TRACE_ERROR, "Bad parameter at line %d\n", __LINE__);
 		up(&vfd_sem_rw);
 		return false;
 	}
@@ -1499,7 +1470,7 @@ int YWPANEL_FP_SendData(YWPANEL_FPData_t *data)
 
 	if (ret != true)
 	{
-		ywtrace_print(TRACE_ERROR,"%s at %d\n",__func__,__LINE__);
+		ywtrace_print(TRACE_ERROR, "%s at %d\n", __func__, __LINE__);
 		up(&vfd_sem_rw);
 		return false;
 	}
@@ -1517,7 +1488,7 @@ YWPANEL_FPSTATE_t YWPANEL_FP_GetFPStatus(void)
 
 	if (YWPANEL_FP_SendData(&data) != true)
 	{
-		ywtrace_print(TRACE_ERROR,"YWPANEL_FP_SendData failed at line [%d] \n",__LINE__);
+		ywtrace_print(TRACE_ERROR, "YWPANEL_FP_SendData failed at line [%d] \n", __LINE__);
 		return false;
 	}
 	if ((data.data.FpStandbyState.On < YWPANEL_FPSTATE_STANDBYOFF) || (data.data.FpStandbyState.On > YWPANEL_FPSTATE_STANDBYON) )
@@ -1552,7 +1523,7 @@ YWPANEL_POWERONSTATE_t YWPANEL_FP_GetPowerOnStatus(void)
 
 	if (YWPANEL_FP_SendData(&data) != true)
 	{
-		ywtrace_print(TRACE_ERROR,"YWPANEL_FP_SendData failed at line [%d]\n",__LINE__);
+		ywtrace_print(TRACE_ERROR, "YWPANEL_FP_SendData failed at line [%d]\n", __LINE__);
 		return false;
 	}
 	if ((data.data.PowerOnState.state < YWPANEL_POWERONSTATE_RUNNING) ||(data.data.PowerOnState.state > YWPANEL_POWERONSTATE_CHECKPOWERBIT) )
@@ -1572,7 +1543,7 @@ int YWPANEL_FP_SetLoopState(YWPANEL_LOOPSTATE_t state)
 
 	if (YWPANEL_FP_SendData(&data) != true)
 	{
-		ywtrace_print(TRACE_ERROR,"YWPANEL_FP_SendData failed at line [%d]\n",__LINE__);
+		ywtrace_print(TRACE_ERROR, "YWPANEL_FP_SendData failed at line [%d]\n", __LINE__);
 		return false;
 	}
 	return true;
@@ -1587,7 +1558,7 @@ int YWPANEL_FP_GetLoopState(YWPANEL_LOOPSTATE_t *state)
 
 	if(YWPANEL_FP_SendData(&data) != true)
 	{
-		ywtrace_print(TRACE_ERROR,"YWPANEL_FP_SendData failed at line [%d]\n",__LINE__);
+		ywtrace_print(TRACE_ERROR, "YWPANEL_FP_SendData failed at line [%d]\n", __LINE__);
 		return false;
 	}
 	if((data.data.LoopState.state < YWPANEL_LOOPSTATE_UNKNOWN) || (data.data.LoopState.state > YWPANEL_LOOPSTATE_LOOPON) )
@@ -1609,7 +1580,7 @@ int YWPANEL_FP_SetPowerOnStatus(YWPANEL_POWERONSTATE_t state)
 
 	if (YWPANEL_FP_SendData(&data) != true)
 	{
-		ywtrace_print(TRACE_ERROR,"YWPANEL_FP_SendData failed at line [%d]\n",__LINE__);
+		ywtrace_print(TRACE_ERROR, "YWPANEL_FP_SendData failed at line [%d]\n", __LINE__);
 		return false;
 	}
 	return true;
@@ -1624,8 +1595,8 @@ int YWPANEL_FP_GetStartUpState(YWPANEL_STARTUPSTATE_t *state)
 
 	if (YWPANEL_FP_SendData(&data) != true)
 	{
-	  ywtrace_print(TRACE_ERROR,"YWPANEL_FP_SendData failed at line [%d]\n",__LINE__);
-	  return false;
+		ywtrace_print(TRACE_ERROR, "YWPANEL_FP_SendData failed at line [%d]\n", __LINE__);
+		return false;
 	}
 
 	*state = data.data.StartUpState.state;
@@ -1641,14 +1612,13 @@ YWPANEL_CPUSTATE_t YWPANEL_FP_GetCpuStatus(void)
 
 	if (YWPANEL_FP_SendData(&data) != true)
 	{
-		ywtrace_print(TRACE_ERROR,"YWPANEL_FP_SendData failed at line [%d]\n",__LINE__);
+		ywtrace_print(TRACE_ERROR, "YWPANEL_FP_SendData failed at line [%d]\n", __LINE__);
 		return false;
 	}
-	if ((data.data.CpuState.state <YWPANEL_CPUSTATE_RUNNING) ||(data.data.CpuState.state> YWPANEL_CPUSTATE_STANDBY) )
+	if ((data.data.CpuState.state <YWPANEL_CPUSTATE_RUNNING) || (data.data.CpuState.state> YWPANEL_CPUSTATE_STANDBY))
 	{
 		return YWPANEL_CPUSTATE_UNKNOWN;
 	}
-
 	return data.data.CpuState.state;
 }
 
@@ -1662,7 +1632,7 @@ int YWPANEL_FP_SetCpuStatus(YWPANEL_CPUSTATE_t state)
 
 	if (YWPANEL_FP_SendData(&data) != true)
 	{
-		ywtrace_print(TRACE_ERROR,"YWPANEL_FP_SendData failed at line [%d]\n",__LINE__);
+		ywtrace_print(TRACE_ERROR, "YWPANEL_FP_SendData failed at line [%d]\n", __LINE__);
 		return false;
 	}
 	return true;
@@ -1677,27 +1647,11 @@ int YWPANEL_FP_GetVersion(YWPANEL_Version_t *version)
 
 	if (YWPANEL_FP_SendData(&data) != true)
 	{
-		ywtrace_print(TRACE_ERROR,"YWPANEL_FP_SendData failed at line [%d]\n",__LINE__);
+		ywtrace_print(TRACE_ERROR, "YWPANEL_FP_SendData failed at line [%d]\n", __LINE__);
 		return false;
 	}
 
 	memcpy(version, &(data.data.version), sizeof(YWPANEL_Version_t));
-	return true;
-}
-
-int YWPANEL_FP_SetTime(u32 value)
-{
-	YWPANEL_FPData_t data;
-
-	memset(&data, 0, sizeof(YWPANEL_FPData_t));
-	data.dataType = YWPANEL_DATATYPE_SETTIME;
-	data.data.time.second = value;
-
-	if (YWPANEL_FP_SendData(&data) != true)
-	{
-		ywtrace_print(TRACE_ERROR,"YWPANEL_FP_SendData failed at line [%d]\n",__LINE__);
-		return false;
-	}
 	return true;
 }
 
@@ -1710,10 +1664,26 @@ u32 YWPANEL_FP_GetTime(void)
 
 	if (YWPANEL_FP_SendData(&data) != true)
 	{
-		ywtrace_print(TRACE_ERROR,"YWPANEL_FP_SendData failed at line [%d]\n",__LINE__);
+		ywtrace_print(TRACE_ERROR,"YWPANEL_FP_SendData failed at line [%d]\n", __LINE__);
 		return false;
 	}
 	return data.data.time.second;
+}
+
+int YWPANEL_FP_SetTime(u32 value)
+{
+	YWPANEL_FPData_t data;
+
+	memset(&data, 0, sizeof(YWPANEL_FPData_t));
+	data.dataType = YWPANEL_DATATYPE_SETTIME;
+	data.data.time.second = value;
+
+	if (YWPANEL_FP_SendData(&data) != true)
+	{
+		ywtrace_print(TRACE_ERROR,"YWPANEL_FP_SendData failed at line [%d]\n", __LINE__);
+		return false;
+	}
+	return true;
 }
 
 int YWPANEL_FP_SetPowerOnTime(u32 value)
@@ -1726,7 +1696,7 @@ int YWPANEL_FP_SetPowerOnTime(u32 value)
 
 	if (YWPANEL_FP_SendData(&data) != true)
 	{
-		ywtrace_print(TRACE_ERROR,"YWPANEL_FP_SendData failed at line [%d]\n",__LINE__);
+		ywtrace_print(TRACE_ERROR, "YWPANEL_FP_SendData failed at line [%d]\n", __LINE__);
 	}
 	return true;
 }
@@ -1740,7 +1710,7 @@ u32 YWPANEL_FP_GetPowerOnTime(void)
 
 	if (YWPANEL_FP_SendData(&data) != true)
 	{
-		ywtrace_print(TRACE_ERROR,"YWPANEL_FP_SendData failed at line [%d]\n",__LINE__);
+		ywtrace_print(TRACE_ERROR, "YWPANEL_FP_SendData failed at line [%d]\n", __LINE__);
 		return 0;
 	}
 	return data.data.time.second;
@@ -1758,7 +1728,7 @@ int YWPANEL_FP_GetKey(int blue, int key_nr, u32 *k)
 			*k = data.data.stbyKey.key;
 			return true;
 		}
-		ywtrace_print(TRACE_ERROR,"YWPANEL_FP_SendData failed at [%d]",__LINE__);
+		ywtrace_print(TRACE_ERROR, "YWPANEL_FP_SendData failed at [%d]", __LINE__);
 	}
 	return false;
 }
@@ -1771,11 +1741,11 @@ int YWPANEL_FP_SetKey(int blue, int key_nr, u32 k)
 		memset(&data, 0, sizeof(YWPANEL_FPData_t));
 		data.dataType = (blue ? YWPANEL_DATATYPE_SETBLUEKEY1 : YWPANEL_DATATYPE_SETSTBYKEY1) + key_nr;
 		data.data.stbyKey.key = k;
-		if(YWPANEL_FP_SendData(&data))
+		if (YWPANEL_FP_SendData(&data))
 		{
 			return true;
 		}
-		ywtrace_print(TRACE_ERROR,"YWPANEL_FP_SendData failed at [%d]",__LINE__);
+		ywtrace_print(TRACE_ERROR, "YWPANEL_FP_SendData failed at [%d]", __LINE__);
 	}
 	msleep(100); // Looks like the controller is returning junk data. Wait a couple of milliseconds, or the next i2c response will be messed up --martii
 	return false;
@@ -1791,7 +1761,7 @@ int YWPANEL_FP_ControlTimer(int on)
 
 	if (YWPANEL_FP_SendData(&data) != true)
 	{
-		ywtrace_print(TRACE_ERROR,"YWPANEL_FP_SendData failed at line [%d]",__LINE__);
+		ywtrace_print(TRACE_ERROR, "YWPANEL_FP_SendData failed at line [%d]", __LINE__);
 		return false;
 	}
 	return true;
@@ -1821,7 +1791,7 @@ int YWPANEL_FP_SetLed(int which, int on)
 			}
 			break;
 		}
-#if defined(SPARK)
+//#if defined(SPARK)
 		case LED_GREEN:
 		{
 			if (on)
@@ -1834,13 +1804,13 @@ int YWPANEL_FP_SetLed(int which, int on)
 			}
 			break;
 		}
-#endif
+//#endif
 	}
 	data.data.lbdData.value = ledValue;
 
 	if (YWPANEL_FP_SendData(&data) != true)
 	{
-		ywtrace_print(TRACE_ERROR,"YWPANEL_FP_SendData failed at line [%d]\n",__LINE__);
+		ywtrace_print(TRACE_ERROR, "YWPANEL_FP_SendData failed at line [%d]\n", __LINE__);
 		ErrorCode = -ETIME;
 	}
 	return ErrorCode;
@@ -2025,14 +1995,14 @@ void YWPANEL_FP_ClearAll(void)
 	int i;
 	for (i = 0; i < 13; i++) // 13 digits?
 	{
-		YWPANEL_VFD_SegDigSeg(i + 1,SEGNUM1,0x00);
+		YWPANEL_VFD_SegDigSeg(i + 1, SEGNUM1, 0x00);
 		VfdSegAddr[i + 1].CurrValue1 = 0x00;
-		YWPANEL_VFD_SegDigSeg(i + 1,SEGNUM2,0x00);
+		YWPANEL_VFD_SegDigSeg(i + 1, SEGNUM2, 0x00);
 		VfdSegAddr[i + 1].CurrValue2 = 0;
 	}
 }
 
-void YWPANEL_VFD_DrawNum(u8 c, u8 position)
+static void YWPANEL_VFD_DrawNum(u8 c, u8 position)
 {
 	int dignum;
 
@@ -2071,14 +2041,14 @@ void YWPANEL_VFD_DrawNum(u8 c, u8 position)
 			YWPANEL_VFD_SegDigSeg(dignum, SEGNUM2, VfdSegAddr[dignum].CurrValue2 & 0x3F);
 		}
 		VfdSegAddr[dignum].CurrValue1 = VfdSegAddr[dignum].CurrValue1 & 0x80;
-		YWPANEL_VFD_SegDigSeg(dignum, SEGNUM1, (NumLib[c][0] >>1 ) | VfdSegAddr[dignum].CurrValue1 );
+		YWPANEL_VFD_SegDigSeg(dignum, SEGNUM1, (NumLib[c][0] >> 1) | VfdSegAddr[dignum].CurrValue1);
 	}
 }
 
 void YWPANEL_VFD_Seg_Addr_Init(void)
 {
 	u8 i, addr = 0xC0;  //address flag
-	for (i = 0; i < 13; i++) // 13 digits?
+	for (i = 0; i < 13; i++) // 13 digits (8 text, 5 clock)?
 	{
 		VfdSegAddr[i + 1].CurrValue1 = 0;
 		VfdSegAddr[i + 1].CurrValue2 = 0;
@@ -2099,39 +2069,37 @@ static int YWPANEL_VFD_ShowTime_StandBy(u8 hh, u8 mm)
 	   return -EBUSY;
 	}
 //show hour
+	memset(&data, 0, sizeof(YWPANEL_FPData_t));
+
+	data.dataType = YWPANEL_DATATYPE_VFD;
+
+	digitNum2 = YWPANEL_CharArray[hh / 10];
+	digitNum1 = YWPANEL_CharArray[hh % 10];
+
+	temp = digitNum2;
+	digitNum2 = (digitNum2 & 0xbf) | (digitNum1 & 0x40);
+	digitNum1 = (digitNum1 & 0x3c) | ((temp & 0x40) << 1) | ((digitNum1 & 0x01) << 1)|((digitNum1 & 0x02) >> 1);
+	data.data.vfdData.type = YWPANEL_VFD_DISPLAY;
+	data.data.vfdData.address[0] = VfdSegAddr[10].Segaddr2;
+
+	data.data.vfdData.DisplayValue[0] = digitNum2;
+	VfdSegAddr[10].CurrValue2 = data.data.vfdData.DisplayValue[0];
+
+	if (YWPANEL_FP_SendData(&data) != true)
 	{
-		memset(&data, 0, sizeof(YWPANEL_FPData_t));
+		ywtrace_print(TRACE_ERROR, "YWPANEL_FP_SendData failed at line [%d]\n", __LINE__);
+		ErrorCode = -ETIME;
+	}
 
-		data.dataType = YWPANEL_DATATYPE_VFD;
+	data.data.vfdData.address[0] = VfdSegAddr[10].Segaddr1;
 
-		digitNum2 = YWPANEL_CharArray[hh / 10];
-		digitNum1 = YWPANEL_CharArray[hh % 10];
+	data.data.vfdData.DisplayValue[0] = digitNum1;
+	VfdSegAddr[10].CurrValue1= data.data.vfdData.DisplayValue[0];
 
-		temp = digitNum2;
-		digitNum2 = (digitNum2 & 0xbf) | (digitNum1 & 0x40);
-		digitNum1 = (digitNum1 & 0x3c) | ((temp & 0x40) << 1) | ((digitNum1 & 0x01) << 1)|((digitNum1 & 0x02) >> 1);
-		data.data.vfdData.type = YWPANEL_VFD_DISPLAY;
-		data.data.vfdData.address[0] = VfdSegAddr[10].Segaddr2;
-
-		data.data.vfdData.DisplayValue[0] = digitNum2;
-		VfdSegAddr[10].CurrValue2 = data.data.vfdData.DisplayValue[0];
-
-		if (YWPANEL_FP_SendData(&data) != true)
-		{
-			ywtrace_print(TRACE_ERROR,"YWPANEL_FP_SendData failed at line [%d]\n",__LINE__);
-			ErrorCode = -ETIME;
-		}
-
-		data.data.vfdData.address[0] = VfdSegAddr[10].Segaddr1;
-
-		data.data.vfdData.DisplayValue[0] = digitNum1;
-		VfdSegAddr[10].CurrValue1= data.data.vfdData.DisplayValue[0];
-
-		if (YWPANEL_FP_SendData(&data) != true)
-		{
-			ywtrace_print(TRACE_ERROR,"YWPANEL_FP_SendData failed at line [%d]\n",__LINE__);
-			ErrorCode = -ETIME;
-		}
+	if (YWPANEL_FP_SendData(&data) != true)
+	{
+		ywtrace_print(TRACE_ERROR,"YWPANEL_FP_SendData failed at line [%d]\n",__LINE__);
+		ErrorCode = -ETIME;
 	}
 //show minute
 	{ // code the same as hours except VfdSegAddr index?
@@ -2141,8 +2109,8 @@ static int YWPANEL_VFD_ShowTime_StandBy(u8 hh, u8 mm)
 		digitNum1 = YWPANEL_CharArray[mm % 10];
 
 		temp = digitNum2;
-		digitNum2 = (digitNum2 &0xbf) | (digitNum1 & 0x40);
-		digitNum1 = (digitNum1 &0x3c) | ((temp & 0x40) << 1) | ((digitNum1 & 0x01) << 1) | ((digitNum1 & 0x02) >>1);
+		digitNum2 = (digitNum2 & 0xbf) | (digitNum1 & 0x40);
+		digitNum1 = (digitNum1 & 0x3c) | ((temp & 0x40) << 1) | ((digitNum1 & 0x01) << 1) | ((digitNum1 & 0x02) >>1);
 		data.data.vfdData.type = YWPANEL_VFD_DISPLAY;
 		data.data.vfdData.address[0] = VfdSegAddr[9].Segaddr2;
 
@@ -2151,7 +2119,7 @@ static int YWPANEL_VFD_ShowTime_StandBy(u8 hh, u8 mm)
 
 		if (YWPANEL_FP_SendData(&data) != true)
 		{
-			ywtrace_print(TRACE_ERROR,"YWPANEL_FP_SendData failed at line [%d]\n",__LINE__);
+			ywtrace_print(TRACE_ERROR, "YWPANEL_FP_SendData failed at line [%d]\n", __LINE__);
 			ErrorCode = -ETIME;
 		}
 
@@ -2162,7 +2130,7 @@ static int YWPANEL_VFD_ShowTime_StandBy(u8 hh, u8 mm)
 
 		if (YWPANEL_FP_SendData(&data) != true)
 		{
-			ywtrace_print(TRACE_ERROR,"YWPANEL_FP_SendData failed at line [%d]\n",__LINE__);
+			ywtrace_print(TRACE_ERROR, "YWPANEL_FP_SendData failed at line [%d]\n", __LINE__);
 			ErrorCode = -ETIME;
 		}
 	}
@@ -2215,7 +2183,7 @@ static int YWPANEL_VFD_ShowTimeOff_Common(void)
 }
 
 /* Set Brightness */
-int YWPANEL_VFD_SetBrightness_StandBy(int level)
+static int YWPANEL_VFD_SetBrightness_StandBy(int level)
 {
 	int ST_ErrCode = 0;
 	YWPANEL_FPData_t data;
@@ -2238,7 +2206,7 @@ int YWPANEL_VFD_SetBrightness_StandBy(int level)
 	data.data.vfdData.setValue = level | 0x88; //used to be 0x78
 	if (YWPANEL_FP_SendData(&data) != true)
 	{
-		ywtrace_print(TRACE_ERROR,"SetBrightness: error!\n");
+		ywtrace_print(TRACE_ERROR, "SetBrightness: error!\n");
 		ST_ErrCode = -ETIME;
 	}
 	up(&vfd_sem);
@@ -2258,7 +2226,7 @@ static int YWPANEL_VFD_SetBrightness_Common(int level)
 		level = 7;
 	}
 	FP_CS_CLR();
-	YWPANEL_FP_WR (0x88 | level); //used to be 0x78
+	YWPANEL_FP_WR(0x88 | level); //used to be 0x78
 	FP_CS_SET();
 	return ST_ErrCode;
 }
@@ -2370,7 +2338,6 @@ int YWPANEL_FP_GetKeyValue(void)
 		case YWFP_COMMON:
 		{
 			byte = YWPANEL_FP_ScanKeyboard();
-//			break;
 		}
 		default:
 		{
@@ -2422,7 +2389,7 @@ int YWPANEL_FP_GetKeyValue(void)
 		}
 		default:
 		{
-			PANEL_PRINT((TRACE_ERROR,"Key 0x%s is INVALID\n",byte));
+			PANEL_PRINT((TRACE_ERROR, "Key 0x%s is INVALID\n", byte));
 		}
 		case 0x00:
 		{
@@ -2437,15 +2404,15 @@ int YWPANEL_FP_GetKeyValue(void)
 /* DVFD Show String */
 #if defined(SPARK7162)
 // Code for dot VFD
-static bool bTimeMode = true;
+static int bTimeMode = 1;
 static char strDvfd[16][5];
 
-void YWVFDi_DVFDCleanChar(u8 i)
+static void YWVFDi_DVFDCleanChar(u8 i)
 {
 	u8 j;
 	int off = 0;
 
-	if (i >= YWPANEL_MAX_DVFD_LENGTH)
+	if (i >= 16)
 	{
 	    return;
 	}
@@ -2465,17 +2432,17 @@ void YWVFDi_DVFDCleanChar(u8 i)
 	}
 }
 
-void YWVFDi_DVFDFillAsciiChar(u8 i, int iChar)
+static void YWVFDi_DVFDFillAsciiChar(u8 i, int iChar)
 {
 	u8 j;
 	int off = 0;
 
-	if (i >= YWPANEL_MAX_DVFD_LENGTH)
+	if (i >= 16)
 	{
 	    return;
 	}
 
-	if ((bTimeMode) && (i >= 10))  //if clock display
+	if (bTimeMode && i >= 10)  //if clock display
 	{
 	    return;
 	}
@@ -2491,7 +2458,7 @@ void YWVFDi_DVFDFillAsciiChar(u8 i, int iChar)
 	}
 }
 
-void YWVFDi_DVFDFillChar(u8 i, u8 c)
+static void YWVFDi_DVFDFillChar(u8 i, u8 c)
 {
 	if ((c >= ' ') && (c <= '~'))
 	{
@@ -2503,14 +2470,14 @@ void YWVFDi_DVFDFillChar(u8 i, u8 c)
 	}
 }
 
-static void YWVFDi_DVFDFillString(char* str)
+static void YWVFDi_DVFDFillString(char *str)
 {
 	int number_of_utf8_characters = utf8strlen(str, strlen(str));
 	int i;
 
-	if (number_of_utf8_characters > YWPANEL_MAX_DVFD_LENGTH - 1)
+	if (number_of_utf8_characters >= 16)
 	{
-		number_of_utf8_characters = YWPANEL_MAX_DVFD_LENGTH;
+		number_of_utf8_characters = 16;
 	}
 
 	for (i = 0; i < number_of_utf8_characters; i++)
@@ -2527,13 +2494,13 @@ static void YWVFDi_DVFDFillString(char* str)
 		str += size;
 	}
 
-	for(; i < YWPANEL_MAX_DVFD_LENGTH; i++)
+	for(; i < 16; i++)
 	{
 		YWVFDi_DVFDCleanChar(i);
 	}
 }
 
-int YWVFDi_DVFDDisplaySync(void)
+static int YWVFDi_DVFDDisplaySync(void)
 {
 	int ret = 0;
 	YWPANEL_FPData_t data;
@@ -2551,7 +2518,7 @@ int YWVFDi_DVFDDisplaySync(void)
 	return ret;
 }
 
-int YWVFDi_DVFDSendString(void)
+static int YWVFDi_DVFDSendString(void)
 {
 	int ret = 0;
 	u8 i, j;
@@ -2569,7 +2536,7 @@ int YWVFDi_DVFDSendString(void)
 		{
 			address = i * 4 + j;
 			data.data.dvfdData.address[j] = address;
-			data.data.dvfdData.DisplayValue[j][0] = strDvfd[address][0];
+			data.data.dvfdData.DisplayValue[j][0] = strDvfd[address][0]; //column 0
 			data.data.dvfdData.DisplayValue[j][1] = strDvfd[address][1];
 			data.data.dvfdData.DisplayValue[j][2] = strDvfd[address][2];
 			data.data.dvfdData.DisplayValue[j][3] = strDvfd[address][3];
@@ -2585,7 +2552,7 @@ int YWVFDi_DVFDSendString(void)
 	return ret;
 }
 
-int YWVFDi_DVFDDisplayString(void)
+static int YWVFDi_DVFDDisplayString(void)
 {
 	int ret = YWVFDi_DVFDSendString();
 
@@ -2596,7 +2563,7 @@ int YWVFDi_DVFDDisplayString(void)
 	return ret;
 }
 
-int YWPANEL_DVFD_ShowString_Standby(char* str)
+static int YWPANEL_DVFD_ShowString_Standby(char *str)
 {
 	int ret = 0;
 
@@ -2612,7 +2579,7 @@ int YWPANEL_DVFD_ShowString_Standby(char* str)
  }
 
 #if 0
-bool YWPANEL_FP_DvfdSetTimeMode(bool on)
+static int YWPANEL_FP_DvfdSetTimeMode(int on)
 {
 	 YWPANEL_FPData_t data;
 
@@ -2623,7 +2590,7 @@ bool YWPANEL_FP_DvfdSetTimeMode(bool on)
 
 	if (YWPANEL_FP_SendData(&data) != true)
 	{
-	return false;
+		return false;
 	}
 
 	bTimeMode = on;
@@ -2631,7 +2598,7 @@ bool YWPANEL_FP_DvfdSetTimeMode(bool on)
 }
 #endif
 
-bool YWPANEL_FP_DvfdGetTimeMode(bool *pOn)
+static int YWPANEL_FP_DvfdGetTimeMode(int *pOn)
 {
 	YWPANEL_FPData_t data;
 
@@ -2641,7 +2608,7 @@ bool YWPANEL_FP_DvfdGetTimeMode(bool *pOn)
 
 	if (YWPANEL_FP_SendData(&data) != true)
 	{
-	return false;
+		return false;
 	}
 
 	(*pOn) = data.data.dvfdData.setValue;
@@ -2695,10 +2662,10 @@ static int YWPANEL_LEDDisplayString(void)
 	data.data.ledData.led3 = YWPANEL_LedDisplayData[2];
 	data.data.ledData.led4 = YWPANEL_LedDisplayData[3];
 
-	if (YWPANEL_FP_SendData(&data)!= true)
+	if (YWPANEL_FP_SendData(&data) != true)
 	{
 		ret = -1;
-		ywtrace_print(TRACE_ERROR, "[ERROR][%s] TIME OUT\n",__func__);
+		ywtrace_print(TRACE_ERROR, "[ERROR][%s] TIME OUT\n", __func__);
  	}
 	return ret;
 }
@@ -2714,15 +2681,16 @@ static int YWPANEL_LED_ShowString_Standby(char *str)
 
 /* VFD Show String */
 static int lookup_utf8(unsigned char *str, int *v1, int *v2)
-{ // str is guaranteed to start with a valid UTF-8 character, no UTF-8 validation required
+{
+	u8 c;
 
+	// str is guaranteed to start with a valid UTF-8 character, no UTF-8 validation required
 	int size = utf8charlen(*str);
 	*v1 = *v2 = 0;
-
 	// Plain ASCII
 	if (size == 1)
 	{
-		u8 c = (int)*str - 0x20;  //remove ctrl-character offset
+		c = (int)*str - 0x20;  //remove ctrl-character offset
 		*v1 = CharLib[c][0];
 		*v2 = CharLib[c][1];
 		return size;
@@ -2749,17 +2717,16 @@ static int lookup_utf8(unsigned char *str, int *v1, int *v2)
 	return size;
 }
 
-static int YWPANEL_VFD_ShowString_StandBy(char* str)
+static int YWPANEL_VFD_ShowString_StandBy(char *str)
 {
 	int ST_ErrCode = 0 ;
 	int number_of_utf8_characters, i;
-
 	YWPANEL_FPData_t data;
 
 	if (down_interruptible(&vfd_sem))
 	{
-	   ST_ErrCode =-EBUSY;
-	   return ST_ErrCode;
+		ST_ErrCode = -EBUSY;
+		return ST_ErrCode;
 	}
 
 	number_of_utf8_characters = utf8strlen(str, strlen(str));
@@ -2808,8 +2775,8 @@ static int YWPANEL_VFD_ShowString_Common(char* str)
 
 	if (down_interruptible(&vfd_sem))
 	{
-	   ST_ErrCode =-EBUSY;
-	   return ST_ErrCode;
+		ST_ErrCode =-EBUSY;
+		return ST_ErrCode;
 	}
 
 	number_of_utf8_characters = utf8strlen(str, strlen(str));
@@ -2898,7 +2865,7 @@ static int YWPANEL_VFD_ShowIcon_StandBy(int which, int on)
 	}
 	if (YWPANEL_FP_SendData(&data) != true)
 	{
-		ywtrace_print(TRACE_ERROR,"Error showing an icon!\n");
+		ywtrace_print(TRACE_ERROR, "Error showing an icon!\n");
 		ST_ErrCode = -ETIME;
 	}
 
@@ -2996,12 +2963,14 @@ static int YWPANEL_FP_DETECT(void)
 	panel_i2c_adapter = i2c_get_adapter(I2C_BUS_NUM);
 	if (NULL == panel_i2c_adapter)
 	{
-		ywtrace_print(TRACE_ERROR,"i2c_get_adapter failed\n");
+		ywtrace_print(TRACE_ERROR, "i2c_get_adapter failed\n");
 		return -ENODEV;
 	}
 
 	/* use i2c write to detect */
+	//printk("%s:%d\n", __func__, __LINE__);
 	ret = i2c_transfer(panel_i2c_adapter, &i2c_msg, 1);
+
 	if (ret == 1)
 	{
 		YWFP_INFO.fp_type = YWFP_STAND_BY;
@@ -3017,27 +2986,25 @@ static int YWPANEL_FP_DETECT(void)
 /* Initialize */
 static int YWPANEL_FP_Init_StandBy(void)
 {
-	int ErrorCode = 0 ;
+	int ErrorCode = 0;
 	init_MUTEX(&vfd_sem);
 	init_MUTEX(&vfd_sem_rw);
 
 	YWPANEL_VFD_Seg_Addr_Init();
-//	YWPANEL_FP_ShowString("Welcome!");  //Main?
-//	YWPANEL_FP_ShowString("bbbb"); //Clock (wrong) or LED?
 	return ErrorCode;
 }
 
 static int YWPANEL_FP_Init_Common(void)
 {
-	int ErrorCode = 0 ;
+	int ErrorCode = 0;
 
 	init_MUTEX(&vfd_sem);
 	init_rwsem(&vfd_rws);
 
-	pio_sda = stpio_request_pin(3,2, "pio_sda", STPIO_OUT);
-	pio_scl = stpio_request_pin(3,4, "pio_scl", STPIO_OUT);
-	pio_cs  = stpio_request_pin(3,5, "pio_cs",  STPIO_OUT);
-	if (!pio_sda || !pio_scl || !pio_cs )
+	pio_sda = stpio_request_pin(3, 2, "pio_sda", STPIO_OUT);
+	pio_scl = stpio_request_pin(3, 4, "pio_scl", STPIO_OUT);
+	pio_cs  = stpio_request_pin(3, 5, "pio_cs",  STPIO_OUT);
+	if (!pio_sda || !pio_scl || !pio_cs)
 	{
 		return -ENODEV;
 	}
@@ -3077,6 +3044,7 @@ static int YWPANEL_FP_Term_Common(void)
 #endif
 	return 0;
 }
+
 /* Unknowns */
 static int YWPANEL_FP_ShowTime_Unknown(u8 hh, u8 mm)
 {
@@ -3120,7 +3088,7 @@ int (*YWPANEL_FP_ShowString)(char *);
 int (*YWPANEL_FP_ShowContent)(void);
 int (*YWPANEL_FP_ShowContentOff)(void);
 
-int YWPANEL_width = YWPANEL_MAX_VFD_LENGTH;
+int YWPANEL_width = YWPANEL_MAX_VFD_LENGTH; //VFD display is default
 YWPANEL_Version_t panel_version;
 
 int YWPANEL_FP_Init(void)
@@ -3187,7 +3155,7 @@ int YWPANEL_FP_Init(void)
 #if defined(SPARK7162)
 			case YWPANEL_FP_DISPTYPE_DVFD:
 			{
-				bool bOn;
+				int bOn;
 				YWPANEL_FP_DvfdGetTimeMode(&bOn);
 				YWVFD_Debug("INIT\n");
 				YWVFD_Debug("boot\n");
@@ -3213,7 +3181,6 @@ int YWPANEL_FP_Init(void)
 			case YWPANEL_FP_DISPTYPE_VFD:
 			default:
 			{
-//				YWPANEL_width = YWPANEL_MAX_VFD_LENGTH;
 				if (YWFP_INFO.fp_type == YWFP_COMMON)
 				{
 					YWPANEL_FP_ShowIcon = YWPANEL_VFD_ShowIcon_Common;
