@@ -57,6 +57,7 @@
  *                          on Spark7162.
  * 20150325 Audioniek       Local keyboard press and RC feedback through
  *                          green LED on DVFD.
+ * 20150327 Audioniek       Fixed compiler problem with Spark.
  * 
  ****************************************************************************/
 
@@ -837,10 +838,13 @@ static int AOTOMdev_ioctl(struct inode *Inode, struct file *File, unsigned int c
 				}
 				case ICON_SPINNER:
 				{
-					led_state[LED_SPINNER].state = aotom_data.u.icon.on;
-					if (aotom_data.u.icon.on)
+					if (YWPANEL_width == YWPANEL_MAX_VFD_LENGTH)
 					{
-						flashLED(LED_SPINNER, aotom_data.u.icon.on * 10); // start spinner thread
+						led_state[LED_SPINNER].state = aotom_data.u.icon.on;
+						if (aotom_data.u.icon.on)
+						{
+							flashLED(LED_SPINNER, aotom_data.u.icon.on * 10); // start spinner thread
+						}
 					}
 					res = 0;
 					break;
@@ -1137,7 +1141,7 @@ static void button_bad_polling(struct work_struct *work)
 		if (button_value != INVALID_KEY)
 		{
 			dprintk(5, "Got button: %02X\n", button_value);
-			#if defined(SPARK7162) || defined(SPARK)
+			#if defined(SPARK7162)
 			if (YWPANEL_width == YWPANEL_MAX_VFD_LENGTH)
 			{
 				aotomSetIcon(ICON_DOT2, LOG_ON);
@@ -1146,6 +1150,9 @@ static void button_bad_polling(struct work_struct *work)
 			{
 				YWPANEL_FP_SetLed(LED_GREEN, LOG_ON);
 			}
+			#elif defined(SPARK)
+
+			YWPANEL_FP_SetLed(LED_GREEN, LOG_ON);
 			#else
 			flashLED(LED_GREEN, 100);
 			#endif
@@ -1186,6 +1193,7 @@ static void button_bad_polling(struct work_struct *work)
 			if (btn_pressed)
 			{
 				btn_pressed = 0;
+				#if defined(SPARK7162)
 				if (YWPANEL_width == YWPANEL_MAX_VFD_LENGTH)
 				{
 					aotomSetIcon(ICON_DOT2, LOG_OFF);
@@ -1194,6 +1202,9 @@ static void button_bad_polling(struct work_struct *work)
 				{
 					YWPANEL_FP_SetLed(LED_GREEN, LOG_OFF);
 				}
+				#elif defined(SPARK)
+				YWPANEL_FP_SetLed(LED_GREEN, LOG_OFF);
+				#endif
 				input_report_key(button_dev, report_key, 0);
 				input_sync(button_dev);
 			}
