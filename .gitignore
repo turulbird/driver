@@ -12,6 +12,8 @@
 *.swp
 *~
 .config
+.dirstamp
+.deps/
 .tmp_versions/
 Module.symvers
 frontends/multituner.org/
