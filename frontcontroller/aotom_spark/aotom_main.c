@@ -58,6 +58,7 @@
  * 20150325 Audioniek       Local keyboard press and RC feedback through
  *                          green LED on DVFD.
  * 20150327 Audioniek       Fixed compiler problem with Spark.
+ * 20150329 Audioniek       DVFD icons supported.
  * 
  ****************************************************************************/
 
@@ -139,25 +140,47 @@ static int VFD_Show_Time(u8 hh, u8 mm, u8 ss)
 }
 
 #if defined(SPARK7162)
-static int VFD_Show_Icon(int which, int on)
-{
-	return YWPANEL_FP_ShowIcon(which, on);
-}
+//static int VFD_Show_Icon(int which, int on)
+//{
+//	return YWPANEL_FP_ShowIcon(which, on);
+//}
 
 int aotomSetIcon(int which, int on)
 {
 	int res = 0;
+	int first, last;
 
 	dprintk(5, "%s > Icon number %d, state %d\n", __func__, which, on);
 
-	if (which < ICON_FIRST || which > ICON_LAST)
+	if (YWPANEL_width == YWPANEL_MAX_DVFD_LENGTH)
+	{
+		first = DICON_FIRST;
+		last = DICON_LAST;
+	}
+	else
+	{
+		first = ICON_FIRST;
+		last = ICON_LAST;
+	}
+
+	if (which < first || which > last)
 	{
 		printk("[aotom] Icon number %d out of range.\n", which);
 		return -EINVAL;
 	}
 
-	which-=1;
-	res = VFD_Show_Icon(((which / 15) + 11) * 16 + (which % 15) + 1, on);
+	if (YWPANEL_width == YWPANEL_MAX_VFD_LENGTH)
+	{
+//		res = VFD_Show_Icon(which, on);
+//		res = YWPANEL_FP_ShowIcon(which, on);
+//	}
+//	else
+//	{
+		which = (((which - 1) / 15) + 11) * 16 + ((which - 1) % 15) + 1;
+//		res = VFD_Show_Icon(((which / 15) + 11) * 16 + (which % 15) + 1, on);
+//		res = YWPANEL_FP_ShowIcon(((which / 15) + 11) * 16 + (which % 15) + 1, on);
+	}
+	res = YWPANEL_FP_ShowIcon(which, on);
 
 	dprintk(10, "%s <\n", __func__);
 	return res;
@@ -168,26 +191,41 @@ int aotomSetIcon(int which, int on)
 
 static void VFD_set_all_icons(int onoff)
 {
-	int i;
+	int i, first, last;
 
-	for (i = ICON_FIRST; i < ICON_LAST + 1; i++)
+	if (YWPANEL_width == YWPANEL_MAX_DVFD_LENGTH)
+	{
+		first = DICON_FIRST;
+		last = DICON_LAST;
+	}
+	else
+	{
+		first = ICON_FIRST;
+		last = ICON_LAST;
+	}
+
+	for (i = first; i < last + 1; i++)
 	{
 		aotomSetIcon(i, onoff);
 	}
 }
+#endif
 
 void clear_display(void)
 {
-	YWPANEL_FP_ShowString("          ");
+	if (YWPANEL_width == YWPANEL_MAX_DVFD_LENGTH)
+	{
+		YWPANEL_FP_ShowString("          ");
+	}
+	else if (YWPANEL_width == YWPANEL_MAX_LED_LENGTH)
+	{
+		YWPANEL_FP_ShowString("    ");
+	}
+	else
+	{
+		YWPANEL_FP_ShowString("        ");
+	}
 }
-#endif
-
-#if defined(SPARK)
-void clear_display(void)
-{
-	YWPANEL_FP_ShowString("    ");
-}
-#endif
 
 static void VFD_clr(void)
 {
@@ -266,13 +304,12 @@ static int draw_thread(void *arg)
 	int saved = 0;
 	int utf8len = utf8strlen(data->data, data->length);
 
-//	if ((panel_version.DisplayInfo == YWPANEL_FP_DISPTYPE_LED) && (len > 2) && (data->data[2] == '.' || data->data[2] == ','|| data->data[2] == ':'))
 	if ((YWPANEL_width == YWPANEL_MAX_LED_LENGTH) && (len > 2) && (data->data[2] == '.' || data->data[2] == ','|| data->data[2] == ':'))
 	{
 		saved = 1;
 	}
 
-	if (utf8len - saved > YWPANEL_width)
+	if (utf8len - saved > YWPANEL_width + 1)
 	{
 		memset(buf, ' ', sizeof(buf));
 		off = YWPANEL_width - 1;
@@ -289,7 +326,7 @@ static int draw_thread(void *arg)
 
 	draw_thread_status = DRAW_THREAD_STATUS_RUNNING;
 
-	if (utf8len - saved > YWPANEL_width)
+	if (utf8len - saved > YWPANEL_width + 1)
 	{
 		unsigned char *b = buf;
 		int pos;
@@ -749,10 +786,10 @@ static int AOTOMdev_ioctl(struct inode *Inode, struct file *File, unsigned int c
 			if (icon_nr >= 256)
 			{
 				icon_nr >>= 8;
-//				switch (YWPANEL_width)
-//				{
-//					case YWPANEL_MAX_VFD_LENGTH:
-//					{
+				switch (YWPANEL_width)
+				{
+					case YWPANEL_MAX_VFD_LENGTH:
+					{
 						switch (icon_nr)
 						{
 							case 17:
@@ -813,21 +850,77 @@ static int AOTOMdev_ioctl(struct inode *Inode, struct file *File, unsigned int c
 								break;
 							}
 						}
-//					}
-//					case YWPANEL_MAX_DVFD_LENGTH:
-//					{
-//						default:
-//						{
-//							break;
-//						}
-//					}
-//				}
+					}
+					case YWPANEL_MAX_DVFD_LENGTH:
+					{
+						switch (icon_nr)
+						{
+							case 17:
+							{
+								icon_nr = ICON_DOUBLESCREEN2; //widescreen
+								break;
+							}
+							case 19:
+							{
+								icon_nr = ICON_CA2;
+								break;
+							}
+							case 23:
+							{
+								icon_nr = ICON_DOLBY2;
+								break;
+							}
+							default:
+							{
+								break;
+							}
+						}
+					}
+				}
 			}
 			if (aotom_data.u.icon.on != LOG_OFF && icon_nr != ICON_SPINNER)
 			{
 				aotom_data.u.icon.on = LOG_ON;
 			}
-// TODO: translate VFD icons that also exist on DVFD to DVFD numbers
+// translate VFD icons that also exist on DVFD to DVFD numbers
+			if (YWPANEL_width == YWPANEL_MAX_DVFD_LENGTH)
+			{
+				switch (icon_nr)
+				{
+					case ICON_CA:
+					{
+						icon_nr = ICON_CA2;
+						break;
+					}
+					case ICON_CI:
+					{
+						icon_nr = ICON_CI2;
+						break;
+					}
+					case ICON_USB:
+					{
+						icon_nr = ICON_USB2;
+						break;
+					}
+					case ICON_DOUBLESCREEN:
+					{
+//						icon_nr = ICON_DOUBLESCREEN2;
+						icon_nr = ICON_HD;
+						break;
+					}
+					case ICON_MUTE:
+					{
+						icon_nr = ICON_MUTE2;
+						break;
+					}
+					case ICON_AC3:
+					{
+						icon_nr = ICON_DOLBY2;
+						break;
+					}
+				}
+			}
+//display icon
 			switch (icon_nr)
 			{
 				case ICON_ALL:
@@ -940,14 +1033,20 @@ static int AOTOMdev_ioctl(struct inode *Inode, struct file *File, unsigned int c
 		}
 		case VFDGETWAKEUPTIME:
 		{
-//#if defined(SPARK) || defined(SPARK7162)
 			u32 uTime = 0;
 			uTime = YWPANEL_FP_GetPowerOnTime();
 			dprintk(5, "%s Power on time: %d\n", __func__, uTime);
 			res = put_user(uTime, (int *) arg);
-//#else
-//			res = 0;
-//#endif
+			break;
+		}
+		case VFDSETDISPLAYTIME:
+		{
+			dprintk(5, "%s Set display time mode 0x%02X\n", __func__, aotom_data.u.display_time.on);
+			if (YWPANEL_width == YWPANEL_MAX_DVFD_LENGTH)
+			{
+				YWPANEL_FP_DvfdSetTimeMode(aotom_data.u.display_time.on);
+			}
+			res = 0;
 			break;
 		}
 		case VFDDISPLAYCHARS:

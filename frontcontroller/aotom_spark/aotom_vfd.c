@@ -4,7 +4,7 @@
  * (c) 2010 Spider-Team
  * (c) 2011 oSaoYa
  * (c) 2012-2013 martii
- * (c) 2013-2014 Audioniek
+ * (c) 2013-2015 Audioniek
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -38,6 +38,9 @@
  *                          aotom_main.h).
  * 20150325 Audioniek       Text output on DVFD did not work; fixed.
  * 20150325 Audioniek       Uppercase only option on DVFD removed.
+ * 20150329 Audioniek       DVFD icons supported.
+ * 20150329 Audioniek       DVFD font changed; digits now same as clock font,
+ *                          upper case legibility improved.
  *
  ****************************************************************************/
 
@@ -320,7 +323,10 @@ static u8 NumLib[10][2] =
 /* dvfd_bitmap: Segment table for DVFD display
 
    Character size is 5 columns by 7 rows
+
    Character format is (byte, bit):
+              1,0 (icon)
+
     1,2  1,3  1,4  1,5  1,6
     1,7  2,0  2,1  2,2  2,3
     2,4  2,5  2,6  2,7  3,0
@@ -329,13 +335,16 @@ static u8 NumLib[10][2] =
     4,3  4,4  4,5  4,6  4,7
     5,0  5,1  5,2  5,3  5,4
 
-  Unused: Byte 1 bits 0 and 1, byte 5 bits 5, 6 and 7
-  TODO: are any of these used for icon control?
+   Bit 0 of byte 1 controls the icon on the position
+   the character is written (on position 10 bit 1
+   controls icon2), 1 = icon on.
+
+   Unused: Byte 1 bit 1 (except on position 10), byte 5 bits 5, 6 and 7
 */
 static char dvfd_bitmap[96][5] =
 {
 	{0x00, 0x00, 0x00, 0x00, 0x00, }, //' ' 0x20 032
-	{0x10, 0x42, 0x08, 0x01, 0x04, }, //'!' 0x21 033
+	{0x11, 0x42, 0x08, 0x01, 0x04, }, //'!' 0x21 033
 	{0x68, 0xad, 0x00, 0x00, 0x00, }, //'"' 0x22 034
 	{0x28, 0xf5, 0xd5, 0x57, 0x0a, }, //'#' 0x23 035
 	{0x10, 0x5f, 0x1c, 0x7d, 0x04, }, //'$' 0x24 036
@@ -351,15 +360,15 @@ static char dvfd_bitmap[96][5] =
 	{0x00, 0x00, 0x00, 0x61, 0x00, }, //'.' 0x2e 046
 	{0x00, 0x88, 0x88, 0x08, 0x00, }, //'/' 0x2f 047
 	{0xb8, 0x18, 0x63, 0x8c, 0x0e, }, //'0' 0x30 048
-	{0x10, 0x43, 0x08, 0x21, 0x1f, }, //'1' 0x31 049
+	{0x10, 0x43, 0x08, 0x21, 0x0e, }, //'1' 0x31 049
 	{0xb8, 0x08, 0x11, 0x11, 0x1f, }, //'2' 0x32 050
-	{0x38, 0xc8, 0x20, 0x84, 0x0f, }, //'3' 0x33 051
-	{0x20, 0xa6, 0xd2, 0x47, 0x1c, }, //'4' 0x34 052
-	{0xbc, 0xf0, 0x20, 0x84, 0x0f, }, //'5' 0x35 053
-	{0x30, 0x11, 0x5e, 0x8c, 0x0e, }, //'6' 0x36 054
-	{0x7c, 0x88, 0x10, 0x22, 0x04, }, //'7' 0x37 055
+	{0xb8, 0x08, 0x19, 0x8c, 0x0e, }, //'3' 0x33 051
+	{0x20, 0xa6, 0xd2, 0x47, 0x08, }, //'4' 0x34 052
+	{0xfc, 0xf0, 0x20, 0x8c, 0x0e, }, //'5' 0x35 053
+	{0xb8, 0x18, 0x5e, 0x8c, 0x0e, }, //'6' 0x36 054
+	{0xfc, 0x88, 0x10, 0x22, 0x04, }, //'7' 0x37 055
 	{0xb8, 0x18, 0x5d, 0x8c, 0x0e, }, //'8' 0x38 056
-	{0xb8, 0x18, 0x3d, 0x44, 0x06, }, //'9' 0x39 057
+	{0xb8, 0x18, 0x3d, 0x8c, 0x0e, }, //'9' 0x39 057
 	{0x00, 0x46, 0x00, 0x61, 0x00, }, //':' 0x3a 058
 	{0x00, 0x46, 0x00, 0x31, 0x02, }, //';' 0x3b 059
 	{0x40, 0x26, 0x06, 0x81, 0x00, }, //'<' 0x3c 060
@@ -367,32 +376,32 @@ static char dvfd_bitmap[96][5] =
 	{0x04, 0x83, 0x30, 0x09, 0x00, }, //'>' 0x3e 062
 	{0xb8, 0x08, 0x19, 0x01, 0x04, }, //'?' 0x3f 063
 	{0xb8, 0x98, 0x6b, 0x0e, 0x1e, }, //'@' 0x40 064
-	{0x08, 0x93, 0xe2, 0x8f, 0x11, }, //'A' 0x41 065
+	{0x10, 0x15, 0xe3, 0x8f, 0x11, }, //'A' 0x41 065
 	{0xbc, 0x18, 0x5f, 0x8c, 0x0f, }, //'B' 0x42 066
 	{0xb8, 0x18, 0x42, 0x88, 0x0e, }, //'C' 0x43 067
 	{0xbc, 0x18, 0x63, 0x8c, 0x0f, }, //'D' 0x44 068
-	{0xfc, 0x18, 0x4e, 0x89, 0x1f, }, //'E' 0x45 069
-	{0x78, 0x21, 0x9c, 0x12, 0x06, }, //'F' 0x46 070
-	{0xf8, 0x10, 0x42, 0x8e, 0x1e, }, //'G' 0x47 071
+	{0xfc, 0x10, 0x5e, 0x08, 0x1f, }, //'E' 0x45 069
+	{0xfc, 0x10, 0x5e, 0x08, 0x01, }, //'F' 0x46 070
+	{0xb8, 0x18, 0x72, 0x8c, 0x0e, }, //'G' 0x47 071
 	{0xc4, 0x18, 0x7f, 0x8c, 0x11, }, //'H' 0x48 072
 	{0x38, 0x42, 0x08, 0x21, 0x0e, }, //'I' 0x49 073
-	{0x70, 0x08, 0x61, 0x8c, 0x0e, }, //'J' 0x4a 074
-	{0xec, 0x54, 0x4e, 0x4a, 0x13, }, //'K' 0x4b 075
-	{0x1c, 0x21, 0x84, 0x10, 0x1f, }, //'L' 0x4c 076
-	{0xc4, 0xbd, 0x6b, 0x8d, 0x1b, }, //'M' 0x4d 077
-	{0xe4, 0x39, 0x6b, 0xce, 0x13, }, //'N' 0x4e 078
+	{0x40, 0x08, 0x21, 0x8c, 0x0e, }, //'J' 0x4a 074
+	{0xc4, 0x54, 0x4e, 0x49, 0x11, }, //'K' 0x4b 075
+	{0x84, 0x10, 0x42, 0x08, 0x1f, }, //'L' 0x4c 076
+	{0xc4, 0xbd, 0x6b, 0x8d, 0x11, }, //'M' 0x4d 077
+	{0xc4, 0x39, 0x6b, 0xce, 0x11, }, //'N' 0x4e 078
 	{0xb8, 0x18, 0x63, 0x8c, 0x0e, }, //'O' 0x4f 079
-	{0xbc, 0x18, 0x5f, 0x08, 0x03, }, //'P' 0x50 080
+	{0xbc, 0x18, 0x5f, 0x08, 0x01, }, //'P' 0x50 080
 	{0xb8, 0x18, 0x63, 0x4d, 0x16, }, //'Q' 0x51 081
-	{0xbc, 0x18, 0x5f, 0x49, 0x13, }, //'R' 0x52 082
+	{0xbc, 0x18, 0x5f, 0x49, 0x11, }, //'R' 0x52 082
 	{0xb8, 0x18, 0x1c, 0x8c, 0x0e, }, //'S' 0x53 083
-	{0xfc, 0x4a, 0x08, 0x21, 0x0e, }, //'T' 0x54 084
-	{0xec, 0x18, 0x63, 0x8c, 0x0e, }, //'U' 0x55 085
-	{0xc4, 0x18, 0xa5, 0x52, 0x04, }, //'V' 0x56 086
+	{0x7c, 0x42, 0x08, 0x21, 0x04, }, //'T' 0x54 084
+	{0xc4, 0x18, 0x63, 0x8c, 0x0e, }, //'U' 0x55 085
+	{0xc4, 0x18, 0x95, 0x52, 0x04, }, //'V' 0x56 086
 	{0xc4, 0x58, 0x6b, 0x55, 0x0a, }, //'W' 0x57 087
-	{0x44, 0xa9, 0x88, 0xca, 0x11, }, //'X' 0x58 088
-	{0x44, 0xa9, 0x08, 0x21, 0x0e, }, //'Y' 0x59 089
-	{0xfc, 0x88, 0x88, 0x88, 0x1f, }, //'Z' 0x5a 090
+	{0xc4, 0xa8, 0x88, 0x8a, 0x11, }, //'X' 0x58 088
+	{0xc4, 0xa8, 0x08, 0x21, 0x04, }, //'Y' 0x59 089
+	{0x7c, 0x88, 0x88, 0x08, 0x1f, }, //'Z' 0x5a 090
 	{0x30, 0x42, 0x08, 0x21, 0x0c, }, //'[' 0x5b 091
 	{0x80, 0x20, 0x08, 0x82, 0x00, }, //'\' 0x5c 092
 	{0x18, 0x42, 0x08, 0x21, 0x06, }, //']' 0x5d 093
@@ -620,6 +629,11 @@ static void YWPANEL_FP_DvfdFillCmd(YWPANEL_FPData_t *data, YWPANEL_I2CData_t *I2
 			I2CData->writeBuff[0] = YWPANEL_INIT_INSTR_SETDVFDDISPLAY;
 			break;
 		}
+		case YWPANEL_DVFD_SETTING:
+		{
+			I2CData->writeBuff[0] = YWPANEL_INIT_INSTR_STRDVFDBRIGHTNESS;
+			break;
+		}
 		case YWPANEL_DVFD_SETTIMEMODE:
 		{
 			I2CData->writeBuff[0] = YWPANEL_INIT_INSTR_SETDVFDTIMEMODE;
@@ -648,18 +662,18 @@ static void YWPANEL_FP_DvfdFillLen(YWPANEL_FPData_t *data, YWPANEL_I2CData_t *I2
 	}
 }
 
-static void YWPANEL_FP_DvfdFillString(YWPANEL_FPData_t *data, YWPANEL_I2CData_t *I2CData, u8 uMax)
+static void YWPANEL_FP_DvfdFillString(YWPANEL_FPData_t *data, YWPANEL_I2CData_t *I2CData, u8 uMax, u8 offset)
 {
 	u8 i;
 
 	for (i = 0; i < uMax; i++)
 	{
-		I2CData->writeBuff[6 * i + 3] = data->data.dvfdData.address[i];
-		I2CData->writeBuff[6 * i + 4] = data->data.dvfdData.DisplayValue[i][0];
-		I2CData->writeBuff[6 * i + 5] = data->data.dvfdData.DisplayValue[i][1];
-		I2CData->writeBuff[6 * i + 6] = data->data.dvfdData.DisplayValue[i][2];
-		I2CData->writeBuff[6 * i + 7] = data->data.dvfdData.DisplayValue[i][3];
-		I2CData->writeBuff[6 * i + 8] = data->data.dvfdData.DisplayValue[i][4];
+		I2CData->writeBuff[offset * i + 3] = data->data.dvfdData.address[i];
+		I2CData->writeBuff[offset * i + 4] = data->data.dvfdData.DisplayValue[i][0];
+		I2CData->writeBuff[offset * i + 5] = data->data.dvfdData.DisplayValue[i][1];
+		I2CData->writeBuff[offset * i + 6] = data->data.dvfdData.DisplayValue[i][2];
+		I2CData->writeBuff[offset * i + 7] = data->data.dvfdData.DisplayValue[i][3];
+		I2CData->writeBuff[offset * i + 8] = data->data.dvfdData.DisplayValue[i][4];
 	}
 }
 
@@ -677,10 +691,11 @@ static void YWPANEL_FP_DvfdFillData(YWPANEL_FPData_t *data, YWPANEL_I2CData_t *I
 				uMax = 4;
 			}
 			I2CData->writeBuff[2] = uMax;
-			YWPANEL_FP_DvfdFillString(data, I2CData, uMax);
+			YWPANEL_FP_DvfdFillString(data, I2CData, uMax, 6);
 			break;
 		}
 		case YWPANEL_DVFD_SETTIMEMODE:
+		case YWPANEL_DVFD_SETTING: // set brightness
 		{
 			I2CData->writeBuff[2] = data->data.dvfdData.setValue;
 		}
@@ -1260,7 +1275,7 @@ int YWPANEL_FP_ParseI2cData(YWPANEL_FPData_t *data,YWPANEL_I2CData_t *I2CData)
 		}
 	}
 
-	switch (dataType)
+	switch (dataType) // read data from FP
 	{
 		case YWPANEL_READ_INSTR_ACK:  //ACK
 		{
@@ -1791,7 +1806,6 @@ int YWPANEL_FP_SetLed(int which, int on)
 			}
 			break;
 		}
-//#if defined(SPARK)
 		case LED_GREEN:
 		{
 			if (on)
@@ -1804,7 +1818,6 @@ int YWPANEL_FP_SetLed(int which, int on)
 			}
 			break;
 		}
-//#endif
 	}
 	data.data.lbdData.value = ledValue;
 
@@ -2202,8 +2215,8 @@ static int YWPANEL_VFD_SetBrightness_StandBy(int level)
 		level = 7;
 	}
 	data.dataType = YWPANEL_DATATYPE_VFD;
-	data.data.vfdData.type = YWPANEL_VFD_SETTING;
-	data.data.vfdData.setValue = level | 0x88; //used to be 0x78
+	data.data.dvfdData.type = YWPANEL_VFD_SETTING;
+	data.data.dvfdData.setValue = level | 0x88; //used to be 0x78
 	if (YWPANEL_FP_SendData(&data) != true)
 	{
 		ywtrace_print(TRACE_ERROR, "SetBrightness: error!\n");
@@ -2230,6 +2243,56 @@ static int YWPANEL_VFD_SetBrightness_Common(int level)
 	FP_CS_SET();
 	return ST_ErrCode;
 }
+
+static int YWPANEL_DVFD_SetBrightness_StandBy(int level)
+{
+	int ST_ErrCode = 0;
+	YWPANEL_FPData_t data;
+
+	if (down_interruptible(&vfd_sem))
+	{
+		ST_ErrCode = -EBUSY;
+		return ST_ErrCode;
+	}
+	if (level < 0)
+	{
+		level = 0;
+	}
+	else if (level > 7)
+	{
+		level = 7;
+	}
+	data.dataType = YWPANEL_DATATYPE_DVFD;
+	data.data.vfdData.type = YWPANEL_DVFD_SETTING;
+	data.data.vfdData.setValue = level | 0x78;
+	if (YWPANEL_FP_SendData(&data) != true)
+	{
+		ywtrace_print(TRACE_ERROR, "SetBrightness: error!\n");
+		ST_ErrCode = -ETIME;
+	}
+	up(&vfd_sem);
+	return ST_ErrCode;
+}
+
+#if 0
+static int YWPANEL_DVFD_SetBrightness_Common(int level)
+{
+	int ST_ErrCode = 0;
+
+	if (level < 0)
+	{
+		level = 0;
+	}
+	else if (level > 7)
+	{
+		level = 7;
+	}
+	FP_CS_CLR();
+	YWPANEL_FP_WR(0x78 | level); //used to be 0x88
+	FP_CS_SET();
+	return ST_ErrCode;
+}
+#endif
 
 /* Scan Keyboard */
 static u8 YWPANEL_FP_ScanKeyboard_StandBy(void)
@@ -2405,18 +2468,19 @@ int YWPANEL_FP_GetKeyValue(void)
 #if defined(SPARK7162)
 // Code for dot VFD
 static int bTimeMode = 1;
-static char strDvfd[16][5];
+static u8 strDvfd[16][5]; // last character data written to display
+static int icon_state[16];
 
-static void YWVFDi_DVFDCleanChar(u8 i)
+static void YWVFDi_DVFDCleanChar(u8 pos)
 {
 	u8 j;
 	int off = 0;
 
-	if (i >= 16)
+	if (pos >= 16)
 	{
 	    return;
 	}
-	if (bTimeMode && i >= 10)
+	if (bTimeMode && pos >= 10)
 	{
 	    return;
 	}
@@ -2428,75 +2492,99 @@ static void YWVFDi_DVFDCleanChar(u8 i)
 
 	for (j = 0; j < 5; j++)
 	{
-		strDvfd[i + off][j] = 0;
+		strDvfd[pos + off][j] = 0;
+	}
+
+	if (icon_state[pos + off]) //if icon on
+	{
+		if (pos != 11) //check for dolby plus
+		{
+			strDvfd[pos + off][0] |= 0b00000001;
+		}
+		else
+		{
+			strDvfd[pos + off - 1][0] |= 0b00000011;
+		}
 	}
 }
 
-static void YWVFDi_DVFDFillAsciiChar(u8 i, int iChar)
+static void YWVFDi_DVFDFillAsciiChar(u8 pos, int iChar)
 {
 	u8 j;
 	int off = 0;
 
-	if (i >= 16)
+	if (pos >= 16)
 	{
 	    return;
 	}
 
-	if (bTimeMode && i >= 10)  //if clock display
+	if (bTimeMode && pos >= 10)
 	{
 	    return;
 	}
 
 	if (bTimeMode)
 	{
-		off = 6;
+		off = 6; //start at position 6
 	}
 
 	for (j = 0; j < 5; j++)
 	{
-		strDvfd[i + off][j] = dvfd_bitmap[iChar][j];
+		strDvfd[pos + off][j] = dvfd_bitmap[iChar][j];
+	}
+
+	if (icon_state[pos + off]) //if icon on
+	{
+		if ((pos + off) != 11) //check for dolby plus
+		{
+			strDvfd[pos + off][0] |= 0b00000001;
+		}
+		else
+		{
+			strDvfd[pos + off - 1][0] |= 0b00000011;
+		}
 	}
 }
 
-static void YWVFDi_DVFDFillChar(u8 i, u8 c)
+static void YWVFDi_DVFDFillChar(u8 pos, u8 c)
 {
 	if ((c >= ' ') && (c <= '~'))
 	{
-		YWVFDi_DVFDFillAsciiChar(i, c - ' ');
+		YWVFDi_DVFDFillAsciiChar(pos, c - ' '); // get character data
 	}
 	else
 	{
-		YWVFDi_DVFDCleanChar(i);
+		YWVFDi_DVFDCleanChar(pos);
 	}
 }
 
 static void YWVFDi_DVFDFillString(char *str)
 {
 	int number_of_utf8_characters = utf8strlen(str, strlen(str));
-	int i;
+	int pos, size;
 
 	if (number_of_utf8_characters >= 16)
 	{
 		number_of_utf8_characters = 16;
 	}
 
-	for (i = 0; i < number_of_utf8_characters; i++)
+	for (pos = 0; pos < number_of_utf8_characters; pos++)
 	{
-		int size = utf8charlen(*str);
+		size = utf8charlen(*str);
 		if (size == 1)
 		{
-			YWVFDi_DVFDFillChar(i, *str);
+			YWVFDi_DVFDFillChar(pos, *str); // get character data
 		}
 		else
 		{
-			YWVFDi_DVFDCleanChar(i);
+			YWVFDi_DVFDCleanChar(pos); // else blank character
 		}
 		str += size;
 	}
 
-	for(; i < 16; i++)
+	for(; pos < 16; pos++)
 	{
-		YWVFDi_DVFDCleanChar(i);
+		YWVFDi_DVFDCleanChar(pos);
 	}
 }
 
@@ -2536,13 +2624,13 @@ static int YWVFDi_DVFDSendString(void)
 		{
 			address = i * 4 + j;
 			data.data.dvfdData.address[j] = address;
-			data.data.dvfdData.DisplayValue[j][0] = strDvfd[address][0]; //column 0
+			data.data.dvfdData.DisplayValue[j][0] = strDvfd[address][0];
 			data.data.dvfdData.DisplayValue[j][1] = strDvfd[address][1];
 			data.data.dvfdData.DisplayValue[j][2] = strDvfd[address][2];
 			data.data.dvfdData.DisplayValue[j][3] = strDvfd[address][3];
 			data.data.dvfdData.DisplayValue[j][4] = strDvfd[address][4];
 		}
-		YWVFD_Debug("%s:%d\n", __func__, __LINE__);
+//		YWVFD_Debug("%s:%d\n", __func__, __LINE__);
 		if (YWPANEL_FP_SendData(&data) != true)
 		{
 			printk("%s:%d: YWPANEL_FP_SendData() failed\n", __func__, __LINE__);
@@ -2554,7 +2642,9 @@ static int YWVFDi_DVFDSendString(void)
 
 static int YWVFDi_DVFDDisplayString(void)
 {
-	int ret = YWVFDi_DVFDSendString();
+	int ret = 0;
+
+	YWVFDi_DVFDSendString();
 
 	YWVFD_Debug("%s:%d\n", __func__, __LINE__);
 
@@ -2576,12 +2666,11 @@ static int YWPANEL_DVFD_ShowString_Standby(char *str)
 	ret = YWVFDi_DVFDDisplayString();
 
 	return ret;
- }
+}
 
-#if 0
-static int YWPANEL_FP_DvfdSetTimeMode(int on)
-{
-	 YWPANEL_FPData_t data;
+int YWPANEL_FP_DvfdSetTimeMode(int on)
+{ //TODO/Caution: does not switch clock off with on=0
+	YWPANEL_FPData_t data;
 
 	memset(&data, 0, sizeof(YWPANEL_FPData_t));
 	data.dataType = YWPANEL_DATATYPE_DVFD;
@@ -2590,13 +2679,12 @@ static int YWPANEL_FP_DvfdSetTimeMode(int on)
 
 	if (YWPANEL_FP_SendData(&data) != true)
 	{
-		return false;
+		return -1;
 	}
 
 	bTimeMode = on;
-	return true;
+	return 0;
 }
-#endif
 
 static int YWPANEL_FP_DvfdGetTimeMode(int *pOn)
 {
@@ -2608,13 +2696,13 @@ static int YWPANEL_FP_DvfdGetTimeMode(int *pOn)
 
 	if (YWPANEL_FP_SendData(&data) != true)
 	{
-		return false;
+		return -1;
 	}
 
 	(*pOn) = data.data.dvfdData.setValue;
 	bTimeMode = data.data.dvfdData.setValue;
 
-	return true;
+	return 0;
 }
 //end code for dot VFD
 #endif // defined(SPARK(7162)
@@ -2933,6 +3021,49 @@ static int YWPANEL_VFD_ShowIcon_Common(int which, int on)
 	return ST_ErrCode;
 }
 
+static int YWPANEL_DVFD_ShowIcon_StandBy(int which, int on)
+{
+	int ret = 0;
+
+	which -= DICON_FIRST; // get position
+
+	icon_state[which] = on;
+
+	if (which != 11)
+	{
+		if (on)
+		{
+			strDvfd[which][0] |= 0b00000001;
+		}
+		else
+		{
+			strDvfd[which][0] &= 0b11111100; //if dolby off, then also plus off
+		}
+	}
+	else // special handling for dolby plus
+	{
+		if (on)
+		{
+			strDvfd[which - 1][0] |= 0b00000011;
+		}
+		else
+		{
+			if (icon_state[10]) // preserve dolby state
+			{
+				strDvfd[which - 1][0] &= 0b11111101;
+			}
+			else
+			{
+				strDvfd[which - 1][0] &= 0b11111100;
+			}
+		}
+	}
+		
+	ret = YWVFDi_DVFDDisplayString(); //redisplay current string
+
+	return ret;
+}
+
 #ifdef CONFIG_CPU_SUBTYPE_STX7105
 static int YWPANEL_FP_DETECT(void)
 {
@@ -3076,7 +3207,6 @@ static int YWPANEL_FP_Init_Unknown(void)
 	return 0;
 }
 
-
 int (*YWPANEL_FP_Initialize)(void);
 int (*YWPANEL_FP_Term)(void);
 int (*YWPANEL_FP_ShowIcon)(int, int);
@@ -3157,14 +3287,14 @@ int YWPANEL_FP_Init(void)
 			{
 				int bOn;
 				YWPANEL_FP_DvfdGetTimeMode(&bOn);
-				YWVFD_Debug("INIT\n");
-				YWVFD_Debug("boot\n");
+//				YWVFD_Debug("INIT\n");
+				YWVFD_Debug("Boot\n");
 
 				YWPANEL_width = YWPANEL_MAX_DVFD_LENGTH;
-				YWPANEL_FP_ShowIcon = YWPANEL_VFD_ShowIcon_StandBy;
+				YWPANEL_FP_ShowIcon = YWPANEL_DVFD_ShowIcon_StandBy;
 				YWPANEL_FP_ShowTime = YWPANEL_VFD_ShowTime_StandBy;
 				YWPANEL_FP_ShowTimeOff = YWPANEL_VFD_ShowTimeOff_StandBy;
-				YWPANEL_FP_SetBrightness = YWPANEL_VFD_SetBrightness_StandBy;
+				YWPANEL_FP_SetBrightness = YWPANEL_DVFD_SetBrightness_StandBy;
 				YWPANEL_FP_ShowString = YWPANEL_DVFD_ShowString_Standby;
 				YWPANEL_FP_ShowContent = YWPANEL_VFD_ShowContent_Standby;
 				YWPANEL_FP_ShowContentOff = YWPANEL_VFD_ShowContentOff_Standby;

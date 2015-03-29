@@ -9,6 +9,8 @@ typedef unsigned short u16;
 typedef unsigned int u32;
 #endif
 
+//#define DEBUG                         1
+
 #define YWPANEL_MAX_LED_LENGTH        4
 #define YWPANEL_MAX_VFD_LENGTH        8  //note: this is the length of the text part
 #define YWPANEL_MAX_DVFD_LENGTH       10 //note: this is the length not used by the clock
@@ -49,6 +51,7 @@ typedef unsigned int u32;
 #define VFDGETLOOPSTATE               0xc0425b01
 #define VFDSETLOOPSTATE               0xc0425b02
 #define VFDGETWAKEUPTIME              0xc0425b03 // added by Audioniek
+#define VFDSETDISPLAYTIME             0xc0425b04 // added by Audioniek (Cuberevo uses 0xc0425b02)
 
 #define INVALID_KEY                   -1
 #define VFD_MAJOR                     147
@@ -59,7 +62,7 @@ typedef unsigned int u32;
 #define YWPANEL_FP_INFO_MAX_LENGTH    10
 #define YWPANEL_FP_DATA_MAX_LENGTH    38
 
-static const char Revision[] = "Revision: 0.8";
+static const char Revision[] = "Revision: 0.9";
 typedef unsigned int YWOS_ClockMsec;
 
 typedef struct YWPANEL_I2CData_s
@@ -90,6 +93,11 @@ struct set_led_s
 struct set_light_s
 {
 	int onoff;
+};
+
+struct set_display_time_s
+{
+	int on;
 };
 
 /* time must be given as follows:
@@ -131,6 +139,7 @@ struct aotom_ioctl_data
 		struct set_brightness_s brightness;
 		struct set_led_s led;
 		struct set_light_s light;
+		struct set_display_time_s display_time;
 		struct set_mode_s mode;
 		struct set_standby_s standby;
 		struct set_time_s time;
@@ -208,7 +217,8 @@ enum
 // Icon names for Spark7162 DVFD
 enum
 {
-	ICON_CA2 = 1,
+	DICON_FIRST = 48,
+	ICON_CA2 = 48,
 	ICON_CI2,
 	ICON_USB2,
 	ICON_DOUBLESCREEN2,
@@ -218,11 +228,13 @@ enum
 	ICON_DNLA,
 	ICON_HD,
 	ICON_MUTE2,
+	ICON_DOLBY2,
 	ICON_DOLBY_PLUS,
 	ICON_DTS,
 	ICON_HBBTV,
 	ICON_HOME,
-	ICON_INTERNET
+	ICON_INTERNET,
+	DICON_LAST = ICON_INTERNET
 };
 
 typedef enum FPMode_e
@@ -358,9 +370,9 @@ typedef enum YWPANEL_DVFDDataType_e
 typedef struct YWPANEL_DVFDData_s
 {
 	YWPANEL_DVFDDataType_t type;
-	u8 setValue;
-	u8 ulen;
-	u8 address[16];
+	u8 setValue;            //if type == YWPANEL_DVFD_SETTING
+	u8 ulen;                //if type == YWPANEL_DVFD_DISPLAY_STRING
+	u8 address[16];         //if type == YWPANEL_DVFD_DISPLAY_STRING
 	u8 DisplayValue[16][5];
 } YWPANEL_DVFDData_t;
 
@@ -542,7 +554,6 @@ typedef struct YWPANEL_FPData_s
 } YWPANEL_FPData_t;
 
 int YWPANEL_FP_Init(void);
-//extern int (*YWPANEL_VFD_Initialize)(void);
 extern int (*YWPANEL_FP_Term)(void);
 extern int (*YWPANEL_FP_ShowIcon)(int, int);
 extern int (*YWPANEL_FP_ShowTime)(u8 hh, u8 mm);
@@ -575,6 +586,7 @@ int YWPANEL_FP_SetPowerOnTime(u32 value);
 u32 YWPANEL_FP_GetPowerOnTime(void);
 int YWPANEL_FP_GetKeyValue(void);
 int YWPANEL_FP_SetLed(int which, int on);
+int YWPANEL_FP_DvfdSetTimeMode(int on);
 int utf8strlen(char *s, int len);
 int utf8charlen(unsigned char c);
 
