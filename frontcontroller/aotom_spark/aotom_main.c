@@ -525,7 +525,7 @@ static int run_draw_thread(struct vfd_ioctl_data *draw_data)
 	}
 
 	draw_thread_status = DRAW_THREAD_STATUS_INIT;
-	draw_task = kthread_run(draw_thread, draw_data, "draw thread");
+	draw_task = kthread_run(draw_thread, draw_data, "draw_thread");
 
 	//wait until thread has copied the argument
 	while (draw_thread_status == DRAW_THREAD_STATUS_INIT)
@@ -1565,14 +1565,14 @@ static int __init aotom_init_module(void)
 		led_state[i].period = 0;
 		led_state[i].status = DRAW_THREAD_STATUS_STOPPED;
 		sema_init(&led_state[i].led_sem, 0);
-		led_state[i].led_task = kthread_run(led_thread, (void *) i, "led thread");
+		led_state[i].led_task = kthread_run(led_thread, (void *) i, "led_thread");
 	}
 #if defined(LED_SPINNER)
 	led_state[LED_SPINNER].state = LOG_OFF;
 	led_state[LED_SPINNER].period = 0;
 	led_state[LED_SPINNER].status = DRAW_THREAD_STATUS_STOPPED;
 	sema_init(&led_state[LED_SPINNER].led_sem, 0);
-	led_state[LED_SPINNER].led_task = kthread_run(spinner_thread, (void *) LED_SPINNER, "spinner thread");
+	led_state[LED_SPINNER].led_task = kthread_run(spinner_thread, (void *) LED_SPINNER, "spinner_thread");
 #endif
 
 	register_reboot_notifier(&aotom_reboot_block);
