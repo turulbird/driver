@@ -51,6 +51,8 @@ endif
 
 ifdef ADB_BOX
 obj-y += adb_box_vfd/
+obj-y += adb_box_vfd/front_bska/
+obj-y += adb_box_vfd/front_bsla/
 endif
 
 ifdef UFS912
@@ -136,4 +138,10 @@ endif
 ifdef SAGEMCOM88
 obj-y += front_led/
 obj-y += front_vfd/
+endif
+
+ifdef ARIVALINK200
+ifeq (,$(wildcard $(DRIVER_TOPDIR)/front_ArivaLink200 ))
+obj-y += front_ArivaLink200/
+endif
 endif

@@ -341,7 +341,16 @@ obj-m += stv090x.o
 endif
 
 ifdef ARIVALINK200
-#cx24116-objs += cx24116_dvbapi5/cx24116.o
-cx24116-objs += cx24116/cx24116.o
+cx24116-objs += cx24116_dvbapi5/cx24116.o
 obj-m += cx24116.o
+endif
+
+ifdef SAGEMCOM88
+ifeq (,$(wildcard $(DRIVER_TOPDIR)/sagemcom88 ))
+fe-core-objs +=        sagemcom88/ix7306.o
+fe-core-objs +=        sagemcom88/stv090x.o
+fe-core-objs +=        sagemcom88/stv6110x.o
+fe-core-objs +=        sagemcom88/core.o
+obj-m += fe-core.o
+endif
 endif

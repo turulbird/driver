@@ -13,7 +13,7 @@
 #include <linux/gpio.h>
 #include <linux/stm/gpio.h>
 #include "asc.h"
-#include "utf.h"
+#include "../vfd/utf.h"
 
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,17)
 #include <linux/stm/pio.h>
@@ -52,10 +52,10 @@ struct vfd_driver {
 spinlock_t mr_lock = SPIN_LOCK_UNLOCKED;
 
 static struct vfd_driver vfd;
-static int debug  = 0;
+static short paramDebug = 0;
 static unsigned char jasnosc = 0xff;
 
-#define DBG(fmt, args...) if ( debug ) printk(KERN_INFO "[vfd] :: " fmt "\n", ## args )
+#define DBG(fmt, args...) if ( paramDebug > 0 ) printk(KERN_INFO "[vfd] :: " fmt "\n", ## args )
 #define ERR(fmt, args...) printk(KERN_ERR "[vfd] :: " fmt "\n", ## args )
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,20)
@@ -194,8 +194,11 @@ int ESI88_WriteFront(unsigned char* data, unsigned char len )
 
   while ((i< len) && (j < 8 + 16))
 	{
-	//j++;
-	if (data[i] < 0x80) {
+	if (data[i] == '\n' || data[i] == 0x0d ) {
+		DBG("[%s] SPECIAL_CHAR (0x%X)\n", __func__, len, data[i]);
+		i++;
+	}
+	else if (data[i] < 0x80) {
 		wdata[j]=data[i];
 		DBG("[%s] data[%i] = '0x%X'\n", __func__, j, data[i]);
 		j++;
@@ -240,7 +243,6 @@ int ESI88_WriteFront(unsigned char* data, unsigned char len )
 			i+=4;
 		else
 			i+=5;
-		//wdata[j]=0x20;
 	}
 	i++;
     }
@@ -342,26 +344,12 @@ static int vfd_ioctl( struct inode *inode, struct file *file, unsigned int cmd, 
 
 }
 
-static ssize_t vfd_write( struct file *filp, const char *buf, size_t len, loff_t *off ) {
-  unsigned char  kbuf[20];
-  size_t         wlen;
-
-  DBG("vfd_write");
-
-  DBG("write : len = %d (%d), off = %d.\n", len, 4, (int)*off);
-
-  if ( len == 0 ) return len;
-
-  if(len>16) len=16;
-
-  copy_from_user(kbuf, buf, len);
-
-  wlen = len;
-  if ( kbuf[len-1] == '\n' ) { kbuf[len-1] = '\0'; wlen--; }
-
-  DBG("write : len = %d, wlen = %d, kbuf = '%s'.\n", len, wlen, kbuf);
-
-  ESI88_WriteFront(kbuf,wlen);
+static ssize_t vfd_write( struct file *filp, const unsigned char *buf, size_t len, loff_t *off ) {
+  DBG("[%s] text = '%s', len= %d\n",__func__, buf,len);
+  if ( len == 0 )
+    ESI88_WriteFront("                ",16);
+  else
+    ESI88_WriteFront(buf,len);
 
   return len;
 }
@@ -508,3 +496,6 @@ module_exit(led_module_exit);
 MODULE_DESCRIPTION("SagemCom88 front vfd driver");
 MODULE_AUTHOR("Nemo");
 MODULE_LICENSE("GPL");
+
+module_param(paramDebug, short, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
+MODULE_PARM_DESC(paramDebug, "Debug Output 0=disabled, 1=enabled");
