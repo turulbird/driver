@@ -13,7 +13,8 @@ typedef unsigned int u32;
 
 #define YWPANEL_MAX_LED_LENGTH        4
 #define YWPANEL_MAX_VFD_LENGTH        8  //note: this is the length of the text part
-#define YWPANEL_MAX_DVFD_LENGTH       10 //note: this is the length not used by the clock
+#define YWPANEL_MAX_DVFD_LENGTH10     10 //note: this is the length when clock is on
+#define YWPANEL_MAX_DVFD_LENGTH16     16 //note: this is the length when clock is off
 #define LOG_OFF                       0
 #define LOG_ON                        1
 #define LED_RED                       0
@@ -62,7 +63,7 @@ typedef unsigned int u32;
 #define YWPANEL_FP_INFO_MAX_LENGTH    10
 #define YWPANEL_FP_DATA_MAX_LENGTH    38
 
-static const char Revision[] = "Revision: 0.9";
+static const char Revision[] = "Revision: 0.9 Audioniek";
 typedef unsigned int YWOS_ClockMsec;
 
 typedef struct YWPANEL_I2CData_s
@@ -218,7 +219,7 @@ enum
 enum
 {
 	DICON_FIRST = 48,
-	ICON_CA2 = 48,
+	ICON_CA2 = DICON_FIRST,
 	ICON_CI2,
 	ICON_USB2,
 	ICON_DOUBLESCREEN2,
@@ -565,6 +566,7 @@ extern int (*YWPANEL_FP_ShowContent)(void);
 extern int (*YWPANEL_FP_ShowContentOff)(void);
 
 extern int YWPANEL_width;
+extern int dvfd_fp; //indicates spark7162 FP type
 
 //int YWPANEL_FP_GetRevision(char * version); //unused by aotom_main
 //YWPANEL_FPSTATE_t YWPANEL_FP_GetFPStatus(void); //unused by aotom_main
