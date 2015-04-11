@@ -63,6 +63,7 @@
  *                          was not passed.
  * 20150405 Audioniek       Fixed some wrong reports on icon numbers; (re)set
  *                          all icons switches spinner off on VFD models.
+ * 20150405 Audioniek       VFDGETDISPLAYTIME added.
  * 
  ****************************************************************************/
 
@@ -233,13 +234,16 @@ void clear_display(void)
 }
 static void VFD_clr(void)
 {
-//	YWPANEL_FP_ShowTimeOff(); //does not work...
 	clear_display();
 #if defined(SPARK7162)
 	VFD_set_all_icons(LOG_OFF);
-	aotomSetIcon(ICON_SPINNER, LOG_OFF);
-#endif
+	if (!dvfd_fp)
+	{
+		YWPANEL_FP_SetLed(LED_GREEN, LOG_OFF);
+	}
+#elif defined(SPARK)
 	YWPANEL_FP_SetLed(LED_GREEN, LOG_OFF);
+#endif
 	YWPANEL_FP_SetLed(LED_RED, LOG_OFF);
 }
 
@@ -920,6 +924,7 @@ static int AOTOMdev_ioctl(struct inode *Inode, struct file *File, unsigned int c
 						break;
 					}
 					case ICON_AC3:
+					case ICON_DOLBY:
 					{
 						icon_nr = ICON_DOLBY2;
 						break;
@@ -1042,11 +1047,28 @@ static int AOTOMdev_ioctl(struct inode *Inode, struct file *File, unsigned int c
 		case VFDSETDISPLAYTIME:
 		{
 #if defined(SPARK7162)
-			dprintk(5, "%s Set display time mode 0x%02X\n", __func__, aotom_data.u.display_time.on);
 			if (dvfd_fp)
 			{
 				YWPANEL_FP_DvfdSetTimeMode(aotom_data.u.display_time.on);
 			}
+#endif
+			res = 0;
+			break;
+		}
+		case VFDGETDISPLAYTIME:
+		{
+#if defined(SPARK7162)
+			int TimeMode;
+
+			if (dvfd_fp)
+			{
+				TimeMode = bTimeMode;
+			}
+			else
+			{
+				TimeMode = 1; // clock is always on on VFD
+			}
+			res = put_user(TimeMode, (int *)arg);
 #endif
 			res = 0;
 			break;
@@ -1082,7 +1104,10 @@ static int AOTOMdev_ioctl(struct inode *Inode, struct file *File, unsigned int c
 			{
 				case 0: //whole display off
 				{
-					YWPANEL_FP_SetLed(LED_RED, LOG_OFF);
+					if (!dvfd_fp)
+					{
+						YWPANEL_FP_SetLed(LED_RED, LOG_OFF);
+					}
 					YWPANEL_FP_SetLed(LED_GREEN, LOG_OFF);
 					res = YWPANEL_FP_ShowContentOff();
 					break;
@@ -1090,7 +1115,10 @@ static int AOTOMdev_ioctl(struct inode *Inode, struct file *File, unsigned int c
 				case 1: // whole display on
 				{
 					res = YWPANEL_FP_ShowContent();
-					YWPANEL_FP_SetLed(LED_RED, led_state[LED_RED].state);
+					if (!dvfd_fp)
+					{
+						YWPANEL_FP_SetLed(LED_RED, led_state[LED_RED].state);
+					}
 					YWPANEL_FP_SetLed(LED_GREEN, led_state[LED_GREEN].state);
 					break;
 				}
@@ -1145,6 +1173,8 @@ static int AOTOMdev_ioctl(struct inode *Inode, struct file *File, unsigned int c
 		case VFDGETVERSION:
 		{
 			YWPANEL_Version_t fpanel_version;
+			const char *fp_type[9] = { "Unknown", "VFD", "LCD", "DVFD", "LED", "?", "?", "?", "LBD" };
+			const char *tm_type[2] = { "Off", "On" };
 
 			memset(&fpanel_version, 0, sizeof(YWPANEL_Version_t));
 
@@ -1152,7 +1182,13 @@ static int AOTOMdev_ioctl(struct inode *Inode, struct file *File, unsigned int c
 			{
 				dprintk(1, "%s Frontpanel CPU type         : %d\n", __func__, fpanel_version.CpuType);
 				dprintk(1, "%s Frontpanel software version : %d.%d\n", __func__, fpanel_version.swMajorVersion, fpanel_version.swSubVersion);
-				dprintk(1, "%s Frontpanel displaytype      : %d (1=VFD, 3=DVFD, 4=LED)\n", __func__, fpanel_version.DisplayInfo);
+				dprintk(1, "%s Frontpanel displaytype      : %s\n", __func__, fp_type[fpanel_version.DisplayInfo]);
+#if defined(SPARK7162)
+				if (fpanel_version.DisplayInfo == 3)
+				{
+					dprintk(1, "%s Time mode                   : %s\n", __func__, tm_type[bTimeMode]);
+				}
+#endif
 				dprintk(1, "%s Frontpanel # of keys        : %d\n", __func__, fpanel_version.scankeyNum);
 				dprintk(1, "%s Number of version bytes     : %d\n", __func__, sizeof(fpanel_version));
 				put_user(fpanel_version.CpuType, (int *) arg);

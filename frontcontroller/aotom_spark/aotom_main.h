@@ -53,6 +53,7 @@ typedef unsigned int u32;
 #define VFDSETLOOPSTATE               0xc0425b02
 #define VFDGETWAKEUPTIME              0xc0425b03 // added by Audioniek
 #define VFDSETDISPLAYTIME             0xc0425b04 // added by Audioniek (Cuberevo uses 0xc0425b02)
+#define VFDGETDISPLAYTIME             0xc0425b05 // added by Audioniek
 
 #define INVALID_KEY                   -1
 #define VFD_MAJOR                     147
@@ -124,7 +125,7 @@ struct set_key_s
 };
 
 /* This changes the mode temporarily (for one IOCTL)
- * to the desired mode. currently the "normal" mode
+ * to the desired mode. Crrently the "normal" mode
  * is the compatible VFD mode
  */
 struct set_mode_s
@@ -374,7 +375,7 @@ typedef struct YWPANEL_DVFDData_s
 	u8 setValue;            //if type == YWPANEL_DVFD_SETTING
 	u8 ulen;                //if type == YWPANEL_DVFD_DISPLAY_STRING
 	u8 address[16];         //if type == YWPANEL_DVFD_DISPLAY_STRING
-	u8 DisplayValue[16][5];
+	u8 DisplayValue[16][5]; //if type == YWPANEL_DVFD_DISPLAY_STRING
 } YWPANEL_DVFDData_t;
 
 typedef struct YWPANEL_ScanKey_s
@@ -529,6 +530,11 @@ typedef struct YWPANEL_Version_s
 	u8 swSubVersion;
 } YWPANEL_Version_t;
 
+typedef struct YWPANEL_GetTimeMode_s
+{
+	int TimeMode;
+} YWPANEL_GetTimeMode_t;
+
 typedef struct YWPANEL_FPData_s
 {
 	YWPANEL_DataType_t dataType;
@@ -550,6 +556,7 @@ typedef struct YWPANEL_FPData_s
 		YWPANEL_PowerOnState_t    PowerOnState;
 		YWPANEL_StartUpState_t    StartUpState;
 		YWPANEL_LoopState_t       LoopState;
+		YWPANEL_GetTimeMode_t     TimeMode;
 	} data;
 	int ack;
 } YWPANEL_FPData_t;
@@ -567,8 +574,10 @@ extern int (*YWPANEL_FP_ShowContentOff)(void);
 
 extern int YWPANEL_width;
 extern int dvfd_fp; //indicates spark7162 FP type
+#if defined(SPARK7162)
+extern int bTimeMode; //indicates spark7162 DVFD time mode
+#endif
 
-//int YWPANEL_FP_GetRevision(char * version); //unused by aotom_main
 //YWPANEL_FPSTATE_t YWPANEL_FP_GetFPStatus(void); //unused by aotom_main
 //int YWPANEL_FP_SetFPStatus(YWPANEL_FPSTATE_t state); //unused by aotom_main
 //YWPANEL_CPUSTATE_t YWPANEL_FP_GetCpuStatus(void); //unused by aotom_main

@@ -2815,7 +2815,7 @@ static int YWPANEL_FP_DvfdGetTimeMode(int *pOn)
 		return -1;
 	}
 
-	(*pOn) = data.data.dvfdData.setValue;
+	(*pOn) = data.data.dvfdData.setValue & 0b00000001;
 	bTimeMode = data.data.dvfdData.setValue;
 
 	return 0;
@@ -3443,7 +3443,7 @@ int (*YWPANEL_FP_ShowContent)(void);
 int (*YWPANEL_FP_ShowContentOff)(void);
 
 int YWPANEL_width = YWPANEL_MAX_VFD_LENGTH; //VFD display is default
-int dvfd_fp; //indicates spark7162 FP type
+int dvfd_fp = 0; //indicates spark7162 FP type, VFD display is default
 YWPANEL_Version_t panel_version;
 
 int YWPANEL_FP_Init(void)
