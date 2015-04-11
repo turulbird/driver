@@ -63,7 +63,8 @@
  *                          was not passed.
  * 20150405 Audioniek       Fixed some wrong reports on icon numbers; (re)set
  *                          all icons switches spinner off on VFD models.
- * 20150405 Audioniek       VFDGETDISPLAYTIME added.
+ * 20150410 Audioniek       VFDGETDISPLAYTIME added.
+ * 20150411 Audioniek       Corrected mistake in clear_display routine.
  * 
  ****************************************************************************/
 
@@ -207,37 +208,18 @@ static void VFD_set_all_icons(int onoff)
 
 void clear_display(void)
 {
-#if 1
 	char clrstr[16];
 
 	memset(clrstr, 0, 16);
 	memset(clrstr, ' ', YWPANEL_width);
 	YWPANEL_FP_ShowString(clrstr);
-#else
-	if (YWPANEL_width == YWPANEL_MAX_DVFD_LENGTH10)
-	{
-		YWPANEL_FP_ShowString("          ");
-	}
-	else if (YWPANEL_width == YWPANEL_MAX_DVFD_LENGTH16)
-	{
-		YWPANEL_FP_ShowString("                ");
-	}
-	else if (YWPANEL_width == YWPANEL_MAX_LED_LENGTH)
-	{
-		YWPANEL_FP_ShowString("    ");
-	}
-	else
-	{
-		YWPANEL_FP_ShowString("        ");
-	}
-#endif
 }
 static void VFD_clr(void)
 {
 	clear_display();
 #if defined(SPARK7162)
 	VFD_set_all_icons(LOG_OFF);
-	if (!dvfd_fp)
+	if (dvfd_fp)
 	{
 		YWPANEL_FP_SetLed(LED_GREEN, LOG_OFF);
 	}
@@ -1104,22 +1086,30 @@ static int AOTOMdev_ioctl(struct inode *Inode, struct file *File, unsigned int c
 			{
 				case 0: //whole display off
 				{
-					if (!dvfd_fp)
+					YWPANEL_FP_SetLed(LED_RED, LOG_OFF);
+#if defined(SPARK7162)
+					if (dvfd_fp)
 					{
-						YWPANEL_FP_SetLed(LED_RED, LOG_OFF);
+						YWPANEL_FP_SetLed(LED_GREEN, LOG_OFF);
 					}
+#elif defined(SPARK)
 					YWPANEL_FP_SetLed(LED_GREEN, LOG_OFF);
+#endif
 					res = YWPANEL_FP_ShowContentOff();
 					break;
 				}
 				case 1: // whole display on
 				{
 					res = YWPANEL_FP_ShowContent();
-					if (!dvfd_fp)
+					YWPANEL_FP_SetLed(LED_RED, led_state[LED_RED].state);
+#if defined(SPARK7162)
+					if (dvfd_fp)
 					{
-						YWPANEL_FP_SetLed(LED_RED, led_state[LED_RED].state);
+						YWPANEL_FP_SetLed(LED_GREEN, led_state[LED_GREEN].state);
 					}
+#elif defined(SPARK)
 					YWPANEL_FP_SetLed(LED_GREEN, led_state[LED_GREEN].state);
+#endif
 					break;
 				}
 				default:
