@@ -161,6 +161,71 @@ enum
 {
 /*----------------------------------11G-------------------------------------*/
 	VICON_FIRST = 11 * 16 + 1, //Icon 1
+	AOTOM_PLAY_FASTBACKWARD = VICON_FIRST,
+	AOTOM_FIRST = AOTOM_PLAY_FASTBACKWARD,
+	AOTOM_PLAY_PREV,
+	AOTOM_PLAY_HEAD = AOTOM_PLAY_PREV,  // deprecated
+	AOTOM_PLAY,
+	AOTOM_PLAY_LOG = AOTOM_PLAY,        // deprecated
+	AOTOM_NEXT,
+	AOTOM_PLAY_TAIL = AOTOM_NEXT,       // deprecated
+	AOTOM_PLAY_FASTFORWARD,
+	AOTOM_PLAY_PAUSE,
+	AOTOM_REC1,
+	AOTOM_MUTE,
+	AOTOM_LOOP,
+	AOTOM_CYCLE = AOTOM_LOOP,           // deprecated
+	AOTOM_DOLBYDIGITAL,
+	AOTOM_DUBI = AOTOM_DOLBYDIGITAL,    // deprecated
+	AOTOM_CA,
+	AOTOM_CI,
+	AOTOM_USB,
+	AOTOM_DOUBLESCREEN,
+	AOTOM_REC2,
+	ICON_REC2,
+/*----------------------------------12G-------------------------------------*/
+	AOTOM_HDD_A8 = 12 * 16 + 1,
+	AOTOM_HDD_A7,
+	AOTOM_HDD_A6,
+	AOTOM_HDD_A5,
+	AOTOM_HDD_A4,
+	AOTOM_HDD_A3,
+	AOTOM_HDD_FULL,
+	AOTOM_HDD_A2,
+	AOTOM_HDD_A1,
+	AOTOM_MP3,
+	AOTOM_AC3,
+	AOTOM_TV,
+	AOTOM_TVMODE_LOG = AOTOM_TV,        // deprecated
+	AOTOM_AUDIO,
+	AOTOM_ALERT,
+	AOTOM_HDD_FRAME,
+	AOTOM_HDD_A9 = AOTOM_HDD_FRAME,     // deprecated
+/*----------------------------------13G-------------------------------------*/
+	AOTOM_CLOCK_PM = 13 * 16 + 1,
+	AOTOM_CLOCK_AM,
+	AOTOM_CLOCK,
+	AOTOM_TIME_SECOND,
+	AOTOM_DOT2,
+	AOTOM_STANDBY,
+	AOTOM_TERRESTRIAL,
+	AOTOM_TER = AOTOM_TERRESTRIAL,      // deprecated
+	AOTOM_DISK_S3,
+	AOTOM_DISK_S2,
+	AOTOM_DISK_S1,
+	AOTOM_DISK_CIRCLE,
+	AOTOM_DISK_S0 = AOTOM_DISK_CIRCLE,  // deprecated
+	AOTOM_SATELLITE,
+	AOTOM_SAT = AOTOM_SATELLITE,        // deprecated
+	AOTOM_TIMESHIFT,
+	AOTOM_DOT1,
+	AOTOM_CABLE,
+	AOTOM_CAB = AOTOM_CABLE,            // deprecated
+	AOTOM_LAST = AOTOM_CABLE,
+	AOTOM_ALL,
+	VICON_LAST = 13 * 16 + 15,
+/*----------------------------------End-------------------------------------*/
+/*--------------------------------Simple numbering -------------------------*/
 	ICON_FIRST = 1, //Icon 1
 	ICON_REWIND = ICON_FIRST,
 	ICON_PLAY_STEPBACK,
@@ -177,7 +242,6 @@ enum
 	ICON_USB,
 	ICON_DOUBLESCREEN,
 	ICON_REC2,
-/*----------------------------------12G-------------------------------------*/
 	ICON_HDD_A8, //Icon 16
 	ICON_HDD_A7,
 	ICON_HDD_A6,
@@ -193,7 +257,6 @@ enum
 	ICON_AUDIO,
 	ICON_ALERT,
 	ICON_HDD_GRID,
-/*----------------------------------13G-------------------------------------*/
 	ICON_CLOCK_PM, //Icon 31
 	ICON_CLOCK_AM,
 	ICON_TIMER,
@@ -209,10 +272,8 @@ enum
 	ICON_TIMESHIFT,
 	ICON_DOT1,
 	ICON_CABLE,
-	VICON_LAST = 13 * 16 + 15,
 	ICON_LAST = ICON_CABLE,
-/*----------------------------------End-------------------------------------*/
-	ICON_ALL, //Table count = 46
+	ICON_ALL,
 	ICON_SPINNER, // 47
 };
 
