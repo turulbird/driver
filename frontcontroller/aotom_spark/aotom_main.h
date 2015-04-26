@@ -182,7 +182,6 @@ enum
 	AOTOM_USB,
 	AOTOM_DOUBLESCREEN,
 	AOTOM_REC2,
-	ICON_REC2,
 /*----------------------------------12G-------------------------------------*/
 	AOTOM_HDD_A8 = 12 * 16 + 1,
 	AOTOM_HDD_A7,
