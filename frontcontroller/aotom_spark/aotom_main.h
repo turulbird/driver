@@ -19,12 +19,13 @@ typedef unsigned int u32;
 #define LOG_ON                        1
 #define LED_RED                       0
 #define LED_GREEN                     1
-#define LASTLED                       2
-#if defined(SPARK7162)
 #define LED_SPINNER                   1
+#define LASTLED                       2
+#define FP_LED                        0
+#define FP_VFD                        1
+#define FP_DVFD                       2
 /* Uncomment next line to enable lower case letters on Spark 7162 VFD */
-//#define LOWER_CASE                   1
-#endif
+//#define VFD_LOWER_CASE                1
 
 #define VFDDISPLAYCHARS               0xc0425a00
 #define VFDBRIGHTNESS                 0xc0425a03
@@ -64,7 +65,7 @@ typedef unsigned int u32;
 #define YWPANEL_FP_INFO_MAX_LENGTH    10
 #define YWPANEL_FP_DATA_MAX_LENGTH    38
 
-static const char Revision[] = "Revision: 0.9 Audioniek";
+static const char Revision[] = "Revision: 0.9a Audioniek";
 typedef unsigned int YWOS_ClockMsec;
 
 typedef struct YWPANEL_I2CData_s
@@ -156,7 +157,7 @@ struct vfd_ioctl_data
 	unsigned char length;
 };
 
-// Icon names for Spark7162 VFD
+// Icon names for VFD
 enum
 {
 /*----------------------------------11G-------------------------------------*/
@@ -276,7 +277,7 @@ enum
 	ICON_SPINNER, // 47
 };
 
-// Icon names for Spark7162 DVFD
+// Icon names for DVFD
 enum
 {
 	DICON_FIRST = 48,
@@ -633,18 +634,11 @@ extern int (*YWPANEL_FP_ShowContent)(void);
 extern int (*YWPANEL_FP_ShowContentOff)(void);
 
 extern int YWPANEL_width;
-extern int dvfd_fp; //indicates spark7162 FP type
-#if defined(SPARK7162)
+extern int fp_type; //indicates front panel type: 0=LED, 1=VFD, 2=DVFD
 extern int bTimeMode; //indicates spark7162 DVFD time mode
-#endif
 
-//YWPANEL_FPSTATE_t YWPANEL_FP_GetFPStatus(void); //unused by aotom_main
-//int YWPANEL_FP_SetFPStatus(YWPANEL_FPSTATE_t state); //unused by aotom_main
-//YWPANEL_CPUSTATE_t YWPANEL_FP_GetCpuStatus(void); //unused by aotom_main
 int YWPANEL_FP_SetCpuStatus(YWPANEL_CPUSTATE_t state);
 int YWPANEL_FP_ControlTimer(int on);
-//YWPANEL_POWERONSTATE_t YWPANEL_FP_GetPowerOnStatus(void); //unused by aotom_main
-//int YWPANEL_FP_SetPowerOnStatus(YWPANEL_POWERONSTATE_t state); //unused by aotom_main
 u32 YWPANEL_FP_GetTime(void);
 int YWPANEL_FP_SetTime(u32 value);
 int YWPANEL_FP_GetKey(int blue, int key_nr, u32 *k);

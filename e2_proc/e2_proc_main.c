@@ -563,6 +563,10 @@ struct ProcStructure_s e2Proc[] =
 	{cProcEntry, "stb/info/chipset"                                                 , NULL, info_chipset_read, NULL, NULL, ""},
 	{cProcEntry, "stb/info/boxtype"                                                 , NULL, info_model_read, NULL, NULL, ""},
 
+	{cProcDir  , "stb/ir"                                                           , NULL, NULL, NULL, NULL, ""},
+	{cProcDir  , "stb/ir/rc"                                                        , NULL, NULL, NULL, NULL, ""},
+	{cProcEntry, "stb/ir/rc/type"                                                   , NULL, info_model_read, NULL, NULL, ""},
+
 	{cProcDir  , "stb/video"                                                        , NULL, NULL, NULL, NULL, ""},
 	{cProcEntry, "stb/video/alpha"                                                  , NULL, NULL, NULL, NULL, ""},
 	{cProcEntry, "stb/video/aspect"                                                 , NULL, NULL, NULL, NULL, ""},

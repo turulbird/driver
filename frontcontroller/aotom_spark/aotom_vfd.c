@@ -34,7 +34,7 @@
  * 20140604 Audioniek       DVFD panel support added.
  * 20140612 Audioniek       UTF8 support added (thnx martii).
  * 20141125 Audioniek       Uppercase only letters on spark7162 VFD made
- *                          switchable through #define LOWER_CASE (in
+ *                          switchable through #define VFD_LOWER_CASE (in
  *                          aotom_main.h).
  * 20150325 Audioniek       Text output on DVFD did not work; fixed.
  * 20150325 Audioniek       Uppercase only option on DVFD removed.
@@ -48,6 +48,12 @@
  * 20150407 Audioniek       SetContent for DVFD models working.
  * 20150407 Audioniek       YWPANEL_FP_DvfdGetTimeMode made functional,
  *                          on power on the previous time mode is retained. 
+ * 20150520 Audioniek       Removed a lot of conditionals that assumed only
+ *                          Spark7162's have a (D)VFD display. Display type
+ *                          already was set at driver start and is now used
+ *                          throughout instead of box model. Should fix
+ *                          display problem on Edision Pingulux Plus (Spark
+ *                          with (D)VFD).
  *
  ****************************************************************************/
 
@@ -236,7 +242,7 @@ static u8 CharLib[0x60][2] =
 	{0x00, 0x40},	// _
 
 	{0x00, 0x01},	// `
-#if defined(LOWER_CASE)
+#if defined(VFD_LOWER_CASE)
 	{0x78, 0x70},	// a
 	{0xF1, 0x48},	// b
 	{0xE1, 0x40},	// c
@@ -299,7 +305,7 @@ static u8 CharLib[0x60][2] =
 	{0x00, 0x00}    //DEL (or end of table l=0x60)
 };
 
-/* Segment table 2 for VFD clock display on text part?
+/* Segment table 2 for VFD clock display on text part (?)
 
     aaaaaaa 
    f       b
@@ -329,7 +335,6 @@ static u8 NumLib[10][2] =
 	            	// even,     odd digits
 };
 
-#if defined(SPARK7162)
 /* dvfd_bitmap: Segment table for DVFD display
 
    Character size is 5 columns by 7 rows
@@ -355,7 +360,7 @@ static u8 NumLib[10][2] =
 static char dvfd_bitmap[96][5] =
 {
 	{0x00, 0x00, 0x00, 0x00, 0x00, }, //' ' 0x20 032
-	{0x11, 0x22, 0x08, 0x01, 0x04, }, //'!' 0x21 033
+	{0x10, 0x22, 0x08, 0x01, 0x04, }, //'!' 0x21 033
 	{0x28, 0xa5, 0x00, 0x00, 0x00, }, //'"' 0x22 034
 	{0x28, 0xf5, 0xd5, 0x57, 0x0a, }, //'#' 0x23 035
 	{0x10, 0x5f, 0x1c, 0x7d, 0x04, }, //'$' 0x24 036
@@ -451,27 +456,26 @@ static char dvfd_bitmap[96][5] =
 	{0x00, 0x20, 0x2a, 0x02, 0x00, }, //'~' 0x7e 126
 	{0xfc, 0xff, 0xff, 0xff, 0x1f, }, //DEL 0x7f 127
 };
-#endif
 
-#if defined(SPARK)
-//lwj add begin
-// Segment table for LED display (Spark)
-//
-//  aaaaaaa 
-// f       b
-// f       b
-// f       b
-//  ggggggg
-// e       c
-// e       c
-// e       c
-//  ddddddd   h
-//
-// a    b    c    d    e    f    g    h
-// 0x80 0x40 0x20 0x10 0x08 0x04 0x02 0x01
-//
-// LED segments: 88.88 (segment h only available on position 2)
+/*lwj add begin
 
+ Segment table for LED display
+
+    aaaaaaa 
+   f       b
+   f       b
+   f       b
+    ggggggg
+   e       c
+   e       c
+   e       c
+   ddddddd   h
+
+   a    b    c    d    e    f    g    h
+   0x80 0x40 0x20 0x10 0x08 0x04 0x02 0x01
+
+   LED segments: 88.88 (segment h only available on position 2)
+*/
 static u8 ywpanel_led_map[0x80] =
 {	//0     1     2     3     4     5     6     7     8     9     A     B     C     D     E     F
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /*00-0f*/
@@ -490,7 +494,6 @@ static u8 ywpanel_led_map[0x80] =
 	//p     q     r     s     t     u     v     w     x     y     z     {     |     }     ~    DEL
 };
 //lwj add end
-#endif
 
 enum
 {
@@ -624,7 +627,6 @@ u16 YWPANEL_GenerateCRC16(u8 * buffer, u32 bufLength)
 	return nAccum;
 }
 
-#if defined(SPARK7162)
 // Code for dot VFD
 static void YWPANEL_FP_DvfdFillCmd(YWPANEL_FPData_t *data, YWPANEL_I2CData_t *I2CData)
 {
@@ -740,7 +742,6 @@ static void YWPANEL_FP_DvfdFillCrc(YWPANEL_FPData_t *data, YWPANEL_I2CData_t *I2
 	I2CData->writeBuff[crcPos + 1] = ((usCRC16 >> 8) & 0xff);
 	I2CData->writeBuffLen = crcPos + 2;
 }
-#endif //defined(SPARK7162)
 
 static int YWPANEL_FP_SetI2cData(YWPANEL_FPData_t *data, YWPANEL_I2CData_t *I2CData)
 {
@@ -762,19 +763,16 @@ static int YWPANEL_FP_SetI2cData(YWPANEL_FPData_t *data, YWPANEL_I2CData_t *I2CD
 			I2CData->writeBuff[0] = YWPANEL_DISPLAY_INSTR_LBD;
 			break;
 		}
-#if defined(SPARK)
 		case YWPANEL_DATATYPE_LED:
 		{
 			I2CData->writeBuff[0] = YWPANEL_DISPLAY_INSTR_LED;
 			break;
 		}
-#elif defined(SPARK7162)
 		case YWPANEL_DATATYPE_DVFD:
 		{
 			YWPANEL_FP_DvfdFillCmd(data, I2CData);
 			break;
 		}
-#endif
 		case YWPANEL_DATATYPE_VFD:
 		{
 			I2CData->writeBuff[0] = YWPANEL_DISPLAY_INSTR_VFD;
@@ -913,13 +911,11 @@ static int YWPANEL_FP_SetI2cData(YWPANEL_FPData_t *data, YWPANEL_I2CData_t *I2CD
 
 	switch (data->dataType) // set I2CData->writeBuff[1] (command length)
 	{
-#if defined(SPARK7162)
 		case YWPANEL_DATATYPE_DVFD:
 		{
 			YWPANEL_FP_DvfdFillLen(data, I2CData);
 			break;
 		}
-#endif
 		case YWPANEL_DATATYPE_VFD:
 		{
 			if (data->data.vfdData.type == YWPANEL_VFD_DISPLAYSTRING)
@@ -942,7 +938,6 @@ static int YWPANEL_FP_SetI2cData(YWPANEL_FPData_t *data, YWPANEL_I2CData_t *I2CD
 			I2CData->writeBuff[2] = data->data.lbdData.value;
 			break;
 		}
-#if defined(SPARK)
 		case YWPANEL_DATATYPE_LED:
 		{
 			I2CData->writeBuff[2] = data->data.ledData.led1;
@@ -951,13 +946,11 @@ static int YWPANEL_FP_SetI2cData(YWPANEL_FPData_t *data, YWPANEL_I2CData_t *I2CD
 			I2CData->writeBuff[5] = data->data.ledData.led4;
 			break;
 		}
-#elif defined(SPARK7162)
 		case YWPANEL_DATATYPE_DVFD:
 		{
 			YWPANEL_FP_DvfdFillData(data, I2CData);
 			break;
 		}
-#endif
 		case YWPANEL_DATATYPE_VFD:
 		{
 			I2CData->writeBuff[2] = data->data.vfdData.type;
@@ -1061,13 +1054,11 @@ static int YWPANEL_FP_SetI2cData(YWPANEL_FPData_t *data, YWPANEL_I2CData_t *I2CD
 
 	switch (data->dataType)  // set I2CData->writeBuff[crcPos],[crcPos + 1] (CRC over command) and [crcPos + 2] (length)
 	{
-#if defined(SPARK7162)
 		case YWPANEL_DATATYPE_DVFD:
 		{
 			YWPANEL_FP_DvfdFillCrc(data, I2CData);
 			break;
 		}
-#endif
 		case YWPANEL_DATATYPE_VFD:
 		{
 			if (data->data.vfdData.type == YWPANEL_VFD_DISPLAYSTRING)
@@ -1180,7 +1171,6 @@ int YWPANEL_FP_ParseI2cData(YWPANEL_FPData_t *data, YWPANEL_I2CData_t *I2CData)
 			}
 			break;
 		}
-#if defined(SPARK7162)
 		case YWPANEL_DATATYPE_DVFD:
 		{
 			if (data->data.dvfdData.type == YWPANEL_DVFD_DISPLAYSTRING)
@@ -1219,7 +1209,6 @@ int YWPANEL_FP_ParseI2cData(YWPANEL_FPData_t *data, YWPANEL_I2CData_t *I2CData)
 			}
 			break;
 		}
-#endif // defined(SPARK7162)
 		case YWPANEL_DATATYPE_GETPOWERONTIME:
 		{
 			if (dataType != YWPANEL_INIT_INSTR_GETPOWERONTIME)
@@ -1521,60 +1510,6 @@ int YWPANEL_FP_SendData(YWPANEL_FPData_t *data)
 	return ret;
 }
 
-YWPANEL_FPSTATE_t YWPANEL_FP_GetFPStatus(void)
-{
-	YWPANEL_FPData_t data;
-
-	memset(&data, 0, sizeof(YWPANEL_FPData_t));
-	data.dataType = YWPANEL_DATATYPE_GETFPSTATE;
-
-	if (YWPANEL_FP_SendData(&data) != true)
-	{
-		ywtrace_print(TRACE_ERROR, "YWPANEL_FP_SendData failed at line [%d] \n", __LINE__);
-		return false;
-	}
-	if ((data.data.FpStandbyState.On < YWPANEL_FPSTATE_STANDBYOFF) || (data.data.FpStandbyState.On > YWPANEL_FPSTATE_STANDBYON) )
-	{
-		return YWPANEL_FPSTATE_UNKNOWN;
-	}
-	return data.data.FpStandbyState.On;
-}
-
-int YWPANEL_FP_SetFPStatus(YWPANEL_FPSTATE_t On)
-{
-	YWPANEL_FPData_t data;
-
-	memset(&data, 0, sizeof(YWPANEL_FPData_t));
-	data.dataType = YWPANEL_DATATYPE_SETFPSTATE;
-	data.data.FpStandbyState.On = On;
-
-	if (YWPANEL_FP_SendData(&data) != true)
-	{
-		ywtrace_print(TRACE_ERROR,"YWPANEL_FP_SendData failed at line [%d]\n",__LINE__);
-		return false;
-	}
-	return true;
-}
-
-YWPANEL_POWERONSTATE_t YWPANEL_FP_GetPowerOnStatus(void)
-{
-	YWPANEL_FPData_t data;
-
-	memset(&data, 0, sizeof(YWPANEL_FPData_t));
-	data.dataType = YWPANEL_DATATYPE_GETPOWERONSTATE;
-
-	if (YWPANEL_FP_SendData(&data) != true)
-	{
-		ywtrace_print(TRACE_ERROR, "YWPANEL_FP_SendData failed at line [%d]\n", __LINE__);
-		return false;
-	}
-	if ((data.data.PowerOnState.state < YWPANEL_POWERONSTATE_RUNNING) ||(data.data.PowerOnState.state > YWPANEL_POWERONSTATE_CHECKPOWERBIT) )
-	{
-		return YWPANEL_POWERONSTATE_UNKNOWN;
-	}
-	return data.data.PowerOnState.state;
-}
-
 int YWPANEL_FP_SetLoopState(YWPANEL_LOOPSTATE_t state)
 {
 	YWPANEL_FPData_t data;
@@ -1612,22 +1547,6 @@ int YWPANEL_FP_GetLoopState(YWPANEL_LOOPSTATE_t *state)
 	return true;
 }
 
-int YWPANEL_FP_SetPowerOnStatus(YWPANEL_POWERONSTATE_t state)
-{
-	YWPANEL_FPData_t data;
-
-	memset(&data, 0, sizeof(YWPANEL_FPData_t));
-	data.dataType = YWPANEL_DATATYPE_SETPOWERONSTATE;
-	data.data.PowerOnState.state = state;
-
-	if (YWPANEL_FP_SendData(&data) != true)
-	{
-		ywtrace_print(TRACE_ERROR, "YWPANEL_FP_SendData failed at line [%d]\n", __LINE__);
-		return false;
-	}
-	return true;
-}
-
 int YWPANEL_FP_GetStartUpState(YWPANEL_STARTUPSTATE_t *state)
 {
 	YWPANEL_FPData_t data;
@@ -1643,25 +1562,6 @@ int YWPANEL_FP_GetStartUpState(YWPANEL_STARTUPSTATE_t *state)
 
 	*state = data.data.StartUpState.state;
 	return true;
-}
-
-YWPANEL_CPUSTATE_t YWPANEL_FP_GetCpuStatus(void)
-{
-	YWPANEL_FPData_t data;
-
-	memset(&data, 0, sizeof(YWPANEL_FPData_t));
-	data.dataType = YWPANEL_DATATYPE_GETCPUSTATE;
-
-	if (YWPANEL_FP_SendData(&data) != true)
-	{
-		ywtrace_print(TRACE_ERROR, "YWPANEL_FP_SendData failed at line [%d]\n", __LINE__);
-		return false;
-	}
-	if ((data.data.CpuState.state <YWPANEL_CPUSTATE_RUNNING) || (data.data.CpuState.state> YWPANEL_CPUSTATE_STANDBY))
-	{
-		return YWPANEL_CPUSTATE_UNKNOWN;
-	}
-	return data.data.CpuState.state;
 }
 
 int YWPANEL_FP_SetCpuStatus(YWPANEL_CPUSTATE_t state)
@@ -2033,7 +1933,7 @@ int YWPANEL_VFD_ShowContentOff_Common(void)
 void YWPANEL_FP_ClearAll(void)
 {
 	int i;
-	for (i = 0; i < 13; i++) // 13 digits?
+	for (i = 0; i < 13; i++) // 13 digits (clock plus text)
 	{
 		YWPANEL_VFD_SegDigSeg(i + 1, SEGNUM1, 0x00);
 		VfdSegAddr[i + 1].CurrValue1 = 0x00;
@@ -2274,7 +2174,6 @@ static int YWPANEL_VFD_SetBrightness_Common(int level)
 	return ST_ErrCode;
 }
 
-#if defined(SPARK7162)
 static int YWPANEL_DVFD_SetBrightness(int level)
 { //FIXME
 	int ST_ErrCode = 0;
@@ -2304,7 +2203,6 @@ static int YWPANEL_DVFD_SetBrightness(int level)
 	up(&vfd_sem);
 	return ST_ErrCode;
 }
-#endif
 
 /* Scan Keyboard */
 static u8 YWPANEL_FP_ScanKeyboard_StandBy(void)
@@ -2477,9 +2375,8 @@ int YWPANEL_FP_GetKeyValue(void)
 }
 
 /* DVFD Show String */
-#if defined(SPARK7162)
 static u8 strDvfd[16][5]; // last character data written to display
-static u8 old_strDvfd[16][5]; // copy for display on/off
+static u8 old_strDvfd[16][5]; // copy of character data for display on/off
 int bTimeMode;
 int old_bTimeMode;
 int icon_state[16];
@@ -2491,11 +2388,7 @@ static void YWVFDi_DVFDCleanChar(u8 pos)
 	u8 j;
 	int off = 0;
 
-	if (pos >= 16)
-	{
-	    return;
-	}
-	if (bTimeMode && pos >= 10)
+	if (pos >= 16 || (bTimeMode && pos >= 10))
 	{
 	    return;
 	}
@@ -2552,12 +2445,7 @@ static void YWVFDi_DVFDFillAsciiChar(u8 pos, int iChar)
 	u8 j;
 	int off = 0;
 
-	if (pos >= 16)
-	{
-	    return;
-	}
-
-	if (bTimeMode && pos >= 10)
+	if (pos >= 16 || (bTimeMode && pos >= 10))
 	{
 	    return;
 	}
@@ -2645,7 +2533,7 @@ static void YWVFDi_DVFDFillString(char *str)
 		str += size;
 	}
 
-	for(; pos < 16; pos++)
+	for (; pos < 16; pos++)
 	{
 		YWVFDi_DVFDCleanChar(pos);
 	}
@@ -2724,19 +2612,19 @@ static int YWPANEL_DVFD_ShowString(char *str)
 	return ret;
 }
 
-/* (Re)set time mode DVFD (clock display on/off) */
+/* (Re)set time mode (DVFD clock display on/off) */
 int YWPANEL_FP_DvfdSetTimeMode(int on)
 {
 	int i, j, ret = 0;
 	YWPANEL_FPData_t data;
 
+	if ((on && bTimeMode) || (!on && !bTimeMode))
+	{
+		return 0;
+	}
+
 	if (light_onoff)
 	{
-		if ((on && bTimeMode) || (!on && !bTimeMode))
-		{
-			return 0;
-		}
-
 		memset(&data, 0, sizeof(YWPANEL_FPData_t));
 		data.dataType = YWPANEL_DATATYPE_DVFD;
 		data.data.dvfdData.type = YWPANEL_DVFD_SETTIMEMODE;
@@ -2820,11 +2708,9 @@ static int YWPANEL_FP_DvfdGetTimeMode(int *pOn)
 
 	return 0;
 }
-#endif // defined(SPARK(7162)
 
 /* LED Show String */
 //lwj add begin for LED panel
-#if defined(SPARK)
 static u8 YWPANEL_LedDisplayData[YWPANEL_MAX_LED_LENGTH];
 
 static void YWPANEL_LEDSetString(char *str)
@@ -2880,7 +2766,6 @@ static int YWPANEL_LED_ShowString_Standby(char *str)
 	return YWPANEL_LEDDisplayString();
 }
 //lwj add end
-#endif //defined(SPARK)
 
 /* VFD Show String */
 static int lookup_utf8(unsigned char *str, int *v1, int *v2)
@@ -3136,7 +3021,6 @@ static int YWPANEL_VFD_ShowIcon_Common(int which, int on)
 	return ST_ErrCode;
 }
 
-#if defined(SPARK7162)
 static int YWPANEL_DVFD_ShowIcon(int which, int on)
 {
 	int ret = 0;
@@ -3198,11 +3082,9 @@ int YWPANEL_DVFD_ShowContent(void)
 		return 0;
 	}
 
-	if (old_bTimeMode)
-	{
-		ret |= YWPANEL_FP_DvfdSetTimeMode(1);
-	}
 	light_onoff = 1;
+
+	ret |= YWPANEL_FP_DvfdSetTimeMode(old_bTimeMode);
 
 	for (i = 0; i < 16; i++)
 	{
@@ -3277,16 +3159,12 @@ int YWPANEL_DVFD_ShowContentOff(void)
 
 	old_bTimeMode = bTimeMode;
 
-	// switch clock off if on
-	if (!bTimeMode)
-	{
-		ret |= YWPANEL_FP_DvfdSetTimeMode(0);
-	}
+	ret |= YWPANEL_FP_DvfdSetTimeMode(0);
+
 	light_onoff = 0;
 
 	return ret;
 }
-#endif //defined(SPARK7162)
 
 #ifdef CONFIG_CPU_SUBTYPE_STX7105
 static int YWPANEL_FP_DETECT(void)
@@ -3443,13 +3321,14 @@ int (*YWPANEL_FP_ShowContent)(void);
 int (*YWPANEL_FP_ShowContentOff)(void);
 
 int YWPANEL_width = YWPANEL_MAX_VFD_LENGTH; //VFD display is default
-int dvfd_fp = 0; //indicates spark7162 FP type, VFD display is default
+int fp_type = FP_VFD; //indicates front panel type, VFD display is default
 YWPANEL_Version_t panel_version;
 
 int YWPANEL_FP_Init(void)
 {
 	int ErrorCode = -ENODEV;
 	int i, k;
+	const char *fp_type_str[3] = { "LED", "VFD", "DVFD" };
 
 	YWPANEL_FP_Initialize = YWPANEL_FP_Init_Unknown;
 	YWPANEL_FP_Term = YWPANEL_FP_X_Unknown;
@@ -3507,10 +3386,9 @@ int YWPANEL_FP_Init(void)
 
 		switch (panel_disp_type)
 		{
-#if defined(SPARK7162)
 			case YWPANEL_FP_DISPTYPE_DVFD:
 			{
-				dvfd_fp = 1;
+				fp_type = FP_DVFD;
 				YWPANEL_FP_DvfdGetTimeMode(&bTimeMode);
 				ywtrace_print(TRACE_INFO, "Current time mode is %d\n", bTimeMode);
 //				YWVFD_Debug("INIT\n");
@@ -3531,18 +3409,17 @@ int YWPANEL_FP_Init(void)
 				YWPANEL_FP_ShowContentOff = YWPANEL_DVFD_ShowContentOff;
 				break;
 			}
-#elif defined(SPARK)
 			case YWPANEL_FP_DISPTYPE_LED:
 			{
+				fp_type = FP_LED;
 				YWPANEL_width = YWPANEL_MAX_LED_LENGTH;
 				YWPANEL_FP_ShowString = YWPANEL_LED_ShowString_Standby;
 				break;
 			}
-#endif
 			case YWPANEL_FP_DISPTYPE_VFD:
 			default:
 			{
-				dvfd_fp = 0;
+				fp_type = FP_VFD;
 				if (YWFP_INFO.fp_type == YWFP_COMMON)
 				{
 					YWPANEL_FP_ShowIcon = YWPANEL_VFD_ShowIcon_Common;
@@ -3568,7 +3445,8 @@ int YWPANEL_FP_Init(void)
 		}
 
 		printk("FP CPU type   : %d\n", panel_version.CpuType);
-		printk("Display type  : %d\n", panel_version.DisplayInfo);
+		printk("Display info  : %d\n", panel_version.DisplayInfo);
+		printk("Display type  : %s\n", fp_type_str[fp_type]);
 		printk("# of FP keys  : %d\n", panel_version.scankeyNum);
 		printk("FP SW Version : %d.%d\n", panel_version.swMajorVersion, panel_version.swSubVersion);
 

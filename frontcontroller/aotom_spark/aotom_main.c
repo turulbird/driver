@@ -5,7 +5,7 @@
  * (c) 2011 oSaoYa
  * (c) 2012-2013 Stefan Seyfried
  * (c) 2012-2013 martii
- * (c) 2013-2014 Audioniek
+ * (c) 2013-2015 Audioniek
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -65,6 +65,12 @@
  *                          all icons switches spinner off on VFD models.
  * 20150410 Audioniek       VFDGETDISPLAYTIME added.
  * 20150411 Audioniek       Corrected mistake in clear_display routine.
+ * 20150520 Audioniek       Removed a lot of conditionals that assumed only
+ *                          Spark7162's have a (D)VFD display. Display type
+ *                          already was set at driver start and is now used
+ *                          throughout instead of box model. Should fix
+ *                          display problem on Edision Pingulux Plus (Spark
+ *                          with (D)VFD).
  * 
  ****************************************************************************/
 
@@ -116,7 +122,7 @@ typedef struct
 	struct semaphore led_sem;
 } tLedState;
 
-static tLedState led_state[LASTLED+1];
+static tLedState led_state[LASTLED + 1];
 
 static struct semaphore write_sem;
 static struct semaphore draw_thread_sem;
@@ -145,7 +151,6 @@ static int VFD_Show_Time(u8 hh, u8 mm, u8 ss)
 	return YWPANEL_FP_SetTime((hh * 3600) + (mm * 60) + ss);
 }
 
-#if defined(SPARK7162)
 int aotomSetIcon(int which, int on)
 {
 	int res = 0;
@@ -153,7 +158,7 @@ int aotomSetIcon(int which, int on)
 
 	dprintk(5, "%s > Icon number %d, state %d\n", __func__, which, on);
 
-	if (dvfd_fp)
+	if (fp_type == FP_DVFD)
 	{
 		first = DICON_FIRST;
 		last = DICON_LAST;
@@ -170,7 +175,7 @@ int aotomSetIcon(int which, int on)
 		return -EINVAL;
 	}
 
-	if (!dvfd_fp)
+	if (fp_type == FP_VFD)
 	{
 		which = (((which - 1) / 15) + 11) * 16 + ((which - 1) % 15) + 1;
 	}
@@ -180,14 +185,11 @@ int aotomSetIcon(int which, int on)
 	return res;
 }
 
-/* export for later use in e2_proc */
-//EXPORT_SYMBOL(aotomSetIcon);
-
 static void VFD_set_all_icons(int onoff)
 {
 	int i, first, last;
 
-	if (dvfd_fp)
+	if (fp_type == FP_DVFD)
 	{
 		first = DICON_FIRST;
 		last = DICON_LAST;
@@ -204,7 +206,6 @@ static void VFD_set_all_icons(int onoff)
 		aotomSetIcon(i, onoff);
 	}
 }
-#endif
 
 void clear_display(void)
 {
@@ -217,15 +218,16 @@ void clear_display(void)
 static void VFD_clr(void)
 {
 	clear_display();
-#if defined(SPARK7162)
-	VFD_set_all_icons(LOG_OFF);
-	if (dvfd_fp)
+
+	if (fp_type != FP_LED)
+	{
+		VFD_set_all_icons(LOG_OFF);
+	}
+
+	if (fp_type != FP_VFD)
 	{
 		YWPANEL_FP_SetLed(LED_GREEN, LOG_OFF);
 	}
-#elif defined(SPARK)
-	YWPANEL_FP_SetLed(LED_GREEN, LOG_OFF);
-#endif
 	YWPANEL_FP_SetLed(LED_RED, LOG_OFF);
 }
 
@@ -294,7 +296,7 @@ static int draw_thread(void *arg)
 	int saved = 0;
 	int utf8len = utf8strlen(data->data, data->length);
 
-	if ((YWPANEL_width == YWPANEL_MAX_LED_LENGTH) && (len > 2) && (data->data[2] == '.' || data->data[2] == ','|| data->data[2] == ':'))
+	if (fp_type == FP_LED && len > 2 && (data->data[2] == '.' || data->data[2] == ','|| data->data[2] == ':'))
 	{
 		saved = 1;
 	}
@@ -331,7 +333,7 @@ static int draw_thread(void *arg)
 				return 0;
 			}
 
-			if ((YWPANEL_width == YWPANEL_MAX_LED_LENGTH) && (b + 2 < buf + sizeof(buf)) && (b[2] == '.' || b[2] == ','|| b[2] == ':'))
+			if (fp_type == FP_LED && (b + 2 < buf + sizeof(buf)) && (b[2] == '.' || b[2] == ','|| b[2] == ':'))
 			{
 				dot = b[2];
 			}
@@ -408,7 +410,6 @@ static int led_thread(void *arg)
 	return 0;
 }
 
-#if defined(LED_SPINNER)
 static int spinner_thread(void *arg)
 {
 	int led = (int)arg;
@@ -481,7 +482,6 @@ static int spinner_thread(void *arg)
 	led_state[led].led_task = 0;
 	return 0;
 }
-#endif
 
 static struct vfd_ioctl_data last_draw_data;
 
@@ -696,7 +696,7 @@ static int AOTOMdev_ioctl(struct inode *Inode, struct file *File, unsigned int c
 		{
 			int led_nr = aotom_data.u.led.led_nr;
 
-			if (led_nr > -1 && led_nr < LED_MAX)
+			if (led_nr > -1 && led_nr < LASTLED)
 			{
 				switch (aotom_data.u.led.on)
 				{
@@ -720,244 +720,250 @@ static int AOTOMdev_ioctl(struct inode *Inode, struct file *File, unsigned int c
 		}
 		case VFDBRIGHTNESS:
 		{
-#if defined(SPARK7162)
-// TODO: fix DVFD
-			if (aotom_data.u.brightness.level < 0)
+// TODO: fix DVFD in aotom_vfd
+			if (fp_type)
 			{
-				aotom_data.u.brightness.level = 0;
+				if (aotom_data.u.brightness.level < 0)
+				{
+					aotom_data.u.brightness.level = 0;
+				}
+				else if (aotom_data.u.brightness.level > 7)
+				{
+					aotom_data.u.brightness.level = 7;
+				}
+				dprintk(5, "%s Set brightness level 0x%02X\n", __func__, aotom_data.u.brightness.level);
+				res = YWPANEL_FP_SetBrightness(aotom_data.u.brightness.level);
 			}
-			else if (aotom_data.u.brightness.level > 7)
+			else
 			{
-				aotom_data.u.brightness.level = 7;
+				res = 0;
 			}
-			dprintk(5, "%s Set brightness level 0x%02X\n", __func__, aotom_data.u.brightness.level);
-			res = YWPANEL_FP_SetBrightness(aotom_data.u.brightness.level);
-#else
-			res = 0;
-#endif
 			break;
 		}
 		case VFDICONDISPLAYONOFF:
 		{
-#if defined(SPARK)
-
-			switch (aotom_data.u.icon.icon_nr)
+			if (fp_type == FP_LED)
 			{
-				case 0: //icon number is the same as the LED number
+				switch (aotom_data.u.icon.icon_nr)
 				{
-					res = YWPANEL_FP_SetLed(LED_RED, aotom_data.u.icon.on);
-					led_state[LED_RED].state = aotom_data.u.icon.on;
-					break;
-				}
-				case 1: //icon number is the same as the LED number
-				case ICON_DOT2: //(RC feedback)
-				{
-					res = YWPANEL_FP_SetLed(LED_GREEN, aotom_data.u.icon.on);
-					led_state[LED_GREEN].state = aotom_data.u.icon.on;
-					break;
-				}
-				case ICON_ALL:
-				{
-					led_state[LED_RED].state = aotom_data.u.icon.on;
-					led_state[LED_GREEN].state = aotom_data.u.icon.on;
-					YWPANEL_FP_SetLed(LED_RED, aotom_data.u.icon.on);
-					res = YWPANEL_FP_SetLed(LED_GREEN, aotom_data.u.icon.on);
-					break;
-				}
-				default:
-				{
-					res = 0;
-					break;
+					case 0: //icon number is the same as the LED number
+					{
+						res = YWPANEL_FP_SetLed(LED_RED, aotom_data.u.icon.on);
+						led_state[LED_RED].state = aotom_data.u.icon.on;
+						break;
+					}
+					case 1: //icon number is the same as the LED number
+					case ICON_DOT2: //(RC feedback)
+					{
+						res = YWPANEL_FP_SetLed(LED_GREEN, aotom_data.u.icon.on);
+						led_state[LED_GREEN].state = aotom_data.u.icon.on;
+						break;
+					}
+					case ICON_ALL:
+					{
+						led_state[LED_RED].state = aotom_data.u.icon.on;
+						led_state[LED_GREEN].state = aotom_data.u.icon.on;
+						YWPANEL_FP_SetLed(LED_RED, aotom_data.u.icon.on);
+						res = YWPANEL_FP_SetLed(LED_GREEN, aotom_data.u.icon.on);
+						break;
+					}
+					default:
+					{
+						res = 0;
+						break;
+					}
 				}
 			}
-#elif defined(SPARK7162)
-			int icon_nr = aotom_data.u.icon.icon_nr;
-			//e2 icons work around
-			if (icon_nr >= 256)
+			else //VFD and DVFD
 			{
-				icon_nr >>= 8;
-				if (dvfd_fp)
+				int icon_nr = aotom_data.u.icon.icon_nr;
+				//e2 icons work around
+				if (icon_nr >= 256)
 				{
-					switch (icon_nr)
+					icon_nr >>= 8;
+					if (fp_type == FP_VFD)
 					{
-						case 17:
+						switch (icon_nr)
 						{
-							icon_nr = ICON_DOUBLESCREEN; //widescreen
-							break;
-						}
-						case 19:
-						{
-							icon_nr = ICON_CA;
-							break;
-						}
-						case 21:
-						{
-							icon_nr = ICON_MP3;
-							break;
-						}
-						case 23:
-						{
-							icon_nr = ICON_AC3;
-							break;
-						}
-						case 26:
-						{
-							icon_nr = ICON_PLAY_LOG; //Play
-							break;
-						}
-						case 30:
-						{
-							icon_nr = ICON_REC1;
-							break;
-						}
-						case 38:
-						{
-		//					icon_nr = ICON_DISK_S3; //cd part1
-							break;
-						}
-						case 39:
+							case 17:
 							{
-		//					icon_nr = ICON_DISK_S2; //cd part2
-							break;
-						}
-						case 40:
+								icon_nr = ICON_DOUBLESCREEN; //widescreen
+								break;
+							}
+							case 19:
 							{
-		//					icon_nr = ICON_DISK_S1; //cd part3
-							break;
+								icon_nr = ICON_CA;
+								break;
+							}
+							case 21:
+							{
+								icon_nr = ICON_MP3;
+								break;
+							}
+							case 23:
+							{
+								icon_nr = ICON_AC3;
+								break;
+							}
+							case 26:
+							{
+								icon_nr = ICON_PLAY_LOG; //Play
+								break;
+							}
+							case 30:
+							{
+								icon_nr = ICON_REC1;
+								break;
+							}
+#if 0
+							case 38:
+							{
+								icon_nr = ICON_DISK_S3; //cd part1
+								break;
+							}
+							case 39:
+							{
+								icon_nr = ICON_DISK_S2; //cd part2
+								break;
+							}
+							case 40:
+							{
+								icon_nr = ICON_DISK_S1; //cd part3
+								break;
+							}
+							case 41:
+							{
+								icon_nr = ICON_DISK_CIRCLE; //cd circle
+								break;
+							}
+#endif
+							case 47:
+							{
+								icon_nr = ICON_SPINNER;
+								break;
+							}
+							default:
+							{
+								printk("[aotom] Tried to set unknown icon number %d.\n", icon_nr);
+//								icon_nr = 29; //no additional symbols at the moment: show alert instead
+								break;
+							}
 						}
-						case 41:
+					}
+					else //DVFD
+					{
+						switch (icon_nr)
 						{
-		//					icon_nr = ICON_DISK_CIRCLE; //cd circle
-		//					icon_nr = -1;
-							break;
-						}
-						case 47:
-						{
-							icon_nr = ICON_SPINNER;
-							break;
-						}
-						default:
-						{
-							printk("[aotom] Tried to set unknown icon number %d.\n", icon_nr);
-		//					icon_nr = 29; //no additional symbols at the moment: show alert instead
-							break;
+							case 17:
+							{
+								icon_nr = ICON_DOUBLESCREEN2; //widescreen
+								break;
+							}
+							case 19:
+							{
+								icon_nr = ICON_CA2;
+								break;
+							}
+							case 23:
+							{
+								icon_nr = ICON_DOLBY2;
+								break;
+							}
+							default:
+							{
+								break;
+							}
 						}
 					}
 				}
-				else
+// translate VFD icons that also exist on DVFD to their DVFD number
+				if (fp_type == FP_DVFD)
 				{
 					switch (icon_nr)
 					{
-						case 17:
-						{
-							icon_nr = ICON_DOUBLESCREEN2; //widescreen
-							break;
-						}
-						case 19:
+						case ICON_CA:
 						{
 							icon_nr = ICON_CA2;
 							break;
 						}
-						case 23:
+						case ICON_CI:
+						{
+							icon_nr = ICON_CI2;
+							break;
+						}
+						case ICON_USB:
+						{
+							icon_nr = ICON_USB2;
+							break;
+						}
+						case ICON_DOUBLESCREEN:
+						{
+//							icon_nr = ICON_DOUBLESCREEN2;
+							icon_nr = ICON_HD;
+							break;
+						}
+						case ICON_MUTE:
+						{
+							icon_nr = ICON_MUTE2;
+							break;
+						}
+						case ICON_AC3:
+						case ICON_DOLBY:
 						{
 							icon_nr = ICON_DOLBY2;
 							break;
 						}
-						default:
-						{
-							break;
-						}
 					}
 				}
-			}
-			if (aotom_data.u.icon.on != LOG_OFF && icon_nr != ICON_SPINNER)
-			{
-				aotom_data.u.icon.on = LOG_ON;
-			}
-// translate VFD icons that also exist on DVFD to DVFD numbers
-			if (dvfd_fp)
-			{
+				if (aotom_data.u.icon.on != LOG_OFF && icon_nr != ICON_SPINNER)
+				{
+					aotom_data.u.icon.on = LOG_ON;
+				}
+//display icon
 				switch (icon_nr)
 				{
-					case ICON_CA:
+					case ICON_ALL:
 					{
-						icon_nr = ICON_CA2;
+						VFD_set_all_icons(aotom_data.u.icon.on);
+						res = 0;
 						break;
 					}
-					case ICON_CI:
+					case ICON_SPINNER:
 					{
-						icon_nr = ICON_CI2;
-						break;
-					}
-					case ICON_USB:
-					{
-						icon_nr = ICON_USB2;
-						break;
-					}
-					case ICON_DOUBLESCREEN:
-					{
-//						icon_nr = ICON_DOUBLESCREEN2;
-						icon_nr = ICON_HD;
-						break;
-					}
-					case ICON_MUTE:
-					{
-						icon_nr = ICON_MUTE2;
-						break;
-					}
-					case ICON_AC3:
-					case ICON_DOLBY:
-					{
-						icon_nr = ICON_DOLBY2;
-						break;
-					}
-				}
-			}
-//display icon
-			switch (icon_nr)
-			{
-				case ICON_ALL:
-				{
-					VFD_set_all_icons(aotom_data.u.icon.on);
-					res = 0;
-					break;
-				}
-				case ICON_SPINNER:
-				{
-					if (!dvfd_fp)
-					{
-						led_state[LED_SPINNER].state = aotom_data.u.icon.on;
-						if (aotom_data.u.icon.on)
+						if (fp_type == FP_VFD)
 						{
-							flashLED(LED_SPINNER, aotom_data.u.icon.on * 10); // start spinner thread
+							led_state[LED_SPINNER].state = aotom_data.u.icon.on;
+							if (aotom_data.u.icon.on)
+							{
+								flashLED(LED_SPINNER, aotom_data.u.icon.on * 10); // start spinner thread
+							}
 						}
+						res = 0;
+						break;
 					}
-					res = 0;
-					break;
-				}
-				case ICON_DOT2: // RC feedback from evremote2
-				{
-					if (dvfd_fp)
+					case ICON_DOT2: // RC feedback from evremote2
 					{
-						res = YWPANEL_FP_SetLed(LED_GREEN, aotom_data.u.icon.on);
-						led_state[LED_GREEN].state = aotom_data.u.icon.on;
+						if (fp_type == FP_DVFD)
+						{
+							res = YWPANEL_FP_SetLed(LED_GREEN, aotom_data.u.icon.on);
+							led_state[LED_GREEN].state = aotom_data.u.icon.on;
+						}
+						else
+						{
+							res = aotomSetIcon(icon_nr, aotom_data.u.icon.on);
+						}
+						break;
 					}
-					else
+					case -1:
+					{
+						break;
+					}
+					default:
 					{
 						res = aotomSetIcon(icon_nr, aotom_data.u.icon.on);
 					}
-					break;
-				}
-				case -1:
-				{
-					break;
-				}
-				default:
-				{
-					res = aotomSetIcon(icon_nr, aotom_data.u.icon.on);
 				}
 			}
-#endif
 			mode = 0;
 			break;
 		}
@@ -1028,31 +1034,33 @@ static int AOTOMdev_ioctl(struct inode *Inode, struct file *File, unsigned int c
 		}
 		case VFDSETDISPLAYTIME:
 		{
-#if defined(SPARK7162)
-			if (dvfd_fp)
+			if (fp_type == FP_DVFD)
 			{
 				YWPANEL_FP_DvfdSetTimeMode(aotom_data.u.display_time.on);
 			}
-#endif
 			res = 0;
 			break;
 		}
 		case VFDGETDISPLAYTIME:
 		{
-#if defined(SPARK7162)
 			int TimeMode;
 
-			if (dvfd_fp)
+			if (fp_type)
 			{
-				TimeMode = bTimeMode;
+				if (fp_type == FP_DVFD)
+				{
+					TimeMode = bTimeMode;
+				}
+				else
+				{
+					TimeMode = 1; // clock is always on on VFD
+				}
+				res = put_user(TimeMode, (int *)arg);
 			}
-			else
+			else //LED
 			{
-				TimeMode = 1; // clock is always on on VFD
+				res = 0;
 			}
-			res = put_user(TimeMode, (int *)arg);
-#endif
-			res = 0;
 			break;
 		}
 		case VFDDISPLAYCHARS:
@@ -1087,29 +1095,21 @@ static int AOTOMdev_ioctl(struct inode *Inode, struct file *File, unsigned int c
 				case 0: //whole display off
 				{
 					YWPANEL_FP_SetLed(LED_RED, LOG_OFF);
-#if defined(SPARK7162)
-					if (dvfd_fp)
+					if (fp_type != FP_VFD)
 					{
 						YWPANEL_FP_SetLed(LED_GREEN, LOG_OFF);
 					}
-#elif defined(SPARK)
-					YWPANEL_FP_SetLed(LED_GREEN, LOG_OFF);
-#endif
 					res = YWPANEL_FP_ShowContentOff();
 					break;
 				}
-				case 1: // whole display on
+				case 1: //whole display on
 				{
 					res = YWPANEL_FP_ShowContent();
 					YWPANEL_FP_SetLed(LED_RED, led_state[LED_RED].state);
-#if defined(SPARK7162)
-					if (dvfd_fp)
+					if (fp_type != FP_VFD)
 					{
 						YWPANEL_FP_SetLed(LED_GREEN, led_state[LED_GREEN].state);
 					}
-#elif defined(SPARK)
-					YWPANEL_FP_SetLed(LED_GREEN, led_state[LED_GREEN].state);
-#endif
 					break;
 				}
 				default:
@@ -1173,13 +1173,11 @@ static int AOTOMdev_ioctl(struct inode *Inode, struct file *File, unsigned int c
 				dprintk(1, "%s Frontpanel CPU type         : %d\n", __func__, fpanel_version.CpuType);
 				dprintk(1, "%s Frontpanel software version : %d.%d\n", __func__, fpanel_version.swMajorVersion, fpanel_version.swSubVersion);
 				dprintk(1, "%s Frontpanel displaytype      : %s\n", __func__, fp_type[fpanel_version.DisplayInfo]);
-#if defined(SPARK7162)
 				if (fpanel_version.DisplayInfo == 3)
 				{
 					dprintk(1, "%s Time mode                   : %s\n", __func__, tm_type[bTimeMode]);
 				}
-#endif
-				dprintk(1, "%s Frontpanel # of keys        : %d\n", __func__, fpanel_version.scankeyNum);
+				dprintk(1, "%s # of frontpanel keys        : %d\n", __func__, fpanel_version.scankeyNum);
 				dprintk(1, "%s Number of version bytes     : %d\n", __func__, sizeof(fpanel_version));
 				put_user(fpanel_version.CpuType, (int *) arg);
 				res = copy_to_user((char *)arg, &fpanel_version, sizeof(fpanel_version));
@@ -1205,9 +1203,7 @@ static int AOTOMdev_ioctl(struct inode *Inode, struct file *File, unsigned int c
 		{
 			printk("[aotom] Unknown IOCTL 0x%08x.\n", cmd);
 		}
-#if defined(SPARK)
 		case 0x5305:
-#endif
 		case 0x5401:
 		{
 			mode = 0;
@@ -1249,20 +1245,27 @@ static void button_bad_polling(struct work_struct *work)
 		if (button_value != INVALID_KEY)
 		{
 			dprintk(5, "Got button: %02X\n", button_value);
-			#if defined(SPARK7162)
-			if (!dvfd_fp)
+
+			switch (fp_type)
 			{
-				aotomSetIcon(ICON_DOT2, LOG_ON);
+				case FP_VFD:
+				{
+					aotomSetIcon(ICON_DOT2, LOG_ON);
+					break;
+				}
+				case FP_LED:
+				case FP_DVFD:
+				{
+					YWPANEL_FP_SetLed(LED_GREEN, LOG_ON);
+					break;
+				}
+				default:
+				{
+					flashLED(LED_GREEN, 100);
+					break;
+				}
 			}
-			else
-			{
-				YWPANEL_FP_SetLed(LED_GREEN, LOG_ON);
-			}
-			#elif defined(SPARK)
-			YWPANEL_FP_SetLed(LED_GREEN, LOG_ON);
-			#else
-			flashLED(LED_GREEN, 100);
-			#endif
+
 			if (1 == btn_pressed)
 			{
 				if (report_key == button_value)
@@ -1300,18 +1303,22 @@ static void button_bad_polling(struct work_struct *work)
 			if (btn_pressed)
 			{
 				btn_pressed = 0;
-				#if defined(SPARK7162)
-				if (!dvfd_fp)
+
+				switch (fp_type)
 				{
-					aotomSetIcon(ICON_DOT2, LOG_OFF);
+					case FP_VFD:
+					{
+						aotomSetIcon(ICON_DOT2, LOG_OFF);
+						break;
+					}
+					case FP_LED:
+					case FP_DVFD:
+					{
+						YWPANEL_FP_SetLed(LED_GREEN, LOG_OFF);
+						break;
+					}
 				}
-				else
-				{
-					YWPANEL_FP_SetLed(LED_GREEN, LOG_OFF);
-				}
-				#elif defined(SPARK)
-				YWPANEL_FP_SetLed(LED_GREEN, LOG_OFF);
-				#endif
+
 				input_report_key(button_dev, report_key, 0);
 				input_sync(button_dev);
 			}
@@ -1395,29 +1402,37 @@ void button_dev_exit(void)
 }
 
 /*----- Reboot notifier -----*/
-
 static int aotom_reboot_event(struct notifier_block *nb, unsigned long event, void *ptr)
 {
 	switch (event)
 	{
 		case SYS_POWER_OFF:
-#if defined(SPARK7162)
 		{
-			YWPANEL_FP_ShowString("Power off");
+			if (!fp_type)
+			{
+				YWPANEL_FP_ShowString("Power off");
+			}
 			break;
 		}
-#endif
 		case SYS_HALT:
 		{
-//#if defined(SPARK7162)
-//			YWPANEL_FP_ShowString("Halt");
-//#endif
+//			if (!fp_type)
+//			{
+//				YWPANEL_FP_ShowString("Halt");
+//			}
 			break;
 		}
 		default:
 		{
 			VFD_clr();
-//			YWPANEL_FP_ShowString("Reboot");
+//			if (!fp_type)
+//			{
+//				YWPANEL_FP_ShowString("Reboot");
+//			}
+//			else
+//			{
+//				YWPANEL_FP_ShowString("Rebt");
+//			}
 			return NOTIFY_DONE;
 		}
 	}
@@ -1435,7 +1450,6 @@ static struct notifier_block aotom_reboot_block =
 };
 
 /*----- RTC driver -----*/
-
 static int aotom_rtc_read_time(struct device *dev, struct rtc_time *tm)
 {
 	u32 uTime = 0;
@@ -1573,15 +1587,15 @@ static int __init aotom_init_module(void)
 		led_state[i].period = 0;
 		led_state[i].status = DRAW_THREAD_STATUS_STOPPED;
 		sema_init(&led_state[i].led_sem, 0);
-		led_state[i].led_task = kthread_run(led_thread, (void *) i, "led_thread");
+		if (i == LED_SPINNER && fp_type == FP_VFD)
+		{
+			led_state[LED_SPINNER].led_task = kthread_run(spinner_thread, (void *) LED_SPINNER, "spinner_thread");
+		}
+		else
+		{
+			led_state[i].led_task = kthread_run(led_thread, (void *) i, "led_thread");
+		}
 	}
-#if defined(LED_SPINNER)
-	led_state[LED_SPINNER].state = LOG_OFF;
-	led_state[LED_SPINNER].period = 0;
-	led_state[LED_SPINNER].status = DRAW_THREAD_STATUS_STOPPED;
-	sema_init(&led_state[LED_SPINNER].led_sem, 0);
-	led_state[LED_SPINNER].led_task = kthread_run(spinner_thread, (void *) LED_SPINNER, "spinner_thread");
-#endif
 
 	register_reboot_notifier(&aotom_reboot_block);
 
@@ -1609,11 +1623,7 @@ static int led_thread_active(void)
 {
 	int i;
 
-#if defined(LED_SPINNER)
-	for (i = 0; i < LASTLED + 1; i++)
-#else
 	for (i = 0; i < LASTLED; i++)
-#endif
 	{
 		if (!led_state[i].status && led_state[i].led_task)	
 		{
