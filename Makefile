@@ -142,7 +142,9 @@ ifndef FORTIS_DP7000 #temporary due to wrong definitions
 obj-y += stgfb/
 obj-y += player2/
 endif
+ifndef SAGEMCOM88 #Sagemcom88 has own boxtype
 obj-y += boxtype/
+endif
 obj-y += simu_button/
 obj-y += e2_proc/
 obj-y += frontends/
@@ -173,6 +175,7 @@ obj-y += smartcard/
 obj-y += adb_box_fan/
 obj-y += cec_adb_box/
 obj-y += dvbt/as102/
+obj-y += dvbt/siano/
 endif
 
 ifndef VIP2_V1
@@ -306,11 +309,15 @@ ifdef SAGEMCOM88
 obj-y += cec/
 obj-y += smartcard/
 obj-y += sagemcomtype/
+obj-y += fan_sagemcom88/
+obj-y += dvbt/as102/
+obj-y += dvbt/siano/
 endif
 ifdef ARIVALINK200
 obj-y += smartcard/
 obj-y += cec_adb_box/
 obj-y += dvbt/as102/
+obj-y += dvbt/siano/
 endif
 
 endif

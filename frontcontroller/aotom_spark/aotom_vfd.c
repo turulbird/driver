@@ -2102,7 +2102,6 @@ static int YWPANEL_VFD_ShowTime_Common(u8 hh, u8 mm)
 }
 
 /* Show Time Off */
-//FIXME: does not switch clock display off: sets display time to midnight!
 static int YWPANEL_VFD_ShowTimeOff_StandBy(void)
 {
 	return YWPANEL_FP_ShowTime(0,0);
