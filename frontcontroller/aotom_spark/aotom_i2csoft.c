@@ -971,7 +971,7 @@ int softi2c_init(void)
 	}
 	{
 		YWI2CSoft_Handle_t SoftHandle;
-		YWI2cSoft_OpenParam OpenParam;
+		YWI2cSoft_OpenParams_t OpenParam;
 		OpenParam.I2cAddress = 0x50;
 		YW_ErrorCode = i2c_soft_open(SoftI2c_DeviceName[0], &SoftHandle, &OpenParam);
 		//printk("SoftHandle = 0x%x\n", (int)SoftHandle);
