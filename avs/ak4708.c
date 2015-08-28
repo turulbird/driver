@@ -129,9 +129,9 @@ static int s_old_src;
  
 int ak4708_set(struct i2c_client *client)
 {    
-	dprintk("[AVS]: ak4708_set >>\n");
-
 	char buffer[ak4708_DATA_SIZE+1];
+
+	dprintk("[AVS]: ak4708_set >>\n");
 
 	buffer[0] = 0;
 	memcpy( buffer+1, &ak4708_data, ak4708_DATA_SIZE );

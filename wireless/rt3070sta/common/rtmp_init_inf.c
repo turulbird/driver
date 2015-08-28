@@ -615,9 +615,9 @@ err1:
 #ifdef INF_AMAZON_SE
 err0:
 #endif /* INF_AMAZON_SE */
-#ifdef ST
-err0:
-#endif /* ST */
+//#ifdef ST
+//err0:
+//#endif /* ST */
 
 	DBGPRINT(RT_DEBUG_ERROR, ("!!! rt28xx Initialized fail !!!\n"));
 	return FALSE;

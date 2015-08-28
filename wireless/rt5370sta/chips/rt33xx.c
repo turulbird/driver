@@ -391,7 +391,7 @@ VOID RT33xxLoadRFSleepModeSetup(
 	IN PRTMP_ADAPTER 	pAd)
 {
 	UCHAR RFValue;
-	UINT32 MACValue;
+//	UINT32 MACValue;
 
 		/* RF_BLOCK_en. RF R1 register Bit 0 to 0*/
 		RT30xxReadRFRegister(pAd, RF_R01, &RFValue);
@@ -424,7 +424,7 @@ VOID RT33xxReverseRFSleepModeSetup(
 	IN BOOLEAN			FlgIsInitState)
 {
 	UCHAR RFValue;
-	UINT32 MACValue;
+//	UINT32 MACValue;
 
 		/* RF_BLOCK_en, RF R1 register Bit 0 to 1*/
 		RT30xxReadRFRegister(pAd, RF_R01, &RFValue);
@@ -490,7 +490,7 @@ VOID RT33xx_ChipSwitchChannel(
 
 #ifdef RT30xx
 	UCHAR Tx0FinePowerCtrl = 0, Tx1FinePowerCtrl = 0;
-	BBP_R109_STRUC BbpR109 = {{0}};
+//	BBP_R109_STRUC BbpR109 = {{0}};
 #endif /* RT30xx */
 
 

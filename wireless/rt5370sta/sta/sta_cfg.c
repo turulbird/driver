@@ -5543,9 +5543,9 @@ static void set_quality(
 	IN	RT_CMD_STA_IOCTL_BSS	*pSignal,
 	IN	PBSS_ENTRY				pBssEntry)
 {
-	memcpy(pSignal->Bssid, pBssEntry->Bssid, MAC_ADDR_LEN);
-
 	BOOLEAN bInitial = FALSE;
+
+	memcpy(pSignal->Bssid, pBssEntry->Bssid, MAC_ADDR_LEN);
 	if (!(pBssEntry->AvgRssiX8 | pBssEntry->AvgRssi))
 	{
 		bInitial = TRUE;

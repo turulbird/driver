@@ -3018,7 +3018,7 @@ VOID RtmpPrepareHwNullFrame(
 	UCHAR *ptr;
 	UINT i;
 	UINT32 longValue;
-	UCHAR MlmeRate;
+//	UCHAR MlmeRate;
 
 	NState = MlmeAllocateMemory(pAd, (PUCHAR *)&pNullFrame);
 
@@ -3148,7 +3148,7 @@ VOID RtmpPrepareHwNullFrame(
 			ptr += 4;
 		
 			RTMP_IO_READ32(pAd, pAd->NullBufOffset + TXWISize+ i, &longValue);
-			hex_dump("null frame after", &longValue, 4);
+			hex_dump("null frame after", (unsigned char *)&longValue, 4);
 		}
 	}
 

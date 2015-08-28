@@ -280,8 +280,8 @@ VOID STAHandleRxDataFrame(
 	MAC_TABLE_ENTRY *pEntry = NULL;
 	UCHAR FromWhichBSSID = BSS0;
 	UCHAR UserPriority = 0;
-	UCHAR OldPwrMgmt = PWR_ACTIVE;
-	FRAME_CONTROL *pFmeCtrl = &pHeader->FC;
+//	UCHAR OldPwrMgmt = PWR_ACTIVE;
+//	FRAME_CONTROL *pFmeCtrl = &pHeader->FC;
 
 	if ((pHeader->FC.FrDs == 1) && (pHeader->FC.ToDs == 1)) {
 #ifdef CLIENT_WDS
@@ -1733,11 +1733,14 @@ VOID STAFindCipherAlgorithm(
 
 		if (KeyIdx == 0xff)
 			CipherAlg = CIPHER_NONE;
-		else if ((Cipher == Ndis802_11EncryptionDisabled)
-			 || (((Cipher == Ndis802_11Encryption1Enabled) && (pAd->SharedKey[BSS0][KeyIdx].KeyLen == 0))
-			|| (((Cipher == Ndis802_11Encryption2Enabled) || (Cipher == Ndis802_11Encryption3Enabled)
-			|| (Cipher == Ndis802_11Encryption4Enabled)) && pMacEntry && (pMacEntry->PairwiseKey.KeyLen == 0))
-			&& (!ADHOC_ON(pAd))) || (ADHOC_ON(pAd) && (pAd->SharedKey[BSS0][KeyIdx].KeyLen == 0)))
+		else if (Cipher == Ndis802_11EncryptionDisabled
+			|| ((Cipher == Ndis802_11Encryption1Enabled && pAd->SharedKey[BSS0][KeyIdx].KeyLen == 0)
+			|| ((Cipher == Ndis802_11Encryption2Enabled
+				|| (Cipher == Ndis802_11Encryption3Enabled)
+				|| (Cipher == Ndis802_11Encryption4Enabled))
+				&& (pMacEntry && (pMacEntry->PairwiseKey.KeyLen == 0)))
+			&& (!ADHOC_ON(pAd)))
+			|| (ADHOC_ON(pAd) && (pAd->SharedKey[BSS0][KeyIdx].KeyLen == 0)))
 			CipherAlg = CIPHER_NONE;
 #ifdef WPA_SUPPLICANT_SUPPORT
 		else if (pAd->StaCfg.WpaSupplicantUP &&
