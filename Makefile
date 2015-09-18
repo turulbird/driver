@@ -303,10 +303,21 @@ endif
 ifdef CUBEREVO_9500HD
 obj-y += smartcard/
 endif
+
+ifdef TF7700
+obj-y += tfswitch/
+#obj-y += smartcard/
+#obj-y += adb_box_fan/
+#obj-y += cec_adb_box/
+#obj-y += dvbt/as102/
+#obj-y += dvbt/siano/
+endif
+
 ifdef VITAMIN_HD5000
 obj-y += cec/
 obj-y += smartcard/
 endif
+
 ifdef SAGEMCOM88
 obj-y += cec/
 obj-y += smartcard/
@@ -315,6 +326,7 @@ obj-y += fan_sagemcom88/
 obj-y += dvbt/as102/
 obj-y += dvbt/siano/
 endif
+
 ifdef ARIVALINK200
 obj-y += smartcard/
 obj-y += cec_adb_box/
