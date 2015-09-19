@@ -306,11 +306,6 @@ endif
 
 ifdef TF7700
 obj-y += tfswitch/
-#obj-y += smartcard/
-#obj-y += adb_box_fan/
-#obj-y += cec_adb_box/
-#obj-y += dvbt/as102/
-#obj-y += dvbt/siano/
 endif
 
 ifdef VITAMIN_HD5000

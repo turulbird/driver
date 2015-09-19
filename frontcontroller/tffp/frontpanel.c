@@ -47,9 +47,13 @@
 /*                  In special casses the ending '\0' has been skipped    */
 /* 2011-07-18 V4.6  Add quick hack for long key press                     */
 /* 2011-07-23 V4.7  Add LKP emulation mode                                */
+/* 2015-09-19 V4.8  All icons controllable and driver made compatible     */
+/*                  with VFD-Icons plugin. Tab/space cleanup. Indenting   */
+/*                  made consistent, including use of braces. Fixed all   */
+/*                  compiler warnings.                                    */
 /**************************************************************************/
 
-#define VERSION         "V4.7"
+#define VERSION         "V4.8"
 //#define DEBUG
 
 #include <asm/io.h>
@@ -130,7 +134,8 @@ extern void remove_proc_fp(void);
 
 typedef enum
 {
-	/* common icons */
+	/* Common legacy icons, not all of them present:
+	 */
 	VFD_ICON_HD = 0x01,
 	VFD_ICON_HDD,
 	VFD_ICON_LOCK,
@@ -146,8 +151,9 @@ typedef enum
 	VFD_ICON_FR,
 	VFD_ICON_REC,
 	VFD_ICON_CLOCK,
-
-	/* additional TF7700 icons */
+	/* Additional unique TF7700 icons
+           The CD icons:
+	*/
 	VFD_ICON_CD1 = 0x20,
 	VFD_ICON_CD2,
 	VFD_ICON_CD3,
@@ -158,6 +164,52 @@ typedef enum
 	VFD_ICON_CD8,
 	VFD_ICON_CD9,
 	VFD_ICON_CD10,
+	VFD_ICON_CDCENTER = 0x2f,
+	/* The HDD level display icons:
+	 */
+	VFD_ICON_HDD1 = 0x30,
+	VFD_ICON_HDD_1,
+	VFD_ICON_HDD_2,
+	VFD_ICON_HDD_3,
+	VFD_ICON_HDD_4,
+	VFD_ICON_HDD_5,
+	VFD_ICON_HDD_6,
+	VFD_ICON_HDD_7,
+	VFD_ICON_HDD_8,
+	VFD_ICON_HDD_FRAME,
+	VFD_ICON_HDD_FULL = 0x3a,
+	/* The remaining TF7700 icons,
+	   approximately in display order:
+	 */
+	VFD_ICON_MP3_2 = 0x40,
+	VFD_ICON_AC3,
+	VFD_ICON_TIMESHIFT,
+	VFD_ICON_TV,
+	VFD_ICON_RADIO,
+	VFD_ICON_SAT,
+	VFD_ICON_REC2,
+	VFD_ICON_RECONE,
+	VFD_ICON_RECTWO,
+	VFD_ICON_REWIND,
+	VFD_ICON_STEPBACK,
+	VFD_ICON_PLAY2,
+	VFD_ICON_STEPFWD,
+	VFD_ICON_FASTFWD,
+	VFD_ICON_PAUSE2,
+	VFD_ICON_MUTE2,
+	VFD_ICON_REPEATL,
+	VFD_ICON_REPEATR,
+	VFD_ICON_DOLLAR,
+	VFD_ICON_ATTN,
+	VFD_ICON_DOLBY,
+	VFD_ICON_NETWORK, 
+	VFD_ICON_AM,
+	VFD_ICON_TIMER,
+	VFD_ICON_PM,
+	VFD_ICON_DOT,
+	VFD_ICON_POWER,
+	VFD_ICON_COLON, //(0x5b)
+	VFD_ICON_ALL = 0x7f
 } VFD_ICON;
 
 struct vfd_ioctl_data
@@ -173,7 +225,7 @@ typedef struct
 	struct semaphore sem;
 } tFrontPanelOpen;
 
-static wait_queue_head_t  wq;
+static wait_queue_head_t wq;
 
 struct semaphore rx_int_sem;
 
@@ -195,7 +247,7 @@ static int               RCVBufferStart = 0, RCVBufferEnd = 0;
 static char              b[256];
 static struct timer_list timer;
 static byte              IconMask [] = {0xff, 0xcf, 0xff, 0xff, 0xff, 0x7f, 0xfe, 0x3f,
-		                        0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+                                        0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
                                         0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
                                         0xff, 0xfe, 0x00, 0x00, 0x00, 0x0f, 0xff, 0xff,
                                         0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
@@ -291,46 +343,46 @@ static void VFDSendToDisplay(bool Force)
 	if (Force || memcmp (&DisplayBufferVFD[0x00], &DisplayBufferVFDCurrent[0x00], 8))
 	{
 		DispBuffer[1] = 0x00;
-		memcpy (&DispBuffer[2], &DisplayBufferVFD[0x00], 8);
+		memcpy(&DispBuffer[2], &DisplayBufferVFD[0x00], 8);
 		SendFPString(DispBuffer);
 	}
 
 	if (Force || memcmp (&DisplayBufferVFD[0x08], &DisplayBufferVFDCurrent[0x08], 8))
 	{
 		DispBuffer[1] = 0x08;
-		memcpy (&DispBuffer[2], &DisplayBufferVFD[0x08], 8);
-		SendFPString (DispBuffer);
+		memcpy(&DispBuffer[2], &DisplayBufferVFD[0x08], 8);
+		SendFPString(DispBuffer);
 	}
 
 	if (Force || memcmp (&DisplayBufferVFD[0x10], &DisplayBufferVFDCurrent[0x10], 8))
 	{
 		DispBuffer[1] = 0x10;
-		memcpy (&DispBuffer[2], &DisplayBufferVFD[0x10], 8);
-		SendFPString (DispBuffer);
+		memcpy(&DispBuffer[2], &DisplayBufferVFD[0x10], 8);
+		SendFPString(DispBuffer);
 	}
 
 	if (Force || memcmp (&DisplayBufferVFD[0x18], &DisplayBufferVFDCurrent[0x18], 8))
 	{
 		DispBuffer[1] = 0x18;
-		memcpy (&DispBuffer[2], &DisplayBufferVFD[0x18], 8);
-		SendFPString (DispBuffer);
+		memcpy(&DispBuffer[2], &DisplayBufferVFD[0x18], 8);
+		SendFPString(DispBuffer);
 	}
 
 	if (Force || memcmp (&DisplayBufferVFD[0x20], &DisplayBufferVFDCurrent[0x20], 8))
 	{
 		DispBuffer[1] = 0x20;
-		memcpy (&DispBuffer[2], &DisplayBufferVFD[0x20], 8);
-		SendFPString (DispBuffer);
+		memcpy(&DispBuffer[2], &DisplayBufferVFD[0x20], 8);
+		SendFPString(DispBuffer);
 	}
 
 	if (Force || memcmp (&DisplayBufferVFD[0x28], &DisplayBufferVFDCurrent[0x28], 8))
 	{
 		DispBuffer[1] = 0x28;
-		memcpy (&DispBuffer[2], &DisplayBufferVFD[0x28], 8);
-		SendFPString (DispBuffer);
+		memcpy(&DispBuffer[2], &DisplayBufferVFD[0x28], 8);
+		SendFPString(DispBuffer);
 	}
 
-	memcpy (DisplayBufferVFDCurrent, DisplayBufferVFD, sizeof (DisplayBufferVFD));
+	memcpy(DisplayBufferVFDCurrent, DisplayBufferVFD, sizeof (DisplayBufferVFD));
 }
 
 static void VFDClearBuffer(void)
@@ -339,13 +391,13 @@ static void VFDClearBuffer(void)
 	printk("FP: VFDClearBuffer()\n");
 #endif
 
-	memset (DisplayBufferLED, 0, sizeof (DisplayBufferLED));
-	memset (DisplayBufferVFD, 0, sizeof (DisplayBufferVFD));
-	memset (DisplayBufferVFDCurrent, 0, sizeof (DisplayBufferVFDCurrent));
-	SendFPData (2, 0x91, 0x00);
+	memset(DisplayBufferLED, 0, sizeof (DisplayBufferLED));
+	memset(DisplayBufferVFD, 0, sizeof (DisplayBufferVFD));
+	memset(DisplayBufferVFDCurrent, 0, sizeof (DisplayBufferVFDCurrent));
+	SendFPData(2, 0x91, 0x00);
 }
 
-static void VFDInit (void)
+static void VFDInit(void)
 {
 #ifdef DEBUG
 	printk("FP: VFDInit()\n");
@@ -416,7 +468,7 @@ static void VFDSetDisplayDigit(byte Character, DISPLAYTYPE DisplayType, byte Dig
 
 			switch (Digit)
 			{
-			/*Source: m l   k j i h   g2 g1 f e   d c b a*/
+			/*Source: m l k j i h g2 g1 f e d c b a*/
 				case 0:
 				{
 					DisplayBufferVFD[1] = (DisplayBufferVFD[1] & 0xf0)
@@ -500,10 +552,6 @@ static void VFDSetDisplayDigit(byte Character, DISPLAYTYPE DisplayType, byte Dig
 					                    | ((s <<  1) & 0x80);
 					break;
 				}
-//				default:
-//				{
-//					;
-//				}
 			}
 			break;
 		}
@@ -542,7 +590,7 @@ static void VFDSetDisplayDigit(byte Character, DISPLAYTYPE DisplayType, byte Dig
 					DisplayBufferVFD[37] = (DisplayBufferVFD[37] & 0x55)
 					                     | ((s <<  4) & 0x20)
 					                     | ((s <<  7) & 0x80);
- 					break;
+					break;
 				}
 				case 1:
 				{
@@ -762,7 +810,7 @@ static void VFDSetDisplayDigit(byte Character, DISPLAYTYPE DisplayType, byte Dig
 
 static void VFDSetDisplaySmallString(char *s)
 {
-	unsigned int i;
+	unsigned int i, j;
 
 #ifdef DEBUG
 	printk("FP: VFDSetDisplaySmallString(s=%s)\n", s);
@@ -772,37 +820,16 @@ static void VFDSetDisplaySmallString(char *s)
 	{
 		i = strlen (s);
 
-		if (i > 0)
+		for (j = 0; j < 4; j++)
 		{
-			VFDSetDisplayDigit(s[0], VFD_14, 0);
-		}
-		else
-		{
-			VFDSetDisplayDigit(' ', VFD_14, 0);
-		}
-		if (i > 1)
-		{
-			VFDSetDisplayDigit(s[1], VFD_14, 1);
-		}
-		else
-		{
-			VFDSetDisplayDigit(' ', VFD_14, 1);
-		}
-		if (i > 2)
-		{
-			VFDSetDisplayDigit(s[2], VFD_14, 2);
-		}
-		else
-		{
-			VFDSetDisplayDigit(' ', VFD_14, 2);
-		}
-		if (i > 3)
-		{
-			VFDSetDisplayDigit(s[3], VFD_14, 3);
-		}
-		else
-		{
-			VFDSetDisplayDigit(' ', VFD_14, 3);
+			if (i > j)
+			{
+				VFDSetDisplayDigit(s[j], VFD_14, j);
+			}
+			else
+			{
+				VFDSetDisplayDigit(' ', VFD_14, j);
+			}
 		}
 	}
 	VFDSendToDisplay(false);
@@ -810,7 +837,7 @@ static void VFDSetDisplaySmallString(char *s)
 
 static void VFDSetDisplayLargeString(char *s)
 {
-	unsigned int i;
+	unsigned int i, j;
 	char         *c;
 
 #ifdef DEBUG
@@ -822,7 +849,7 @@ static void VFDSetDisplayLargeString(char *s)
 		if (tffpConfig.allCaps)
 		{
 			c = s;
-			while(*c)
+			while (*c)
 			{
 				*c = toupper(*c);
 				c++;
@@ -831,69 +858,16 @@ static void VFDSetDisplayLargeString(char *s)
 
 		i = strlen (s);
 
-		if (i > 0)
+		for (j = 0; j < 8; j++)
 		{
-			VFDSetDisplayDigit(s[0], VFD_17, 0);
-		}
-		else
-		{
-			VFDSetDisplayDigit(' ', VFD_17, 0);
-		}
-		if (i > 1)
-		{
-			VFDSetDisplayDigit(s[1], VFD_17, 1);
-		}
-		else
-		{
-			VFDSetDisplayDigit(' ', VFD_17, 1);
-		}
-		if (i > 2)
-		{
-			VFDSetDisplayDigit(s[2], VFD_17, 2);
-		}
-		else
-		{
-			VFDSetDisplayDigit(' ', VFD_17, 2);
-		}
-		if (i > 3)
-		{
-			VFDSetDisplayDigit(s[3], VFD_17, 3);
-		}
-		else
-		{
-			VFDSetDisplayDigit(' ', VFD_17, 3);
-		}
-		if (i > 4)
-		{
-			VFDSetDisplayDigit(s[4], VFD_17, 4);
-		}
-		else
-		{
-			VFDSetDisplayDigit(' ', VFD_17, 4);
-		}
-		if (i > 5)
-		{
-			VFDSetDisplayDigit(s[5], VFD_17, 5);
-		}
-		else
-		{
-			VFDSetDisplayDigit(' ', VFD_17, 5);
-		}
-		if (i > 6)
-		{
-			VFDSetDisplayDigit(s[6], VFD_17, 6);
-		}
-		else
-		{
-			VFDSetDisplayDigit(' ', VFD_17, 6);
-		}
-		if (i > 7)
-		{
-			VFDSetDisplayDigit(s[7], VFD_17, 7);
-		}
-		else
-		{
-			VFDSetDisplayDigit(' ', VFD_17, 7);
+			if (i > j)
+			{
+				VFDSetDisplayDigit(s[j], VFD_17, j);
+			}
+			else
+			{
+				VFDSetDisplayDigit(' ', VFD_17, j);
+			}
 		}
 	}
 	VFDSendToDisplay(false);
@@ -946,11 +920,11 @@ static void TranslateUTFString(unsigned char *s)
 							Source++;
 						}
 					}
-					else
-					{
-						*Dest = ((Source[0] & 0x03) << 6) | (Source[1] & 0x3f);
-						Source++;
-					}
+				}
+				else
+				{
+					*Dest = ((Source[0] & 0x03) << 6) | (Source[1] & 0x3f);
+					Source++;
 				}
 			}
 			else
@@ -982,7 +956,7 @@ frontpanel_ioctl_time *VFDReqDateTime(void)
 #endif
 
 	FPREQDATETIMENEWPending = 1;
-	SendFPData (1, FPREQDATETIMENEW);
+	SendFPData(1, FPREQDATETIMENEW);
 	wait_event_interruptible_timeout(FPREQDATETIMENEW_queue, !FPREQDATETIMENEWPending, HZ);
 
 	return &fptime;
@@ -1031,9 +1005,8 @@ void VFDSetTime(frontpanel_ioctl_time *fptime)
 	s[3] = fptime->hour;
 	s[4] = fptime->min;
 	s[5] = fptime->sec;
-	SendFPString (s);
+	SendFPString(s);
 }
-
 
 /**********************************************************************************************/
 /* Code for remote and frontpanel buttons                                                     */
@@ -1074,23 +1047,25 @@ static inline void AddKeyBuffer(byte Key)
 	}
 }
 
-
 static void AddKeyToBuffer(byte Key, bool FrontPanel)
 {
+//TODO: add feedback
 	switch (KeyEmulationMode)
 	{
 		case KEYEMUTF7700:
 		case KEYEMUTF7700LKP:
 		{
-			AddKeyBuffer (FrontPanel ? FPKEYPRESSFP : FPKEYPRESS);
-			AddKeyBuffer (Key);
+			AddKeyBuffer(FrontPanel ? FPKEYPRESSFP : FPKEYPRESS);
+			AddKeyBuffer(Key);
 			wake_up_interruptible(&wq);
 			break;
 		}
 		case KEYEMUUFS910:
 		{
 			if (ufs910map[Key] == 0xff)
+			{
 				printk("FP: undefined UFS910 key (TF=0x%2.2x)\n", Key);
+			}
 			else
 			{
 				AddKeyBuffer (ufs910map[Key]);
@@ -1195,14 +1170,14 @@ static void VFDReboot(void)
 }
 
 /**********************************************************************************************/
-/* Code for settings the front panel VFD brightness                                           */
+/* Code for setting the front panel VFD brightness                                            */
 /**********************************************************************************************/
 static void VFDBrightness(byte Brightness)
 {
 	byte BrightData[]={0x00, 0x01, 0x02, 0x08, 0x10, 0x20};
 
 #ifdef DEBUG
-	printk("FP: VFDBrightness(Brightness=%d)\n", Brightness);
+	printk("FP: VFDBrightness (Brightness = %d)\n", Brightness);
 #endif
 
 	if (Brightness < 6)
@@ -1229,7 +1204,7 @@ void VFDSetTimer(frontpanel_ioctl_time *fptime)
 	word w;
 
 #ifdef DEBUG
-	printk("FP: VFDSetTimer(pfptime=%p)\n", fptime);
+	printk("FP: VFDSetTimer (pfptime = %p)\n", fptime);
 #endif
 
 	w = (((fptime->year - 2000) & 0x7f) << 9)
@@ -1252,7 +1227,7 @@ byte FPIRData [] = {0xa5, 0x00, 0x02, 0x34, 0x0a, 0x00,
                     0xa5, 0x02, 0x49, 0x99, 0x0a, 0x00,
                     0xa5, 0x03, 0x20, 0xdf, 0x0a, 0x00};
 
-static void VFDSetIRMode (byte Mode, byte OnOff)
+static void VFDSetIRMode(byte Mode, byte OnOff)
 {
 #ifdef DEBUG
 	printk("FP: VFDSetIRMode(Mode0%d, OnOff=%d)\n", Mode, OnOff);
@@ -1281,191 +1256,53 @@ static inline void SetIconBits(byte Reg, byte Bit, byte Mode)
 	IconBlinkMode[Reg][3] = (IconBlinkMode[Reg][3] & j) | ((Mode & 0x08) ? i : 0);
 }
 
-static void setDolbyIcon(int on)
-{
-	if (on)
-	{
-		SetIconBits(43, 3, 0xf);
-	}
-	else
-	{
-		SetIconBits(43, 3, 0x0);
-	}
-}
-
-static void setHddIcon(int on)
-{
-	if (on)
-	{
-		SetIconBits(29, 4, 0xf);
-		SetIconBits(28, 5, 0xf);
-	}
-	else
-	{
-		SetIconBits(29, 4, 0x0);
-		SetIconBits(28, 5, 0x0);
-	}
-}
-
-static void setMuteIcon(int on)
-{
-	if (on)
-	{
-		SetIconBits(42, 0, 0xf);
-	}
-	else
-	{
-		SetIconBits(42, 0, 0x0);
-	}
-}
-
-static void setPlayIcon(int on)
-{
-	if (on)
-	{
-		SetIconBits(42, 4, 0xf);
-	}
-	else
-	{
-		SetIconBits(42, 4, 0x0);
-	}
-}
-
-static void setPauseIcon(int on)
-{
-	if (on)
-	{
-		SetIconBits(42, 1, 0xf);
-	}
-	else
-	{
-		SetIconBits(42, 1, 0x0);
-	}
-}
-
-static void setRecIcon(int on)
-{
-	if (on)
-	{
-		SetIconBits(41, 1, 0xf);
-	}
-	else
-	{
-		SetIconBits(41, 1, 0x0);
-	}
-}
-
-static void setFwdIcon(int on)
-{
-	if (on)
-	{
-		SetIconBits(42, 2, 0xf);
-	}
-	else
-	{
-		SetIconBits(42, 2, 0x0);
-	}
-}
-
-static void setRwdIcon(int on)
-{
-	if (on)
-	{
-		SetIconBits(42, 6, 0xf);
-	}
-	else
-	{
-		SetIconBits(42, 6, 0x0);
-	}
-}
-
-static void setMusicIcon(int on)
-{
-	if (on)
-	{
-		SetIconBits(27, 3, 0xf);
-	}
-	else
-	{
-		SetIconBits(27, 3, 0x0);
-	}
-}
-
-static void setMp3Icon(int on)
-{
-	if (on)
-	{
-		SetIconBits(28, 7, 0xf);
-	}
-	else
-	{
-		SetIconBits(28, 7, 0x0);
-	}
-}
-
-static void setTimerIcon(int on)
-{
-	if (on)
-	{
-		SetIconBits( 7, 6, 0xf);
-	}
-	else
-	{
-		SetIconBits( 7, 6, 0x0);
-	}
-}
-
 static void VFDSetIcons(dword Icons1, dword Icons2, byte BlinkMode)
 {
 #ifdef DEBUG
 	printk("FP: VFDSetIcons(Icons1=0x%08x, Icons2=0x%08x, BlinkMode=%d)\n", (int)Icons1, (int)Icons2, BlinkMode);
 #endif
 
-	if (Icons1 & FPICON_AC3)          SetIconBits(27, 0, BlinkMode);
+	if (Icons1 & FPICON_IRDOT)        SetIconBits( 1, 4, BlinkMode);
+	if (Icons1 & FPICON_POWER)        SetIconBits( 1, 5, BlinkMode);
+	if (Icons1 & FPICON_COLON)        SetIconBits( 5, 7, BlinkMode);
+	if (Icons1 & FPICON_PM)           SetIconBits( 6, 0, BlinkMode);
+	if (Icons1 & FPICON_TIMER)        SetIconBits( 7, 6, BlinkMode);
 	if (Icons1 & FPICON_AM)           SetIconBits( 7, 7, BlinkMode);
+	if (Icons1 & FPICON_AC3)          SetIconBits(27, 0, BlinkMode);
+	if (Icons1 & FPICON_TIMESHIFT)    SetIconBits(27, 1, BlinkMode);
+	if (Icons1 & FPICON_TV)           SetIconBits(27, 2, BlinkMode);
+	if (Icons1 & FPICON_MUSIC)        SetIconBits(27, 3, BlinkMode);
+	if (Icons1 & FPICON_DISH)         SetIconBits(27, 4, BlinkMode);
+	if (Icons1 & FPICON_MP3)          SetIconBits(28, 7, BlinkMode);
+	if (Icons1 & FPICON_TUNER1)       SetIconBits(41, 0, BlinkMode);
+	if (Icons1 & FPICON_REC)          SetIconBits(41, 1, BlinkMode);
+	if (Icons1 & FPICON_PAUSE)        SetIconBits(42, 1, BlinkMode);
+	if (Icons1 & FPICON_FWD)          SetIconBits(42, 2, BlinkMode);
+	if (Icons1 & FPICON_xxx2)         SetIconBits(42, 3, BlinkMode);
+	if (Icons1 & FPICON_PLAY)         SetIconBits(42, 4, BlinkMode);
+	if (Icons1 & FPICON_xxx4)         SetIconBits(42, 5, BlinkMode);
+	if (Icons1 & FPICON_RWD)          SetIconBits(42, 6, BlinkMode);
+	if (Icons1 & FPICON_TUNER2)       SetIconBits(42, 7, BlinkMode);
 	if (Icons1 & FPICON_ATTN)         SetIconBits(43, 4, BlinkMode);
 	if (Icons1 & FPICON_AUTOREWLEFT)  SetIconBits(43, 7, BlinkMode);
 	if (Icons1 & FPICON_AUTOREWRIGHT) SetIconBits(43, 6, BlinkMode);
-	if (Icons1 & FPICON_COLON)        SetIconBits( 5, 7, BlinkMode);
-	if (Icons1 & FPICON_DISH)         SetIconBits(27, 4, BlinkMode);
 	if (Icons1 & FPICON_DOLBY)        SetIconBits(43, 3, BlinkMode);
 	if (Icons1 & FPICON_DOLLAR)       SetIconBits(43, 5, BlinkMode);
-	if (Icons1 & FPICON_FWD)          SetIconBits(42, 2, BlinkMode);
-	if (Icons1 & FPICON_IRDOT)        SetIconBits( 1, 4, BlinkMode);
-	if (Icons1 & FPICON_MP3)          SetIconBits(28, 7, BlinkMode);
-	if (Icons1 & FPICON_MUSIC)        SetIconBits(27, 3, BlinkMode);
 	if (Icons1 & FPICON_MUTE)         SetIconBits(42, 0, BlinkMode);
 	if (Icons1 & FPICON_NETWORK)      SetIconBits(43, 2, BlinkMode);
-	if (Icons1 & FPICON_PAUSE)        SetIconBits(42, 1, BlinkMode);
-	if (Icons1 & FPICON_PLAY)         SetIconBits(42, 4, BlinkMode);
-	if (Icons1 & FPICON_PM)           SetIconBits( 6, 0, BlinkMode);
-	if (Icons1 & FPICON_POWER)        SetIconBits( 1, 5, BlinkMode);
-	if (Icons1 & FPICON_REC)          SetIconBits(41, 1, BlinkMode);
-	if (Icons1 & FPICON_RWD)          SetIconBits(42, 6, BlinkMode);
-	if (Icons1 & FPICON_TIMER)        SetIconBits( 7, 6, BlinkMode);
-	if (Icons1 & FPICON_TIMESHIFT)    SetIconBits(27, 1, BlinkMode);
-	if (Icons1 & FPICON_TUNER1)       SetIconBits(41, 0, BlinkMode);
-	if (Icons1 & FPICON_TUNER2)       SetIconBits(42, 7, BlinkMode);
-	if (Icons1 & FPICON_TV)           SetIconBits(27, 2, BlinkMode);
-	if (Icons1 & FPICON_xxx2)         SetIconBits(42, 3, BlinkMode);
-	if (Icons1 & FPICON_xxx4)         SetIconBits(42, 5, BlinkMode);
-	if (Icons2 & FPICON_CD1)          SetIconBits(26, 7, BlinkMode);
-	if (Icons2 & FPICON_CD10)         SetIconBits(27, 6, BlinkMode);
-	if (Icons2 & FPICON_CD11)         SetIconBits(27, 5, BlinkMode);
 	if (Icons2 & FPICON_CD12)         SetIconBits(25, 0, BlinkMode);
-	if (Icons2 & FPICON_CD2)          SetIconBits(26, 6, BlinkMode);
-	if (Icons2 & FPICON_CD3)          SetIconBits(26, 5, BlinkMode);
-	if (Icons2 & FPICON_CD4)          SetIconBits(26, 4, BlinkMode);
-	if (Icons2 & FPICON_CD5)          SetIconBits(26, 3, BlinkMode);
-	if (Icons2 & FPICON_CD6)          SetIconBits(26, 2, BlinkMode);
-	if (Icons2 & FPICON_CD7)          SetIconBits(26, 1, BlinkMode);
-	if (Icons2 & FPICON_CD8)          SetIconBits(26, 0, BlinkMode);
-	if (Icons2 & FPICON_CD9)          SetIconBits(27, 7, BlinkMode);
 	if (Icons2 & FPICON_CDCENTER)     SetIconBits(25, 1, BlinkMode);
-	if (Icons2 & FPICON_HDD)          SetIconBits(29, 4, BlinkMode);
-	if (Icons2 & FPICON_HDD1)         SetIconBits(29, 5, BlinkMode);
-	if (Icons2 & FPICON_HDD2)         SetIconBits(29, 6, BlinkMode);
-	if (Icons2 & FPICON_HDD3)         SetIconBits(29, 7, BlinkMode);
+	if (Icons2 & FPICON_CD8)          SetIconBits(26, 0, BlinkMode);
+	if (Icons2 & FPICON_CD7)          SetIconBits(26, 1, BlinkMode);
+	if (Icons2 & FPICON_CD6)          SetIconBits(26, 2, BlinkMode);
+	if (Icons2 & FPICON_CD5)          SetIconBits(26, 3, BlinkMode);
+	if (Icons2 & FPICON_CD4)          SetIconBits(26, 4, BlinkMode);
+	if (Icons2 & FPICON_CD3)          SetIconBits(26, 5, BlinkMode);
+	if (Icons2 & FPICON_CD2)          SetIconBits(26, 6, BlinkMode);
+	if (Icons2 & FPICON_CD1)          SetIconBits(26, 7, BlinkMode);
+	if (Icons2 & FPICON_CD11)         SetIconBits(27, 5, BlinkMode);
+	if (Icons2 & FPICON_CD10)         SetIconBits(27, 6, BlinkMode);
+	if (Icons2 & FPICON_CD9)          SetIconBits(27, 7, BlinkMode);
 	if (Icons2 & FPICON_HDD4)         SetIconBits(28, 0, BlinkMode);
 	if (Icons2 & FPICON_HDD5)         SetIconBits(28, 1, BlinkMode);
 	if (Icons2 & FPICON_HDD6)         SetIconBits(28, 2, BlinkMode);
@@ -1473,6 +1310,10 @@ static void VFDSetIcons(dword Icons1, dword Icons2, byte BlinkMode)
 	if (Icons2 & FPICON_HDD8)         SetIconBits(28, 4, BlinkMode);
 	if (Icons2 & FPICON_HDDFRAME)     SetIconBits(28, 5, BlinkMode);
 	if (Icons2 & FPICON_HDDFULL)      SetIconBits(28, 6, BlinkMode);
+	if (Icons2 & FPICON_HDD)          SetIconBits(29, 4, BlinkMode);
+	if (Icons2 & FPICON_HDD1)         SetIconBits(29, 5, BlinkMode);
+	if (Icons2 & FPICON_HDD2)         SetIconBits(29, 6, BlinkMode);
+	if (Icons2 & FPICON_HDD3)         SetIconBits(29, 7, BlinkMode);
 }
 
 /**********************************************************************************************/
@@ -1513,7 +1354,6 @@ static void ScrollTimer(void)
 				ScrollState = SS_ShortString;
 				break;
 			}
-
 			//Check if the scroll mode has changed in the meantime
 			switch(ScrollMode.ScrollMode)
 			{
@@ -1632,7 +1472,7 @@ static void VFDGetControl(void)
 	printk("FP: VFDGetControl()\n");
 #endif
 
-	SendFPData (1, 0x40);
+	SendFPData(1, 0x40);
 }
 #endif
 
@@ -1652,7 +1492,7 @@ static int frontpanel_init_func(void)
 
 static void FPCommandInterpreter(void)
 {
-	int  Cmd, CmdLen, i;
+	int Cmd, CmdLen, i;
 
 #ifdef DEBUG
 	printk("FP: FPCommandInterpreter()\n");
@@ -1717,7 +1557,6 @@ static void FPCommandInterpreter(void)
 				// Switch off power icon to indicate that no automatic shutdown for auto timers will be done
 				VFDSetIcons(FPICON_POWER, 0x0, 0x0);
 			}
-		
 			InterpretKeyPresses();
 			break;
 		}
@@ -1844,8 +1683,8 @@ static irqreturn_t FP_interrupt(int irq, void *dev_id)
 		{
 			if (msgStart && (RCVBuffer[RCVBufferStart] == 0x20))
 			{
-				SendFPData (2, FPSHUTDOWNACK, 0x02);
-				SendFPData (1, FPGETDISPLAYCONTROL);
+				SendFPData(2, FPSHUTDOWNACK, 0x02);
+				SendFPData(1, FPGETDISPLAYCONTROL);
 			}
 			msgStart = 0;
 		}
@@ -2011,7 +1850,7 @@ static ssize_t FrontPaneldev_read(struct file *filp, const char *buff, size_t le
 				}
 				case FRONTPANEL_MINOR_RC:
 				{
-					byte  BytesPerKey = 2;
+					byte BytesPerKey = 2;
 
 					while (KeyBufferStart == KeyBufferEnd)
 					{
@@ -2048,24 +1887,20 @@ static ssize_t FrontPaneldev_read(struct file *filp, const char *buff, size_t le
 #endif
 						return -ERESTARTSYS;
 					}
-					copy_to_user(buff, kernel_buff, BytesPerKey);
+					copy_to_user((void*)buff, kernel_buff, BytesPerKey);
 					up (&FrontPanelOpen[i].sem);
-
 #ifdef DEBUG
 					printk("FP: FrontPaneldev_read = %d\n", BytesPerKey);
 #endif
-
 					return BytesPerKey;
 				}
 			}
-
 #ifdef DEBUG
 			printk("FP: FrontPaneldev_read = 0\n");
 #endif
 			return 0;
 		}
 	}
-
 #ifdef DEBUG
 	printk("FP: FrontPaneldev_read = -EUSERS\n");
 #endif
@@ -2209,13 +2044,13 @@ static int FrontPaneldev_ioctl(struct inode *Inode, struct file *File, unsigned 
 
 	if (cmd == TCGETS)
 	{
-		copy_to_user (arg, &termAttributes, sizeof(struct termios));
+		copy_to_user((void*)arg, &termAttributes, sizeof(struct termios));
 		return 0;
 	}
 
 	if (cmd == 0x5404)
 	{
-		copy_from_user (&termAttributes, arg, sizeof(struct termios));
+		copy_from_user(&termAttributes, (const void*)arg, sizeof(struct termios));
 		return 0;
 	}
 
@@ -2228,9 +2063,9 @@ static int FrontPaneldev_ioctl(struct inode *Inode, struct file *File, unsigned 
 	{
 		struct vfd_ioctl_data vfdData;
 
-		copy_from_user (&vfdData, arg, sizeof(vfdData));
+		copy_from_user(&vfdData, (const void*)arg, sizeof(vfdData));
 
-		switch(cmd)
+		switch (cmd)
 		{
 			case VFDDISPLAYCHARS:
 			{
@@ -2248,136 +2083,323 @@ static int FrontPaneldev_ioctl(struct inode *Inode, struct file *File, unsigned 
 			}
 			case VFDICONDISPLAYONOFF:
 			{
-				//printk("FP: VFDICONDISPLAYONOFF %x:%x\n", vfdData.data[0], vfdData.data[4]);
-				switch(vfdData.data[0])
+				byte onoff;
+
+				onoff = vfdData.data[4] ? 0xf : 0;
+
+				/* The icon number layout has been established as follows:
+                                   Icons 1 through 41: unchanged for compatibility with existing drivers
+				   Of these, icons 32 - 41 from the CD segments
+				   Icon 47 (CD center): added
+				   Icons 48 - 58 (HDD level display parts): added
+				   Icons 64 - 91 (remaining icons in display order): added
+				   Icon 127 (all): added
+				 */
+				printk("FP: VFDICONDISPLAYONOFF Set icon number 0x%2x, state 0x%2x\n", vfdData.data[0], vfdData.data[4]);
+				switch (vfdData.data[0]) //get icon number
 				{
-				/* VFD driver of enigma2 issues codes during the start
-				   phase, map them to the CD segments to indicate progress */
-					case VFD_ICON_CD1:
+					/* The VFD driver of enigma2 issues codes during the start
+					   phase, map them to the CD segments to indicate progress
+        	                           These are icon numbers 32-41 & 47. */
+					case VFD_ICON_CD1: //0x20, note: two segments
 					{
-						SetIconBits(26, 7, vfdData.data[4] ? 0xf : 0);
-						SetIconBits(26, 6, vfdData.data[4] ? 0xf : 0);
+						SetIconBits(26, 7, onoff);
+						SetIconBits(26, 6, onoff);
 						break;
 					}
-					case VFD_ICON_CD2:
+					case VFD_ICON_CD2: //0x21
 					{
-						SetIconBits(26, 5, vfdData.data[4] ? 0xf : 0);
+						SetIconBits(26, 5, onoff);
 						break;
 					}
-					case VFD_ICON_CD3:
+					case VFD_ICON_CD3: //0x22
 					{
-						SetIconBits(26, 4, vfdData.data[4] ? 0xf : 0);
+						SetIconBits(26, 4, onoff);
 						break;
 					}
-					case VFD_ICON_CD4:
+					case VFD_ICON_CD4: //0x23
 					{
-						SetIconBits(26, 3, vfdData.data[4] ? 0xf : 0);
+						SetIconBits(26, 3, onoff);
 						break;
 					}
-					case VFD_ICON_CD5:
+					case VFD_ICON_CD5: //0x24
 					{
-						SetIconBits(26, 2, vfdData.data[4] ? 0xf : 0);
+						SetIconBits(26, 2, onoff);
 						break;
 					}
-					case VFD_ICON_CD6:
+					case VFD_ICON_CD6: //0x25, note: two segments
 					{
-						SetIconBits(26, 1, vfdData.data[4] ? 0xf : 0);
-						SetIconBits(26, 0, vfdData.data[4] ? 0xf : 0);
+						SetIconBits(26, 1, onoff);
+						SetIconBits(26, 0, onoff);
 						break;
 					}
-					case VFD_ICON_CD7:
+					case VFD_ICON_CD7: //0x26
 					{
-						SetIconBits(27, 7, vfdData.data[4] ? 0xf : 0);
+						SetIconBits(27, 7, onoff);
 						break;
 					}
-					case VFD_ICON_CD8:
+					case VFD_ICON_CD8: //0x27
 					{
-						SetIconBits(27, 6, vfdData.data[4] ? 0xf : 0);
+						SetIconBits(27, 6, onoff);
 						break;
 					}
-					case VFD_ICON_CD9:
+					case VFD_ICON_CD9: //0x28
 					{
-						SetIconBits(27, 5, vfdData.data[4] ? 0xf : 0);
+						SetIconBits(27, 5, onoff);
 						break;
 					}
-					case VFD_ICON_CD10:
+					case VFD_ICON_CD10: //0x29
 					{
-						SetIconBits(25, 0, vfdData.data[4] ? 0xf : 0);
+						SetIconBits(25, 0, onoff);
 						break;
 					}
-					case VFD_ICON_HDD:
+					case VFD_ICON_CDCENTER: //0x2F
 					{
-						setHddIcon(vfdData.data[4]);
+						SetIconBits(25, 1, onoff);
 						break;
 					}
-					case VFD_ICON_MP3:
+
+					/* Icons to build the HDD level display.
+	                                   These are icon numbers 48-58.
+					   Please note that these are also used by the TopfieldVFD plugin.
+					 */
+					case VFD_ICON_HDD1: //0x30
+					case VFD_ICON_HDD: //0x02
 					{
-						setMp3Icon(vfdData.data[4]);
+						SetIconBits(29, 4, onoff);
 						break;
 					}
-					case VFD_ICON_MUSIC:
+					case VFD_ICON_HDD_1: //0x31
 					{
-						setMusicIcon(vfdData.data[4]);
+						SetIconBits(29, 5, onoff);
 						break;
 					}
-					case VFD_ICON_DD:
+					case VFD_ICON_HDD_2: //0x32
 					{
-						setDolbyIcon(vfdData.data[4]);
+						SetIconBits(29, 6, onoff);
 						break;
 					}
-					case VFD_ICON_MUTE:
+					case VFD_ICON_HDD_3: //0x33
 					{
-						setMuteIcon(vfdData.data[4]);
+						SetIconBits(29, 7, onoff);
 						break;
 					}
-					case VFD_ICON_PLAY:
+					case VFD_ICON_HDD_4: //0x34
 					{
-						setPlayIcon(vfdData.data[4]);
+						SetIconBits(28, 0, onoff);
 						break;
 					}
-					case VFD_ICON_PAUSE:
+					case VFD_ICON_HDD_5: //0x35
 					{
-						setPauseIcon(vfdData.data[4]);
+						SetIconBits(28, 1, onoff);
 						break;
 					}
-					case VFD_ICON_FF:
+					case VFD_ICON_HDD_6: //0x36
 					{
-						setFwdIcon(vfdData.data[4]);
+						SetIconBits(28, 2, onoff);
 						break;
 					}
-					case VFD_ICON_FR:
+					case VFD_ICON_HDD_7: //0x37
 					{
-						setRwdIcon(vfdData.data[4]);
+						SetIconBits(28, 3, onoff);
 						break;
 					}
-					case VFD_ICON_REC:
+					case VFD_ICON_HDD_8: //0x38
 					{
-						setRecIcon(vfdData.data[4]);
+						SetIconBits(28, 4, onoff);
 						break;
 					}
-					case VFD_ICON_CLOCK:
+					case VFD_ICON_HDD_FRAME: //0x39
 					{
-						setTimerIcon(vfdData.data[4]);
+						SetIconBits(28, 5, onoff);
 						break;
 					}
-					//case VFD_ICON_HD:
-					//case VFD_ICON_LOCK:
-					//case VFD_ICON_MAIL:
-					//case VFD_ICON_BT:
+					case VFD_ICON_HDD_FULL: //0x3A
+					{
+						SetIconBits(28, 6, onoff);
+						break;
+					}
+					/* The remanining icons, approximately in
+					   display order. Some are assigned twice or three times
+					   to remain comptible with existing drivers and/or to
+					   support the standard VFD-Icons plugin.
+					 */
+					case VFD_ICON_MP3_2: //0x40
+					case VFD_ICON_MP3: //0x05
+					case 21: //MP3, added, sent by VFD-Icons
+					{
+						SetIconBits(28, 7, onoff);
+						break;
+					}
+					case VFD_ICON_AC3: //0x41
+					{
+						SetIconBits(27, 0, onoff);
+						break;
+					}
+					case VFD_ICON_TIMESHIFT: //0x42
+					{
+						SetIconBits(27, 1, onoff);
+						break;
+					}
+					case VFD_ICON_TV: //0x43
+					{
+						SetIconBits(27, 2, onoff);
+						break;
+					}
+					case VFD_ICON_RADIO: //0x44
+					case VFD_ICON_MUSIC: //0x06
+					{
+						SetIconBits(27, 3, onoff);
+						break;
+					}
+					case VFD_ICON_SAT: //0x45
+					{
+						SetIconBits(27, 4, onoff);
+						break;
+					}
+					case VFD_ICON_REC2: //0x46
+					case VFD_ICON_REC: //0x0E
+					case 30: //record, added, sent by VFD-Icons
+					{
+						SetIconBits(41, 1, onoff);
+						break;
+					}
+					case VFD_ICON_RECONE: //0x47
+					{
+						SetIconBits(41, 0, onoff);
+						break;
+					}
+					case VFD_ICON_RECTWO: //0x48
+					{
+						SetIconBits(42, 7, onoff);
+						break;
+					}
+					case VFD_ICON_REWIND: //0x49
+					case VFD_ICON_FR: //0x0D
+					{
+						SetIconBits(42, 6, onoff);
+						break;
+					}
+					case VFD_ICON_STEPBACK: //0x4A
+					{
+						SetIconBits(42, 5, onoff);
+						break;
+					}
+					case VFD_ICON_PLAY2: //0x4B
+					case VFD_ICON_PLAY: //0x0A
+					case 26: //play, added, sent by VFD-Icons
+					{
+						SetIconBits(42, 4, onoff);
+						break;
+					}
+					case VFD_ICON_STEPFWD: //0x4C
+					{
+						SetIconBits(42, 3, onoff);
+						break;
+					}
+					case VFD_ICON_FASTFWD: //0x4D
+					case VFD_ICON_FF: //0x0C
+					{
+						SetIconBits(42, 2, onoff);
+						break;
+					}
+					case VFD_ICON_PAUSE2: //0x4E
+					case VFD_ICON_PAUSE: //0x0B
+					{
+						SetIconBits(42, 1, onoff);
+						break;
+					}
+					case VFD_ICON_MUTE2: //0x4F
+					case VFD_ICON_MUTE: //0x09
+					{
+						SetIconBits(42, 0, onoff);
+						break;
+					}
+					case VFD_ICON_REPEATL: //0x50, note: used by TopfieldVFD plugin for network display
+					{
+						SetIconBits(43, 7, onoff);
+						break;
+					}
+					case VFD_ICON_REPEATR: //0x51, note: used by TopfieldVFD plugin for network display
+					{
+						SetIconBits(43, 6, onoff);
+						break;
+					}
+					case VFD_ICON_DOLLAR: //0x52
+					case 19: //scrambled, added, sent by VFD-Icons
+					{
+						SetIconBits(43, 5, onoff);
+						break;
+					}
+					case VFD_ICON_ATTN: //0x53
+					{
+						SetIconBits(43, 4, onoff);
+						break;
+					}
+					case VFD_ICON_DOLBY: //0x54
+					case VFD_ICON_DD: //0x07
+					case 23: //DD, added, sent by VFD-Icons
+					{
+						SetIconBits(43, 3, onoff);
+						break;
+					}
+					case VFD_ICON_NETWORK: //0x55, 
+					case 17: //added, sent by VFD-Icons (misused as HD indicator)
+					{
+						SetIconBits(43, 2, onoff);
+						break;
+					}
+					case VFD_ICON_AM: //0x56
+					{
+						SetIconBits(7, 7, onoff);
+						break;
+					}
+					case VFD_ICON_TIMER: //0x57
+					case VFD_ICON_CLOCK: //0x0F
+					{
+						SetIconBits(7, 6, onoff);
+						break;
+					}
+					case VFD_ICON_PM: //0x58
+					{
+						SetIconBits(6, 0, onoff);
+						break;
+					}
+					case VFD_ICON_DOT: //0x59, note: RC feedback
+					{
+						SetIconBits(1, 4, onoff);
+						break;
+					}
+					case VFD_ICON_POWER: //0x5A, note: controlled by frontprocessor also
+					{
+						SetIconBits(1, 5, onoff);
+						break;
+					}
+					case VFD_ICON_COLON: //0x5B, note: controlled by frontprocessor also
+					{
+						SetIconBits(5, 7, onoff);
+						break;
+					}
+					case VFD_ICON_ALL: //0x7f
+					{
+						VFDSetIcons(0xffffffff, 0xffffffff, onoff);
+						break;
+					}
 					default:
 					{
+						printk("FP: unknown icon number %0x2x\n", vfdData.data[0]);
 						return 0;
-						break;
 					}
 				}
-				default:
-				{
-					//printk("FP: VFD cmd %x\n", cmd);
-					break;
-				}
+				break;
 			}
-			return 0;
+			default:
+			{
+				printk("FP: unknown VFD IOCTL command %x\n", cmd);
+				break;
+			}
 		}
+		return 0;
 	}
 	else if (((cmd >> 8) & 0xff) != IOCTLMAGIC)
 	{
@@ -2390,12 +2412,12 @@ static int FrontPaneldev_ioctl(struct inode *Inode, struct file *File, unsigned 
 		case _FRONTPANELGETTIME:
 		{
 			VFDReqDateTime();
-			copy_to_user(arg, &fptime, sizeof(frontpanel_ioctl_time));
+			copy_to_user((void*)arg, &fptime, sizeof(frontpanel_ioctl_time));
 			break;
 		}
 		case _FRONTPANELSETTIME:
 		{
-			copy_from_user(&fptime, arg, sizeof(frontpanel_ioctl_time));
+			copy_from_user(&fptime, (const void*)arg, sizeof(frontpanel_ioctl_time));
 			VFDSetTime(&fptime);
 			VFDReqDateTime();
 			break;
@@ -2467,7 +2489,7 @@ static int FrontPaneldev_ioctl(struct inode *Inode, struct file *File, unsigned 
 		}
 		case _FRONTPANELSETTIMER:
 		{
-			copy_from_user(&fptime, arg, sizeof(frontpanel_ioctl_time));
+			copy_from_user(&fptime, (const void*)arg, sizeof(frontpanel_ioctl_time));
 			VFDSetTimer(&fptime);
 			break;
 		}
@@ -2477,7 +2499,7 @@ static int FrontPaneldev_ioctl(struct inode *Inode, struct file *File, unsigned 
 
 			if (arg)
 			{
-				copy_from_user(&fpdata, arg, sizeof(frontpanel_ioctl_irfilter));
+				copy_from_user(&fpdata, (const void*)arg, sizeof(frontpanel_ioctl_irfilter));
 				if (tffpConfig.irFilter1 != fpdata.onoff)
 				{
 					tffpConfig.irFilter1 = fpdata.onoff;
@@ -2493,7 +2515,7 @@ static int FrontPaneldev_ioctl(struct inode *Inode, struct file *File, unsigned 
 
 			if (arg)
 			{
-				copy_from_user(&fpdata, arg, sizeof(frontpanel_ioctl_irfilter));
+				copy_from_user(&fpdata, (const void*)arg, sizeof(frontpanel_ioctl_irfilter));
 				if (tffpConfig.irFilter2 != fpdata.onoff)
 				{
 					tffpConfig.irFilter2 = fpdata.onoff;
@@ -2509,7 +2531,7 @@ static int FrontPaneldev_ioctl(struct inode *Inode, struct file *File, unsigned 
 
 			if (arg)
 			{
-				copy_from_user(&fpdata, arg, sizeof(frontpanel_ioctl_irfilter));
+				copy_from_user(&fpdata, (const void*)arg, sizeof(frontpanel_ioctl_irfilter));
 				if (tffpConfig.irFilter3 != fpdata.onoff)
 				{
 					tffpConfig.irFilter3 = fpdata.onoff;
@@ -2525,7 +2547,7 @@ static int FrontPaneldev_ioctl(struct inode *Inode, struct file *File, unsigned 
 
 			if (arg)
 			{
-				copy_from_user(&fpdata, arg, sizeof(frontpanel_ioctl_irfilter));
+				copy_from_user(&fpdata, (const void*)arg, sizeof(frontpanel_ioctl_irfilter));
 				if (tffpConfig.irFilter4 != fpdata.onoff)
 				{
 					tffpConfig.irFilter4 = fpdata.onoff;
@@ -2554,7 +2576,7 @@ static int FrontPaneldev_ioctl(struct inode *Inode, struct file *File, unsigned 
 		case _FRONTPANELBOOTREASON:
 		{
 			//The reason value has already been cached upon module startup
-			copy_to_user(arg, &fpbootreason, sizeof(frontpanel_ioctl_bootreason));
+			copy_to_user((void*)arg, &fpbootreason, sizeof(frontpanel_ioctl_bootreason));
 			break;
 		}
 		case _FRONTPANELPOWEROFF:
@@ -2574,7 +2596,7 @@ static int FrontPaneldev_ioctl(struct inode *Inode, struct file *File, unsigned 
 
 			if (arg)
 			{
-				copy_from_user(&fpdata, arg, sizeof(frontpanel_ioctl_typematicdelay));
+				copy_from_user(&fpdata, (const void*)arg, sizeof(frontpanel_ioctl_typematicdelay));
 				if (tffpConfig.typematicDelay != fpdata.TypematicDelay)
 				{
 					tffpConfig.typematicDelay = fpdata.TypematicDelay;
@@ -2590,7 +2612,7 @@ static int FrontPaneldev_ioctl(struct inode *Inode, struct file *File, unsigned 
 
 			if (arg)
 			{
-				copy_from_user(&fpdata, arg, sizeof(frontpanel_ioctl_typematicrate));
+				copy_from_user(&fpdata, (const void*)arg, sizeof(frontpanel_ioctl_typematicrate));
 				if (tffpConfig.typematicRate != fpdata.TypematicRate)
 				{
 					tffpConfig.typematicRate = fpdata.TypematicRate;
@@ -2606,7 +2628,7 @@ static int FrontPaneldev_ioctl(struct inode *Inode, struct file *File, unsigned 
 
 			if (arg)
 			{
-				copy_from_user(&fpdata, arg, sizeof(frontpanel_ioctl_keyemulation));
+				copy_from_user(&fpdata, (const void*)arg, sizeof(frontpanel_ioctl_keyemulation));
 				KeyEmulationMode = fpdata.KeyEmulation;
 				KeyBufferStart =  KeyBufferEnd = 0;
 			}
@@ -2628,7 +2650,7 @@ static int FrontPaneldev_ioctl(struct inode *Inode, struct file *File, unsigned 
 
 			if (arg)
 			{
-				copy_from_user(&fpdata, arg, sizeof(frontpanel_ioctl_allcaps));
+				copy_from_user(&fpdata, (const void*)arg, sizeof(frontpanel_ioctl_allcaps));
 				if (tffpConfig.allCaps != fpdata.AllCaps)
 				{
 					tffpConfig.allCaps = fpdata.AllCaps;
@@ -2641,7 +2663,7 @@ static int FrontPaneldev_ioctl(struct inode *Inode, struct file *File, unsigned 
 		{
 			if (arg)
 			{
-				copy_from_user(&ScrollMode, arg, sizeof(frontpanel_ioctl_scrollmode));
+				copy_from_user(&ScrollMode, (const void*)arg, sizeof(frontpanel_ioctl_scrollmode));
 				if (ScrollMode.ScrollPause == 0)
 				{
 					ScrollMode.ScrollPause = 1;
@@ -2659,7 +2681,6 @@ static int FrontPaneldev_ioctl(struct inode *Inode, struct file *File, unsigned 
 					tffpConfig.scrollPause = ScrollMode.ScrollPause;
 					writeTffpConfig(&tffpConfig);
 				}
-
 				ScrollOnce = 1;
 				ScrollState = SS_InitChars;
 			}
@@ -2671,8 +2692,8 @@ static int FrontPaneldev_ioctl(struct inode *Inode, struct file *File, unsigned 
 
 			if (arg)
 			{
-				copy_from_user(&fpdata, arg, sizeof(frontpanel_ioctl_icons));
-				VFDSetIcons (fpdata.Icons1, fpdata.Icons2, fpdata.BlinkMode);
+				copy_from_user(&fpdata, (const void*)arg, sizeof(frontpanel_ioctl_icons));
+				VFDSetIcons(fpdata.Icons1, fpdata.Icons2, fpdata.BlinkMode);
 			}
 			break;
 		}
@@ -2787,7 +2808,7 @@ static int __init frontpanel_init_module(void)
 	}
 	else
 	{
-		printk("FP: Can't get irq\n");
+		printk("FP: Cannot get irq\n");
 	}
 	memset (&termAttributes, 0, sizeof (struct termios));
 
@@ -2812,7 +2833,6 @@ static void __exit frontpanel_cleanup_module(void)
 
 	remove_proc_fp();
 }
-
 
 module_init(frontpanel_init_module);
 module_exit(frontpanel_cleanup_module);
