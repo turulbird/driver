@@ -19,7 +19,9 @@
 #include "lnb_core.h"
 #define TAGDEBUG "[LNB-A8293] "
 
-extern int _12v_isON; //defined in e2_proc ->I will implement a better mechanism later
+#if defined(IPBOX9900)
+extern int _12v_isON;
+#endif
 
 unsigned char a8293_read(struct i2c_client *client)
 {
@@ -69,6 +71,7 @@ int a8293_command_kernel(struct i2c_client *client, unsigned int cmd, void *arg 
 		{
 			dprintk(20, "Switch LNB power off\n");
 
+#if defined(IPBOX9900)
 			if (_12v_isON == 0)
 			{
 				return a8293_write(client, reg);
@@ -77,6 +80,9 @@ int a8293_command_kernel(struct i2c_client *client, unsigned int cmd, void *arg 
 			{
 				return 0;
 			}
+#else
+			return a8293_write(client, reg);
+#endif
 		}
 		case LNB_VOLTAGE_VER:
 		{

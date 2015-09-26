@@ -29,7 +29,9 @@ static struct stpio_pin	*lnb_power;
 static struct stpio_pin	*lnb_13_18;
 static struct stpio_pin	*lnb_14_19;
 
-extern int _12v_isON; //defined in e2_proc ->I will implement a better mechanism later
+#if defined(IPBOX9900)
+extern int _12v_isON;
+#endif
 
 int lnb_pio_command_kernel(unsigned int cmd, void *arg)
 {
@@ -45,13 +47,17 @@ int lnb_pio_command_kernel(unsigned int cmd, void *arg)
 		{
 			dprintk(10, "Switch LNB power off\n");
 
-			if(_12v_isON == 0)
+#if defined(IPBOX9900)
+			if (_12v_isON == 0)
 			{
 				if (lnb_power)
 				{
 					stpio_set_pin(lnb_power, 0);
 				}
 			}
+#else
+			stpio_set_pin(lnb_power, 0);
+#endif
 			break;
 		}
 		case LNB_VOLTAGE_VER:
