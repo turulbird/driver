@@ -51,9 +51,10 @@
 /*                  with VFD-Icons plugin. Tab/space cleanup. Indenting   */
 /*                  made consistent, including use of braces. Fixed all   */
 /*                  compiler warnings.                                    */
+/* 2015-09-25 V4.9  IOCTL brightness control and display on/off added.    */
 /**************************************************************************/
 
-#define VERSION         "V4.8"
+#define VERSION         "V4.9"
 //#define DEBUG
 
 #include <asm/io.h>
@@ -123,7 +124,13 @@ extern void remove_proc_fp(void);
 
 #define VFDMAGIC                  0xc0425a00
 #define VFDDISPLAYCHARS           0xc0425a00
+#define VFDBRIGHTNESS             0xc0425a03
+#define VFDDISPLAYWRITEONOFF      0xc0425a05
 #define VFDICONDISPLAYONOFF       0xc0425a0a
+#define VFDPOWEROFF               0xc0425af5
+#define VFDGETWAKEUPMODE          0xc0425af9
+
+#define VFDDISPLAYCLR             0xc0425b00
 
 #define STASC1IRQ                 120
 #define BUFFERSIZE                256     //must be 2 ^ n
@@ -132,9 +139,10 @@ extern void remove_proc_fp(void);
 #define KEYEMUUFS910              1
 #define KEYEMUTF7700LKP           2
 
+
 typedef enum
 {
-	/* Common legacy icons, not all of them present:
+	/* Common legacy icons (not all of them present):
 	 */
 	VFD_ICON_HD = 0x01,
 	VFD_ICON_HDD,
@@ -232,6 +240,8 @@ struct semaphore rx_int_sem;
 static time_t gmtWakeupTime = 0;
 
 static tFrontPanelOpen FrontPanelOpen [LASTMINOR + 1];     //remembers the file handle for all minor numbers
+
+byte save_bright; //remembers brightness level for VFDDISPLAYWRITEONOFF
 
 typedef enum
 {
@@ -1180,7 +1190,7 @@ static void VFDBrightness(byte Brightness)
 	printk("FP: VFDBrightness (Brightness = %d)\n", Brightness);
 #endif
 
-	if (Brightness < 6)
+	if ((Brightness >= 0) && (Brightness < 6))
 	{
 		SendFPData(3, 0xa2, 0x08, BrightData[Brightness]);
 	}
@@ -1482,7 +1492,7 @@ static int frontpanel_init_func(void)
 	printk("FP: frontpanel_init_func()\n");
 #endif
 
-	printk("FP: Topfield TF7700HDPVR front panel module %s initializing\n", VERSION);
+	printk("FP: Topfield TF77X0HDPVR front panel module %s initializing\n", VERSION);
 
 	VFDInit();
 //	ShowText("LINUX");
@@ -1999,7 +2009,7 @@ void vfdSetGmtWakeupTime(time_t time)
 	pTime = gmtime(time);
 
 	VFDSetTimer(pTime);
-	printk("\nWakeup time: %d:%02d:%02d %d.%d.%d\n", pTime->hour, pTime->min,
+	printk("\nWakeup time: %d:%02d:%02d %02d-%02d-%04d\n", pTime->hour, pTime->min,
 		 pTime->sec, pTime->day, pTime->month, pTime->year);
 }
 
@@ -2059,7 +2069,7 @@ static int FrontPaneldev_ioctl(struct inode *Inode, struct file *File, unsigned 
 		return -EUSERS;
 	}
 
-	if ((cmd & 0xffffff00) == VFDMAGIC)
+	if ((cmd & 0xfffffe00) == VFDMAGIC)
 	{
 		struct vfd_ioctl_data vfdData;
 
@@ -2095,7 +2105,7 @@ static int FrontPaneldev_ioctl(struct inode *Inode, struct file *File, unsigned 
 				   Icons 64 - 91 (remaining icons in display order): added
 				   Icon 127 (all): added
 				 */
-				printk("FP: VFDICONDISPLAYONOFF Set icon number 0x%2x, state 0x%2x\n", vfdData.data[0], vfdData.data[4]);
+				printk("FP: VFDICONDISPLAYONOFF Set icon number 0x%2x, state %1x\n", vfdData.data[0], vfdData.data[4]);
 				switch (vfdData.data[0]) //get icon number
 				{
 					/* The VFD driver of enigma2 issues codes during the start
@@ -2393,10 +2403,81 @@ static int FrontPaneldev_ioctl(struct inode *Inode, struct file *File, unsigned 
 				}
 				break;
 			}
+			case VFDBRIGHTNESS:
+			{
+				byte bright;
+
+				bright = vfdData.start_address & 0x7;
+
+				if (bright == save_bright)
+				{
+					break;
+				}
+				if (bright > 5)
+				{
+					bright = 5;
+				}
+				if (bright < 0)
+				{
+					bright = 0;
+				}
+				VFDBrightness(bright);
+
+				save_bright = bright;
+				break;
+			}
+			case VFDDISPLAYWRITEONOFF:
+			{
+				byte onoff;
+
+				onoff = vfdData.start_address;
+
+				if (onoff != 0)
+				{
+					onoff = 1;
+				}
+
+				switch (onoff)
+				{
+					case 0: //whole display off
+					{
+						VFDBrightness(1);
+						break;
+					}
+					case 1: //whole display on
+					{
+						VFDBrightness(save_bright);
+						break;
+					}
+				}
+				break;
+			}
+			case VFDDISPLAYCLR:
+			{
+				VFDClearBuffer();
+				memset(IconBlinkMode, 0, sizeof(IconBlinkMode));
+				break;
+			}
+			case VFDGETWAKEUPMODE:
+			{
+				//The reason value has already been cached upon module startup
+				copy_to_user((void*)arg, &fpbootreason, sizeof(frontpanel_ioctl_bootreason));
+				break;
+			}
+			case VFDPOWEROFF:
+			{
+				VFDShutdown();
+				break;
+			}
+			case 0x5305:
+			{
+				//Neutrino sends this
+				break;
+			}
 			default:
 			{
 				printk("FP: unknown VFD IOCTL command %x\n", cmd);
-				break;
+				return -EINVAL;
 			}
 		}
 		return 0;
