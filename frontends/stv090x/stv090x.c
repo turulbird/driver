@@ -42,7 +42,9 @@
 #include "stv090x.h"
 #include "stv090x_priv.h"
 
+#if defined(IPBOX9900)
 extern int _12v_isON; //defined in e2_proc ->I will implement a better mechanism later
+#endif
 extern int bbgain;
 extern short paramDebug;
 #define TAGDEBUG "[stv090x] "
@@ -6925,11 +6927,27 @@ static int hdbox_set_voltage(struct dvb_frontend *fe, enum fe_sec_voltage voltag
 	{
 	case SEC_VOLTAGE_OFF:
 		dprintk(20, "Switch LNB voltage off\n");
+#if defined(IPBOX9900)
 		if (_12v_isON == 0)
+		{
 			if (state->tuner == STV090x_TUNER1)
+			{
 				res |= 0x10;
+			}
 			else
+			{
 				res |= 0x20;
+			}
+#else
+		if (state->tuner == STV090x_TUNER1)
+		{
+			res |= 0x10;
+		}
+		else
+		{
+			res |= 0x20;
+		}
+#endif
 		break;
 
 	case SEC_VOLTAGE_13: /* vertical */
@@ -7063,10 +7081,14 @@ static int lnbh23_set_voltage(struct dvb_frontend *fe, enum fe_sec_voltage volta
 		case SEC_VOLTAGE_OFF:
 		{
 			dprintk(20, "Switch LNB voltage off\n");
+#if defined(IPBOX9900)
 			if (_12v_isON == 0)
 			{
 				writereg_lnb_supply(state, 0xd0);
 			}
+#else
+			writereg_lnb_supply(state, 0xd0);
+#endif
 			break;
 		}
 		case SEC_VOLTAGE_13: /* vertical */
