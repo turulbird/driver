@@ -24,7 +24,7 @@
    K = ioctl magic = 0x3a
    N = command number
 */
-
+/* IOCTL definitions for tffpctl */
 #define FRONTPANELGETTIME               0x40003a00 | (sizeof(frontpanel_ioctl_time) << 16)
 #define FRONTPANELSETTIME               0x40003a01
 #define FRONTPANELSYNCSYSTIME           0x40003a02
@@ -48,6 +48,55 @@
 #define FRONTPANELALLCAPS               0x40003a14 | (sizeof(frontpanel_ioctl_allcaps) << 16)
 #define FRONTPANELSCROLLMODE            0x40003a15 | (sizeof(frontpanel_ioctl_scrollmode) << 16)
 #define FRONTPANELICON                  0x40003a20 | (sizeof(frontpanel_ioctl_icons) << 16)
+#define FRONTPANELSPINNER               0x40003a21 | (sizeof(frontpanel_ioctl_spinner) << 16)
+
+/* IOCTL command definitions for tffpctl */
+#define _FRONTPANELGETTIME              0x00
+#define _FRONTPANELSETTIME              0x01
+#define _FRONTPANELSYNCTIME             0x02
+#define _FRONTPANELCLEARTIMER           0x03
+#define _FRONTPANELSETTIMER             0x04
+#define _FRONTPANELBRIGHTNESS           0x05
+#define _FRONTPANELIRFILTER1            0x06
+#define _FRONTPANELIRFILTER2            0x07
+#define _FRONTPANELIRFILTER3            0x08
+#define _FRONTPANELIRFILTER4            0x09
+#define _FRONTPANELPOWEROFF             0x0a
+#define _FRONTPANELBOOTREASON           0x0b
+#define _FRONTPANELCLEAR                0x0c
+#define _FRONTPANELTYPEMATICDELAY       0x0d
+#define _FRONTPANELTYPEMATICRATE        0x0e
+#define _FRONTPANELKEYEMULATION         0x0f
+#define _FRONTPANELREBOOT               0x10
+#define _FRONTPANELRESEND               0x13
+#define _FRONTPANELALLCAPS              0x14
+#define _FRONTPANELSCROLLMODE           0x15
+#define _FRONTPANELICON                 0x20
+#define _FRONTPANELSPINNER              0x21
+
+/* IOCTL definitions for duckbox enigma2 */
+#define VFDMAGIC                        0xc0425a00
+#define VFDDISPLAYCHARS                 0xc0425a00
+#define VFDBRIGHTNESS                   0xc0425a03
+#define VFDDISPLAYWRITEONOFF            0xc0425a05
+#define VFDICONDISPLAYONOFF             0xc0425a0a
+#define VFDPOWEROFF                     0xc0425af5
+#define VFDSETPOWERONTIME               0xc0425af6
+#define VFDGETWAKEUPMODE                0xc0425af9
+#define VFDGETTIME                      0xc0425afa
+#define VFDSETTIME                      0xc0425afb
+#define VFDSTANDBY                      0xc0425afc
+#define VFDREBOOT                       0xc0425afd
+//#define VFDSETTIME2                     0xc0425afd //aotom has this
+#define VFDDISPLAYCLR                   0xc0425b00
+#define VFDGETWAKEUPTIME                0xc0425b03
+
+#define STASC1IRQ                       120
+#define BUFFERSIZE                      256     //must be 2 ^ n
+
+#define KEYEMUTF7700                    0
+#define KEYEMUUFS910                    1
+#define KEYEMUTF7700LKP                 2
 
 //The following icons belong to block 1
 #define FPICON_IRDOT                    0x00000001
@@ -168,14 +217,80 @@ typedef struct
 
 typedef struct
 {
+	byte Spinner;
+} frontpanel_ioctl_spinner;
+
+typedef struct
+{
 	byte ScrollMode;
 	byte ScrollPause;
 	byte ScrollDelay;
 } frontpanel_ioctl_scrollmode;
 
+
+/* These are used by the generic ioctl routines */
+struct set_brightness_s
+{
+	int level;
+};
+
+struct set_icon_s
+{
+	int icon_nr;
+	int on;
+};
+
+struct set_light_s
+{
+	int onoff;
+};
+
+struct set_display_time_s
+{
+	int on;
+};
+
+/* time must be given as follows:
+ * time[0] & time[1] = mjd ???
+ * time[2] = hour
+ * time[3] = min
+ * time[4] = sec
+ */
+//struct set_standby_s
+//{
+//	char time[5];
+//};
+
+struct set_time_s
+{
+	char time[5];
+};
+
+struct tffp_ioctl_data
+{
+	union
+	{
+		struct set_icon_s icon;
+		struct set_brightness_s brightness;
+		struct set_light_s light;
+		struct set_display_time_s display_time;
+//		struct set_mode_s mode;
+//		struct set_standby_s standby;
+		struct set_time_s time;
+	} u;
+};
+
+struct vfd_ioctl_data
+{
+	unsigned char start_address;
+	unsigned char data[64];
+	unsigned char length;
+};
+
 extern void vfdSetGmtWakeupTime(time_t time);
 extern void vfdSetGmtTime(time_t time);
 extern time_t vfdGetGmtTime(void);
+extern time_t vfdGetLocalTime(void);
 extern int getBootReason(void);
 
 #endif
