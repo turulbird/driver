@@ -43,18 +43,20 @@
 /* 2009-07-27 V4.2  Removed filtering of the power-off key.               */
 /* 2009-08-08 V4.3  Added support for configuration in EEPROM             */
 /* 2009-10-13 V4.4  Added typematic rate control for the power-off key    */
-/* 2009-10-13 V4.5  Fixed error in function TranslateUTFString            */
-/*                  In special casses the ending '\0' has been skipped    */
+/* 2009-10-13 V4.5  Fixed error in function TranslateUTFString.           */
+/*                   In special casses the ending '\0' has been skipped   */
 /* 2011-07-18 V4.6  Add quick hack for long key press                     */
 /* 2011-07-23 V4.7  Add LKP emulation mode                                */
 /* 2015-09-19 V4.8  All icons controllable and driver made compatible     */
-/*                  with VFD-Icons plugin. Tab/space cleanup. Indenting   */
-/*                  made consistent, including use of braces. Fixed all   */
-/*                  compiler warnings.                                    */
+/*                   with VFD-Icons plugin. Tab/space cleanup. Indenting  */
+/*                   made consistent, including use of braces. Fixed all  */
+/*                   compiler warnings.                                   */
 /* 2015-09-25 V4.9  IOCTL brightness control and display on/off added.    */
+/* 2015-10-13 V4.10 RTC driver added.                                     */
+/* 2015-11-06 V4.11 Spinner added.                                        */
 /**************************************************************************/
 
-#define VERSION         "V4.9"
+#define VERSION         "V4.11"
 //#define DEBUG
 
 #include <asm/io.h>
@@ -75,6 +77,8 @@
 #include <linux/termios.h>
 #include <linux/poll.h>
 #include <linux/ctype.h>
+#include <linux/rtc.h>
+#include <linux/platform_device.h>
 
 #include "frontpanel.h"
 #include "stb7109regs.h"
@@ -87,28 +91,6 @@ extern void remove_proc_fp(void);
 #define LASTMINOR                 3
 #define IOCTLMAGIC                0x3a
 
-#define _FRONTPANELGETTIME        0x00
-#define _FRONTPANELSETTIME        0x01
-#define _FRONTPANELSYNCTIME       0x02
-#define _FRONTPANELCLEARTIMER     0x03
-#define _FRONTPANELSETTIMER       0x04
-#define _FRONTPANELBRIGHTNESS     0x05
-#define _FRONTPANELIRFILTER1      0x06
-#define _FRONTPANELIRFILTER2      0x07
-#define _FRONTPANELIRFILTER3      0x08
-#define _FRONTPANELIRFILTER4      0x09
-#define _FRONTPANELPOWEROFF       0x0a
-#define _FRONTPANELBOOTREASON     0x0b
-#define _FRONTPANELCLEAR          0x0c
-#define _FRONTPANELTYPEMATICDELAY 0x0d
-#define _FRONTPANELTYPEMATICRATE  0x0e
-#define _FRONTPANELKEYEMULATION   0x0f
-#define _FRONTPANELREBOOT         0x10
-#define _FRONTPANELRESEND         0x13
-#define _FRONTPANELALLCAPS        0x14
-#define _FRONTPANELSCROLLMODE     0x15
-#define _FRONTPANELICON           0x20
-
 #define FPSHUTDOWN                0x20
 #define FPPOWEROFF                0x21
 #define FPSHUTDOWNACK             0x31
@@ -120,30 +102,17 @@ extern void remove_proc_fp(void);
 #define FPREQBOOTREASON           0x80
 #define FPBOOTREASON              0x81
 #define FPTIMERCLEAR              0x72
+#define FPREQTIMERNEW             0x82 //experimental
+#define FPTIMERNEW                0x83 //experimental
 #define FPTIMERSET                0x84
 
-#define VFDMAGIC                  0xc0425a00
-#define VFDDISPLAYCHARS           0xc0425a00
-#define VFDBRIGHTNESS             0xc0425a03
-#define VFDDISPLAYWRITEONOFF      0xc0425a05
-#define VFDICONDISPLAYONOFF       0xc0425a0a
-#define VFDPOWEROFF               0xc0425af5
-#define VFDGETWAKEUPMODE          0xc0425af9
-
-#define VFDDISPLAYCLR             0xc0425b00
-
-#define STASC1IRQ                 120
-#define BUFFERSIZE                256     //must be 2 ^ n
-
-#define KEYEMUTF7700              0
-#define KEYEMUUFS910              1
-#define KEYEMUTF7700LKP           2
+#define RTC_NAME "tffp-rtc"
+static struct platform_device *rtc_pdev;
 
 
 typedef enum
 {
-	/* Common legacy icons (not all of them present):
-	 */
+	/* Common legacy icons (not all of them present): */
 	VFD_ICON_HD = 0x01,
 	VFD_ICON_HDD,
 	VFD_ICON_LOCK,
@@ -159,9 +128,8 @@ typedef enum
 	VFD_ICON_FR,
 	VFD_ICON_REC,
 	VFD_ICON_CLOCK,
-	/* Additional unique TF7700 icons
-           The CD icons:
-	*/
+	/* Additional unique TF77X0 icons
+       The CD icons: */
 	VFD_ICON_CD1 = 0x20,
 	VFD_ICON_CD2,
 	VFD_ICON_CD3,
@@ -173,8 +141,7 @@ typedef enum
 	VFD_ICON_CD9,
 	VFD_ICON_CD10,
 	VFD_ICON_CDCENTER = 0x2f,
-	/* The HDD level display icons:
-	 */
+	/* The HDD level display icons: */
 	VFD_ICON_HDD1 = 0x30,
 	VFD_ICON_HDD_1,
 	VFD_ICON_HDD_2,
@@ -186,9 +153,8 @@ typedef enum
 	VFD_ICON_HDD_8,
 	VFD_ICON_HDD_FRAME,
 	VFD_ICON_HDD_FULL = 0x3a,
-	/* The remaining TF7700 icons,
-	   approximately in display order:
-	 */
+	/* The remaining TF77X0 icons,
+	   approximately in display order: */
 	VFD_ICON_MP3_2 = 0x40,
 	VFD_ICON_AC3,
 	VFD_ICON_TIMESHIFT,
@@ -216,16 +182,10 @@ typedef enum
 	VFD_ICON_PM,
 	VFD_ICON_DOT,
 	VFD_ICON_POWER,
-	VFD_ICON_COLON, //(0x5b)
+	VFD_ICON_COLON,
+	VFD_ICON_SPINNER, //(0x5c)
 	VFD_ICON_ALL = 0x7f
 } VFD_ICON;
-
-struct vfd_ioctl_data
-{
-	unsigned char start_address;
-	unsigned char data[64];
-	unsigned char length;
-};
 
 typedef struct
 {
@@ -242,6 +202,7 @@ static time_t gmtWakeupTime = 0;
 static tFrontPanelOpen FrontPanelOpen [LASTMINOR + 1];     //remembers the file handle for all minor numbers
 
 byte save_bright; //remembers brightness level for VFDDISPLAYWRITEONOFF
+byte spinner_on; //flag: display spinner
 
 typedef enum
 {
@@ -294,12 +255,12 @@ static void SendFPString(byte *s)
 #ifdef DEBUG
 	if (s)
 	{
-		printk("FP: SendString(s=02 ");
+		printk("FP: SendString(SOP ");
 		for (i = 0; i <= (s[0] & 0x0f); i++)
 		{
 			printk ("%2.2x ", s[i]);
 		}
-		printk("03)\n");
+		printk("EOP)\n");
 	}
 #endif
 
@@ -345,7 +306,7 @@ static void VFDSendToDisplay(bool Force)
 	byte DispBuffer [10];
 
 #ifdef DEBUG
-	//printk("FP: VFDSendToDisplay(Force=%s)\n", Force ? "true" : "false");
+	printk("FP: VFDSendToDisplay(Force=%s)\n", Force ? "true" : "false");
 #endif
 
 	DispBuffer[0] = 0x99;
@@ -958,6 +919,8 @@ char                           sdow[][4] = {"Mon", "Tue", "Wed", "Thu", "Fri", "
 static frontpanel_ioctl_time   fptime;
 int                            FPREQDATETIMENEWPending = 0;
 static DECLARE_WAIT_QUEUE_HEAD (FPREQDATETIMENEW_queue);
+int                            FPREQTIMERNEWPending = 0;
+static DECLARE_WAIT_QUEUE_HEAD (FPREQTIMERNEW_queue);
 
 frontpanel_ioctl_time *VFDReqDateTime(void)
 {
@@ -972,6 +935,18 @@ frontpanel_ioctl_time *VFDReqDateTime(void)
 	return &fptime;
 }
 
+frontpanel_ioctl_time *VFDReqTimerDateTime(void)
+{
+#ifdef DEBUG
+	printk("FP: VFDReqTimerDateTime()\n");
+#endif
+
+	FPREQTIMERNEWPending = 1;
+	SendFPData(1, FPREQTIMERNEW);
+	wait_event_interruptible_timeout(FPREQTIMERNEW_queue, !FPREQTIMERNEWPending, HZ);
+
+	return &fptime;
+}
 static void InterpretDateTime(void)
 {
 	word w;
@@ -993,7 +968,7 @@ static void InterpretDateTime(void)
 	fptime.sec   = GetBufferByte(6);
 	fptime.now = mktime(fptime.year, fptime.month, fptime.day, fptime.hour, fptime.min, fptime.sec);
 
-	printk ("FP: clock set to %d-%2.2d-%2.2d %s %2.2d:%2.2d:%2.2d\n", fptime.year, fptime.month, fptime.day, fptime.sdow, fptime.hour, fptime.min, fptime.sec);
+	printk ("FP: clock set to %s %2.2d-%2.2d-%4.4d %2.2d:%2.2d:%2.2d\n", fptime.sdow, fptime.day, fptime.month, fptime.year, fptime.hour, fptime.min, fptime.sec);
 
 	FPREQDATETIMENEWPending = 0;
 	wake_up_interruptible(&FPREQDATETIMENEW_queue);
@@ -1007,7 +982,12 @@ void VFDSetTime(frontpanel_ioctl_time *fptime)
 #ifdef DEBUG
 	printk("FP: VFDSetTime(*fptime=%p)\n", fptime);
 #endif
-
+/*
+ w is a 16 bit sequence representing the date, consisting of:
+   7 bits: year minus 2000
+   4 bits: month
+   5 bits: day
+ */
 	w = (((fptime->year - 2000) & 0x7f) << 9) | ((fptime->month & 0x0f) << 5) | (fptime->day & 0x1f);
 	s[0] = FPDATETIMENEW;
 	s[1] = w >> 8;
@@ -1184,6 +1164,7 @@ static void VFDReboot(void)
 /**********************************************************************************************/
 static void VFDBrightness(byte Brightness)
 {
+// BUG/TODO: level 0 is max brightness
 	byte BrightData[]={0x00, 0x01, 0x02, 0x08, 0x10, 0x20};
 
 #ifdef DEBUG
@@ -1324,6 +1305,144 @@ static void VFDSetIcons(dword Icons1, dword Icons2, byte BlinkMode)
 	if (Icons2 & FPICON_HDD1)         SetIconBits(29, 5, BlinkMode);
 	if (Icons2 & FPICON_HDD2)         SetIconBits(29, 6, BlinkMode);
 	if (Icons2 & FPICON_HDD3)         SetIconBits(29, 7, BlinkMode);
+}
+
+/**********************************************************************************************/
+/* Spinner task                                                                               */
+/**********************************************************************************************/
+static int Spinner_on;
+static int Spinner_state;
+static int Segment_flag[11];
+
+static void CD_icons_onoff(byte onoff)
+{
+	int i;
+
+	SetIconBits(26, 7, onoff); //CD segment 1
+	SetIconBits(26, 6, onoff);
+
+	SetIconBits(26, 5, onoff); //CD segment 2
+
+	SetIconBits(26, 4, onoff); //CD segment 3
+
+	SetIconBits(26, 3, onoff); //CD segment 4
+
+	SetIconBits(26, 2, onoff); //CD segment 5
+
+	SetIconBits(26, 1, onoff); //CD segment 6
+	SetIconBits(26, 0, onoff);
+
+	SetIconBits(27, 7, onoff); //CD segment 7
+
+	SetIconBits(27, 6, onoff); //CD segment 8
+
+	SetIconBits(27, 5, onoff); //CD segment 9
+
+	SetIconBits(25, 0, onoff); //CD segment 10
+
+	for (i = 0; i < 11; i++)
+	{
+		Segment_flag[i] = onoff ? 1 : 0;
+	}
+}
+
+static void SpinnerTimer(void)
+{
+	// called every 10ms
+	static int cntdown = 0;
+	byte on_off;
+
+	if (!Spinner_state && Spinner_on) //Spinner was switched on
+	{
+//		SetIconBits(25, 1, 0xf); //switch CD center on
+		CD_icons_onoff(0); //start with all segments off
+		Spinner_state = 1; //and state 1
+		cntdown = 0;
+	}
+
+	if (Spinner_state && !Spinner_on) //Spinner was switched off
+	{
+//		SetIconBits(25, 1, 0); //switch CD center off
+		CD_icons_onoff(0); //switch all segments off
+		Spinner_state = 0;
+	}
+
+	if (Spinner_on)
+	{
+		if (cntdown >= 20) // one cycle will last 20 x 10ms x 10 states = 2s
+		{
+			on_off = Segment_flag[Spinner_state] ? 0 : 0xf;
+
+			switch (Spinner_state)
+			{
+				case 1:
+				{
+					SetIconBits(26, 7, on_off); //CD segment 1
+					SetIconBits(26, 6, on_off);
+					break;
+				}
+				case 2:
+				{
+					SetIconBits(26, 5, on_off); //CD segment 2
+					break;
+				}
+				case 3:
+				{
+					SetIconBits(26, 4, on_off); //CD segment 3
+					break;
+				}
+				case 4:
+				{
+					SetIconBits(26, 3, on_off); //CD segment 4
+					break;
+				}
+				case 5:
+				{
+					SetIconBits(26, 2, on_off); //CD segment 5
+					break;
+				}
+				case 6:
+				{
+					SetIconBits(26, 1, on_off); //CD segment 6
+					SetIconBits(26, 0, on_off);
+					break;
+				}
+				case 7:
+				{
+					SetIconBits(27, 7, on_off); //CD segment 7
+					break;
+				}
+				case 8:
+				{
+					SetIconBits(27, 6, on_off); //CD segment 8
+					break;
+				}
+				case 9:
+				{
+					SetIconBits(27, 5, on_off); //CD segment 9
+					break;
+				}
+				case 10:
+				{
+					SetIconBits(25, 0, on_off); //CD segment 10
+					break;
+				}
+			}
+			Segment_flag[Spinner_state] = !Segment_flag[Spinner_state];
+
+			Spinner_state++;
+			if (Spinner_state == 11)
+			{
+				Spinner_state = 1;
+			}
+
+			cntdown = 0;
+		}
+		else
+		{
+			cntdown++;
+		}
+	}
 }
 
 /**********************************************************************************************/
@@ -1517,7 +1636,7 @@ static void FPCommandInterpreter(void)
 		{
 			static byte TypematicRate = 0;
 #ifdef DEBUG
-	printk("FP: FPSHUTDOWN\n");
+			printk("FP: FPSHUTDOWN\n");
 #endif
 
 			if (KeyEmulationMode == KEYEMUTF7700LKP)
@@ -1557,6 +1676,12 @@ static void FPCommandInterpreter(void)
 			InterpretBootReason();
 			break;
 		}
+		case FPTIMERNEW:
+		{
+			InterpretDateTime();
+			//update_persistent_clock(now);
+			break;
+		}
 		case FPKEYPRESS:
 		case FPKEYPRESSFP:
 		{
@@ -1567,7 +1692,10 @@ static void FPCommandInterpreter(void)
 				// Switch off power icon to indicate that no automatic shutdown for auto timers will be done
 				VFDSetIcons(FPICON_POWER, 0x0, 0x0);
 			}
+			SetIconBits(1, 4, 0x0f);
 			InterpretKeyPresses();
+			SetIconBits(1, 4, 0);
+
 			break;
 		}
 		default:
@@ -1735,13 +1863,14 @@ static void FP_Timer(void)
 	DelayCounter = (DelayCounter + 1) & 0x03;
 }
 
-// This is a 10ms timer. It is responsible to call ScrollTimer() every time
+// This is a 10ms timer. It is responsible to call ScrollTimer() and SpinnerTimer() every time
 // and FP_Timer() every 250ms
 static void HighRes_FP_Timer(dword arg)
 {
 	static int Counter = 0;
 
 	ScrollTimer();
+	SpinnerTimer();
 
 	if (Counter > 24)
 	{
@@ -2009,7 +2138,7 @@ void vfdSetGmtWakeupTime(time_t time)
 	pTime = gmtime(time);
 
 	VFDSetTimer(pTime);
-	printk("\nWakeup time: %d:%02d:%02d %02d-%02d-%04d\n", pTime->hour, pTime->min,
+	printk("\nWakeup time: %02d:%02d:%02d %02d-%02d-%04d (GMT)\n", pTime->hour, pTime->min,
 		 pTime->sec, pTime->day, pTime->month, pTime->year);
 }
 
@@ -2021,7 +2150,22 @@ void vfdSetGmtTime(time_t time)
 	time += tffpConfig.gmtOffset;
 
 	pTime = gmtime(time);
+#ifdef DEBUG
+	printk("\nTime= %02d:%02d:%02d %02d-%02d-%04d (GMT, offset=%dh)\n", pTime->hour, pTime->min,
+		 pTime->sec, pTime->day, pTime->month, pTime->year, tffpConfig.gmtOffset/3600);
+#endif
+	VFDSetTime(pTime);
+}
 
+void vfdSetLocalTime(time_t time)
+{
+	frontpanel_ioctl_time *pTime;
+
+	pTime = gmtime(time);
+#ifdef DEBUG
+	printk("\nTime= %02d:%02d:%02d %02d-%02d-%04d (local)\n", pTime->hour, pTime->min,
+		 pTime->sec, pTime->day, pTime->month, pTime->year);
+#endif
 	VFDSetTime(pTime);
 }
 
@@ -2037,6 +2181,32 @@ time_t vfdGetGmtTime()
 	time -= tffpConfig.gmtOffset;
 
 	return time;
+}
+
+time_t vfdGetLocalTime()
+{
+	frontpanel_ioctl_time *pTime = VFDReqDateTime();
+	time_t time;
+
+	/* convert to seconds since 1970 */
+	time = mktime(pTime->year, pTime->month, pTime->day, pTime->hour, pTime->min, pTime->sec);
+
+	return time;
+}
+
+time_t vfdCalcuTime(struct set_time_s *Time)
+{
+	time_t uTime;
+	word mjd = (((Time->time[0] & 0xff) << 8) + (Time->time[1] & 0xff) - 40587);
+	byte hour = Time->time[2] & 0xff;
+	byte min = Time->time[3] & 0xff;
+	byte sec = Time->time[4] & 0xff;
+
+	uTime = (mjd * 86400) + (hour * 3600) + (min * 60) + sec;
+#ifdef DEBUG
+	printk("FP: %s MJD=%u %02d:%02d:%02d (uTime=%u)\n", __func__, mjd, hour, min, sec, (int)uTime);
+#endif
+	return uTime;
 }
 
 static int FrontPaneldev_ioctl(struct inode *Inode, struct file *File, unsigned int cmd, dword arg)
@@ -2071,9 +2241,25 @@ static int FrontPaneldev_ioctl(struct inode *Inode, struct file *File, unsigned 
 
 	if ((cmd & 0xfffffe00) == VFDMAGIC)
 	{
+		int res = 0;
+		struct tffp_ioctl_data tffp_data;
 		struct vfd_ioctl_data vfdData;
-
 		copy_from_user(&vfdData, (const void*)arg, sizeof(vfdData));
+
+
+		switch (cmd)
+		{
+			case VFDICONDISPLAYONOFF:
+			case VFDSETTIME:
+			case VFDBRIGHTNESS:
+			case VFDDISPLAYWRITEONOFF:
+			{
+				if (copy_from_user(&tffp_data, (void *)arg, sizeof(tffp_data)))
+				{
+					return -EFAULT;
+				}
+			}
+		}
 
 		switch (cmd)
 		{
@@ -2093,24 +2279,21 @@ static int FrontPaneldev_ioctl(struct inode *Inode, struct file *File, unsigned 
 			}
 			case VFDICONDISPLAYONOFF:
 			{
-				byte onoff;
+				int icon_nr = tffp_data.u.icon.icon_nr;
+				byte onoff = tffp_data.u.icon.on ? 0xf : 0;
 
-				onoff = vfdData.data[4] ? 0xf : 0;
-
-				/* The icon number layout has been established as follows:
-                                   Icons 1 through 41: unchanged for compatibility with existing drivers
-				   Of these, icons 32 - 41 from the CD segments
-				   Icon 47 (CD center): added
-				   Icons 48 - 58 (HDD level display parts): added
-				   Icons 64 - 91 (remaining icons in display order): added
-				   Icon 127 (all): added
-				 */
-				printk("FP: VFDICONDISPLAYONOFF Set icon number 0x%2x, state %1x\n", vfdData.data[0], vfdData.data[4]);
-				switch (vfdData.data[0]) //get icon number
+				//e2 icons work around
+				if (icon_nr >= 256)
+				{
+					icon_nr >>= 8;
+					/* E2 icon translation can be inserted here */
+				}
+				switch (icon_nr) //get icon number
 				{
 					/* The VFD driver of enigma2 issues codes during the start
 					   phase, map them to the CD segments to indicate progress
-        	                           These are icon numbers 32-41 & 47. */
+					   These are icon numbers 32-41 & 47.
+					 */
 					case VFD_ICON_CD1: //0x20, note: two segments
 					{
 						SetIconBits(26, 7, onoff);
@@ -2170,7 +2353,7 @@ static int FrontPaneldev_ioctl(struct inode *Inode, struct file *File, unsigned 
 					}
 
 					/* Icons to build the HDD level display.
-	                                   These are icon numbers 48-58.
+					   These are icon numbers 48-58.
 					   Please note that these are also used by the TopfieldVFD plugin.
 					 */
 					case VFD_ICON_HDD1: //0x30
@@ -2229,9 +2412,9 @@ static int FrontPaneldev_ioctl(struct inode *Inode, struct file *File, unsigned 
 						SetIconBits(28, 6, onoff);
 						break;
 					}
-					/* The remanining icons, approximately in
+					/* The remaining icons, approximately in
 					   display order. Some are assigned twice or three times
-					   to remain comptible with existing drivers and/or to
+					   to remain compatible with existing drivers and/or to
 					   support the standard VFD-Icons plugin.
 					 */
 					case VFD_ICON_MP3_2: //0x40
@@ -2390,54 +2573,58 @@ static int FrontPaneldev_ioctl(struct inode *Inode, struct file *File, unsigned 
 						SetIconBits(5, 7, onoff);
 						break;
 					}
+					case VFD_ICON_SPINNER: //0x5C
+					{
+						Spinner_on = onoff ? 1 : 0;
+						break;
+					}
 					case VFD_ICON_ALL: //0x7f
 					{
-						VFDSetIcons(0xffffffff, 0xffffffff, onoff);
+						VFDSetIcons(0x0fffffff, 0x00fffffff, onoff);
 						break;
 					}
 					default:
 					{
 						printk("FP: unknown icon number %0x2x\n", vfdData.data[0]);
-						return 0;
+						return -EINVAL;
 					}
 				}
 				break;
 			}
 			case VFDBRIGHTNESS:
 			{
-				byte bright;
+				if (tffp_data.u.brightness.level < 0)
+				{
+					tffp_data.u.brightness.level = 0;
+				}
+				else if (tffp_data.u.brightness.level > 5)
+				{
+					tffp_data.u.brightness.level = 5;
+				}
 
-				bright = vfdData.start_address & 0x7;
-
-				if (bright == save_bright)
+				if (tffp_data.u.brightness.level == save_bright)
 				{
 					break;
 				}
-				if (bright > 5)
+#ifdef DEBUG
+				printk("FP: %s Set brightness level 0x%02X\n", __func__, tffp_data.u.brightness.level);
+#endif
+				if (tffpConfig.brightness != tffp_data.u.brightness.level)
 				{
-					bright = 5;
+					tffpConfig.brightness = tffp_data.u.brightness.level;
+					writeTffpConfig(&tffpConfig);
 				}
-				if (bright < 0)
-				{
-					bright = 0;
-				}
-				VFDBrightness(bright);
+				VFDBrightness(tffp_data.u.brightness.level);
 
-				save_bright = bright;
+				save_bright = tffp_data.u.brightness.level;
+
 				break;
 			}
 			case VFDDISPLAYWRITEONOFF:
 			{
-				byte onoff;
+				printk("FP: %s Set light 0x%02X\n", __func__, tffp_data.u.light.onoff);
 
-				onoff = vfdData.start_address;
-
-				if (onoff != 0)
-				{
-					onoff = 1;
-				}
-
-				switch (onoff)
+				switch (tffp_data.u.light.onoff)
 				{
 					case 0: //whole display off
 					{
@@ -2449,26 +2636,134 @@ static int FrontPaneldev_ioctl(struct inode *Inode, struct file *File, unsigned 
 						VFDBrightness(save_bright);
 						break;
 					}
+					default:
+					{
+						res = -EINVAL;
+						break;
+					}
 				}
 				break;
 			}
 			case VFDDISPLAYCLR:
 			{
 				VFDClearBuffer();
+				Spinner_on = 0;
+				CD_icons_onoff(0);
 				memset(IconBlinkMode, 0, sizeof(IconBlinkMode));
 				break;
 			}
+			case VFDSETTIME:
+			{
+				time_t uTime;
+
+				uTime = vfdCalcuTime(&tffp_data.u.time);
+
+				vfdSetLocalTime(uTime);
+//				VFDReqDateTime();
+				break;
+			}
+//			case VFDSETTIME2:
+//			{
+//				u32 uTime = 0;
+//
+//				res = get_user(uTime, (int *)arg);
+//				if (! res)
+//				{
+//					vfdSetLocalTime(uTime);
+//					VFDReqDateTime();
+//				}
+//				break;
+//			}
+			case VFDGETTIME:
+			{
+				u32 uTime = 0;
+				
+//				uTime = vfdGetGmtTime();
+				uTime = vfdGetLocalTime();
+#ifdef DEBUG
+				printk("FP: %s FP time: %d\n", __func__, uTime);
+#endif
+				res = put_user(uTime, (int *) arg);
+				break;
+			}
+			case VFDSETPOWERONTIME:
+			{
+				time_t uTime = 0;
+
+				get_user(uTime, (int *)arg);
+#ifdef DEBUG
+				printk("FP: %s Set FP wake up time to: %u (uTime)\n", __func__, (int)uTime);
+#endif
+				vfdSetGmtWakeupTime(uTime);
+				break;
+			}
+//			case VFDGETWAKEUPTIME:
+//			{
+//				u32 uTime = 0;
+//
+//				printk("FP: %s Power on time: %d\n", __func__, uTime);
+//				res = put_user(uTime, (int *)arg);
+//				break;
+//			}
 			case VFDGETWAKEUPMODE:
 			{
 				//The reason value has already been cached upon module startup
-				copy_to_user((void*)arg, &fpbootreason, sizeof(frontpanel_ioctl_bootreason));
+				int reason = getBootReason();
+
+				switch (reason) //convert reason to a value expected by fp_control
+				{
+						case 2: //timer?
+						{
+							reason = 3;
+							break;
+						}
+//						case 1: //power on,  or reboot?
+//						{
+//							reason = 1;
+//							break;
+//						}
+						case 0: //from deep standby?
+						{
+							reason = 2;
+							break;
+						}
+						case 3: //?
+						default:
+						{
+							reason = 0; //unknown
+							break;
+						}
+				}
+				copy_to_user((void*)arg, &reason, sizeof(frontpanel_ioctl_bootreason));
+				break;
+			}
+			case VFDREBOOT:
+			{
+				Spinner_on = 0;
+				CD_icons_onoff(0);
+				VFDReboot();
 				break;
 			}
 			case VFDPOWEROFF:
 			{
+				Spinner_on = 0;
+				CD_icons_onoff(0);
+				VFDClearBuffer();
+				memset(IconBlinkMode, 0, sizeof(IconBlinkMode));
 				VFDShutdown();
 				break;
 			}
+//			case VFDSTANDBY:
+//			{
+//				u32 uTime = 0;
+//
+//				get_user(uTime, (int *) arg);
+//				vfdSetGmtWakeupTime(uTime);
+//				VFDClearBuffer();
+//				memset(IconBlinkMode, 0, sizeof(IconBlinkMode));
+//				res = 0;
+//				break;
+//			}
 			case 0x5305:
 			{
 				//Neutrino sends this
@@ -2480,7 +2775,7 @@ static int FrontPaneldev_ioctl(struct inode *Inode, struct file *File, unsigned 
 				return -EINVAL;
 			}
 		}
-		return 0;
+		return res;
 	}
 	else if (((cmd >> 8) & 0xff) != IOCTLMAGIC)
 	{
@@ -2540,7 +2835,7 @@ static int FrontPaneldev_ioctl(struct inode *Inode, struct file *File, unsigned 
 				
 				writeTffpConfig(&tffpConfig);
 
-				printk("New GMT offset is %d\n", tffpConfig.gmtOffset);
+				printk("New GMT offset is %ds\n", tffpConfig.gmtOffset);
 
 				/* update the wakeup time if set */
 				if (gmtWakeupTime)
@@ -2553,7 +2848,7 @@ static int FrontPaneldev_ioctl(struct inode *Inode, struct file *File, unsigned 
 		case _IOC_NR(FRONTPANELSYNCSYSTIME):
 		{
 			VFDReqDateTime();
-			/* set the system time to the curernt FP time */
+			/* set the system time to the current FP time */
 			{
 				struct timespec ts;
 
@@ -2778,15 +3073,175 @@ static int FrontPaneldev_ioctl(struct inode *Inode, struct file *File, unsigned 
 			}
 			break;
 		}
+		case _FRONTPANELSPINNER:
+		{
+			frontpanel_ioctl_spinner fpdata;
+
+			if (arg)
+			{
+				copy_from_user(&fpdata, (const void*)arg, sizeof(frontpanel_ioctl_spinner));
+				Spinner_on = fpdata.Spinner ? 1 : 0;
+			}
+			break;
+		}
 		default:
+		{
 			printk("FP: unknown IOCTL 0x%x(0x%08x)\n", cmd, (int)arg);
 			ret = -ENOTTY;
+		}
 	}
 	return ret;
 }
 
 /**********************************************************************************************/
-/* Driver Interface                                                                           */
+/* RTC code                                                                                   */
+/* (based on code taken from aotom driver)                                                    */
+/**********************************************************************************************/
+static int tffp_rtc_read_time(struct device *dev, struct rtc_time *tm)
+{
+	u32 uTime = 0;
+
+#ifdef DEBUG
+	printk("FP: %s >\n", __func__);
+#endif
+
+	uTime = vfdGetGmtTime();
+	rtc_time_to_tm(uTime, tm);
+
+#ifdef DEBUG
+	printk("FP: %s < %d\n", __func__, uTime);
+#endif
+
+	return 0;
+}
+
+static int tm2time(struct rtc_time *tm)
+{
+	return mktime(tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday, tm->tm_hour, tm->tm_min, tm->tm_sec);
+}
+
+static int tffp_rtc_set_time(struct device *dev, struct rtc_time *tm)
+{
+	int res = 0;
+	u32 uTime = tm2time(tm);
+
+#ifdef DEBUG
+	printk("FP: %s > uTime %d\n", __func__, uTime);
+#endif
+
+	vfdSetGmtTime(uTime);
+
+#ifdef DEBUG
+	printk("FP: %s < res: %d\n", __func__, res);
+#endif
+
+	return res;
+}
+
+static int tffp_rtc_read_alarm(struct device *dev, struct rtc_wkalrm *al)
+{
+	u32 a_time = 0;
+
+#ifdef DEBUG
+	printk("FP: %s >\n", __func__);
+#endif
+
+//	a_time = FP_GetPowerOnTime();
+	if (al->enabled)
+	{
+		rtc_time_to_tm(a_time, &al->time);
+	}
+#ifdef DEBUG
+	printk("FP: %s < Enabled: %d RTC alarm time: %d time: %d\n", __func__, al->enabled, (int)&a_time, a_time);
+#endif
+
+	return -EINVAL;
+}
+
+static int tffp_rtc_set_alarm(struct device *dev, struct rtc_wkalrm *al)
+{
+	u32 a_time = 0;
+
+#ifdef DEBUG
+	printk("FP: %s >\n", __func__);
+#endif
+
+	if (al->enabled)
+	{
+		a_time = tm2time(&al->time);
+	}
+	vfdSetGmtWakeupTime(a_time);
+#ifdef DEBUG
+	printk("FP: %s < Enabled: %d time: %d (GMT)\n", __func__, al->enabled, a_time);
+#endif
+
+	return 0;
+}
+
+static const struct rtc_class_ops tffp_rtc_ops =
+{
+	.read_time  = tffp_rtc_read_time,
+	.set_time   = tffp_rtc_set_time,
+	.read_alarm = tffp_rtc_read_alarm,
+	.set_alarm  = tffp_rtc_set_alarm
+};
+
+static int __devinit tffp_rtc_probe(struct platform_device *pdev)
+{
+	struct rtc_device *rtc;
+
+#ifdef DEBUG
+	printk("FP: %s >\n", __func__);
+#endif
+
+	printk("Topfield front panel real time clock\n");
+	pdev->dev.power.can_wakeup = 1;
+	rtc = rtc_device_register("tffp_rtc", &pdev->dev, &tffp_rtc_ops, THIS_MODULE);
+	if (IS_ERR(rtc))
+	{
+		return PTR_ERR(rtc);
+	}
+	platform_set_drvdata(pdev, rtc);
+#ifdef DEBUG
+	printk("FP: %s < %p\n", __func__, rtc);
+#endif
+
+	return 0;
+}
+
+static int __devexit tffp_rtc_remove(struct platform_device *pdev)
+{
+	struct rtc_device *rtc = platform_get_drvdata(pdev);
+
+#ifdef DEBUG
+	printk("FP: %s %p >\n", __func__, rtc);
+#endif
+	rtc_device_unregister(rtc);
+	platform_set_drvdata(pdev, NULL);
+#ifdef DEBUG
+	printk("FP: %s <\n", __func__);
+#endif
+
+	return 0;
+}
+
+/**********************************************************************************************/
+/* Real Time Clock Driver Interface                                                           */
+/*                                                                                            */
+/**********************************************************************************************/
+static struct platform_driver tffp_rtc_driver =
+{
+	.probe = tffp_rtc_probe,
+	.remove = __devexit_p(tffp_rtc_remove),
+	.driver =
+	{
+		.name	= RTC_NAME,
+		.owner	= THIS_MODULE
+	},
+};
+
+/**********************************************************************************************/
+/* Frontpanel Driver Interface                                                                           */
 /*                                                                                            */
 /**********************************************************************************************/
 static struct file_operations frontpanel_fops =
@@ -2893,8 +3348,27 @@ static int __init frontpanel_init_module(void)
 	}
 	memset (&termAttributes, 0, sizeof (struct termios));
 
+	// switch spinner off
+	Spinner_on = 0;
+
 	//Start the timer
 	HighRes_FP_Timer(0);
+
+	//Handle RTC
+	i = platform_driver_register(&tffp_rtc_driver);
+	if (i)
+	{
+		printk("FP: %s RTC platform_driver_register failed: %d\n", __func__, i);
+	}
+	else
+	{
+		rtc_pdev = platform_device_register_simple(RTC_NAME, -1, NULL, 0);
+	}
+
+	if (IS_ERR(rtc_pdev))
+	{
+		printk("FP: %s RTC platform_device_register_simple failed: %ld\n", __func__, PTR_ERR(rtc_pdev));
+	}
 
 	create_proc_fp();
 
@@ -2905,12 +3379,18 @@ static void __exit frontpanel_cleanup_module(void)
 {
 	unsigned int *ASC_3_INT_EN = (unsigned int*)(ASC3BaseAddress + ASC_INT_EN);
 
+	//RTC
+	platform_driver_unregister(&tffp_rtc_driver);
+	platform_set_drvdata(rtc_pdev, NULL);
+	platform_device_unregister(rtc_pdev);
+
 	*ASC_3_INT_EN = *ASC_3_INT_EN & ~0x000001ff;
+	Spinner_on = 0;  // switch spinner off
 	free_irq(STASC1IRQ, NULL);
 	del_timer(&timer);
 	VFDClearBuffer();
 	unregister_chrdev(FRONTPANEL_MAJOR,"FrontPanel");
-	printk("FP: Topfield TF7700HDPVR front panel module unloading\n");
+	printk("FP: Topfield TF77X0HDPVR front panel module unloading\n");
 
 	remove_proc_fp();
 }
@@ -2918,6 +3398,8 @@ static void __exit frontpanel_cleanup_module(void)
 module_init(frontpanel_init_module);
 module_exit(frontpanel_cleanup_module);
 
-MODULE_DESCRIPTION("FrontPanel module for Topfield TF7700HDPVR " VERSION);
-MODULE_AUTHOR("Gustav Gans");
+MODULE_DESCRIPTION("FrontPanel module for Topfield TF77X0HDPVR " VERSION);
+MODULE_AUTHOR("Gustav Gans, enhanced by Audioniek");
 MODULE_LICENSE("GPL");
+
+// vim:ts=4
