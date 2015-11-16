@@ -71,6 +71,9 @@
  *                          throughout instead of box model. Should fix
  *                          display problem on Edision Pingulux Plus (Spark
  *                          with (D)VFD).
+ * 20151114 Audioniek       Fixed erroneous 'Tried to set illegal icon number'
+ *                          message with CD segment icons.
+ * 20151116 Audioniek       procfs added.
  * 
  ****************************************************************************/
 
@@ -97,7 +100,7 @@
 
 #include "aotom_main.h"
 
-static short paramDebug = 0;  //debug print level is zero as default (0=nothing, 1= open/close functions, 5=some detail, 10=all)
+short paramDebug = 0;  //debug print level is zero as default (0=nothing, 1= open/close functions, 5=some detail, 10=all)
 #define TAGDEBUG "[aotom] "
 #define dprintk(level, x...) do { \
 		if ((paramDebug) && (paramDebug > level)) printk(TAGDEBUG x); \
@@ -113,16 +116,8 @@ static int open_count = 0;
 
 #define FRONTPANEL_MINOR_VFD 0
 
-typedef struct
-{
-	int state;
-	int period;
-	int status;
-	struct task_struct *led_task;
-	struct semaphore led_sem;
-} tLedState;
 
-static tLedState led_state[LASTLED + 1];
+tLedState led_state[LASTLED + 1];
 
 static struct semaphore write_sem;
 static struct semaphore draw_thread_sem;
@@ -149,6 +144,24 @@ static int VFD_Show_Time(u8 hh, u8 mm, u8 ss)
 	}
 
 	return YWPANEL_FP_SetTime((hh * 3600) + (mm * 60) + ss);
+}
+
+int aotomSetBrightness(int level)
+{
+	int res = 0;
+
+	if (level < 0)
+	{
+		level = 0;
+	}
+	else if (level > 7)
+	{
+		level = 7;
+	}
+	dprintk(5, "%s Set brightness level 0x%02X\n", __func__, level);
+	res = YWPANEL_FP_SetBrightness(level);
+
+	return res;
 }
 
 int aotomSetIcon(int which, int on)
@@ -185,7 +198,7 @@ int aotomSetIcon(int which, int on)
 	return res;
 }
 
-static void VFD_set_all_icons(int onoff)
+void VFD_set_all_icons(int onoff)
 {
 	int i, first, last;
 
@@ -215,6 +228,7 @@ void clear_display(void)
 	memset(clrstr, ' ', YWPANEL_width);
 	YWPANEL_FP_ShowString(clrstr);
 }
+
 static void VFD_clr(void)
 {
 	clear_display();
@@ -527,6 +541,36 @@ static int run_draw_thread(struct vfd_ioctl_data *draw_data)
 	return 0;
 }
 
+int aotomWriteText(char *buf, size_t len)
+{
+	int res = 0;
+	struct vfd_ioctl_data data;
+
+	if (len > sizeof(data.data))
+	{
+		data.length = sizeof(data.data);
+	}
+	else
+	{
+		data.length = len;
+	}
+
+	while ((data.length > 0) && (buf[data.length - 1 ] == '\n'))
+	{
+		data.length--;
+	}
+
+	if (data.length > sizeof(data.data))
+	{
+		len = data.length = sizeof(data.data);
+	}
+	memcpy(data.data, buf, data.length);
+	res = run_draw_thread(&data);
+
+	return res;
+}
+//EXPORT_SYMBOL(aotomWriteText);
+
 int aotomSetTime(char* time)
 {
 	int res = 0;
@@ -568,27 +612,7 @@ static ssize_t AOTOMdev_write(struct file *filp, const char *buff, size_t len, l
 	}
 	copy_from_user(kernel_buf, buff, len);
 
-	if (len > sizeof(data.data))
-	{
-		data.length = sizeof(data.data);
-	}
-	else
-	{
-		data.length = len;
-	}
-
-	while ((data.length > 0) && (kernel_buf[data.length - 1 ] == '\n'))
-	{
-		data.length--;
-	}
-
-	if (data.length > sizeof(data.data))
-	{
-		len = data.length = sizeof(data.data);
-	}
-
-	memcpy(data.data, kernel_buf, data.length);
-	res = run_draw_thread(&data);
+	aotomWriteText(kernel_buf, len);
 
 	kfree(kernel_buf);
 
@@ -723,16 +747,7 @@ static int AOTOMdev_ioctl(struct inode *Inode, struct file *File, unsigned int c
 // TODO: fix DVFD in aotom_vfd
 			if (fp_type)
 			{
-				if (aotom_data.u.brightness.level < 0)
-				{
-					aotom_data.u.brightness.level = 0;
-				}
-				else if (aotom_data.u.brightness.level > 7)
-				{
-					aotom_data.u.brightness.level = 7;
-				}
-				dprintk(5, "%s Set brightness level 0x%02X\n", __func__, aotom_data.u.brightness.level);
-				res = YWPANEL_FP_SetBrightness(aotom_data.u.brightness.level);
+				res = aotomSetBrightness(aotom_data.u.brightness.level);
 			}
 			else
 			{
@@ -815,28 +830,13 @@ static int AOTOMdev_ioctl(struct inode *Inode, struct file *File, unsigned int c
 								icon_nr = ICON_REC1;
 								break;
 							}
-#if 0
-							case 38:
-							{
-								icon_nr = ICON_DISK_S3; //cd part1
-								break;
-							}
+							case 38: //CD segments & circle
 							case 39:
-							{
-								icon_nr = ICON_DISK_S2; //cd part2
-								break;
-							}
 							case 40:
-							{
-								icon_nr = ICON_DISK_S1; //cd part3
-								break;
-							}
 							case 41:
 							{
-								icon_nr = ICON_DISK_CIRCLE; //cd circle
 								break;
 							}
-#endif
 							case 47:
 							{
 								icon_nr = ICON_SPINNER;
@@ -1067,19 +1067,16 @@ static int AOTOMdev_ioctl(struct inode *Inode, struct file *File, unsigned int c
 		{
 			if (mode == 0)
 			{
-				if (copy_from_user(&vfd_data, (void *) arg, sizeof(vfd_data)))
+				if (copy_from_user(&vfd_data, (void *)arg, sizeof(vfd_data)))
 				{
 					return -EFAULT;
 				}
-				if (vfd_data.length > sizeof(vfd_data.data))
+				res = aotomWriteText(vfd_data.data, vfd_data.length);
+
+				if (res >= 0)
 				{
-					vfd_data.length = sizeof(vfd_data.data);
+					res = vfd_data.length;
 				}
-				while ((vfd_data.length > 0) && (vfd_data.data[vfd_data.length - 1 ] == '\n'))
-				{
-					vfd_data.length--;
-				}
-				res = run_draw_thread(&vfd_data);
 			}
 			else
 			{
@@ -1553,6 +1550,9 @@ static struct platform_driver aotom_rtc_driver =
 	},
 };
 
+extern void create_proc_fp(void);
+extern void remove_proc_fp(void);
+
 static int __init aotom_init_module(void)
 {
 	int i;
@@ -1614,6 +1614,8 @@ static int __init aotom_init_module(void)
 		dprintk(5, "%s platform_device_register_simple failed: %ld\n", __func__, PTR_ERR(rtc_pdev));
 	}
 
+	create_proc_fp();
+
 	dprintk(5, "%s <\n", __func__);
 
 	return 0;
@@ -1641,6 +1643,7 @@ static void __exit aotom_cleanup_module(void)
 	platform_driver_unregister(&aotom_rtc_driver);
 	platform_set_drvdata(rtc_pdev, NULL);
 	platform_device_unregister(rtc_pdev);
+	remove_proc_fp();
 
 	if ((draw_thread_status != DRAW_THREAD_STATUS_STOPPED) && draw_task)
 	{

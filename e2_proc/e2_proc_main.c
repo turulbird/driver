@@ -610,6 +610,7 @@ int proc_misc_12V_output_read(char *page, char **start, off_t off, int count, in
 }
 #endif
 
+#if 0
 static int info_fpversion(char *page, char **start, off_t off, int count, int *eof, void *data)
 {
 //#if defined(UFS910) || defined(ADB_BOX)
@@ -627,6 +628,7 @@ static int info_fpversion(char *page, char **start, off_t off, int count, int *e
 //#endif
 	return len;
 }
+#endif
 
 static int zero_read(char *page, char **start, off_t off, int count, int *eof, void *data)
 {
@@ -704,16 +706,32 @@ struct ProcStructure_s e2Proc[] =
 	{cProcEntry, "stb/fb/znorm"                                                     , NULL, NULL, default_write_proc, NULL, ""},
 
 	{cProcDir  , "stb/fp"                                                           , NULL, NULL, NULL, NULL, ""},
-	{cProcEntry, "stb/fp/lnb_sense1"                                                , NULL, NULL, NULL, NULL, ""},
-	{cProcEntry, "stb/fp/lnb_sense2"                                                , NULL, NULL, NULL, NULL, ""},
+//	{cProcEntry, "stb/fp/lnb_sense1"                                                , NULL, NULL, NULL, NULL, ""},
+//	{cProcEntry, "stb/fp/lnb_sense2"                                                , NULL, NULL, NULL, NULL, ""},
 	{cProcEntry, "stb/fp/led0_pattern"                                              , NULL, NULL, default_write_proc, NULL, ""},
+	{cProcEntry, "stb/fp/led1_pattern"                                              , NULL, NULL, default_write_proc, NULL, ""},
 	{cProcEntry, "stb/fp/led_pattern_speed"                                         , NULL, NULL, default_write_proc, NULL, ""},
+	{cProcEntry, "stb/fp/oled_brightness"                                           , NULL, NULL, NULL, NULL, ""},
+	{cProcEntry, "stb/fp/rtc"                                                       , NULL, zero_read, default_write_proc, NULL, ""},
+	{cProcEntry, "stb/fp/rtc_offset"                                                , NULL, zero_read, default_write_proc, NULL, ""},
+	{cProcEntry, "stb/fp/text"                                                      , NULL, NULL, NULL, NULL, ""},
 	{cProcEntry, "stb/fp/version"                                                   , NULL, zero_read, NULL, NULL, ""},
 	{cProcEntry, "stb/fp/wakeup_time"                                               , NULL, wakeup_time_read, wakeup_time_write, NULL, ""},
 	{cProcEntry, "stb/fp/was_timer_wakeup"                                          , NULL, NULL, NULL, NULL, ""},
-	{cProcEntry, "stb/fp/rtc"                                                       , NULL, zero_read, default_write_proc, NULL, ""},
 
-	{cProcDir  , "stb/tsmux"                                                        , NULL, NULL, NULL, NULL, ""},
+#if defined(SPARK) || defined(SPARK7162)
+	{cProcEntry, "stb/fp/aotom"                                                     , NULL, NULL, NULL, NULL, ""},
+	{cProcEntry, "stb/fp/displaytype"                                               , NULL, NULL, NULL, NULL, ""},
+	{cProcEntry, "stb/fp/timemode"                                                  , NULL, NULL, NULL, NULL, ""},
+
+//	{cProcEntry, "vfd"                                                              , NULL, NULL, NULL, NULL, ""},
+//	{cProcDir  , "stb/vfd"                                                          , NULL, NULL, NULL, NULL, ""},
+
+	{cProcDir  , "stb/power"                                                        , NULL, NULL, NULL, NULL, ""},
+	{cProcEntry, "stb/power/standbyled"                                             , NULL, NULL, NULL, NULL, ""},
+#endif
+
+   	{cProcDir  , "stb/tsmux"                                                        , NULL, NULL, NULL, NULL, ""},
 	{cProcEntry, "stb/tsmux/input0"                                                 , NULL, NULL, NULL, NULL, ""},
 	{cProcEntry, "stb/tsmux/input1"                                                 , NULL, NULL, NULL, NULL, ""},
 	{cProcEntry, "stb/tsmux/ci0_input"                                              , NULL, NULL, NULL, NULL, ""},

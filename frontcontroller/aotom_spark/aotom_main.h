@@ -65,7 +65,7 @@ typedef unsigned int u32;
 #define YWPANEL_FP_INFO_MAX_LENGTH    10
 #define YWPANEL_FP_DATA_MAX_LENGTH    38
 
-static const char Revision[] = "Revision: 0.9a Audioniek";
+static const char Revision[] = "Revision: 0.10 Audioniek";
 typedef unsigned int YWOS_ClockMsec;
 
 typedef struct YWPANEL_I2CData_s
@@ -319,6 +319,16 @@ typedef struct SegAddrVal_s
 	u8 CurrValue1;
 	u8 CurrValue2;
 } SegAddrVal_T;
+
+typedef struct
+{
+	int state;
+	int period;
+	int status;
+	int enable;
+	struct task_struct *led_task;
+	struct semaphore led_sem;
+} tLedState;
 
 typedef enum YWPANEL_DataType_e
 {
@@ -634,8 +644,10 @@ extern int (*YWPANEL_FP_ShowContent)(void);
 extern int (*YWPANEL_FP_ShowContentOff)(void);
 
 extern int YWPANEL_width;
+extern short paramDebug;
 extern int fp_type; //indicates front panel type: 0=LED, 1=VFD, 2=DVFD
 extern int bTimeMode; //indicates spark7162 DVFD time mode
+extern tLedState led_state[LASTLED + 1];
 
 int YWPANEL_FP_SetCpuStatus(YWPANEL_CPUSTATE_t state);
 int YWPANEL_FP_ControlTimer(int on);
