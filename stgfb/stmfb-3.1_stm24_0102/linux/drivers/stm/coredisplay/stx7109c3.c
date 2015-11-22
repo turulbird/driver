@@ -128,7 +128,7 @@ static struct stmcore_display_pipeline_data platform_data[] = {
 #elif defined(CONFIG_SH_STB7100_REF) || defined(CONFIG_SH_ST_MB442) || defined(CONFIG_SH_RELOOK511) || \
     defined(CUBEREVO) || defined(CUBEREVO_MINI) || \
     defined(CUBEREVO_MINI2) || defined(CUBEREVO_250HD) || defined(CUBEREVO_2000HD) || \
-    defined(CUBEREVO_9500HD) || defined(CUBEREVO_MINI_FTA) || \
+    defined(CUBEREVO_9500HD) || defined(CUBEREVO_MINI_FTA) || defined(CUBEREVO_3000HD) || \
     defined(CONFIG_SH_IPBOX9900) || defined(CONFIG_SH_IPBOX99) || defined(CONFIG_SH_IPBOX55)
     .hdmi_i2c_adapter_id      = 1,
 #elif defined(CONFIG_SH_STB7109E_REF) || defined(CONFIG_SH_ST_MB448)
