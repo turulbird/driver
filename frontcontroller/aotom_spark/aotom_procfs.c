@@ -31,6 +31,8 @@
  * --------------------------------------------------------------------------
  * 20151116 Audioniek       Initial version based on tffpprocfs.c and code
  *                          by skl.
+ * 20151202 Audioniek       Progress display only done once, after reaching
+ *                          99% set inhibit flag.
  * 
  ****************************************************************************/
 
@@ -87,6 +89,7 @@ extern void clear_display(void);
 static int rtc_offset = 3600; //TODO: set this automatically
 static u32 wakeup_time;
 static int progress = 0;
+static int progress_done = 0;
 static u32 led0_pattern = 0;
 static u32 led1_pattern = 0;
 static int led_pattern_speed = 20;
@@ -111,6 +114,7 @@ static int text_write(struct file *file, const char __user *buf, unsigned long c
 	int ret = -ENOMEM;
 
 	page = (char *)__get_free_page(GFP_KERNEL);
+
 	if (page)
 	{
 		ret = -EFAULT;
@@ -151,7 +155,14 @@ static int progress_write(struct file *file, const char __user *buf, unsigned lo
 		sscanf(myString, "%d", &progress);
 		kfree(myString);
 
-		if (progress < 99)
+		if (progress > 98 && progress_done == 0)
+		{
+			progress_done = 1;
+			clear_display();
+			ret = YWPANEL_width;
+			goto out;
+		}
+		if (progress > 19 && progress < 99 && progress_done == 0)
 		{
 			if (fp_type == FP_LED) //LED display
 			{
@@ -179,12 +190,12 @@ static int progress_write(struct file *file, const char __user *buf, unsigned lo
 				}
 			}
 		}
-		else
-		{
-			clear_display();
-			ret = YWPANEL_width;
-		}
-	
+//		else
+//		{
+//			clear_display();
+//			ret = YWPANEL_width;
+//		}
+		
 		if (ret >= 0)
 		{
 			ret = count;
