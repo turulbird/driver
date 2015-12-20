@@ -1,8 +1,11 @@
 /*
- * DVB USB compliant linux driver for IT9135 & IT9137
+ * DVB USB compliant linux driver for ITE IT9135 and IT9137
  *
  * Copyright (C) 2011 Malcolm Priestley (tvboxspy@gmail.com)
+ * IT9135 (C) ITE Tech Inc.
  * IT9137 (C) ITE Tech Inc.
+ *
+ * Adapted to DVBAPI version 5 and SH4 by Audioniek.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2, as
@@ -26,13 +29,10 @@
 
 #include <linux/usb.h>
 #include <linux/usb/input.h>
-//#include <dvb-usb.h>
-//#include "dvb-core/dvb-usb.h"
-#include "dvb-usb.h"
 #if defined RC_ENABLE
 #include <media/rc-core.h>
-#include "rc-core.h"
 #endif
+#include <dvb-usb.h>
 #include "it913x-fe.h"
 
 static const char Revision[] = "1.28";
@@ -57,6 +57,11 @@ module_param_named(pid, pid_filter, int, 0644);
 
 static int dvb_usb_it913x_firmware;
 module_param_named(firmware, dvb_usb_it913x_firmware, int, 0644);
+MODULE_PARM_DESC(firmware, "set firmware 0=auto "\
+	"1=IT9137 2=IT9135 V1 3=IT9135 V2");
+#define FW_IT9137 "dvb-usb-it9137-01.fw"
+#define FW_IT9135_V1 "dvb-usb-it9135-01.fw"
+#define FW_IT9135_V2 "dvb-usb-it9135-02.fw"
 
 int cmd_counter;
 
@@ -343,7 +348,7 @@ static int it913x_pid_filter(struct dvb_usb_adapter *adap, int index, u16 pid, i
 	}
 	else
 	{
-		st->pid_filter_onoff = adap->fe_adap[adap->active_fe].pid_filtering;
+		st->pid_filter_onoff = adap->pid_filtering;
 	}
 	mutex_unlock(&adap->dev->i2c_mutex);
 	return 0;
@@ -356,7 +361,7 @@ static int it913x_return_status(struct usb_device *udev)
 	firm = it913x_query(udev, DEV_0);
 	if (firm > 0)
 	{
-		info("Firmware Version %d", firm);
+		info("Firmware Version %x", firm);
 	}
 	return (firm > 0) ? firm : 0;
 }
@@ -371,7 +376,7 @@ static int it913x_i2c_xfer(struct i2c_adapter *adap, struct i2c_msg msg[], int n
 
 	mutex_lock(&d->i2c_mutex);
 
-	debug_data_snipet(1, "Message out", msg[0].buf);
+//	debug_data_snipet(1, "Message out", msg[0].buf);
 	deb_info(2, "num of messages %d address %02x", num, msg[0].addr);
 
 	pro = (msg[0].addr & 0x2) ?  DEV_0_DMOD : 0x0;
@@ -414,6 +419,7 @@ static int it913x_rc_query(struct dvb_usb_device *d)
 
 	/* Avoid conflict with frontends*/
 	mutex_lock(&d->i2c_mutex);
+
 	ret = it913x_io(d->udev, READ_LONG, PRO_LINK, CMD_IR_GET, 0, 0, &ibuf[0], sizeof(ibuf));
 
 	if ((ibuf[2] + ibuf[3]) == 0xff)
@@ -427,7 +433,9 @@ static int it913x_rc_query(struct dvb_usb_device *d)
 			rc_keydown(d->rc_dev, key, 0);
 		}
 	}
+
 	mutex_unlock(&d->i2c_mutex);
+
 	return ret;
 }
 #endif
@@ -477,7 +485,6 @@ static int ite_firmware_select(struct usb_device *udev, struct dvb_usb_device_pr
 			props->firmware = fw_it9135_v2;
 			switch (it913x_config.tuner_id_0)
 			{
-				case IT9135_38:
 				case IT9135_61:
 				case IT9135_62:
 				{
@@ -487,6 +494,7 @@ static int ite_firmware_select(struct usb_device *udev, struct dvb_usb_device_pr
 				{
 					info("Unknown tuner ID; applying default 0x60");
 				}
+				case IT9135_38:
 				case IT9135_60:
 				{
 					it913x_config.tuner_id_0 = IT9135_60;
@@ -599,6 +607,8 @@ static int it913x_select_config(struct usb_device *udev, struct dvb_usb_device_p
 		it913x_config.tuner_id_0 = reg;
 	}
 
+	info("Dual mode=%x Tuner Type=%x", it913x_config.dual_mode, it913x_config.tuner_id_0);
+
 #if defined RC_ENABLE
 	if (proprietary_ir)
 	{
@@ -608,7 +618,7 @@ static int it913x_select_config(struct usb_device *udev, struct dvb_usb_device_p
 
 	if (udev->speed != USB_SPEED_HIGH)
 	{
-		props->adapter[0].fe[0].pid_filter_count = 5;
+		props->adapter[0].pid_filter_count = 5;
 		info("USB 1.1 low speed mode - connect to USB 2.0 port");
 		if (pid_filter > 0)
 		{
@@ -621,28 +631,28 @@ static int it913x_select_config(struct usb_device *udev, struct dvb_usb_device_p
 		}
 	}
 	else /* For replugging */
-	{	if (props->adapter[0].fe[0].pid_filter_count == 5)
+	{	if (props->adapter[0].pid_filter_count == 5)
 		{
-			props->adapter[0].fe[0].pid_filter_count = 31;
+			props->adapter[0].pid_filter_count = 31;
 		}
 	}
 	/* Select Stream Buffer Size and pid filter option*/
 	if (pid_filter)
 	{
-		props->adapter[0].fe[0].stream.u.bulk.buffersize = TS_BUFFER_SIZE_MAX;
-		props->adapter[0].fe[0].caps &= ~DVB_USB_ADAP_NEED_PID_FILTERING;
+		props->adapter[0].stream.u.bulk.buffersize = TS_BUFFER_SIZE_MAX;
+		props->adapter[0].caps &= ~DVB_USB_ADAP_NEED_PID_FILTERING;
 	}
 	else
 	{
-		props->adapter[0].fe[0].stream.u.bulk.buffersize = TS_BUFFER_SIZE_PID;
+		props->adapter[0].stream.u.bulk.buffersize = TS_BUFFER_SIZE_PID;
 	}
 	if (it913x_config.dual_mode)
 	{
-		props->adapter[1].fe[0].stream.u.bulk.buffersize = props->adapter[0].fe[0].stream.u.bulk.buffersize;
+		props->adapter[1].stream.u.bulk.buffersize = props->adapter[0].stream.u.bulk.buffersize;
 		props->num_adapters = 2;
 		if (pid_filter)
 		{
-			props->adapter[1].fe[0].caps = props->adapter[0].fe[0].caps;
+			props->adapter[1].caps = props->adapter[0].caps;
 		}
 	}
 	else
@@ -656,7 +666,31 @@ static int it913x_select_config(struct usb_device *udev, struct dvb_usb_device_p
 	return ret;
 }
 
-static int it913x_identify_state(struct usb_device *udev, struct dvb_usb_device_properties *props, struct dvb_usb_device_description **desc, int *cold)
+static int it913x_streaming_ctrl(struct dvb_usb_adapter *adap, int onoff)
+{
+	struct it913x_state *st = adap->dev->priv;
+	int ret = 0;
+	u8 pro = (adap->id == 0) ? DEV_0_DMOD : DEV_1_DMOD;
+
+	deb_info(1, "STM  (%02x)", onoff);
+
+	if (!onoff)
+	{
+		mutex_lock(&adap->dev->i2c_mutex);
+
+		ret = it913x_wr_reg(adap->dev->udev, pro, PID_RST, 0x1);
+
+		mutex_unlock(&adap->dev->i2c_mutex);
+		st->pid_filter_onoff = adap->pid_filtering;
+	}
+
+	return ret;
+}
+
+static int it913x_identify_state(struct usb_device *udev,
+                                 struct dvb_usb_device_properties *props,
+                                 struct dvb_usb_device_description **desc,
+                                 int *cold)
 {
 	int ret = 0, firm_no;
 	u8 reg;
@@ -725,26 +759,6 @@ static int it913x_identify_state(struct usb_device *udev, struct dvb_usb_device_
 	}
 	*cold = 1;
 	return (ret < 0) ? -ENODEV : 0;
-}
-
-static int it913x_streaming_ctrl(struct dvb_usb_adapter *adap, int onoff)
-{
-	struct it913x_state *st = adap->dev->priv;
-	int ret = 0;
-	u8 pro = (adap->id == 0) ? DEV_0_DMOD : DEV_1_DMOD;
-
-	deb_info(1, "STM  (%02x)", onoff);
-
-	if (!onoff)
-	{
-		mutex_lock(&adap->dev->i2c_mutex);
-
-		ret = it913x_wr_reg(adap->dev->udev, pro, PID_RST, 0x1);
-
-		mutex_unlock(&adap->dev->i2c_mutex);
-		st->pid_filter_onoff = adap->fe_adap[adap->active_fe].pid_filtering;
-	}
-	return ret;
 }
 
 static int it913x_download_firmware(struct usb_device *udev, const struct firmware *fw)
@@ -851,7 +865,8 @@ static int it913x_name(struct dvb_usb_adapter *adap)
 {
 	const char *desc = adap->dev->desc->name;
 	char *fe_name[] = {"_1", "_2", "_3", "_4"};
-	char *name = adap->fe_adap[0].fe->ops.info.name;
+//	char *name = adap->fe_adap[0].fe->ops.info.name;
+	char *name = adap->fe->ops.info.name;
 
 	strlcpy(name, desc, 128);
 	strlcat(name, fe_name[adap->id], 128);
@@ -864,7 +879,7 @@ static int it913x_frontend_attach(struct dvb_usb_adapter *adap)
 	struct it913x_state *st = adap->dev->priv;
 	int ret = 0;
 	u8 adap_addr = I2C_BASE_ADDR + (adap->id << 5);
-	u16 ep_size = adap->props.fe[0].stream.u.bulk.buffersize / 4;
+	u16 ep_size = adap->props.stream.u.bulk.buffersize / 4;
 	u8 pkt_size = 0x80;
 
 	if (adap->dev->udev->speed != USB_SPEED_HIGH)
@@ -877,9 +892,9 @@ static int it913x_frontend_attach(struct dvb_usb_adapter *adap)
 	{
 		memcpy(&st->it913x_config, &it913x_config, sizeof(struct ite_config));
 	}
-	adap->fe_adap[0].fe = dvb_attach(it913x_fe_attach, &adap->dev->i2c_adap, adap_addr, &st->it913x_config);
+	adap->fe = dvb_attach(it913x_fe_attach, &adap->dev->i2c_adap, adap_addr, &st->it913x_config);
 
-	if (adap->id == 0 && adap->fe_adap[0].fe)
+	if (adap->id == 0 && adap->fe)
 	{
 		ret = it913x_wr_reg(udev, DEV_0_DMOD, MP2_SW_RST, 0x1);
 		ret = it913x_wr_reg(udev, DEV_0_DMOD, MP2IF2_SW_RST, 0x1);
@@ -890,7 +905,7 @@ static int it913x_frontend_attach(struct dvb_usb_adapter *adap)
 		ret = it913x_wr_reg(udev, DEV_0, EP4_TX_LEN_MSB, ep_size >> 8);
 		ret = it913x_wr_reg(udev, DEV_0, EP4_MAX_PKT, pkt_size);
 	}
-	else if (adap->id == 1 && adap->fe_adap[0].fe)
+	else if (adap->id == 1 && adap->fe)
 	{
 		ret = it913x_wr_reg(udev, DEV_0, EP0_TX_EN, 0x6f);
 		ret = it913x_wr_reg(udev, DEV_0, EP5_TX_LEN_LSB, ep_size & 0xff);
@@ -915,6 +930,11 @@ static int it913x_frontend_attach(struct dvb_usb_adapter *adap)
 	return ret;
 }
 
+static int it913x_tuner_attach(struct dvb_usb_adapter *adap)
+{
+	return 0;
+}
+
 /* DVB USB Driver */
 static struct dvb_usb_device_properties it913x_properties;
 
@@ -924,7 +944,7 @@ static int it913x_probe(struct usb_interface *intf, const struct usb_device_id *
 
 	info("IT913X USB2.0 driver version %s initializing", Revision);
 
-	if (0 == dvb_usb_device_init1(intf, &it913x_properties, THIS_MODULE, NULL, adapter_nr))
+	if (0 == dvb_usb_device_init(intf, &it913x_properties, THIS_MODULE, NULL, adapter_nr))
 	{
 		info("DEV registering device driver");
 		return 0;
@@ -952,73 +972,55 @@ MODULE_DEVICE_TABLE(usb, it913x_table);
 static struct dvb_usb_device_properties it913x_properties = {
 	.caps = DVB_USB_IS_AN_I2C_ADAPTER,
 	.usb_ctrl = DEVICE_SPECIFIC,
-	.download_firmware = it913x_download_firmware,
 	.firmware = "dvb-usb-it9137-01.fw",
-	.no_reconnect = 1,
+
+	.generic_bulk_ctrl_endpoint = 0x02,
+
 	.size_of_priv = sizeof(struct it913x_state),
+	.i2c_algo         = &it913x_i2c_algo,
+
+	.download_firmware = it913x_download_firmware,
+	.no_reconnect = 1,
 	.num_adapters = 2,
-	.adapter = {
+	.adapter = 
+	{
 		{
-		.num_frontends = 1,
-		.fe = {{
 			.caps = DVB_USB_ADAP_HAS_PID_FILTER
 			      | DVB_USB_ADAP_NEED_PID_FILTERING
 			      | DVB_USB_ADAP_PID_FILTER_CAN_BE_TURNED_OFF,
-			.streaming_ctrl   = it913x_streaming_ctrl,
 			.pid_filter_count = 31,
 			.pid_filter       = it913x_pid_filter,
 			.pid_filter_ctrl  = it913x_pid_filter_ctrl,
+			.streaming_ctrl   = it913x_streaming_ctrl,
 			.frontend_attach  = it913x_frontend_attach,
-			/* parameter for the MPEG2-data transfer */
-			.stream = {
+			.tuner_attach     = it913x_tuner_attach,
+			.stream =
+			{
 				.type = USB_BULK,
 				.count = 10,
 				.endpoint = 0x04,
-				.u = {/* Keep Low if PID filter on */
-					.bulk = {
-					.buffersize = TS_BUFFER_SIZE_PID,
-					}
-				}
-			}
-		}},
-		},
-		{
-		.num_frontends = 1,
-		.fe = {{
-			.caps = DVB_USB_ADAP_HAS_PID_FILTER
-			      | DVB_USB_ADAP_NEED_PID_FILTERING
-			      | DVB_USB_ADAP_PID_FILTER_CAN_BE_TURNED_OFF,
-			.streaming_ctrl   = it913x_streaming_ctrl,
-			.pid_filter_count = 31,
-			.pid_filter       = it913x_pid_filter,
-			.pid_filter_ctrl  = it913x_pid_filter_ctrl,
-			.frontend_attach  = it913x_frontend_attach,
-			/* parameter for the MPEG2-data transfer */
-			.stream = {
-				.type = USB_BULK,
-				.count = 5,
-				.endpoint = 0x05,
-				.u = {
-					.bulk = {
+				.u =
+				{/* Keep Low if PID filter on */
+					.bulk =
+					{
 						.buffersize = TS_BUFFER_SIZE_PID,
 					}
 				}
-			}
-		}},
+			},
+//			.size_of_priv;
 		}
 	},
-	.identify_state   = it913x_identify_state,
+//	.power_ctrl = it913x_power_ctrl,
+//	.read_mac_address =
+	.identify_state = it913x_identify_state,
 #if defined RC_ENABLE
-	.rc.core = {
-		.protocol       = RC_TYPE_NEC,
-		.module_name    = "it913x",
-		.rc_query       = it913x_rc_query,
-		.rc_interval    = IT913X_POLL,
-		.allowed_protos = RC_TYPE_NEC,
-		.rc_codes       = RC_MAP_IT913X_V1,
-	},
+	.rc_key_map = RC_MAP_IT913X_V1,
+	.rc_key_map_size = sizeof(RC_MAP_IT913X_V1),
+	.rc_query = it913x_rc_query
+	.rc_interval = IT913X_POLL,
+#else
+	.rc_key_map = NULL,
 #endif
-	.i2c_algo         = &it913x_i2c_algo,
 	.num_device_descs = 11,
 	.devices = {
 		{ "Kworld UB499-2T T09(IT9137)", { &it913x_table[0], NULL }, },
@@ -1038,7 +1040,7 @@ static struct dvb_usb_device_properties it913x_properties = {
 static struct usb_driver it913x_driver = {
 	.name       = "it913x",
 	.probe      = it913x_probe,
-	.disconnect = dvb_usb_device_exit1,
+	.disconnect = dvb_usb_device_exit,
 	.id_table   = it913x_table,
 };
 
@@ -1057,7 +1059,7 @@ module_exit(it913x_exit);
 
 MODULE_AUTHOR("Malcolm Priestley <tvboxspy@gmail.com>");
 MODULE_DESCRIPTION("it913x USB 2 Driver");
-MODULE_VERSION("1.28");
+MODULE_VERSION("1.28_SH4");
 MODULE_LICENSE("GPL");
 MODULE_PARM_DESC(debug, "Set debugging level (1=info (or-able))." DVB_USB_DEBUG_STATUS);
 MODULE_PARM_DESC(pid, "Set default 0=on 1=off");

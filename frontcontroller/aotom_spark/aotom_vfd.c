@@ -2176,6 +2176,7 @@ static int YWPANEL_VFD_SetBrightness_Common(int level)
 static int YWPANEL_DVFD_SetBrightness(int level)
 { //FIXME
 	int ST_ErrCode = 0;
+#if 0
 	YWPANEL_FPData_t data;
 
 	if (down_interruptible(&vfd_sem))
@@ -2200,6 +2201,7 @@ static int YWPANEL_DVFD_SetBrightness(int level)
 		ST_ErrCode = -ETIME;
 	}
 	up(&vfd_sem);
+#endif
 	return ST_ErrCode;
 }
 

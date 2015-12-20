@@ -19,9 +19,7 @@
  */
 #ifndef IT913X_FE_H
 #define IT913X_FE_H
-//#include <linux/kconfig.h>
 #include <linux/dvb/frontend.h>
-#include "dvb_frontend.h"
 
 struct ite_config {
 	u8 chip_ver;
@@ -155,6 +153,24 @@ extern struct dvb_frontend *it913x_fe_attach(struct i2c_adapter *i2c_adap, u8 i2
 #define IT9135_61 0x61
 #define IT9135_62 0x62
 
+/* Vendor IDs */
+#define USB_VID_AVERMEDIA             0x07ca
+#define USB_VID_ITETECH               0x048d
+#define USB_VID_KWORLD_2              0x1b80
+
+/* Product IDs */
+#define USB_PID_ITETECH_IT9135        0x9135
+#define USB_PID_ITETECH_IT9135_9005   0x9005
+#define USB_PID_ITETECH_IT9135_9006   0x9006
+#define USB_PID_KWORLD_UB499_2T_T09   0xe409
+#define USB_PID_AVERMEDIA_A835B_1835  0x1835
+#define USB_PID_AVERMEDIA_A835B_2835  0x2835
+#define USB_PID_AVERMEDIA_A835B_3835  0x3835
+#define USB_PID_AVERMEDIA_A835B_4835  0x4835
+#define USB_PID_AVERMEDIA_H335        0x0335
+#define USB_PID_SVEON_STV22_IT9137    0xe411
+#define USB_PID_CTVDIGDUAL_V2         0xe410
+
 enum {
 	CMD_DEMOD_READ = 0,
 	CMD_DEMOD_WRITE,
@@ -207,6 +223,172 @@ enum {
 	IT9135_V1_FW,
 	IT9135_V2_FW,
 };
+
+#if 0
+struct it913x_core_device_t {
+	struct list_head entry;
+
+	struct list_head clients;
+	struct list_head subclients;
+	spinlock_t clientslock;
+
+	struct list_head buffers;
+	spinlock_t bufferslock;
+	int num_buffers;
+
+	void *common_buffer;
+	int common_buffer_size;
+	dma_addr_t common_buffer_phys;
+
+	void *context;
+	struct device *device;
+
+	char devpath[32];
+	unsigned long device_flags;
+
+	setmode_t setmode_handler;
+	detectmode_t detectmode_handler;
+	sendrequest_t sendrequest_handler;
+	preload_t preload_handler;
+	postload_t postload_handler;
+
+	int mode, modes_supported;
+
+	/* host <--> device messages */
+	struct completion version_ex_done, data_download_done, trigger_done;
+	struct completion init_device_done, reload_start_done, resume_done;
+	struct completion gpio_configuration_done, gpio_set_level_done;
+	struct completion gpio_get_level_done, ir_init_done;
+
+	/* Buffer management */
+	wait_queue_head_t buffer_mng_waitq;
+
+	/* GPIO */
+	int gpio_get_res;
+
+	/* Target hardware board */
+	int board_id;
+
+	/* Firmware */
+	u8 *fw_buf;
+	u32 fw_buf_size;
+
+	/* Infrared (IR) */
+	struct ir_t ir;
+
+	int led_state;
+};
+#endif
+
+struct PID_STATISTICS_DATA_S {
+	struct PID_BURST_S {
+		u32 size;
+		u32 padding_cols;
+		u32 punct_cols;
+		u32 duration;
+		u32 cycle;
+		u32 calc_cycle;
+	} burst;
+
+	u32 tot_tbl_cnt;
+	u32 invalid_tbl_cnt;
+	u32 tot_cor_tbl;
+};
+
+struct PID_DATA_S {
+	u32 pid;
+	u32 num_rows;
+	struct PID_STATISTICS_DATA_S pid_statistics;
+};
+
+struct TRANSMISSION_STATISTICS_S {
+	u32 Frequency;		/* Frequency in Hz */
+	u32 Bandwidth;		/* Bandwidth in MHz */
+	u32 TransmissionMode;	/* FFT mode carriers in Kilos */
+	u32 GuardInterval;	/* Guard Interval from
+	SMSHOSTLIB_GUARD_INTERVALS_ET */
+	u32 CodeRate;		/* Code Rate from SMSHOSTLIB_CODE_RATE_ET */
+	u32 LPCodeRate;		/* Low Priority Code Rate from
+	SMSHOSTLIB_CODE_RATE_ET */
+	u32 Hierarchy;		/* Hierarchy from SMSHOSTLIB_HIERARCHY_ET */
+	u32 Constellation;	/* Constellation from
+	SMSHOSTLIB_CONSTELLATION_ET */
+
+	/* DVB-H TPS parameters */
+	u32 CellId;		/* TPS Cell ID in bits 15..0, bits 31..16 zero;
+	 if set to 0xFFFFFFFF cell_id not yet recovered */
+	u32 DvbhSrvIndHP;	/* DVB-H service indication info, bit 1 -
+	 Time Slicing indicator, bit 0 - MPE-FEC indicator */
+	u32 DvbhSrvIndLP;	/* DVB-H service indication info, bit 1 -
+	 Time Slicing indicator, bit 0 - MPE-FEC indicator */
+	u32 IsDemodLocked;	/* 0 - not locked, 1 - locked */
+};
+
+struct RECEPTION_STATISTICS_S {
+	u32 IsRfLocked;		/* 0 - not locked, 1 - locked */
+	u32 IsDemodLocked;	/* 0 - not locked, 1 - locked */
+	u32 IsExternalLNAOn;	/* 0 - external LNA off, 1 - external LNA on */
+
+	u32 ModemState;		/* from SMSHOSTLIB_DVB_MODEM_STATE_ET */
+	s32 SNR;		/* dB */
+	u32 BER;		/* Post Viterbi BER [1E-5] */
+	u32 BERErrorCount;	/* Number of erronous SYNC bits. */
+	u32 BERBitCount;	/* Total number of SYNC bits. */
+	u32 TS_PER;		/* Transport stream PER,
+	0xFFFFFFFF indicate N/A */
+	u32 MFER;		/* DVB-H frame error rate in percentage,
+	0xFFFFFFFF indicate N/A, valid only for DVB-H */
+	s32 RSSI;		/* dBm */
+	s32 InBandPwr;		/* In band power in dBM */
+	s32 CarrierOffset;	/* Carrier Offset in bin/1024 */
+	u32 ErrorTSPackets;	/* Number of erroneous
+	transport-stream packets */
+	u32 TotalTSPackets;	/* Total number of transport-stream packets */
+
+	s32 MRC_SNR;		/* dB */
+	s32 MRC_RSSI;		/* dBm */
+	s32 MRC_InBandPwr;	/* In band power in dBM */
+};
+
+/* Statistics information returned as response for
+ * SmsHostApiGetStatisticsEx_Req for DVB applications, SMS1100 and up */
+struct IT913X_HOSTLIB_STATISTICS_DVB_S {
+	/* Reception */
+	struct RECEPTION_STATISTICS_S ReceptionData;
+
+	/* Transmission parameters */
+	struct TRANSMISSION_STATISTICS_S TransmissionData;
+
+	/* Burst parameters, valid only for DVB-H */
+#define	SRVM_MAX_PID_FILTERS 8
+	struct PID_DATA_S PidData[SRVM_MAX_PID_FILTERS];
+};
+
+struct it913x_dvb_client_t {
+	struct list_head               entry;
+
+//	struct it913x_core_device_t    *coredev;
+//	struct it913x_core_client_t    *it913x_client;
+
+	struct dvb_adapter             adapter;
+	struct dvb_demux               demux;
+	struct dmxdev                  dmxdev;
+	struct dvb_frontend            frontend;
+
+	fe_status_t                    fe_status;
+
+	struct completion              tune_done;
+
+	/* todo: save freq/band instead whole struct */
+	struct dvb_frontend_parameters fe_params;
+
+	struct IT913X_HOSTLIB_STATISTICS_DVB_S it913x_stat_dvb;
+	int event_fe_state;
+	int event_unc_state;
+};
+
+
+
 #endif /* IT913X_FE_H */
 // vim:ts=4
 

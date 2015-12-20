@@ -27,6 +27,9 @@
 #include <linux/slab.h>
 #include <linux/types.h>
 
+#include "dmxdev.h"
+#include "dvbdev.h"
+#include "dvb_demux.h"
 #include "dvb_frontend.h"
 #include "it913x-fe.h"
 #include "it913x-fe-priv.h"
@@ -491,7 +494,7 @@ static int it913x_fe_select_bw(struct it913x_fe_state *state, u32 bandwidth, u32
 	u8 bw;
 	u8 adcmultiplier;
 
-	deb_info("Bandwidth %d Adc %d", bandwidth, adcFrequency);
+	deb_info("Bandwidth: %d Adc: %d", bandwidth, adcFrequency);
 
 	switch (bandwidth)
 	{
@@ -580,6 +583,22 @@ static int it913x_fe_select_bw(struct it913x_fe_state *state, u32 bandwidth, u32
 	return ret;
 }
 
+static int it913x_fe_get_tune_settings(struct dvb_frontend *fe, struct dvb_frontend_tune_settings *settings)
+{
+//	ENTER();
+
+#if 1
+	deb_info("step_size    = %d\n", settings->step_size);
+	deb_info("max_drift    = %d\n", settings->max_drift);
+	deb_info("min_delay_ms = %d -> %d\n", settings->min_delay_ms, 1000);
+#endif
+
+	settings->min_delay_ms = 1000;
+
+//	LEAVE();
+	return 0;
+}
+
 static int it913x_fe_read_status(struct dvb_frontend *fe, fe_status_t *status)
 {
 	struct it913x_fe_state *state = fe->demodulator_priv;
@@ -606,8 +625,8 @@ static int it913x_fe_read_status(struct dvb_frontend *fe, fe_status_t *status)
 			if (ret == 0x1)
 			{
 				*status |= FE_HAS_CARRIER
-				        | FE_HAS_VITERBI
-			            | FE_HAS_SYNC;
+				         | FE_HAS_VITERBI
+			             | FE_HAS_SYNC;
 			}
 			state->it913x_status = *status;
 		}
@@ -853,43 +872,209 @@ static int it913x_fe_read_ucblocks(struct dvb_frontend *fe, u32 *ucblocks)
 	return ret;
 }
 
-static int it913x_fe_get_frontend(struct dvb_frontend *fe)
+static int it913x_fe_get_frontend(struct dvb_frontend *fe, struct dvb_frontend_parameters *feparams)
 {
 	struct dtv_frontend_properties *p = &fe->dtv_property_cache;
 	struct it913x_fe_state *state = fe->demodulator_priv;
 	u8 reg[8];
+//	int ret;
+
+	struct it913x_dvb_client_t *client;
 
 	it913x_read_reg(state, REG_TPSD_TX_MODE, reg, sizeof(reg));
 
 	if (reg[3] < 3)
 	{
 		p->modulation = fe_con[reg[3]];
+		switch (p->modulation)
+		{
+			default:
+			case 0:
+				feparams->u.ofdm.constellation = QPSK;
+//				deb_info("QPSK\n");
+				break;
+			case 1:
+				feparams->u.ofdm.constellation = QAM_16;
+//				deb_info("QAM_16\n");
+				break;
+			case 2:
+				feparams->u.ofdm.constellation = QAM_64;
+//				deb_info("QAM_64\n");
+				break;
+		}
 	}
+
 	if (reg[0] < 3)
 	{
 		p->transmission_mode = fe_mode[reg[0]];
+		switch (p->transmission_mode)
+		{
+			case 0:
+				feparams->u.ofdm.transmission_mode = TRANSMISSION_MODE_2K;
+//				deb_info("2K\n");
+				break;
+			case 1:
+				feparams->u.ofdm.transmission_mode = TRANSMISSION_MODE_4K;
+//				deb_info("4K\n");
+				break;
+			default:
+			case 2:
+				feparams->u.ofdm.transmission_mode = TRANSMISSION_MODE_8K;
+//				deb_info("8K\n");
+				break;
+		}
 	}
+
 	if (reg[1] < 4)
 	{
 		p->guard_interval = fe_gi[reg[1]];
+		switch (p->guard_interval)
+		{
+			case 0:
+				feparams->u.ofdm.guard_interval = GUARD_INTERVAL_1_32;
+//				deb_info("1_32\n");
+				break;
+			case 1:
+				feparams->u.ofdm.guard_interval = GUARD_INTERVAL_1_16;
+//				deb_info("1_16\n");
+				break;
+			case 2:
+				feparams->u.ofdm.guard_interval = GUARD_INTERVAL_1_8;
+//				deb_info("1_8\n");
+				break;
+			default:
+			case 3:
+				feparams->u.ofdm.guard_interval = GUARD_INTERVAL_1_4;
+//				deb_info("1_4\n");
+				break;
+		}
 	}
+
 	if (reg[2] < 4)
 	{
 		p->hierarchy = fe_hi[reg[2]];
+		switch (p->hierarchy)
+		{
+			default:
+			case 0:
+			{
+				feparams->u.ofdm.hierarchy_information = HIERARCHY_NONE;
+				break;
+			}
+			case 1:
+			{
+				feparams->u.ofdm.hierarchy_information = HIERARCHY_1;
+				break;
+			}
+			case 2:
+			{
+				feparams->u.ofdm.hierarchy_information = HIERARCHY_2;
+				break;
+			}
+			case 3:
+			{
+				feparams->u.ofdm.hierarchy_information = HIERARCHY_4;
+				break;
+			}
+		}
 	}
+
 	state->priority = reg[5];
 
 	p->code_rate_HP = (reg[6] < 6) ? fe_code[reg[6]] : FEC_NONE;
+	switch (p->code_rate_HP)
+	{
+		case 0:
+			feparams->u.ofdm.code_rate_HP = FEC_1_2;
+			break;
+		case 1:
+			feparams->u.ofdm.code_rate_HP = FEC_2_3;
+			break;
+		case 2:
+			feparams->u.ofdm.code_rate_HP = FEC_3_4;
+			break;
+		case 3:
+			feparams->u.ofdm.code_rate_HP = FEC_5_6;
+			break;
+		case 4:
+			feparams->u.ofdm.code_rate_HP = FEC_7_8;
+			break;
+		default:
+			feparams->u.ofdm.code_rate_HP = FEC_NONE;
+			break;
+	}
+
 	p->code_rate_LP = (reg[7] < 6) ? fe_code[reg[7]] : FEC_NONE;
+	switch (p->code_rate_LP)
+	{
+		case 0:
+			feparams->u.ofdm.code_rate_LP = FEC_1_2;
+			break;
+		case 1:
+			feparams->u.ofdm.code_rate_LP = FEC_2_3;
+			break;
+		case 2:
+			feparams->u.ofdm.code_rate_LP = FEC_3_4;
+			break;
+		case 3:
+			feparams->u.ofdm.code_rate_LP = FEC_5_6;
+			break;
+		case 4:
+			feparams->u.ofdm.code_rate_LP = FEC_7_8;
+			break;
+		default:
+			feparams->u.ofdm.code_rate_LP = FEC_NONE;
+			break;
+	}
+
+//	ret = it913x_write_reg(state, PRO_DMOD, REG_BW, bw);
+	p->bandwidth_hz = it913x_read_reg_u8(state, REG_BW);
+	switch (p->bandwidth_hz)
+	{
+		case 0:
+		{
+			feparams->u.ofdm.bandwidth = BANDWIDTH_6_MHZ;
+			break;
+		}
+		case 1:
+		{
+			feparams->u.ofdm.bandwidth = BANDWIDTH_7_MHZ;
+			break;
+		}
+		case 3:
+		{
+			feparams->u.ofdm.bandwidth = BANDWIDTH_5_MHZ;
+			break;
+		}
+		default:
+		case  2:
+		{
+			feparams->u.ofdm.bandwidth = BANDWIDTH_8_MHZ;
+			break;
+		}
+	}
 
 	/* Update internal state to reflect the autodetected props */
 	state->constellation = p->modulation;
 	state->transmission_mode = p->transmission_mode;
 
+	deb_info("===== fe_get_frontend ==============\n");
+	deb_info("CONSTELLATION: %d\n", p->modulation);
+	deb_info("TRANSMISSION MODE %d", p->transmission_mode);
+	deb_info("GUARD INTERVAL %d\n", p->guard_interval);
+	deb_info("HIERARCHY %d\n", feparams->u.ofdm.hierarchy_information);
+	deb_info("PRIORITY %s\n", state->priority ? "high" : "low");
+	deb_info("CODERATE HP %d\n", p->code_rate_HP);
+	deb_info("CODERATE LP %d\n", p->code_rate_LP);
+	deb_info("BANDWIDTH %d\n", p->bandwidth_hz);
+
+	client = container_of(fe, struct it913x_dvb_client_t, frontend);
+	memcpy(feparams, &client->fe_params, sizeof(struct dvb_frontend_parameters));
+
 	return 0;
 }
 
-static int it913x_fe_set_frontend(struct dvb_frontend *fe)
+static int it913x_fe_set_frontend(struct dvb_frontend *fe, struct dvb_frontend_parameters* params)
 {
 	struct dtv_frontend_properties *p = &fe->dtv_property_cache;
 	struct it913x_fe_state *state = fe->demodulator_priv;
@@ -897,6 +1082,15 @@ static int it913x_fe_set_frontend(struct dvb_frontend *fe)
 	u8 empty_ch, last_ch;
 
 	state->it913x_status = 0;
+
+	deb_info("Set frequency %d bandwidth %d (params)\n", params->frequency, params->u.ofdm.bandwidth);
+	deb_info("Set frequency %d bandwidth %d\n (p)", p->frequency, p->bandwidth_hz);
+
+	if (fe->ops.tuner_ops.release == NULL)
+	{
+		deb_info("Tuner not attached");
+		return -ENODEV;
+	}
 
 	/* Set bw*/
 	it913x_fe_select_bw(state, p->bandwidth_hz, state->adcFrequency);
@@ -933,7 +1127,7 @@ static int it913x_fe_set_frontend(struct dvb_frontend *fe)
 
 	it913x_write_reg(state, PRO_DMOD, FREE_BAND, i);
 
-	deb_info("Frontend Set Tuner Type %02x", state->tuner_type);
+	deb_info("Frontend set tuner type %02x", state->tuner_type);
 
 	switch (state->tuner_type)
 	{
@@ -951,7 +1145,7 @@ static int it913x_fe_set_frontend(struct dvb_frontend *fe)
 		{
 			if (fe->ops.tuner_ops.set_params)
 			{
-				fe->ops.tuner_ops.set_params(fe);
+				fe->ops.tuner_ops.set_params(fe, params);
 				if (fe->ops.i2c_gate_ctrl)
 				{
 					fe->ops.i2c_gate_ctrl(fe, 0);
@@ -1130,8 +1324,8 @@ static int it913x_fe_start(struct it913x_fe_state *state)
 	b[2] = 0;
 	ret |= it913x_write(state, PRO_DMOD, 0x0029, b, 3);
 
-	info("Crystal Frequency :%d Adc Frequency :%d ADC X2: %02x", state->crystalFrequency, state->adcFrequency, state->config->adc_x2);
-	deb_info("Xtal value :%04x Adc value :%04x", xtal, adc);
+	info("Crystal frequency: %d Adc frequency: %d ADC X2: %02x", state->crystalFrequency, state->adcFrequency, state->config->adc_x2);
+	deb_info("Xtal value: %04x Adc value: %04x", xtal, adc);
 
 	if (ret < 0)
 	{
@@ -1296,32 +1490,95 @@ error:
 }
 EXPORT_SYMBOL(it913x_fe_attach);
 
+static int it913x_fe_ts_bus_ctrl(struct dvb_frontend *fe, int acquire)
+{
+//	struct it913x_dev_t *dev;
+	int ret = 0;
+
+#if 0
+	ENTER();
+
+	dev = (struct it913x_dev_t *)fe->tuner_priv;
+	if (dev == NULL)
+	{
+		return -ENODEV;
+	}
+	if (mutex_lock_interruptible(&dev->bus_adap.lock))
+	{
+		return -EBUSY;
+	}
+	if (acquire)
+	{
+		if (elna_enable)
+		{
+			it913x_cmd_set_context(&dev->bus_adap, 1010, 0xC0);
+		}
+		ret = it913x_cmd_turn_on(&dev->bus_adap);
+	}
+	else
+	{
+		ret = it913x_cmd_turn_off(&dev->bus_adap);
+	}
+
+	mutex_unlock(&dev->bus_adap.lock);
+
+	LEAVE();
+#endif
+	return ret;
+}
+
+static int it913x_get_property(struct dvb_frontend *fe, struct dtv_property* tvp)
+{
+	/* get delivery system info */
+	if (tvp->cmd == DTV_DELIVERY_SYSTEM)
+	{
+		switch (tvp->u.data)
+		{
+			case SYS_DVBT:
+			{
+				break;
+			}
+			default:
+			{
+				return -EINVAL;
+			}
+		}
+	}
+	return 0;
+}
+
 static struct dvb_frontend_ops it913x_fe_ofdm_ops = {
-	.delsys = { SYS_DVBT },
+//	.delsys = { SYS_DVBT },
 	.info = {
-		.name               = "it913x-fe DVB-T",
+		.name               = "IT913x USB2.0 DVB-T",
+		.type               = FE_OFDM,
 		.frequency_min      = 51000000,
 		.frequency_max      = 1680000000,
 		.frequency_stepsize = 62500,
-		.caps = FE_CAN_FEC_1_2 | FE_CAN_FEC_2_3 | FE_CAN_FEC_3_4
-		      | FE_CAN_FEC_4_5 | FE_CAN_FEC_5_6 | FE_CAN_FEC_6_7
-			  | FE_CAN_FEC_7_8 | FE_CAN_FEC_8_9 | FE_CAN_FEC_AUTO
-			  | FE_CAN_QAM_16 | FE_CAN_QAM_64 | FE_CAN_QAM_AUTO
-			  | FE_CAN_TRANSMISSION_MODE_AUTO
-			  | FE_CAN_GUARD_INTERVAL_AUTO
-			  | FE_CAN_HIERARCHY_AUTO,
+		.caps               = FE_CAN_FEC_1_2 | FE_CAN_FEC_2_3 | FE_CAN_FEC_3_4
+		                    | FE_CAN_FEC_4_5 | FE_CAN_FEC_5_6 | FE_CAN_FEC_6_7
+		                    | FE_CAN_FEC_7_8 | FE_CAN_FEC_8_9 | FE_CAN_FEC_AUTO
+		                    | FE_CAN_QAM_16 | FE_CAN_QAM_64 | FE_CAN_QAM_AUTO
+		                    | FE_CAN_TRANSMISSION_MODE_AUTO
+		                    | FE_CAN_GUARD_INTERVAL_AUTO
+		                    | FE_CAN_HIERARCHY_AUTO,
 	},
-	.release = it913x_fe_release,
-	.init = it913x_fe_init,
-	.sleep = it913x_fe_sleep,
-	.set_frontend = it913x_fe_set_frontend,
-	.get_frontend = it913x_fe_get_frontend,
+	.release              = it913x_fe_release,
+	.init                 = it913x_fe_init,
+	.sleep                = it913x_fe_sleep,
+	.set_frontend         = it913x_fe_set_frontend,
+	.get_frontend         = it913x_fe_get_frontend,
 
-	.read_status = it913x_fe_read_status,
+	.get_tune_settings	  = it913x_fe_get_tune_settings,
+	.get_property		  = it913x_get_property,
+
+	.read_status          = it913x_fe_read_status,
 	.read_signal_strength = it913x_fe_read_signal_strength,
-	.read_snr = it913x_fe_read_snr,
-	.read_ber = it913x_fe_read_ber,
-	.read_ucblocks = it913x_fe_read_ucblocks,
+	.read_snr             = it913x_fe_read_snr,
+	.read_ber             = it913x_fe_read_ber,
+	.read_ucblocks        = it913x_fe_read_ucblocks,
+	.ts_bus_ctrl		  = it913x_fe_ts_bus_ctrl,
+
 };
 
 MODULE_DESCRIPTION("it913x Frontend and it9137 tuner");
