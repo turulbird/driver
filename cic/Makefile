@@ -68,7 +68,13 @@ hs711x-objs:= hs711x/hs711x_cic.o
 else ifdef HS7119
 obj-m += hs711x.o
 hs711x-objs:= hs711x/hs711x_cic.o
+else ifdef HS7420
+obj-m += starci.o
+starci-objs:= starci2win/starci2win.o
 else ifdef HS7810A
+obj-m += starci.o
+starci-objs:= starci2win/starci2win.o
+else ifdef HS7429
 obj-m += starci.o
 starci-objs:= starci2win/starci2win.o
 else ifdef HS7819

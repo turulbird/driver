@@ -297,6 +297,10 @@ static int info_model_read(char *page, char **start, off_t off, int count, int *
 	int len = sprintf(page, "hs7110\n");
 #elif defined(HS7119)
 	int len = sprintf(page, "hs7119\n");
+#elif defined(HS7420)
+	int len = sprintf(page, "hs7420\n");
+#elif defined(HS7429)
+	int len = sprintf(page, "hs7429\n");
 #elif defined(HS7810A)
 	int len = sprintf(page, "hs7810a\n");
 #elif defined(HS7819)
@@ -389,13 +393,45 @@ out:
 
 static int info_chipset_read(char *page, char **start, off_t off, int count, int *eof, void *data)
 {
-#if defined(UFS910) || defined(ADB_BOX)
+#if defined(UFS910) \
+ || defined(ADB_BOX)
 	int len = sprintf(page, "STi7100\n");
-#elif defined(ATEVIO7500) || defined(UFS913) || defined(SAGEMCOM88)
+#elif defined(ATEVIO7500) \
+ || defined(UFS913) \
+ || defined(SAGEMCOM88)
 	int len = sprintf(page, "STi7105\n");
-#elif defined(FORTIS_HDBOX) || defined(HL101) || defined(OCTAGON1008) || defined(TF7700) || defined(UFS922) || defined(UFC960) || defined(VIP1_V2) || defined(VIP2_V1) || defined(CUBEREVO) || defined(CUBEREVO_MINI) || defined(CUBEREVO_MINI2) || defined(CUBEREVO_250HD) || defined(CUBEREVO_MINI_FTA) || defined(CUBEREVO_2000HD) || defined(CUBEREVO_9500HD) || defined(CUBEREVO_3000HD) || defined(IPBOX9900) || defined(IPBOX99) || defined(IPBOX55) || defined(ARIVALINK200)
+#elif defined(FORTIS_HDBOX) \
+ || defined(HL101) \
+ || defined(OCTAGON1008) \
+ || defined(TF7700) \
+ || defined(UFS922) \
+ || defined(UFC960) \
+ || defined(VIP1_V2) \
+ || defined(VIP2_V1) \
+ || defined(CUBEREVO) \
+ || defined(CUBEREVO_MINI) \
+ || defined(CUBEREVO_MINI2) \
+ || defined(CUBEREVO_250HD) \
+ || defined(CUBEREVO_MINI_FTA) \
+ || defined(CUBEREVO_2000HD) \
+ || defined(CUBEREVO_9500HD) \
+ || defined(CUBEREVO_3000HD) \
+ || defined(IPBOX9900) \
+ || defined(IPBOX99) \
+ || defined(IPBOX55) \
+ || defined(ARIVALINK200)
 	int len = sprintf(page, "STi7109\n");
-#elif defined(UFS912) || defined(HS7110) || defined(HS7810A) || defined(HS7119) || defined(HS7819) || defined(ATEMIO520) || defined(ATEMIO530) || defined(SPARK) || defined(VITAMIN_HD5000)
+#elif defined(UFS912) \
+ || defined(HS7110) \
+ || defined(HS7810A) \
+ || defined(HS7420) \
+ || defined(HS7429) \
+ || defined(HS7119) \
+ || defined(HS7819) \
+ || defined(ATEMIO520) \
+ || defined(ATEMIO530) \
+ || defined(SPARK) \
+ || defined(VITAMIN_HD5000)
 	int len = sprintf(page, "STi7111\n");
 #elif defined(SPARK7162)
 	int len = sprintf(page, "STi7162\n");
@@ -621,7 +657,7 @@ static int info_fpversion(char *page, char **start, off_t off, int count, int *e
 //	int len = sprintf(page, "STi7105\n");
 //#elif defined(FORTIS_HDBOX) || defined(HL101) || defined(OCTAGON1008) || defined(TF7700) || defined(UFS922) || defined(UFC960) || defined(VIP1_V2) || defined(VIP2_V1) || defined(CUBEREVO) || defined(CUBEREVO_MINI) || defined(CUBEREVO_MINI2) || defined(CUBEREVO_250HD) || defined(CUBEREVO_MINI_FTA) || defined(CUBEREVO_2000HD) || defined(CUBEREVO_9500HD) || defined(IPBOX9900) || defined(IPBOX99) || defined(IPBOX55) || defined(ARIVALINK200)
 //	int len = sprintf(page, "STi7109\n");
-//#elif defined(UFS912) || defined(HS7110) || defined(HS7810A) || defined(HS7119) || defined(HS7819) || defined(ATEMIO520) || defined(ATEMIO530) || defined(SPARK) || defined(VITAMIN_HD5000)
+//#elif defined(UFS912) || defined(HS7110) || defined(HS7810A) || defined(HS7420) || defined(HS7429) || defined(HS7119) || defined(HS7819) || defined(ATEMIO520) || defined(ATEMIO530) || defined(SPARK) || defined(VITAMIN_HD5000)
 //	int len = sprintf(page, "STi7111\n");
 //#elif defined(SPARK7162)
 //	int len = sprintf(page, "STi7162\n");
@@ -807,7 +843,21 @@ struct ProcStructure_s e2Proc[] =
 	{cProcEntry, "stb/video/plane/psi_contrast"                                     , NULL, NULL, NULL, NULL, "psi_contrast"},
 	{cProcEntry, "stb/video/plane/psi_tint"                                         , NULL, NULL, NULL, NULL, "psi_tint"},
 	{cProcEntry, "stb/video/plane/psi_apply"                                        , NULL, NULL, NULL, NULL, "psi_apply"},
-#if defined(UFS912) || defined(UFS913) || defined(ATEVIO7500) || defined(HS7110) || defined(HS7119) || defined(ATEMIO520) || defined(ATEMIO530) || defined(HS7810A) || defined(HS7819) || defined(SPARK) || defined(SPARK7162) || defined(SAGEMCOM88)  || defined(VITAMIN_HD5000)
+#if defined(UFS912) \
+ || defined(UFS913) \
+ || defined(ATEVIO7500) \
+ || defined(HS7110) \
+ || defined(HS7119) \
+ || defined(ATEMIO520) \
+ || defined(ATEMIO530) \
+ || defined(HS7420) \
+ || defined(HS7429) \
+ || defined(HS7810A) \
+ || defined(HS7819) \
+ || defined(SPARK) \
+ || defined(SPARK7162) \
+ || defined(SAGEMCOM88) \
+ || defined(VITAMIN_HD5000)
 	{cProcDir  , "stb/cec"                                                          , NULL, NULL, NULL, NULL, ""},
 	{cProcEntry, "stb/cec/state_activesource"                                       , NULL, NULL, NULL, NULL, ""},
 	{cProcEntry, "stb/cec/state_standby"                                            , NULL, NULL, NULL, NULL, ""},

@@ -92,8 +92,14 @@ endif
 ifdef HS7119
 CCFLAGSY += -DHS7119
 endif
+ifdef HS7420
+CCFLAGSY += -DHS7420
+endif
 ifdef HS7810A
 CCFLAGSY += -DHS7810A
+endif
+ifdef HS7429
+CCFLAGSY += -DHS7429
 endif
 ifdef HS7819
 CCFLAGSY += -DHS7819
@@ -227,12 +233,22 @@ obj-y += cec/
 obj-y += smartcard/
 endif
 
+ifdef HS7420
+obj-y += cec/
+obj-y += smartcard/
+endif
+
 ifdef HS7810A
 obj-y += cec/
 obj-y += smartcard/
 endif
 
 ifdef HS7119
+obj-y += cec/
+obj-y += smartcard/
+endif
+
+ifdef HS7429
 obj-y += cec/
 obj-y += smartcard/
 endif

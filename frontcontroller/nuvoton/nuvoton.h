@@ -189,7 +189,7 @@ struct vfd_ioctl_data
 
 /****************************************************************************************/
 
-#ifdef OCTAGON1008
+#if defined(OCTAGON1008) || defined(HS7420) || defined(HS7429)
 struct vfd_buffer
 {
 	u8 buf0;

@@ -6734,6 +6734,8 @@ static int stv090x_setup(struct dvb_frontend *fe)
 #if defined(UFS912) \
  || defined(HS7110) \
  || defined(HS7119) \
+ || defined(HS7420) \
+ || defined(HS7429) \
  || defined(HS7810A) \
  || defined(HS7819) \
  || defined(ATEMIO520) \
@@ -6756,6 +6758,8 @@ static int stv090x_setup(struct dvb_frontend *fe)
 #if defined(UFS912) \
  || defined(HS7110) \
  || defined(HS7119) \
+ || defined(HS7420) \
+ || defined(HS7429) \
  || defined(HS7810A) \
  || defined(HS7819) \
  || defined(ATEMIO520) \
@@ -6993,12 +6997,14 @@ static int hdbox_set_voltage(struct dvb_frontend *fe, enum fe_sec_voltage voltag
 	return 0;
 }
 #elif defined(HS7110) \
-|| defined(HS7119) \
-|| defined(HS7810A) \
-|| defined(HS7819) \
-|| defined(ATEMIO520) \
-|| defined(ATEMIO530) \
-|| defined(SPARK)
+ || defined(HS7119) \
+ || defined(HS7420) \
+ || defined(HS7429) \
+ || defined(HS7810A) \
+ || defined(HS7819) \
+ || defined(ATEMIO520) \
+ || defined(ATEMIO530) \
+ || defined(SPARK)
 
 #define LNB_VOLTAGE_OFF 0x2b0010
 #define LNB_VOLTAGE_VER 0x2b0011
@@ -7157,7 +7163,15 @@ static struct dvb_frontend_ops stv090x_ops = {
 
 #if defined(FORTIS_HDBOX)
 	.set_voltage                 = hdbox_set_voltage,
-#elif defined(HS7110) || defined(HS7119) || defined(HS7810A) || defined(HS7819) || defined(ATEMIO520) || defined(ATEMIO530) || defined(SPARK)
+#elif defined(HS7110) \
+ || defined(HS7119) \
+ || defined(HS7420) \
+ || defined(HS7429) \
+ || defined(HS7810A) \
+ || defined(HS7819) \
+ || defined(ATEMIO520) \
+ || defined(ATEMIO530) \
+ || defined(SPARK)
 	.set_voltage                 = lnb_set_voltage,
 #elif defined(UFS912)
 	.set_voltage                 = lnbh23_set_voltage,
@@ -7196,6 +7210,8 @@ struct dvb_frontend *stv090x_attach(const struct stv090x_config *config,
 #if defined(UFS912) \
  || defined(HS7110) \
  || defined(HS7119) \
+ || defined(HS7420) \
+ || defined(HS7429) \
  || defined(HS7810A) \
  || defined(HS7819) \
  || defined(ATEMIO520) \
