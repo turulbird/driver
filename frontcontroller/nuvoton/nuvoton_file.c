@@ -32,10 +32,10 @@
  * 20131008 Audioniek       Beginning of Octagon1008 lower case characters.
  * 20131015 Audioniek       VFDDISPLAYWRITEONOFF made functional on HDBOX.
  * 20131026 Audioniek       Octagon1008 lower case characters completed.
- * 20131126 Audioniek       Start of adding text scrollng.
+ * 20131126 Audioniek       Start of adding text scrolling.
  * 20131128 Audioniek       Text scroll on /dev/vfd working: text scrolls
  *                          once if text is longer than display size,
- * 20131224 Audioniek       except on HS7119, HS7810A, HS7819 & ATEMIO530.
+ * 20131224 Audioniek       except on HS7119, HS7810A & HS7819.
  * 20131205 Audioniek       Errors and doubles corrected in HDBOX icon table.
  * 20131220 Audioniek       Start of work on ATEVIO7500 (Fortis HS8200).
  * 20131224 Audioniek       nuvotonWriteString on HS7119/HS7810A/HS7819
@@ -53,6 +53,8 @@
  * 20141010 Audioniek       HS7119/HS7810A/HS7819 scroll texts longer than
  *                          4 once.
  * 20151231 Audioniek       HS7420/HS7429 added.
+ * 20160103 Audioniek       Compiler warning fixed, references to ATEMIO530
+ *                          removed.
  *
  *****************************************************************************/
 
@@ -130,7 +132,7 @@ u8 regs[0xff];  // array with copy values of FP registers
    byte pos is 0..8 (0=rightmost, 8 is collection of icons on left)
 */
 
-/* character layout:
+/* character layout for positions 0..7:
        icon
     aaaaaaaaa
    fj   i   hb
@@ -793,7 +795,7 @@ int nuvotonSetIcon(int which, int on)
 {
 	return 0;
 }
-#else // HS7119, HS7420, HS7429, HS7810A & HS7819
+#else // HS7110, HS7119, HS7420, HS7429, HS7810A & HS7819
 int nuvotonSetIcon(int which, int on)
 {
 	return 0;
@@ -803,7 +805,6 @@ int nuvotonSetIcon(int which, int on)
 /* export for later use in e2_proc */
 EXPORT_SYMBOL(nuvotonSetIcon);
 
-//TODO: test all Fortis boxes
 int nuvotonSetLED(int which, int level)
 {
 	char buffer[6];
@@ -885,8 +886,7 @@ EXPORT_SYMBOL(nuvotonSetLED);
 #if !defined(HS7110) \
  && !defined(HS7119) \
  && !defined(HS7810A) \
- && !defined(HS7819) \
- && !defined(ATEMIO530)
+ && !defined(HS7819)
 int nuvotonSetBrightness(int level)
 {
 	char buffer[5];
@@ -1098,19 +1098,15 @@ int nuvotonSetDisplayOnOff(char level)
 	}
 	else
 	{
-		res |= nuvotonWriteString(&lastdata.data, lastdata.length);
+		res |= nuvotonWriteString(lastdata.data, lastdata.length);
+
 	}
-//#elif defined(HS7119) || defined(HS7810A) || defined(HS7819)
-//	dprintk(100, "%s >\n", __func__);
-//	res |= nuvotonWriteString("    ", 4);
-//#elif defined(HS7420) || defined(HS7429)
-//	dprintk(100, "%s >\n", __func__);
-//	res |= nuvotonWriteString("        ", 8);
 #endif
 	dprintk(100, "%s <\n", __func__);
 	return res;
 }
 
+//nuvotonWriteString
 #if defined(HS7810A) || defined(HS7819) // 4 character 7-segment LED with colon and periods
 int nuvotonWriteString(unsigned char *aBuf, int len)
 {
@@ -1434,7 +1430,7 @@ int nuvotonWriteString(unsigned char *aBuf, int len)
 	dprintk(100, "%s <\n", __func__);
 	return res;
 }
-#else // not HS7119, HS7420, HS7429, HS7810A, HS7819, OCTAGON1008, FORTIS_HDBOX or ATEVIO7500
+#else // not HS7119, HS7420, HS7429, HS7810A, HS7819, OCTAGON1008, FORTIS_HDBOX or ATEVIO7500 -> HS7110
 int nuvotonWriteString(unsigned char* aBuf, int len)
 {
 	dprintk(100, "%s >\n", __func__);
