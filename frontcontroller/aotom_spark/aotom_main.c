@@ -429,6 +429,10 @@ static int spinner_thread(void *arg)
 	int led = (int)arg;
 	int i = 0;
 
+	if (led_state[led].status == DRAW_THREAD_STATUS_RUNNING)
+	{
+		return 0;
+	}
 	led_state[led].status = DRAW_THREAD_STATUS_RUNNING;
 
 	while (!kthread_should_stop())
@@ -625,7 +629,7 @@ static ssize_t AOTOMdev_write(struct file *filp, const char *buff, size_t len, l
 	return len;
 }
 
-static void flashLED(int led, int ms)
+void flashLED(int led, int ms)
 {
 	if (!led_state[led].led_task || ms < 1)
 	{

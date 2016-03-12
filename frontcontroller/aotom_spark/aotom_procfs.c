@@ -80,6 +80,7 @@ extern int remove_e2_procs(char *name, read_proc_t *read_proc, write_proc_t *wri
 
 /* from other aotom modules */
 extern int aotomSetIcon(int which, int on);
+extern void flashLED(int led, int ms);
 extern void VFD_set_all_icons(int onoff);
 extern int aotomWriteText(char *buf, size_t len);
 extern int aotomSetBrightness(int level);
@@ -159,8 +160,19 @@ static int progress_write(struct file *file, const char __user *buf, unsigned lo
 		{
 			progress_done = 1;
 			clear_display();
+			if (fp_type == FP_VFD) //VFD display
+			{
+				led_state[LED_SPINNER].state = 0;
+//				aotomSetIcon(ICON_SPINNER, 0);
+			}
 			ret = YWPANEL_width;
 			goto out;
+		}
+		if (progress_done == 0 && fp_type == FP_VFD && led_state[LED_SPINNER].state == 0) //VFD display
+		{
+			led_state[LED_SPINNER].state = 1;
+			flashLED(LED_SPINNER, 200); // start spinner thread
+//			aotomSetIcon(ICON_SPINNER, 1);
 		}
 		if (progress > 19 && progress < 99 && progress_done == 0)
 		{
