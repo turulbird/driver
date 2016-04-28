@@ -218,7 +218,6 @@ int procfile_read(char *buffer, char **buffer_location, off_t offset, int buffer
 	{
 #if !defined(ADB_BOX)
 		ret = sprintf(buffer, "%d\n", boxtype);
-
 #else
 		if (boxtype==1) ret = sprintf(buffer, "bska\n");
 		else
@@ -252,7 +251,7 @@ int __init boxtype_init(void)
 	if (boxtype == 0)
 	{
 #if !defined(ADB_BOX)
-	  /* no platform data found, assume ufs910 */
+		/* no platform data found, assume ufs910 */
 		boxtype = (STPIO_GET_PIN(PIO_PORT(4),5) << 1) | STPIO_GET_PIN(PIO_PORT(4), 4);
 #else
 		ret=stv6412_boxtype();

@@ -56,6 +56,7 @@ int my_init_module(void)
    spark_setup_clks();
 #elif defined(HS7110)
    hs7110_setup_clks();
+<<<<<<< HEAD
 #elif defined(HS7420)
    hs7420_setup_clks();
 #elif defined(HS7810A)
@@ -64,6 +65,16 @@ int my_init_module(void)
    hs7119_setup_clks();
 #elif defined(HS7429)
    hs7429_setup_clks();
+=======
+#elif defined(HS7119)
+   hs7119_setup_clks();
+#elif defined(HS7420)
+   hs7420_setup_clks();
+#elif defined(HS7429)
+   hs7429_setup_clks();
+#elif defined(HS7810A)
+   hs7810a_setup_clks();
+>>>>>>> upstream/master
 #elif defined(HS7819)
    hs7819_setup_clks();
 #elif defined(ATEMIO520)

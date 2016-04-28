@@ -80,11 +80,16 @@
 #include "nuvoton_asc.h"
 #include "nuvoton_utf.h"
 
-#if defined(OCTAGON1008) || defined(HS7420) || defined(HS7429)
+#if defined(OCTAGON1008) \
+ || defined(HS7420) \
+ || defined(HS7429)
 #define DISP_SIZE 8
-#elif defined(FORTIS_HDBOX) || defined(ATEVIO7500)
+#elif defined(FORTIS_HDBOX) \
+ || defined(ATEVIO7500)
 #define DISP_SIZE 12
-#elif defined(HS7810A) || defined(HS7119) || defined(HS7819)
+#elif defined(HS7810A) \
+ || defined(HS7119) \
+ || defined(HS7819)
 #define DISP_SIZE 4
 #elif defined(HS7110)
 #define DISP_SIZE 0
@@ -1089,7 +1094,13 @@ int nuvotonSetDisplayOnOff(char level)
 	buffer[4] = EOP;
 
 	res = nuvotonWriteCommand(buffer, 5, 0);
-#elif defined(ATEVIO7500) || defined(HS7420) || defined(HS7810A) || defined(HS7119) || defined(HS7429) || defined(HS7819)
+#elif defined(ATEVIO7500) \
+ || defined(HS7420) \
+ || defined(HS7810A) \
+ || defined(HS7119) \
+ || defined(HS7429) \
+ || defined(HS7819)
+>>>>>>> upstream/master
 	dprintk(100, "%s >\n", __func__);
 
 	if (level == 0)
@@ -1559,7 +1570,6 @@ static void clear_display(void)
 	res = nuvotonWriteString(bBuf, DISP_SIZE);
 }
 
-
 static ssize_t NUVOTONdev_write(struct file *filp, const char *buff, size_t len, loff_t *off)
 {
 	char *kernel_buf;
@@ -1855,7 +1865,15 @@ static int NUVOTONdev_ioctl(struct inode *Inode, struct file *File, unsigned int
 		}
 		case VFDBRIGHTNESS:
 		{
+<<<<<<< HEAD
 #if defined(FORTIS_HDBOX) || defined(OCTAGON1008) || defined(ATEVIO7500) || defined(HS7420) || defined(HS7429)
+=======
+#if defined(FORTIS_HDBOX) \
+ || defined(OCTAGON1008) \
+ || defined(ATEVIO7500) \
+ || defined(HS7420) \
+ || defined(HS7429)
+>>>>>>> upstream/master
 			if (mode == 0)
 			{
 				res = nuvotonSetBrightness(data->start_address);

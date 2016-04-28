@@ -95,6 +95,12 @@ endif
 ifdef HS7420
 CCFLAGSY += -DHS7420
 endif
+<<<<<<< HEAD
+=======
+ifdef HS7429
+CCFLAGSY += -DHS7429
+endif
+>>>>>>> upstream/master
 ifdef HS7810A
 CCFLAGSY += -DHS7810A
 endif

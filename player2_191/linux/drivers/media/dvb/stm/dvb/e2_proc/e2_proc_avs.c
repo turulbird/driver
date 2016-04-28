@@ -240,7 +240,9 @@ int proc_avs_0_volume_write(struct file* file, const char __user* buf, unsigned 
 			 * ->see pseudo_mixer.c line 722.
 			 */
 			/* Dagobert: 06.10.2009: Volume is a logarithmical value ...
+
 			        scale range
+
 			        volume = ((volume * 100) / cMaxVolumeE2 * cMaxVolumePlayer) / 100;
 			        volume = 0 - volume;
 			*/

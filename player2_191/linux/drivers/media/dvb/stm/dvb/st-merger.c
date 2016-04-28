@@ -585,11 +585,30 @@ void stm_tsm_init(int use_cimax)
 	unsigned int ret;
 	int n;
 	int reinit = 0;
-#if !defined(FORTIS_HDBOX) && !defined(UFS912) && !defined(UFS913) && !defined(SPARK) && !defined(OCTAGON1008) && !defined(HOMECAST5101) && \
-    !defined(ATEVIO7500) && !defined(HS7110) && !defined(HS7810A) && !defined(HS7420) && !defined(HS7429) && !defined(HS7119) && !defined(HS7819) && \
-    !defined(ATEMIO520) && !defined(ATEMIO530) && !defined(CUBEREVO) && !defined(CUBEREVO_MINI2) && !defined(CUBEREVO_MINI) && \
-    !defined(CUBEREVO_250HD) && !defined(CUBEREVO_2000HD) && !defined(CUBEREVO_9500HD) && \
-    !defined(CUBEREVO_MINI_FTA) && !defined(CUBEREVO_3000HD) && !defined(VITAMIN_HD5000)
+#if !defined(FORTIS_HDBOX) \
+ && !defined(UFS912) \
+ && !defined(UFS913) \
+ && !defined(SPARK) \
+ && !defined(OCTAGON1008) \
+ && !defined(HOMECAST5101) \
+ && !defined(ATEVIO7500) \
+ && !defined(HS7110) \
+ && !defined(HS7810A) \
+ && !defined(HS7420) \
+ && !defined(HS7429) \
+ && !defined(HS7119) \
+ && !defined(HS7819) \
+ && !defined(ATEMIO520) \
+ && !defined(ATEMIO530) \
+ && !defined(CUBEREVO) \
+ && !defined(CUBEREVO_MINI2) \
+ && !defined(CUBEREVO_MINI) \
+ && !defined(CUBEREVO_250HD) \
+ && !defined(CUBEREVO_2000HD) \
+ && !defined(CUBEREVO_9500HD) \
+ && !defined(CUBEREVO_MINI_FTA) \
+ && !defined(CUBEREVO_3000HD) \
+ && !defined(VITAMIN_HD5000)
 	unsigned int stream_sync = 0xbc4733;
 #else
 	unsigned int stream_sync = 0xbc4722;
@@ -756,8 +775,18 @@ void stm_tsm_init(int use_cimax)
 		 */
 		ctrl_outl(0x0, reg_sys_config + SYS_CFG0);
 #endif
-#if !defined(ATEVIO7500) && !defined(UFS912) && !defined(UFS913) && !defined(HS7110) && !defined(HS7810A) && !defined(HS7420) \
- && !defined(HS7429) && !defined(HS7119) && !defined(HS7819) && !defined(ATEMIO520) && !defined(ATEMIO530) && !defined(VITAMIN_HD5000)
+#if !defined(ATEVIO7500) \
+ && !defined(UFS912) \
+ && !defined(UFS913) \
+ && !defined(HS7110) \
+ && !defined(HS7810A) \
+ && !defined(HS7420) \
+ && !defined(HS7429) \
+ && !defined(HS7119) \
+ && !defined(HS7819) \
+ && !defined(ATEMIO520) \
+ && !defined(ATEMIO530) \
+ && !defined(VITAMIN_HD5000)
 		ctrl_outl(0x0, reg_sys_config + SYS_CFG1);
 #endif
 		if (reinit)
@@ -830,7 +859,7 @@ void stm_tsm_init(int use_cimax)
  || defined(ATEMIO520) \
  || defined(ATEMIO530) \
  || defined(IPBOX9900) \
- ||  defined(ARIVALINK200) \
+ || defined(ARIVALINK200) \
  || defined(VITAMIN_HD5000)
 		ctrl_outl(0x0, tsm_io + SWTS_CFG(1));
 		ctrl_outl(0x0, tsm_io + SWTS_CFG(2));
@@ -1340,10 +1369,19 @@ void stm_tsm_init(int use_cimax)
 		/* set stream0 on */
 		ret = ctrl_inl(tsm_io + TSM_STREAM0_CFG);
 		ctrl_outl(ret | 0x80, tsm_io + TSM_STREAM0_CFG);
-#if !defined(CUBEREVO) && !defined(CUBEREVO_MINI2) && \
-    !defined(CUBEREVO_MINI) && !defined(CUBEREVO_250HD) && !defined(CUBEREVO_2000HD) && \
-    !defined(CUBEREVO_9500HD) && !defined(CUBEREVO_MINI_FTA) && !defined(CUBEREVO_3000HD) && \
-    !defined(HS7110) && !defined(HS7119) && !defined(ATEMIO520) && !defined(ATEMIO530) && !defined(UFS913)     /* Dagobert: set-up swts */
+#if !defined(CUBEREVO) \
+ && !defined(CUBEREVO_MINI2) \
+ && !defined(CUBEREVO_MINI) \
+ && !defined(CUBEREVO_250HD) \
+ && !defined(CUBEREVO_2000HD) \
+ && !defined(CUBEREVO_9500HD) \
+ && !defined(CUBEREVO_MINI_FTA) \
+ && !defined(CUBEREVO_3000HD) \
+ && !defined(HS7110) \
+ && !defined(HS7119) \
+ && !defined(ATEMIO520) \
+ && !defined(ATEMIO530) \
+ && !defined(UFS913) /* Dagobert: set-up swts */
 		ctrl_outl(TSM_SWTS_REQ_TRIG(128 / 16) | 0x10, tsm_io + TSM_SWTS_CFG(0));
 		/* SWTS0 to PTI */
 		ret = ctrl_inl(tsm_io + TSM_PTI_SEL);
@@ -1465,7 +1503,6 @@ void stm_tsm_init(int use_cimax)
 		*/
 #endif
 /* <<< DVBT-USB */
-
 #ifdef LOAD_TSM_DATA
 		TSM_NUM_PTI_ALT_OUT  = 1/* config->tsm_num_pti_alt_out*/;
 		TSM_NUM_1394_ALT_OUT = 1/*config->tsm_num_1394_alt_out */;

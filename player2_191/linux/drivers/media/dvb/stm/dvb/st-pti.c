@@ -90,9 +90,22 @@ extern void fe_core_register_frontend(struct dvb_adapter *dvb_adap);
  || defined(VITAMIN_HD5000) \
  || defined(SAGEMCOM88)
 extern void stv090x_register_frontend(struct dvb_adapter *dvb_adap);
-#elif defined(HL101) || defined(VIP1_V2) || defined(VIP2_V1) || defined(IPBOX9900) || defined(IPBOX99) || defined(IPBOX55) || defined(ADB_BOX)
+#elif defined(HL101) \
+ || defined(VIP1_V2) \
+ || defined(VIP2_V1) \
+ || defined(IPBOX9900) \
+ || defined(IPBOX99) \
+ || defined(IPBOX55) \
+ || defined(ADB_BOX)
 extern void fe_core_register_frontend(struct dvb_adapter *dvb_adap);
-#elif defined(CUBEREVO) || defined(CUBEREVO_MINI2) || defined(CUBEREVO_MINI) || defined(CUBEREVO_250HD) || defined(CUBEREVO_2000HD) || defined(CUBEREVO_9500HD) || defined(CUBEREVO_MINI_FTA) || defined(CUBEREVO_3000HD)
+#elif defined(CUBEREVO) \
+ || defined(CUBEREVO_MINI2) \
+ || defined(CUBEREVO_MINI) \
+ || defined(CUBEREVO_250HD) \
+ || defined(CUBEREVO_2000HD) \
+ || defined(CUBEREVO_9500HD) \
+ || defined(CUBEREVO_MINI_FTA) \
+ || defined(CUBEREVO_3000HD)
 extern void socket_register_adapter(struct dvb_adapter *dvb_adap);
 #elif defined(OCTAGON1008)
 extern void avl2108_register_frontend(struct dvb_adapter *dvb_adap);
@@ -274,7 +287,7 @@ int stpti_start_feed(struct dvb_demux_feed *dvbdmxfeed, struct DeviceContext_s *
 	pSession->num_pids++;
 	dprintk("%s: pid = %d, num_pids = %d \n", __FUNCTION__, dvbdmxfeed->pid,
 			pSession->num_pids);
-#ifdef VERY_VERBOSE
+#if 0
 	printk("#  pid t pt ref\n");
 	for (vLoop = 0; vLoop < (pSession->num_pids); vLoop++)
 	{
@@ -472,7 +485,8 @@ static struct stpti pti;
 void ptiInit(struct DeviceContext_s *pContext)
 {
 #if defined(SAGEMCOM88) \
- ||  defined(UFS912) \
+ || defined(UFS912) \
+
  || defined(UFS913) \
  || defined(SPARK) \
  || defined(SPARK7162) \
