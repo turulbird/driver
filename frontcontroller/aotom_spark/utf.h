@@ -139,7 +139,6 @@ unsigned char UTF_C3[64][2] =
         {0x0,0x0},
         {0x0,0x0}
 };
-#endif
 
 unsigned char UTF_C4[64][2] =
 {

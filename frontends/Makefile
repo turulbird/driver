@@ -159,28 +159,16 @@ obj-m += stv090x.o
 obj-y += lnb/
 endif 
 
-<<<<<<< HEAD
-ifdef HS7420
-stv090x-objs += stv090x/stv090x.o
-stv090x-objs += stv090x/stv6110x.o
-stv090x-objs += stv090x/ix7306.o
-stv090x-objs += stv090x/core.o
-=======
 ifdef HS7119
 stv090x-objs += stv090x/stv090x.o
 stv090x-objs += stv090x/stv6110x.o
 stv090x-objs += stv090x/ix7306.o
 stv090x-objs +=stv090x/core.o
->>>>>>> upstream/master
 obj-m += stv090x.o
 obj-y += lnb/
 endif
 
-<<<<<<< HEAD
-ifdef HS7810A
-=======
 ifdef HS7420
->>>>>>> upstream/master
 stv090x-objs += stv090x/stv090x.o
 stv090x-objs += stv090x/stv6110x.o
 stv090x-objs += stv090x/ix7306.o
@@ -198,16 +186,6 @@ obj-m += stv090x.o
 obj-y += lnb/
 endif 
 
-<<<<<<< HEAD
-ifdef HS7429
-stv090x-objs += stv090x/stv090x.o
-stv090x-objs += stv090x/stv6110x.o
-stv090x-objs += stv090x/ix7306.o
-stv090x-objs +=stv090x/core.o
-obj-m += stv090x.o
-obj-y += lnb/
-endif 
-=======
 ifdef HS7810A
 stv090x-objs += stv090x/stv090x.o
 stv090x-objs += stv090x/stv6110x.o
@@ -216,7 +194,6 @@ stv090x-objs += stv090x/core.o
 obj-m += stv090x.o
 obj-y += lnb/
 endif
->>>>>>> upstream/master
 
 ifdef HS7819
 stv090x-objs += stv090x/stv090x.o
