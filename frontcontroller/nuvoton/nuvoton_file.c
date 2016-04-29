@@ -1100,7 +1100,6 @@ int nuvotonSetDisplayOnOff(char level)
  || defined(HS7119) \
  || defined(HS7429) \
  || defined(HS7819)
->>>>>>> upstream/master
 	dprintk(100, "%s >\n", __func__);
 
 	if (level == 0)
@@ -1865,15 +1864,11 @@ static int NUVOTONdev_ioctl(struct inode *Inode, struct file *File, unsigned int
 		}
 		case VFDBRIGHTNESS:
 		{
-<<<<<<< HEAD
-#if defined(FORTIS_HDBOX) || defined(OCTAGON1008) || defined(ATEVIO7500) || defined(HS7420) || defined(HS7429)
-=======
 #if defined(FORTIS_HDBOX) \
  || defined(OCTAGON1008) \
  || defined(ATEVIO7500) \
  || defined(HS7420) \
  || defined(HS7429)
->>>>>>> upstream/master
 			if (mode == 0)
 			{
 				res = nuvotonSetBrightness(data->start_address);

@@ -119,6 +119,7 @@ endif
 ifdef HS7119
 obj-m += hs711x.o
 hs711x-objs:= hs711x/hs711x_cic.o
+endif
 
 ifdef HS7420
 obj-m += starci.o
