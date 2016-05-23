@@ -32,7 +32,8 @@
  *
  * Date     By              Description
  * --------------------------------------------------------------------------------------
- * 20130929 Audioniek
+ * 20130929 Audioniek       Initial version.
+ * 20160523 Audioniek       procfs added.
  *
  ****************************************************************************************/
 
@@ -611,6 +612,9 @@ int nuvotonTask(void *dummy)
 
 //----------------------------------------------
 
+extern void create_proc_fp(void);
+extern void remove_proc_fp(void);
+
 static int __init nuvoton_init_module(void)
 {
 	int i = 0;
@@ -619,7 +623,7 @@ static int __init nuvoton_init_module(void)
 	unsigned int *ASC_X_INT_EN = (unsigned int *)(ASCXBaseAddress + ASC_INT_EN);
 	// Address for FiFo enable/disable
 	unsigned int *ASC_X_CTRL   = (unsigned int *)(ASCXBaseAddress + ASC_CTRL);
-	dprintk(5, "%s >\n", __func__);
+	dprintk(100, "%s >\n", __func__);
 	//Disable all ASC 2 interrupts
 	*ASC_X_INT_EN = *ASC_X_INT_EN & ~0x000001ff;
 
@@ -662,13 +666,16 @@ static int __init nuvoton_init_module(void)
 		printk("Unable to get major %d for VFD/NUVOTON\n", VFD_MAJOR);
 	}
 
-	dprintk(10, "%s <\n", __func__);
+	create_proc_fp();
+
+	dprintk(100, "%s <\n", __func__);
 	return 0;
 }
 
 static void __exit nuvoton_cleanup_module(void)
 {
 	printk("NUVOTON frontcontroller module unloading\n");
+	remove_proc_fp();
 	unregister_chrdev(VFD_MAJOR, "VFD");
 	free_irq(InterruptLine, NULL);
 }
