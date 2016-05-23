@@ -55,6 +55,9 @@
  * 20151231 Audioniek       HS7420/HS7429 added.
  * 20160103 Audioniek       Compiler warning fixed, references to ATEMIO530
  *                          removed.
+ * 20160424 Audioniek       VFDGETVERSION added.
+ * 20160522 Audioniek       VFDSETPOWERONTIME AND VFDGETWAKEUPTIME added.
+ * 20160523 Audioniek       procfs added.
  *
  *****************************************************************************/
 
@@ -103,6 +106,7 @@ extern void nuvoton_putc(unsigned char data);
 struct semaphore write_sem;
 int errorOccured = 0;
 static char ioctl_data[8];
+static char wakeup_time[5];
 
 tFrontPanelOpen FrontPanelOpen [LASTMINOR];
 
@@ -576,7 +580,7 @@ struct iconToInternal
 #define cCommandSetWakeupTime    0x72 // 03 1:hrs 2:mins                      nothing
 #define cCommandSetWakeupMJD     0x74 // 05 1:MJDh 2:MJDl 3:hrs 4:mins        nothing
 
-#define cCommandGetPowerOnSrc    0x80 // 01                                   1 byte: wake up reason (2= from deep sleep)
+#define cCommandGetPowerOnSrc    0x80 // 01                                   1 byte: wake up reason (0=power-on, 1= from deep standby, 2=timer?)
                                                                               //TODO: returns error on HS742X
 
 #define cCommandSetLed           0x93 // 04 1:LED# 2:level 3:08               nothing
@@ -921,7 +925,7 @@ int nuvotonSetBrightness(int level)
 EXPORT_SYMBOL(nuvotonSetBrightness);
 #endif
 
-int nuvotonSetStandby(char *time)
+int nuvotonSetStandby(char *wtime)
 {
 	char     buffer[8];
 	char     power_off[] = {SOP, cCommandPowerOffReplay, 0x01, EOP};
@@ -937,12 +941,18 @@ int nuvotonSetStandby(char *time)
 	buffer[0] = SOP;
 	buffer[1] = cCommandSetWakeupMJD;
 
-	memcpy(buffer + 2, time, 4); /* only 4 because we do not have seconds here */
+	memcpy(buffer + 2, wtime, 4); /* only 4 because we do not have seconds here */
 	buffer[6] = EOP;
 
 	res = nuvotonWriteCommand(buffer, 7, 0);
 
-	/* now power off */
+//	for (i = 0; i < 4; i++)
+//	{
+//		wakeup_time[i] = wtime[i];
+//	}
+//	wakeup_time[4] = 0;
+
+	/* now go to standby */
 	res = nuvotonWriteCommand(power_off, sizeof(power_off), 0);
 
 	dprintk(100, "%s <\n", __func__);
@@ -970,10 +980,11 @@ int nuvotonSetTime(char *time)
 	return res;
 }
 
-int nuvotonGetTime(void)
+int nuvotonGetTime(char *time)
 {
 	char buffer[3];
 	int res = 0;
+	int i;
 
 	dprintk(100, "%s >\n", __func__);
 
@@ -995,17 +1006,59 @@ int nuvotonGetTime(void)
 	}
 	else
 	{
-		/* time received ->noop here */
+		/* time received */
 		dprintk(1, "time received\n");
 		dprintk(20, "myTime= 0x%02x - 0x%02x - 0x%02x - 0x%02x - 0x%02x\n", ioctl_data[0], ioctl_data[1],
 				ioctl_data[2], ioctl_data[3], ioctl_data[4]);
+		for (i = 0; i < 5; i++)
+		{
+			time[i] = ioctl_data[i];
+		}
 	}
+	dprintk(100, "%s <\n", __func__);
+	return res;
+}
+
+int nuvotonSetWakeUpTime(char *wtime)
+{
+	char     buffer[7];
+	int      res = 0, i;
+
+	dprintk(100, "%s >\n", __func__);
+
+	/* set wakeup time */
+	memset(buffer, 0, 7);
+
+	buffer[0] = SOP;
+	buffer[1] = cCommandSetWakeupMJD;
+
+	memcpy(buffer + 2, wtime, 4); /* only 4 because we do not have seconds here */
+	buffer[6] = EOP;
+
+	res = nuvotonWriteCommand(buffer, 7, 0);
+
+	for (i = 0; i < 4; i++)
+	{
+		wakeup_time[i] = wtime[i];
+	}
+	wakeup_time[4] = 0;
 
 	dprintk(100, "%s <\n", __func__);
 	return res;
 }
 
-int nuvotonGetWakeUpMode(void)
+void nuvotonGetWakeUpTime(char *time)
+{
+	int i;
+
+	for (i = 0; i < 4; i++)
+	{
+		time[i] = wakeup_time[i];
+	}
+	time[4] = 0;
+}
+
+int nuvotonGetWakeUpMode(int *wakeup_mode)
 {
 	char buffer[3];
 	int res = 0;
@@ -1031,8 +1084,9 @@ int nuvotonGetWakeUpMode(void)
 	}
 	else
 	{
-		/* time received ->noop here */
-		dprintk(1, "time received\n");
+		/* mode received */
+		dprintk(1, "wakeup mode received\n");
+		*wakeup_mode = ioctl_data[0] + 1;
 	}
 
 	dprintk(100, "%s <\n", __func__);
@@ -1116,6 +1170,55 @@ int nuvotonSetDisplayOnOff(char level)
 	return res;
 }
 
+int nuvotonGetVersion(int *version)
+{
+	int res = 0;
+
+#if 0
+#define LOADER_VERSION 0x000000f4 //32 bit word that holds the loader version
+	unsigned int volatile * const p = (unsigned int *)LOADER_VERSION;
+	unsigned int lversion, i;
+	int byte[6];
+
+	dprintk(100, "%s >\n", __func__);
+
+	lversion = *p;
+	for (i = 0; i < 6; i += 2)
+	{
+		byte[i]     = (lversion >> 4 * i) & 0x0f; //units
+		byte[i + 1] = (lversion >> ((4 * i) + 4)) & 0x0f ; //tens
+	}
+	dprintk(1, "Loader version is %1d%01d.%01d%01d\n", byte[3], byte[2], byte[1], byte[0]);
+
+//	*lversion = (1000 * byte[3]) + (100 * byte[2]) + (10 * byte[1]) + byte[0];
+#else
+#if defined(FORTIS_HDBOX)
+	*version = 154;
+#elif defined(OCTAGON1008)
+	*version = 254;
+#elif defined(ATEVIO7500)
+	*version = 600;
+#elif defined(HS7110)
+	*version = 640;
+#elif defined(HS7420)
+	*version = 630;
+#elif defined(HS7810A)
+	*version = 620;
+#elif defined(HS7119)
+	*version = 740;
+#elif defined(HS7429)
+	*version = 730;
+#elif defined(HS78190)
+	*version = 720;
+#else
+	*version = -1;
+#endif
+#endif
+//	dprintk(1, "FP version is %d\n", *version);
+
+	dprintk(100, "%s <\n", __func__);
+	return res;
+}
 //nuvotonWriteString
 #if defined(HS7810A) || defined(HS7819) // 4 character 7-segment LED with colon and periods
 int nuvotonWriteString(unsigned char *aBuf, int len)
@@ -1507,7 +1610,7 @@ int nuvoton_init_func(void)
 	}
 #if !defined(HS7810A) && !defined(HS7819) && !defined(HS7110) && !defined(HS7119) //VFD models
 	res |= nuvotonSetBrightness(7);
-	res |= nuvotonWriteString("T.-Ducktales", strlen("T.-Ducktales"));
+//	res |= nuvotonWriteString("T.-Ducktales", strlen("T.-Ducktales"));
 #elif defined(FORTIS_HDBOX) || defined(OCTAGON1008) //models with icons
 	for (vLoop = ICON_MIN + 1; vLoop < ICON_MAX; vLoop++)
 	{
@@ -1516,6 +1619,12 @@ int nuvoton_init_func(void)
 #elif defined(HS7119) || defined(HS7810A) || defined(HS7819) //LED models
 	res |= nuvotonWriteString("----", 4); //HS7810A, HS7819 & HS7119: show 4 dashes
 #endif
+	wakeup_time[0] = 40587 >> 8; //set initial wakeup time to epoch
+	wakeup_time[1] = 40587 & 0xff;
+	wakeup_time[2] = 0;
+	wakeup_time[3] = 0;
+	wakeup_time[4] = 0;
+
 	dprintk(100, "%s <\n", __func__);
 	return 0;
 }
@@ -1550,7 +1659,13 @@ int nuvoton_init_func(void)
 	res |= nuvotonWriteCommand(init4, sizeof(init4), 0);  //clear wakeup time
 	res |= nuvotonSetBrightness(7);
 
-	res |= nuvotonWriteString("T.-Ducktales", strlen("T.-Ducktales"));
+//	res |= nuvotonWriteString("T.-Ducktales", strlen("T.-Ducktales"));
+
+	wakeup_time[0] = 40587 >> 8; //set initial wakeup time to epoch
+	wakeup_time[1] = 40587 & 0xff;
+	wakeup_time[2] = 0;
+	wakeup_time[3] = 0;
+	wakeup_time[4] = 0;
 
 	dprintk(100, "%s <\n", __func__);
 	return 0;
@@ -2049,8 +2164,24 @@ static int NUVOTONdev_ioctl(struct inode *Inode, struct file *File, unsigned int
 		case VFDSTANDBY:
 		{
 			clear_display();
-			dprintk(5, "Set standby mode, wake up time: (MJD= %d) - %02d:%02d:%02d (UTC)\n", (nuvoton->u.standby.time[0] & 0xFF) * 256 + (nuvoton->u.standby.time[1] & 0xFF), nuvoton->u.standby.time[2], nuvoton->u.standby.time[3], nuvoton->u.standby.time[4]);
+			dprintk(5, "Set standby mode, wake up time: (MJD= %d) - %02d:%02d:%02d (UTC)\n", (nuvoton->u.standby.time[0] & 0xFF) * 256 + (nuvoton->u.standby.time[1] & 0xFF),
+				nuvoton->u.standby.time[2], nuvoton->u.standby.time[3], nuvoton->u.standby.time[4]);
 			res = nuvotonSetStandby(nuvoton->u.standby.time);
+			break;
+		}
+		case VFDSETPOWERONTIME:
+		{
+			dprintk(5, "Set wake up time: (MJD= %d) - %02d:%02d:%02d (UTC)\n", (nuvoton->u.standby.time[0] & 0xFF) * 256 + (nuvoton->u.standby.time[1] & 0xFF),
+				nuvoton->u.standby.time[2], nuvoton->u.standby.time[3], nuvoton->u.standby.time[4]);
+			res = nuvotonSetWakeUpTime(nuvoton->u.standby.time);
+			break;
+		}
+		case VFDGETWAKEUPTIME:
+		{
+			dprintk(5, "Wake up time: (MJD= %d) - %02d:%02d:%02d (UTC)\n", (wakeup_time[0] & 0xFF) * 256 + (wakeup_time[1] & 0xFF),
+				wakeup_time[2], wakeup_time[3], wakeup_time[4]);
+			copy_to_user((void *)arg, &wakeup_time, 5);
+			res = 0;
 			break;
 		}
 		case VFDSETTIME:
@@ -2064,15 +2195,19 @@ static int NUVOTONdev_ioctl(struct inode *Inode, struct file *File, unsigned int
 		}
 		case VFDGETTIME:
 		{
-			res = nuvotonGetTime();
+			char time[5];
+
+			res = nuvotonGetTime(time);
 			dprintk(5, "Get frontpanel time: (MJD=) %d - %02d:%02d:%02d (UTC)\n", (ioctl_data[0] & 0xFF) * 256 + (ioctl_data[1] & 0xFF), ioctl_data[2], ioctl_data[3], ioctl_data[4]);
 			copy_to_user((void *)arg, &ioctl_data, 5);
 			break;
 		}
 		case VFDGETWAKEUPMODE:
 		{
-			res = nuvotonGetWakeUpMode();
-			copy_to_user((void *)arg, &ioctl_data, 1);
+			int wakeup_mode = 0;
+
+			res = nuvotonGetWakeUpMode(&wakeup_mode);
+			res |= put_user(wakeup_mode, (int *)arg);
 			break;
 		}
 		case VFDDISPLAYCHARS:
@@ -2108,6 +2243,13 @@ static int NUVOTONdev_ioctl(struct inode *Inode, struct file *File, unsigned int
 			mode = 0; //go back to vfd mode
 			break;
 		}
+		case VFDGETVERSION:
+		{
+			int version = 0;
+
+			res = nuvotonGetVersion(&version);
+			res |= put_user(version, (int *)arg);
+		}
 		case 0x5305:
 		{
 			mode = 0; //go back to vfd mode
@@ -2119,14 +2261,11 @@ static int NUVOTONdev_ioctl(struct inode *Inode, struct file *File, unsigned int
 		case VFDGETSTBYKEY:
 		case VFDSETSTBYKEY:
 		case VFDPOWEROFF:
-		case VFDSETPOWERONTIME:
-		case VFDGETVERSION:
 		case VFDGETSTARTUPSTATE:
 		case VFDSETTIME2:
 		case VFDDISPLAYCLR:
 		case VFDGETLOOPSTATE:
 		case VFDSETLOOPSTATE:
-		case VFDGETWAKEUPTIME:
 		{
 			printk("[nuvoton] Unsupported IOCTL 0x%x for this receiver.\n", cmd);
 			mode = 0;
@@ -2153,3 +2292,4 @@ struct file_operations vfd_fops =
 	.open    = NUVOTONdev_open,
 	.release = NUVOTONdev_close
 };
+// vim:ts=4

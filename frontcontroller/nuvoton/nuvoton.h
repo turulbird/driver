@@ -85,7 +85,7 @@ extern tFrontPanelOpen FrontPanelOpen[LASTMINOR];
 #define VFDSETSTBYKEY         0xc0425af4 // unused, used by other boxes
 #define VFDPOWEROFF           0xc0425af5 // unused, used by other boxes
 #define VFDSETPOWERONTIME     0xc0425af6 // unused, used by other boxes
-#define VFDGETVERSION         0xc0425af7 // unused, used by other boxes
+#define VFDGETVERSION         0xc0425af7
 #define VFDGETSTARTUPSTATE    0xc0425af8 // unused, used by other boxes
 #define VFDGETWAKEUPMODE      0xc0425af9
 #define VFDGETTIME            0xc0425afa
