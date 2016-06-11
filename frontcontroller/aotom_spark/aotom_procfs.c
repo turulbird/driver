@@ -33,12 +33,17 @@
  *                          by skl.
  * 20151202 Audioniek       Progress display only done once, after reaching
  *                          99% set inhibit flag.
+ * 20160511 Audioniek       /proc/stb/fp/rtc converted to UTC,
+ *                          /proc/stb/fp/rtc_offset automatically set when
+ *                          /proc/stb/fp/rtc is written to and rtc_offset is
+ *                          still set to default value of 3599.
  * 
  ****************************************************************************/
 
 #include <linux/proc_fs.h>      /* proc fs */
 #include <asm/uaccess.h>        /* copy_from_user */
 #include <linux/time.h>
+//#include <time.h>
 #include <linux/kernel.h>
 #include "aotom_main.h"
 
@@ -51,8 +56,8 @@
  *             |
  *             +--- aotom (w)               Direct control of LEDs and icons
  *             +--- version (r)             SW version of front processor (hundreds = major, ten/units = minor)
- *             +--- rtc (rw)                RTC time (local, seconds since Unix epoch))
- *             +--- rtc_offset (rw)         RTC offset in seconds from UTC (not used)
+ *             +--- rtc (rw)                RTC time (UTC, seconds since Unix epoch))
+ *             +--- rtc_offset (rw)         RTC offset in seconds from UTC, default = 3600 seconds
  *             +--- wakeup_time (rw)        Next wakeup time (absolute, local, seconds since Unix epoch)
  *             +--- was_timer_wakeup (r)    Wakeup reason (1 = timer, 0 = other)
  *             +--- led0_pattern (rw)       Blink pattern for red LED (currently limited to on (0xffffffff) or off (0))
@@ -87,7 +92,7 @@ extern int aotomSetBrightness(int level);
 extern void clear_display(void);
 
 /* Globals */
-static int rtc_offset = 3600; //TODO: set this automatically
+static int rtc_offset = 3600;
 static u32 wakeup_time;
 static int progress = 0;
 static int progress_done = 0;
@@ -324,7 +329,7 @@ static int write_rtc(struct file *file, const char __user *buffer, unsigned long
 
 		test = sscanf (myString, "%u", &argument);
 
-		if (0 < test)
+		if (test > 0)
 		{
 			YWPANEL_FP_SetTime(argument + rtc_offset);
 			YWPANEL_FP_ControlTimer(true);

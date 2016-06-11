@@ -8,6 +8,9 @@
 #include "dvb_frontend.h"
 #include "sharp5469c.h"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wframe-larger-than="
+
 struct sharp5469c_state
 {
 	struct dvb_frontend     *fe;
@@ -435,3 +438,5 @@ exit:
 	return NULL;
 }
 EXPORT_SYMBOL(sharp5469c_attach);
+#pragma GCC diagnostic pop
+

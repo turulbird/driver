@@ -156,7 +156,7 @@ int isl6405(void)	//dla bsla
 /************************************************************************
 *
 * Unfortunately there is no generic mechanism to unambiguously determine
-* STBs from different manufactureres. Since each hardware platform needs
+* STBs from different manufacturers. Since each hardware platform needs
 * special I/O pin handling it also requires a different kernel image.
 * Setting platform device configuration in the kernel helps to roughly
 * determine the STB type. Further identification can be based on reading
@@ -181,6 +181,7 @@ int isl6405(void)	//dla bsla
 * during initialization of hardware resources.
 *
 ************************************************************************/
+#if 0
 static int boxtype_probe (struct device *dev)
 {
   struct platform_device *pdev = to_platform_device (dev);
@@ -195,6 +196,7 @@ static int boxtype_remove (struct device *dev)
 {
   return 0;
 }
+#endif
 
 #if 0
 static struct device_driver boxtype_driver = {

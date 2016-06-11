@@ -106,4 +106,3 @@ struct tuner_devctl {
 
 extern void st90x_register_frontend(struct dvb_adapter *dvb_adap);
 #endif
-

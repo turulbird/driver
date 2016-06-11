@@ -1133,11 +1133,11 @@ int init_ci_controller(struct dvb_adapter* dvb_adap)
   dprintk("init_startci: call dvb_ca_en50221_init\n");
 
 #if defined(CUBEREVO_250HD) || defined(CUBEREVO_2000HD) || defined(CUBEREVO_MINI_FTA)
-  if ((result = dvb_ca_en50221_init(state->dvb_adap,
-                    &state->ca, 0, 1)) != 0) {
+  if ((result = dvb_ca_en50221_init(state->dvb_adap, &state->ca, 0, 1)) != 0)
+	{
 #else
-  if ((result = dvb_ca_en50221_init(state->dvb_adap,
-				    &state->ca, 0, 2)) != 0) {
+  if ((result = dvb_ca_en50221_init(state->dvb_adap, &state->ca, 0, 2)) != 0)
+	{
 #endif
 	  printk(KERN_ERR "ca0 initialisation failed.\n");
 	  goto error;

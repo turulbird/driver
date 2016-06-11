@@ -74,6 +74,9 @@
  * 20151114 Audioniek       Fixed erroneous 'Tried to set illegal icon number'
  *                          message with CD segment icons.
  * 20151116 Audioniek       procfs added.
+ * 20160511 Audioniek       /proc/stb/fp/rtc converted to UTC,
+ *                          /proc/stb/fp/rtc_offset automatically set when
+ *                          /proc/stb/fp/rtc is written to.
  * 
  ****************************************************************************/
 

@@ -1208,7 +1208,7 @@ int nuvotonGetVersion(int *version)
 	*version = 740;
 #elif defined(HS7429)
 	*version = 730;
-#elif defined(HS78190)
+#elif defined(HS7819)
 	*version = 720;
 #else
 	*version = -1;

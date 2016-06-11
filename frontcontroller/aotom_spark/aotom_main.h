@@ -65,7 +65,7 @@ typedef unsigned int u32;
 #define YWPANEL_FP_INFO_MAX_LENGTH    10
 #define YWPANEL_FP_DATA_MAX_LENGTH    38
 
-static const char Revision[] = "Revision: 0.10 Audioniek";
+static const char Revision[] = "Revision: 0.11 Audioniek";
 typedef unsigned int YWOS_ClockMsec;
 
 typedef struct YWPANEL_I2CData_s
@@ -666,6 +666,7 @@ int YWPANEL_FP_SetLed(int which, int on);
 int YWPANEL_FP_DvfdSetTimeMode(int on);
 int utf8strlen(char *s, int len);
 int utf8charlen(unsigned char c);
+//int rtc_offset = 3599;
 
 #endif /* __AOTOM_MAIN_H__ */
 
