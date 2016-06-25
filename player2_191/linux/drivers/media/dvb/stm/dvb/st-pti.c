@@ -129,8 +129,7 @@ extern int swts;
 extern int hasdvbt;
 #endif
 
-int stpti_start_feed(struct dvb_demux_feed *dvbdmxfeed,
-		     struct DeviceContext_s *DeviceContext)
+int stpti_start_feed(struct dvb_demux_feed *dvbdmxfeed, struct DeviceContext_s *DeviceContext)
 {
 	struct dvb_demux *demux = dvbdmxfeed->demux;
 	int vLoop, my_pes_type;
@@ -142,9 +141,9 @@ int stpti_start_feed(struct dvb_demux_feed *dvbdmxfeed,
 		return -1;
 	}
 	/* PTI is only started if the source is one of two frontends or
-	 if playback via SWTS is activated. Otherwise playback would
-	 unnecessarily waste a buffer (might lead to loss of a second
-	 recording). */
+	   if playback via SWTS is activated. Otherwise playback would
+	   unnecessarily waste a buffer (might lead to loss of a second
+	   recording). */
 #if defined(ADB_BOX) \
  || defined(SAGEMCOM88) \
  || defined(SPARK7162)
@@ -237,7 +236,7 @@ int stpti_start_feed(struct dvb_demux_feed *dvbdmxfeed,
 			}
 #ifdef VERY_VERBOSE
 			printk("pid %d already collecting. references %d \n",
-			       dvbdmxfeed->pid, pSession->references[vLoop]);
+				dvbdmxfeed->pid, pSession->references[vLoop]);
 #endif
 			return 0;
 		}
@@ -249,14 +248,14 @@ int stpti_start_feed(struct dvb_demux_feed *dvbdmxfeed,
 	pSession->slots[pSession->num_pids] = pti_hal_get_new_slot_handle(pSession->session,
 									  dvbdmxfeed->type,
 									  dvbdmxfeed->
-									  pes_type, demux, NULL, NULL);
+									  pes_type, demux,
+									  NULL,
+									  NULL);
 	pSession->descramblerindex[pSession->num_pids] = pSession->descramblerForPid[dvbdmxfeed->pid];
 #ifdef VERY_VERBOSE
 	printk("SlotHandle = %d\n", pSession->slots[pSession->num_pids]);
 #endif
-	if (pti_hal_slot_link_buffer(pSession->session,
-				     pSession->slots[pSession->num_pids],
-				     bufType) != 0)
+	if (pti_hal_slot_link_buffer(pSession->session, pSession->slots[pSession->num_pids], bufType) != 0)
 	{
 		// free slot
 		pti_hal_slot_free(pSession->session, pSession->slots[pSession->num_pids]);
@@ -283,14 +282,12 @@ int stpti_start_feed(struct dvb_demux_feed *dvbdmxfeed,
 #endif
 		}
 	}
-	pti_hal_slot_set_pid(pSession->session, pSession->slots[pSession->num_pids],
-			     dvbdmxfeed->pid);
+	pti_hal_slot_set_pid(pSession->session, pSession->slots[pSession->num_pids], dvbdmxfeed->pid);
 	//pti_hal_buffer_enable ( pSession->session, pSession->buffers[0] );
 	//pti_hal_buffer_enable ( pSession->session, pSession->buffers[1] );
 	pSession->num_pids++;
-	dprintk("%s: pid = %d, num_pids = %d \n", __FUNCTION__, dvbdmxfeed->pid,
-		pSession->num_pids);
-#if 0
+	dprintk("%s: pid = %d, num_pids = %d \n", __FUNCTION__, dvbdmxfeed->pid, pSession->num_pids);
+#ifdef VERY_VERBOSE
 	printk("# pid t pt ref\n");
 	for (vLoop = 0; vLoop < (pSession->num_pids); vLoop++)
 	{
@@ -304,8 +301,7 @@ int stpti_start_feed(struct dvb_demux_feed *dvbdmxfeed,
 
 EXPORT_SYMBOL(stpti_start_feed);
 
-int stpti_stop_feed(struct dvb_demux_feed *dvbdmxfeed,
-		    struct DeviceContext_s *pContext)
+int stpti_stop_feed(struct dvb_demux_feed *dvbdmxfeed, struct DeviceContext_s *pContext)
 {
 	int n, vLoop, my_pes_type;
 	int haveFound = 0;
@@ -316,7 +312,7 @@ int stpti_stop_feed(struct dvb_demux_feed *dvbdmxfeed,
 		return -1;
 	}
 	/* PTI was only started if the source is one of two frontends or
-	 if playback via SWTS was activated. */
+	   if playback via SWTS was activated. */
 #if defined(ADB_BOX) \
  || defined(SAGEMCOM88) \
  || defined(SPARK7162)
@@ -352,17 +348,16 @@ int stpti_stop_feed(struct dvb_demux_feed *dvbdmxfeed,
 			haveFound = 1;
 			if (pSession->references[vLoop] == 0)
 			{
-				pti_hal_slot_unlink_buffer(pSession->session,
-							   pSession->slots[vLoop]);
+				pti_hal_slot_unlink_buffer(pSession->session, pSession->slots[vLoop]);
 				//pti_hal_buffer_disable ( pSession->session, pSession->buffers[0] );
 				pti_hal_slot_clear_pid(pSession->session, pSession->slots[vLoop]);
 				pti_hal_slot_free(pSession->session, pSession->slots[vLoop]);
 				//printk ( "found pid to stop: %d (index = %d) %d, %d\n", pSession->pidtable[vLoop],
-				// vLoop , pSession->type[vLoop], pSession->pes_type[vLoop]);
+				//   vLoop , pSession->type[vLoop], pSession->pes_type[vLoop]);
 				for (n = vLoop; n < (pSession->num_pids - 1); n++)
 				{
 					//printk ( "n = %d, old pid = %d, %d, %d, new pid = %d\n", n, pSession->pidtable[n], pSession->type[n], pSession->pes_type[n],
-					// pSession->pidtable[n + 1] );
+					//     pSession->pidtable[n + 1] );
 					pSession->pidtable[n] = pSession->pidtable[n + 1];
 					pSession->slots[n] = pSession->slots[n + 1];
 					pSession->type[n] = pSession->type[n + 1];
@@ -375,9 +370,9 @@ int stpti_stop_feed(struct dvb_demux_feed *dvbdmxfeed,
 				if (dvbdmxfeed->pes_type == DMX_TS_PES_VIDEO)
 				{
 					/* reset the DMA threshold to 1 to allow low rate TS
-					 to be signalled on time */
+					   to be signalled on time */
 					/* FIXME: quick hack assuming that DMA 0 is always responsible for
-					 the video */
+					   the video */
 					setDmaThreshold(0, 1);
 				}
 #endif
@@ -405,9 +400,10 @@ static int convert_source(const dmx_source_t source)
  || defined(UFS912) \
  || defined(ADB_BOX) \
  || defined(SPARK) \
- || defined(SPARK7162) \
  || defined(SAGEMCOM88)
 			tag = TSIN2;
+#elif defined(SPARK7162)
+			tag = TSIN1;
 #else
 			tag = TSIN0;
 #endif
@@ -422,6 +418,8 @@ static int convert_source(const dmx_source_t source)
 			{
 				tag = TSIN0;
 			}
+#elif defined(SPARK7162)
+			tag = TSIN0;
 #elif defined(UFS913)
 			tag = 3;//TSIN2; //TSIN3
 #elif defined(SAGEMCOM88)
@@ -434,7 +432,7 @@ static int convert_source(const dmx_source_t source)
 			break;
 #if defined(SPARK7162)
 		case DMX_SOURCE_FRONT2:
-			tag = TSIN0;
+			tag = TSIN2;
 			break;
 		case (dmx_source_t)3: /* for ptiInit() which passes 0,1,2,3 instead of DVR0 */
 			tag = SWTS0;
@@ -703,4 +701,4 @@ int SetSource(struct dmx_demux *demux, const dmx_source_t *src)
 	}
 	return 0;
 }
-
+// vim:ts=4

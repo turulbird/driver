@@ -989,7 +989,7 @@ INT32 nim_panic6158_set_info(struct nim_device *dev, UINT8 system, UINT32 id , U
 					break;
 			}
 
-		/* '11/10/19 : OKAMOTO  Correct warning: enumeration value ÅeDMD_E_ISDBTÅf not handled in switch */
+		/* '11/10/19 : OKAMOTO  Correct warning: enumeration value DMD_E_ISDBT is not handled in switch */
 		default:
 			ret = !SUCCESS;
 			break;
