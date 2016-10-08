@@ -58,6 +58,7 @@
  * 20160424 Audioniek       VFDGETVERSION added.
  * 20160522 Audioniek       VFDSETPOWERONTIME AND VFDGETWAKEUPTIME added.
  * 20160523 Audioniek       procfs added.
+ * 20161006 Audioniek       Logo brightness for Octagon1008 added.
  *
  *****************************************************************************/
 
@@ -513,7 +514,7 @@ enum
 };
 
 struct iconToInternal
-/* TODO: Icons 1 through 16 work on all models, but others only on early production ones */
+/* TODO: Icons 3 through 14 work on all models, but others only on early production ones */
 {
 	char *name;
 	u16 icon;
@@ -587,7 +588,7 @@ struct iconToInternal
 
 #define cCommandGetIrCode        0xa0
 #define cCommandGetIrCodeExt     0xa1
-#define cCommandSetIrCode        0xa5 // 06 (HS8200 only?)
+#define cCommandSetIrCode        0xa5 // 07 (HS8200 only?)
 
 #define cCommandGetPort          0xb2
 #define cCommandSetPort          0xb3
@@ -644,7 +645,7 @@ int nuvotonWriteCommand(char *buffer, int len, int needAck)
 	for (i = 0; i < len; i++)
 	{
 		udelay(1);
-#ifdef DIRECT_ASC
+#ifdef DIRECT_ASC // not defined anywhere
 		serial_putc(buffer[i]);
 #else
 		nuvoton_putc(buffer[i]);
@@ -726,7 +727,7 @@ int nuvotonSetIcon(int which, int on)
 int nuvotonSetIcon(int which, int on)  //works for icons 1 - 16 only on later production models
 {
 	char buffer[5];
-	u8 internalCode1, SymbolData1, internalCode2, SymbolData2;
+	u8   internalCode1, SymbolData1, internalCode2, SymbolData2;
 	int  vLoop, res = 0;
 
 	dprintk(100, "%s > %d, %d\n", __func__, which, on);
@@ -737,20 +738,20 @@ int nuvotonSetIcon(int which, int on)  //works for icons 1 - 16 only on later pr
 		return -EINVAL;
 	}
 
-	internalCode1 = 0xff;
-	internalCode2 = 0xff;
-	SymbolData1 = 0x00;
-	SymbolData2 = 0x00;
+	internalCode1 = 0xff; // set register number 1 to not found
+	internalCode2 = 0xff; // set register number 2 to single icon
+	SymbolData1 = 0x00;   // clear
+	SymbolData2 = 0x00;   // bitmasks
 
 	for (vLoop = 0; vLoop < ARRAY_SIZE(nuvotonIcons); vLoop++)
 	{
 		if ((which & 0xff) == nuvotonIcons[vLoop].icon) //look for icon number
 		{
-			internalCode1 = nuvotonIcons[vLoop].internalCode1; //if found
-			internalCode2 = nuvotonIcons[vLoop].internalCode2; //get data
-			SymbolData1 = nuvotonIcons[vLoop].SymbolData1;
-			SymbolData2 = nuvotonIcons[vLoop].SymbolData2;
-			if (internalCode1 == 0xff) // if code for unknown or not found
+			internalCode1 = nuvotonIcons[vLoop].internalCode1; // register number
+			internalCode2 = nuvotonIcons[vLoop].internalCode2; // register number 2 for double icons (0xff is single icon)
+			SymbolData1 = nuvotonIcons[vLoop].SymbolData1;     // bitmask for icon on
+			SymbolData2 = nuvotonIcons[vLoop].SymbolData2;     // bitmask for icon on (double icons)
+			if (internalCode1 == 0xff) // if not found
 			{
 				printk("%s: Unknown or unsupported icon %d ->%s\n", __func__, which, nuvotonIcons[vLoop].name);
 				return -EINVAL;
@@ -758,9 +759,9 @@ int nuvotonSetIcon(int which, int on)  //works for icons 1 - 16 only on later pr
 
 			memset(buffer, 0, 6);  //else clear buffer
 
-			buffer[0] = SOP;        //fill
-			buffer[1] = cCommandSetIconI;   //buffer
-			buffer[2] = internalCode1;  //with
+			buffer[0] = SOP;               //fill
+			buffer[1] = cCommandSetIconI;  //buffer
+			buffer[2] = internalCode1;     //with
 
 			if (on)
 			{
@@ -770,7 +771,7 @@ int nuvotonSetIcon(int which, int on)  //works for icons 1 - 16 only on later pr
 			{
 				regs[internalCode1] = buffer[3] = regs[internalCode1] & ~SymbolData1;   //buffer3 is old register minus bitmask
 			}
-			buffer[4] = EOP;    //data
+			buffer[4] = EOP;               //data
 			dprintk(50, "[nuvoton] Set icon number %d to %d\n", which, on);
 			res = nuvotonWriteCommand(buffer, 5, 0);  //write to FP
 
@@ -821,11 +822,15 @@ int nuvotonSetLED(int which, int level)
 
 	dprintk(100, "%s > %d, %d\n", __func__, which, level);
 
-#if defined(OCTAGON1008)
-#define MAX_LED 1
+#if defined(OCTAGON1008) || defined(HS7420) || defined(HS7429) || defined(HS7810A) || defined(HS7819)
+                     // LED number is a bit mask:
+                     // bit 0 = standby (red),
+                     // bit 1 = logo (not on all models)
+                     // RC feedback (green, on HS78XX) seems to be not controllable
+#define MAX_LED 3
 #define MAX_BRIGHT 7
 #elif defined(FORTIS_HDBOX) || defined(ATEVIO7500) // New Nuvoton                    
-#define MAX_LED 256  // LED number is a bit mask: bit 0 (  1) = red power
+#define MAX_LED 255  // LED number is a bit mask: bit 0 (  1) = red power
                      //                           bit 1 (  2) = blue power
                      //                           bit 2 (  4) = -
                      //                           bit 3 (  8) = -
@@ -836,24 +841,11 @@ int nuvotonSetLED(int which, int level)
                      //                           (0xf2 = full cross plus blue)
                      // TODO: Buggy on ATEVIO7500, fp seems to have a life of its own
 #define MAX_BRIGHT 31
-#elif defined(HS7420) || defined(HS7429)
-                     // LED number is a bit mask:
-                     // bit 0 = standby (red),
-                     // bit 1 = logo (not on all models),
-#define MAX_LED 2 // must be power of 2
-#define MAX_BRIGHT 7
-#elif defined(HS7810A) || defined(HS7819)
-                     // LED number is a bit mask:
-                     // bit 0 = standby (red),
-                     // bit 1 = logo,
-                     // bit 2(?) = RC feedback (green) seems to be not controllable (off when red is on)
-#define MAX_LED 4 // must be power of 2
-#define MAX_BRIGHT 7
 #elif defined(HS7110) || defined(HS7119)
                      // LED number is a bit mask:
                      // bit 0 = standby (red),
-                     // bit 1(?) = RC feedback (green) seems to be not controllable (off when red is on)
-#define MAX_LED 2 // must be power of 2
+                     // RC feedback (green) seems to be not controllable (off when red is on)
+#define MAX_LED 1
 #define MAX_BRIGHT 7
 #endif
 
@@ -1008,7 +1000,7 @@ int nuvotonGetTime(char *time)
 	{
 		/* time received */
 		dprintk(1, "time received\n");
-		dprintk(20, "myTime= 0x%02x - 0x%02x - 0x%02x - 0x%02x - 0x%02x\n", ioctl_data[0], ioctl_data[1],
+		dprintk(20, "Time= 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x\n", ioctl_data[0], ioctl_data[1],
 				ioctl_data[2], ioctl_data[3], ioctl_data[4]);
 		for (i = 0; i < 5; i++)
 		{
@@ -1085,7 +1077,7 @@ int nuvotonGetWakeUpMode(int *wakeup_mode)
 	else
 	{
 		/* mode received */
-		dprintk(1, "wakeup mode received\n");
+		dprintk(1, "wakeup mode received: 0x%01x\n", ioctl_data[0] + 1);
 		*wakeup_mode = ioctl_data[0] + 1;
 	}
 
@@ -1133,6 +1125,7 @@ int nuvotonSetDisplayOnOff(char level)
 
 	res = nuvotonWriteCommand(buffer, 5, 0);
 #elif defined(FORTIS_HDBOX)
+//TODO: only works on old production front panels
 	char buffer[5];
 
 	dprintk(100, "%s >\n", __func__);
@@ -1362,6 +1355,8 @@ int nuvotonWriteString(unsigned char *aBuf, int len)
 	int res = 0;
 
 	dprintk(100, "%s > %d\n", __func__, len);
+
+
 	max = (len > 8) ? 8 : len;
 	for (i = max; i < 8; i++)
 	{
@@ -2215,7 +2210,9 @@ static int NUVOTONdev_ioctl(struct inode *Inode, struct file *File, unsigned int
 #if !defined (HS7110)
 			if (mode == 0)
 			{
-				dprintk(5, "Write string (mode 0): %s (length = %d)\n", data->data, data->length);
+				data->data[data->length]= 0; //terminate string to show
+				dprintk(5, "Write string (mode 0): [%s] (length = %d)\n", data->data, data->length);
+
 				res = nuvotonWriteString(data->data, data->length);
 			}
 			else
