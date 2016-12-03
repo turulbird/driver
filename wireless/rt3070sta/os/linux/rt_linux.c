@@ -1280,7 +1280,7 @@ NDIS_STATUS RtmpOSTaskAttach(
 #ifdef KTHREAD_SUPPORT
 	pTask->task_killed = 0;
 	pTask->kthread_task = NULL;
-	pTask->kthread_task = kthread_run(fn, (void *)arg, pTask->taskName);
+	pTask->kthread_task = kthread_run((int (*)(void *))fn, (void *)arg, pTask->taskName);
 	if (IS_ERR(pTask->kthread_task))
 		status = NDIS_STATUS_FAILURE;
 #else
@@ -1611,7 +1611,9 @@ INT RtmpOSNetDevDestory(
 void RtmpOSNetDevDetach(PNET_DEV pNetDev)
 {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,31)
-	struct net_device_ops *pNetDevOps = pNetDev->netdev_ops;
+	struct net_device_ops *pNetDevOps;
+
+	pNetDevOps = (struct net_device_ops *)pNetDev->netdev_ops;
 #endif
 
 	unregister_netdev(pNetDev);
@@ -1649,7 +1651,7 @@ int RtmpOSNetDevAttach(
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,31)
 	struct net_device_ops *pNetDevOps;
 
-	pNetDevOps = pNetDev->netdev_ops;
+	pNetDevOps = (struct net_device_ops *)pNetDev->netdev_ops;
 #endif
 
 	DBGPRINT(RT_DEBUG_TRACE, ("RtmpOSNetDevAttach()--->\n"));

@@ -87,11 +87,15 @@ void report_restricted_severity_levels(int lower_restriction,
 
 /* --- */
 
+//static void report_output(char *report_buffer)
+#if defined (REPORT_UART)
 static void report_output(char *report_buffer)
 {
-#if defined (REPORT_UART)
 	UartOutput(report_buffer);
+}
 #elif defined (REPORT_LOG)
+static void report_output(char *report_buffer)
+{
 	char *p = report_buffer;
 	while (0 != (*report_log_ptr++ = *p++))
 	{
@@ -106,21 +110,30 @@ static void report_output(char *report_buffer)
 #ifdef __ST200__
 	__asm__ __volatile__("prgadd 0[%0] ;;" : : "r"(report_log_ptr));
 #endif
+}
 #else
 #if defined (__KERNEL__)
 #ifdef REPORT_KPTRACE
+static void report_output(char *report_buffer)
+{
 	extern void kptrace_write_record(const char *rec);
 	kptrace_write_record(report_buffer);
+}
 #endif
 #ifdef REPORT_PRINTK
+static void report_output(char *report_buffer)
+{
 	printk("%s", report_buffer);
+}
 #endif
 #else
+static void report_output(char *report_buffer)
+{
 	printf("%s", report_buffer);
 	fflush(stdout);
-#endif
-#endif
 }
+#endif
+#endif
 
 /* -----------------------------------------------------------
  The actual report function

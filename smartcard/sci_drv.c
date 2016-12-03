@@ -1385,7 +1385,7 @@ SCI_ERROR sci_init(void)
 			sci_exit();
 			return SCI_ERROR_DRIVER_NOT_INITIALIZED;
 		}
-		sci->thread = kthread_run(sci_detect_handler, (void *)sci, "SMART/%d", i);
+		sci->thread = kthread_run((int (*)(void *))sci_detect_handler, (void *)sci, "SMART/%d", i);
 		if (sci->thread)
 		{
 			PDEBUG("create sci%d task successful...\n", i);

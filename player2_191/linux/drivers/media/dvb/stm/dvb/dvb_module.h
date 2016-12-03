@@ -74,8 +74,8 @@ struct DeviceContext_s;
 /* Output trace information off the critical path */
 #define DVB_TRACE(fmt, args...) (printk(KERN_NOTICE "%s: " fmt, __FUNCTION__, ##args))
 /* Output errors, should never be output in 'normal' operation */
-//#define DVB_ERROR(fmt, args...) (printk(KERN_CRIT "ERROR in %s: " fmt, __FUNCTION__, ##args))
-#define DVB_ERROR(fmt, args...) (printk_ratelimit() && printk(KERN_CRIT "ERROR in %s: " fmt, __FUNCTION__, ##args))
+#define DVB_ERROR(fmt, args...) (printk(KERN_CRIT "ERROR in %s: " fmt, __FUNCTION__, ##args))
+//#define DVB_ERROR(fmt, args...) (printk_ratelimit() && printk(KERN_CRIT "ERROR in %s: " fmt, __FUNCTION__, ##args))
 
 #define DVB_ASSERT(x) do if(!(x)) printk(KERN_CRIT "%s: Assertion '%s' failed at %s:%d\n", \
 							 __FUNCTION__, #x, __FILE__, __LINE__); while(0)

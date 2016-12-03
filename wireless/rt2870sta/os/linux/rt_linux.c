@@ -1691,7 +1691,7 @@ INT RtmpOSNetDevDestory(
 void RtmpOSNetDevDetach(PNET_DEV pNetDev)
 {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,31)
-	struct net_device_ops *pNetDevOps = pNetDev->netdev_ops;
+	struct net_device_ops *pNetDevOps = (struct net_device_ops *)pNetDev->netdev_ops;
 #endif
 
 	unregister_netdev(pNetDev);
@@ -1728,7 +1728,7 @@ int RtmpOSNetDevAttach(
 	int ret, rtnl_locked = FALSE;
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,31)
-	struct net_device_ops *pNetDevOps = pNetDev->netdev_ops;
+	struct net_device_ops *pNetDevOps = (struct net_device_ops *)pNetDev->netdev_ops;
 #endif
 
 	DBGPRINT(RT_DEBUG_TRACE, ("RtmpOSNetDevAttach()--->\n"));

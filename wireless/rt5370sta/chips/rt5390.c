@@ -465,8 +465,7 @@ Return Value:
 Note:
 ========================================================================
 */
-VOID RT5390_Init(
-	IN PRTMP_ADAPTER		pAd)
+VOID RT5390_Init(IN PRTMP_ADAPTER pAd)
 {
 #ifdef RTMP_INTERNAL_TX_ALC
 	extern TX_POWER_TUNING_ENTRY_STRUCT *TxPowerTuningTable;
@@ -474,8 +473,7 @@ VOID RT5390_Init(
 	RTMP_CHIP_OP *pChipOps = &pAd->chipOps;
 	RTMP_CHIP_CAP *pChipCap = &pAd->chipCap;
 
-
-	/* ??? */
+/* ??? */
 /*	pAd->RfIcType = RFIC_3320; */
 
 	/* init capability */
@@ -487,7 +485,7 @@ VOID RT5390_Init(
 		pChipCap->pRFRegTable = RF5392RegTable;
 		
 	pChipCap->pBBPRegTable = NULL; /* The same with BBPRegTable */
-	pChipCap->bbpRegTbSize = NULL;
+	pChipCap->bbpRegTbSize = 0;
 	pChipCap->SnrFormula = SNR_FORMULA3;
 	pChipCap->RfReg17WtMethod = RF_REG_WT_METHOD_STEP_ON;
 	pChipOps->AsicRfInit = NICInitRT5390RFRegisters;
@@ -1606,7 +1604,7 @@ VOID RT5390_ChipSwitchChannel(
 						RT30xxReadRFRegister(pAd, RF_R17, (PUCHAR)&RFValue);
 						PreRFValue = RFValue;
 						RFValue = ((RFValue & ~0x7F) | (pAd->FreqCalibrationCtrl.AdaptiveFreqOffset & 0x7F)); /* xo_code (C1 value control) - Crystal calibration */
-						RFValue = min(RFValue, 0x5F);
+						RFValue = min(RFValue, (UCHAR)0x5F);
 						if (PreRFValue != RFValue)
 						{
 							AsicSendCommandToMcu(pAd, 0x74, 0xff, RFValue, PreRFValue);
@@ -1617,7 +1615,7 @@ VOID RT5390_ChipSwitchChannel(
 						RT30xxReadRFRegister(pAd, RF_R17, (PUCHAR)&RFValue);
 						PreRFValue = RFValue;
 						RFValue = ((RFValue & ~0x7F) | (pAd->RfFreqOffset & 0x7F)); /* xo_code (C1 value control) - Crystal calibration */
-						RFValue = min(RFValue, 0x5F);
+						RFValue = min(RFValue, (UCHAR)0x5F);
 						if (PreRFValue != RFValue)
 						{
 							AsicSendCommandToMcu(pAd, 0x74, 0xff, RFValue, PreRFValue);
@@ -1631,7 +1629,7 @@ VOID RT5390_ChipSwitchChannel(
 					RT30xxReadRFRegister(pAd, RF_R17, (PUCHAR)&RFValue);
 					PreRFValue = RFValue;
 					RFValue = ((RFValue & ~0x7F) | (pAd->RfFreqOffset & 0x7F)); /* xo_code (C1 value control) - Crystal calibration */
-					RFValue = min(RFValue, 0x5F);
+					RFValue = min(RFValue, (UCHAR)0x5F);
 					if (PreRFValue != RFValue)
 					{
 						AsicSendCommandToMcu(pAd, 0x74, 0xff, RFValue, PreRFValue);
@@ -3073,18 +3071,15 @@ LONG Rounding(
    Return Value:
 	  Success or failure
 */
-BOOLEAN GetDesiredTssiAndCurrentTssi(
-	IN PRTMP_ADAPTER pAd, 
-	IN OUT PCHAR pDesiredTssi, 
-	IN OUT PCHAR pCurrentTssi)
+BOOLEAN GetDesiredTssiAndCurrentTssi(IN PRTMP_ADAPTER pAd, IN OUT PCHAR pDesiredTssi, IN OUT PCHAR pCurrentTssi)
 {
 	UCHAR BbpR47 = 0;
 	UCHAR RateInfo = 0;
 	CCK_TSSI_INFO cckTssiInfo = {{0}};
 	OFDM_TSSI_INFO ofdmTssiInfo = {{0}};
-	HT_TSSI_INFO htTssiInfo = {{0}};
-
-	UCHAR ch=0;
+	HT_TSSI_INFO htTssiInfo = {{{0}}};
+	
+	UCHAR ch = 0;
 
 	DBGPRINT(RT_DEBUG_INFO, ("---> %s\n", __FUNCTION__));
 
@@ -3347,12 +3342,17 @@ BOOLEAN GetDesiredTssiAndCurrentTssi(
 }
 
 #ifdef RALINK_ATE
-INT RT5390_ATETssiCalibration(
-	IN	PRTMP_ADAPTER		pAd,
-	IN	PSTRING				arg)
+INT RT5390_ATETssiCalibration(IN PRTMP_ADAPTER pAd, IN PSTRING arg)
 {    
 	UCHAR inputDAC;
 	
+	UINT 		i;
+//	UCHAR		BbpData, RFValue, OrgBbp47Value, ChannelPower;
+	UCHAR		BbpData, RFValue, OrgBbp47Value;
+	USHORT		EEPData;
+	UCHAR 		BSSID_ADDR[MAC_ADDR_LEN] = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66};
+	BBP_R47_STRUC	BBPR47;
+
 	inputDAC = simple_strtol(arg, 0, 10);
 
 	if (!IS_RT5390(pAd) || !(pAd->TxPowerCtrl.bInternalTxALC))                          
@@ -3361,13 +3361,7 @@ INT RT5390_ATETssiCalibration(
 		return FALSE;
 	}
 	
-	UINT 		i = 0;
-//	UCHAR		BbpData, RFValue, OrgBbp47Value, ChannelPower;
-	UCHAR		BbpData, RFValue, OrgBbp47Value;
-	USHORT		EEPData;
-	UCHAR 		BSSID_ADDR[MAC_ADDR_LEN] = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66};
-	BBP_R47_STRUC	BBPR47;
-
+	i = 0;
 	/* Set RF R27[3:0] TSSI gain */		
 	RT30xxReadRFRegister(pAd, RF_R27, (PUCHAR)(&RFValue));			
 	RFValue = ((RFValue & 0xF0) | pAd->TssiGain); /* [3:0] = (tssi_gain and tssi_atten) */
@@ -3451,7 +3445,7 @@ INT RT5390_ATETssiCalibration(
 		if (pAd->bFroceEEPROMBuffer)
 			NdisMoveMemory(&(pAd->EEPROMImage[EEPROM_TSSI_OVER_OFDM_54]), (PUCHAR)(&EEPData) ,2);
 		else
-			eFuseWrite(pAd, EEPROM_TSSI_OVER_OFDM_54, (PUCHAR)(&EEPData), 2);
+			eFuseWrite(pAd, EEPROM_TSSI_OVER_OFDM_54, (PUSHORT)(&EEPData), 2);
 	}
 #endif /* RTMP_EFUSE_SUPPORT */
 	else
@@ -3622,7 +3616,7 @@ CHAR GetPowerDeltaFromTssiRatio(CHAR TssiOfChannel, CHAR TssiBase)
 
 	PowerDelta = MinTssiDeltaIndex - TSSI_RATIO_TABLE_OFFSET;
 
-	DBGPRINT(RT_DEBUG_WARN, ("MinTssiDeltaIndex = %d, MinTssiDelta = %d, PowerDelta = %d\n", MinTssiDeltaIndex,  MinTssiDelta, (int)PowerDelta));
+	DBGPRINT(RT_DEBUG_WARN, ("MinTssiDeltaIndex = %d, MinTssiDelta = %d, PowerDelta = %d\n", MinTssiDeltaIndex, (int)MinTssiDelta, (int)PowerDelta));
 	
 	return (PowerDelta);
 }
@@ -3928,3 +3922,4 @@ VOID RT5390_AsicResetBbpAgent(
 	RTMP_IO_WRITE32(pAd, 0x1328, (MacValue | 0x00050f0f));	
 	}
 }
+// vim:ts=4

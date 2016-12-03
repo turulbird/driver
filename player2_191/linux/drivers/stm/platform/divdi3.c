@@ -25,7 +25,7 @@ s64 __divdi3(s64 n, s64 d)
 	}
 	if (unlikely(d & 0xffffffff00000000LL))
 	{
-		uint32_t di = d;
+		uint32_t di = (uint32_t)d;
 		printk(KERN_WARNING "Workaround for 64-bit/64-bit division.");
 		/* Scale divisor to 32 bits */
 		if (d > 0xffffffffULL)

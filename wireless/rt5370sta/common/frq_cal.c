@@ -199,7 +199,7 @@ VOID FrequencyCalibration(
 						{
 							RT30xxReadRFRegister(pAd, RF_R23, (PUCHAR)(&RFValue));
 							RFValue = ((RFValue & ~0x7F) | (pAd->FreqCalibrationCtrl.AdaptiveFreqOffset & 0x7F));
-							RFValue = min(RFValue, 0x5F);
+							RFValue = min(RFValue, (UCHAR)0x5F);
 							pAd->FreqCalibrationCtrl.AdaptiveFreqOffset = RFValue; /* Keep modified RF R23 value */
 							RT30xxWriteRFRegister(pAd, RF_R23, (UCHAR)RFValue);
 
@@ -212,7 +212,7 @@ VOID FrequencyCalibration(
 							RT30xxReadRFRegister(pAd, RF_R17, (PUCHAR)(&RFValue));
 							PreRFValue = RFValue;
 							RFValue = ((RFValue & ~0x7F) | (pAd->FreqCalibrationCtrl.AdaptiveFreqOffset & 0x7F));
-							RFValue = min(RFValue, 0x5F);
+							RFValue = min(RFValue, (UCHAR)0x5F);
 							pAd->FreqCalibrationCtrl.AdaptiveFreqOffset = RFValue; /* Keep modified RF R17 value */
 							if (PreRFValue != RFValue)
 							{
@@ -227,7 +227,7 @@ VOID FrequencyCalibration(
 						{
 							RT30xxReadRFRegister(pAd, RF_R17, (PUCHAR)(&RFValue));
 							RFValue = ((RFValue & ~0x7F) | (pAd->FreqCalibrationCtrl.AdaptiveFreqOffset & 0x7F));
-							RFValue = min(RFValue, 0x5F);
+							RFValue = min(RFValue, (UCHAR)0x5F);
 							pAd->FreqCalibrationCtrl.AdaptiveFreqOffset = RFValue; // Keep modified RF R17 value
 							RT30xxWriteRFRegister(pAd, RF_R17, (UCHAR)RFValue);
 
@@ -249,7 +249,7 @@ VOID FrequencyCalibration(
 						{
 							RT30xxReadRFRegister(pAd, RF_R23, (PUCHAR)(&RFValue));
 							RFValue = ((RFValue & ~0x7F) | (pAd->FreqCalibrationCtrl.AdaptiveFreqOffset & 0x7F));
-							RFValue = min(RFValue, 0x5F);
+							RFValue = min(RFValue, (UCHAR)0x5F);
 							pAd->FreqCalibrationCtrl.AdaptiveFreqOffset = RFValue; /* Keep modified RF R23 value */
 							RT30xxWriteRFRegister(pAd, RF_R23, (UCHAR)RFValue);
 
@@ -262,7 +262,7 @@ VOID FrequencyCalibration(
 							RT30xxReadRFRegister(pAd, RF_R17, (PUCHAR)(&RFValue));
 							PreRFValue = RFValue;
 							RFValue = ((RFValue & ~0x7F) | (pAd->FreqCalibrationCtrl.AdaptiveFreqOffset & 0x7F));
-							RFValue = min(RFValue, 0x5F);
+							RFValue = min(RFValue, (UCHAR)0x5F);
 							pAd->FreqCalibrationCtrl.AdaptiveFreqOffset = RFValue; /* Keep modified RF R17 value */
 							if (PreRFValue != RFValue)
 							{
@@ -277,7 +277,7 @@ VOID FrequencyCalibration(
 						{
 							RT30xxReadRFRegister(pAd, RF_R17, (PUCHAR)(&RFValue));
 							RFValue = ((RFValue & ~0x7F) | (pAd->FreqCalibrationCtrl.AdaptiveFreqOffset & 0x7F));
-							RFValue = min(RFValue, 0x5F);
+							RFValue = min(RFValue, (UCHAR)0x5F);
 							pAd->FreqCalibrationCtrl.AdaptiveFreqOffset = RFValue; /* Keep modified RF R17 value */
 							RT30xxWriteRFRegister(pAd, RF_R17, (UCHAR)RFValue);
 

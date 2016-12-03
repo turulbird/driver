@@ -296,7 +296,7 @@ static int linuxdvb_v4l2_capture_thread(void *data)
 	stm_blitter_operation_t op;
 	stm_rect_t dstrect;
 	stm_rect_t srcrect;
-	stm_display_buffer_t *last = NULL;
+	volatile stm_display_buffer_t *last = NULL;
 	set_freezable();
 	memset(&op, 0, sizeof(op));
 	dstrect.top = 0;
@@ -306,7 +306,7 @@ static int linuxdvb_v4l2_capture_thread(void *data)
 	while (1)
 	{
 		int ret;
-		stm_display_buffer_t *ptr;
+		volatile stm_display_buffer_t *ptr;
 		ret = wait_event_freezable_timeout(g_ManifestorLastWaitQueue,
 						   /* condition is:
 						   a new buffer is
@@ -334,7 +334,7 @@ static int linuxdvb_v4l2_capture_thread(void *data)
 		if (!ptr)
 			continue;
 		{
-			memcpy(&buffer, ptr, sizeof(stm_display_buffer_t));
+			memcpy(&buffer, (const void *)ptr, sizeof(stm_display_buffer_t));
 #if 0
 			printk("%s:%d %d %d %d %d\n", __FUNCTION__, __LINE__,
 			       ldvb->capture->width,

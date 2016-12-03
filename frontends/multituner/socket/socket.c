@@ -137,7 +137,7 @@ static int socket_probe (struct platform_device *pdev)
 	return 0;
 }
 
-static int socket_remove(struct device *dev)
+static int socket_remove(struct platform_device *dev)
 {
 	return 0;
 }

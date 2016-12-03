@@ -1276,7 +1276,7 @@ VOID DefaultATEAsicSwitchChannel(
 					ATE_RF_IO_READ8_BY_REG_ID(pAd, RF_R17, (PUCHAR)&RFValue);
 					PreRFValue = RFValue;
 					RFValue = ((RFValue & 0x80) | (pAd->ate.RFFreqOffset & 0x7F)); /* xo_code (C1 value control) - Crystal calibration */
-					RFValue = min(RFValue, 0x5F);
+					RFValue = min(RFValue, (UCHAR)0x5F);
 					if (PreRFValue != RFValue)
 					{
 						AsicSendCommandToMcu(pAd, 0x74, 0xff, RFValue, PreRFValue);
@@ -7770,7 +7770,7 @@ INT	Set_ATE_TX_FREQOFFSET_Proc(
 		ATE_RF_IO_READ8_BY_REG_ID(pAd, RF_R17, (PUCHAR)&RFValue);
 		PreRFValue = RFValue;
 		RFValue = ((RFValue & 0x80) | (pAd->ate.RFFreqOffset & 0x7F)); // xo_code (C1 value control) - Crystal calibration
-		RFValue = min(RFValue, 0x5F);
+		RFValue = min(RFValue, (UCHAR)0x5F);
 		if (PreRFValue != RFValue)
 		{
 			AsicSendCommandToMcu(pAd, 0x74, 0xff, RFValue, PreRFValue);

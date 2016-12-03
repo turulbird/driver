@@ -40,9 +40,9 @@
 #include <linux/moduleparam.h>
 #include <linux/init.h>
 #include <linux/firmware.h>
+#include "dvb_frontend.h"
 #include <linux/i2c-algo-bit.h>
 
-#include "dvb_frontend.h"
 #include <linux/stm/pio.h>
 #include <pvr_config.h>
 #include <linux/platform_device.h>

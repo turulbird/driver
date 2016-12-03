@@ -39,20 +39,11 @@
 
 #include "wsc.h"
 
-
-
 #include "rtmp_chip.h"
-
-
-
-
 
 #ifdef CLIENT_WDS
 #include "client_wds_cmm.h"
 #endif /* CLIENT_WDS */
-
-
-
 
 typedef struct _RTMP_ADAPTER RTMP_ADAPTER;
 typedef struct _RTMP_ADAPTER *PRTMP_ADAPTER;

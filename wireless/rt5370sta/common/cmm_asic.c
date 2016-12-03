@@ -27,11 +27,6 @@
 
 #include "rt_config.h"
 
-
-
-
-
-
 #ifdef RTMP_INTERNAL_TX_ALC
 #if defined(RT5370) || defined(RT5372) || defined(RT5390) || defined(RT5392)
 
@@ -935,7 +930,7 @@ VOID AsicGetAutoAgcOffset(
 //	PTX_POWER_TUNING_ENTRY_STRUCT pTxPowerTuningEntry2 = NULL;
 //	UCHAR BbpValue = 0;
 //	INT CurrentTemp = 0;
-	INT LookupTableIndex = pAd->TxPowerCtrl.LookupTableIndex + TEMPERATURE_COMPENSATION_LOOKUP_TABLE_OFFSET;
+//	INT LookupTableIndex = pAd->TxPowerCtrl.LookupTableIndex + TEMPERATURE_COMPENSATION_LOOKUP_TABLE_OFFSET;
 //	BOOLEAN bTempSuccess = FALSE;	
 #endif /* defined(RT5370) || defined(RT5372) || defined(RT5390) || defined(RT5392) */
 

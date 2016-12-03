@@ -41,8 +41,8 @@
  * use the new i2c_new_device interface in the later 2.6 kernels, but need
  * to keep compatibility with 2.6.17 for the moment.
  */
-static unsigned short forced_i2c_edid[] = { ANY_I2C_BUS, I2C_EDID_ADDR, ANY_I2C_BUS, I2C_EDDC_SEGMENT_REG_ADDR, I2C_CLIENT_END};
-static unsigned short *forces_edid[]    = { forced_i2c_edid,NULL };
+//static unsigned short forced_i2c_edid[] = { ANY_I2C_BUS, I2C_EDID_ADDR, ANY_I2C_BUS, I2C_EDDC_SEGMENT_REG_ADDR, I2C_CLIENT_END};
+//static unsigned short *forces_edid[]    = { forced_i2c_edid,NULL };
 
 /***********************************************************************
  * I2C management routines for EDID devices

@@ -585,10 +585,10 @@ int WriteToDecoder(struct dvb_demux_feed *Feed, const u8 *buf, size_t count)
 	 (once as PES_VIDEO and then as PES_PCR). Therefore it is IMPORTANT
 	 not to overwrite the flag or the PES type. */
 	if ((Feed->type == DMX_TYPE_TS) &&
-			((Feed->pes_type == DMX_PES_AUDIO0) ||
-			 (Feed->pes_type == DMX_PES_VIDEO0) ||
-			 (Feed->pes_type == DMX_PES_AUDIO1) ||
-			 (Feed->pes_type == DMX_PES_VIDEO1)))
+			((Feed->pes_type == (enum dmx_ts_pes)DMX_PES_AUDIO0) ||
+			 (Feed->pes_type == (enum dmx_ts_pes)DMX_PES_VIDEO0) ||
+			 (Feed->pes_type == (enum dmx_ts_pes)DMX_PES_AUDIO1) ||
+			 (Feed->pes_type == (enum dmx_ts_pes)DMX_PES_VIDEO1)))
 	{
 		Context->provideToDecoder = 1;
 		Context->feedPesType = Feed->pes_type;
