@@ -2373,20 +2373,28 @@ int sci_read_proc(char *buffer, char **start, off_t offset,  int size,  int *eof
 	{
 		sci = &sci_cb[ix];
 		blen = strlen(outbuf);
-		if (sci_is_card_present(sci) == SCI_CARD_NOT_PRESENT)
+		if (sci_is_card_present(sci) == (SCI_ERROR)SCI_CARD_NOT_PRESENT)
+		{
 			sprintf(outbuf + blen, "sci%d: no card\n", ix);
+		}
 		else
+		{
 			sprintf(outbuf + blen, "sci%d: card detected\n", ix);
+		}
 	}
 	blen = strlen(outbuf);
 	if (size < blen)
+	{
 		return -EINVAL;
+	}
 	/*
 	 * If file position is non-zero, then assume the string has
 	 * been read and indicate there is no more data to be read.
 	 */
 	if (offset != 0)
+	{
 		return 0;
+	}
 	/*
 	 * We know the buffer is big enough to hold the string.
 	 */

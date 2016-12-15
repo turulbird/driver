@@ -12,11 +12,12 @@ enum
 	LNB_PIO,
 };
 
-static const struct i2c_device_id lnb_id[] = {
-        { "a8293", A8293 },
-        { "lnb24", LNB24 },
-        { "pio", LNB_PIO },
-        { }
+static const struct i2c_device_id lnb_id[] =
+{
+	{ "a8293", A8293 },
+	{ "lnb24", LNB24 },
+	{ "pio", LNB_PIO },
+	{ }
 };
 MODULE_DEVICE_TABLE(i2c, lnb_id);
 
@@ -27,7 +28,8 @@ short paramDebug = 0;
 /*
  * Addresses to scan
  */
-static unsigned short normal_i2c[] = {
+static unsigned short normal_i2c[] =
+{
 	0x08, /* A8293 */
 	I2C_CLIENT_END
 };
@@ -50,7 +52,7 @@ static int lnb_newprobe(struct i2c_client *client, const struct i2c_device_id *i
 
 	dprintk(10, "I2C device found at address 0x%02x\n", client->addr);
 
-	switch(devType)
+	switch (devType)
 	{
 		case A8293:
 		{
@@ -97,7 +99,7 @@ static int lnb_command_ioctl(struct i2c_client *client, unsigned int cmd, void *
 	{
 		return -1;
 	}
-	switch(devType)
+	switch (devType)
 	{
 		case A8293:
 		{
@@ -129,7 +131,7 @@ int lnb_command_kernel(unsigned int cmd, void *arg)
 	{
 		return -1;
 	}
-	switch(devType)
+	switch (devType)
 	{
 		case A8293:
 		{
@@ -163,12 +165,13 @@ static int lnb_open(struct inode *inode, struct file *filp)
 	return 0;
 }
 
-static int lnb_close (struct inode *inode, struct file *filp)
+static int lnb_close(struct inode *inode, struct file *filp)
 {
 	return 0;
 }
 
-static struct file_operations lnb_fops = {
+static struct file_operations lnb_fops =
+{
 	.owner   = THIS_MODULE,
 	.ioctl   = lnb_ioctl,
 	.open    = lnb_open,
@@ -194,7 +197,7 @@ static int lnb_detect(struct i2c_client *client, int kind, struct i2c_board_info
 		{
 			kind = LNB24;
 		}
-		else if(!strcmp("pio", type))
+		else if (!strcmp("pio", type))
 		{
 			kind = LNB_PIO;
 		}
@@ -234,7 +237,8 @@ static int lnb_detect(struct i2c_client *client, int kind, struct i2c_board_info
 /*
  * i2c
  */
-static struct i2c_driver lnb_i2c_driver = {
+static struct i2c_driver lnb_i2c_driver =
+{
 	.class = I2C_CLASS_TV_DIGITAL,
 	.driver = {
 		.owner = THIS_MODULE,
@@ -292,7 +296,7 @@ int __init lnb_init(void)
 		i2c_del_driver(&lnb_i2c_driver);
 		return -EIO;
 	}
-	
+
 	if (register_chrdev(LNB_MAJOR, "LNB", &lnb_fops) < 0)
 	{
 		dprintk(1, "Unable to register device\n");
@@ -306,13 +310,13 @@ int __init lnb_init(void)
 		}
 		return -EIO;
 	}
-	dprintk(1,"module lnb loaded, type: %s\n", name);
+	dprintk(1, "module lnb loaded, type: %s\n", name);
 	return 0;
 }
 
 void __exit lnb_exit(void)
 {
-	unregister_chrdev(LNB_MAJOR,"LNB");
+	unregister_chrdev(LNB_MAJOR, "LNB");
 	i2c_del_driver(&lnb_i2c_driver);
 	dprintk(1, "module lnb unloaded\n");
 }
@@ -320,7 +324,7 @@ void __exit lnb_exit(void)
 module_init(lnb_init);
 module_exit(lnb_exit);
 
-module_param(type,charp,0);
+module_param(type, charp, 0);
 MODULE_PARM_DESC(type, "device type (a8293, lnb24, pio)");
 
 module_param(paramDebug, short, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);

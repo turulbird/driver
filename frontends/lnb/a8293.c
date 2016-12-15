@@ -19,9 +19,7 @@
 #include "lnb_core.h"
 #define TAGDEBUG "[LNB-A8293] "
 
-#if defined(IPBOX9900)
-extern int _12v_isON;
-#endif
+extern int _12v_isON; //defined in e2_proc ->I will implement a better mechanism later
 
 unsigned char a8293_read(struct i2c_client *client)
 {
@@ -63,7 +61,7 @@ int a8293_command_kernel(struct i2c_client *client, unsigned int cmd, void *arg 
 
 	if (cmd != LNB_VOLTAGE_OFF)
 	{
-		reg |= (1<<5);
+		reg |= (1 << 5);
 	}
 	switch (cmd)
 	{
@@ -148,4 +146,3 @@ int a8293_init(struct i2c_client *client)
 	}
 	return res;
 }
-

@@ -317,7 +317,6 @@ static int draw_thread(void *arg)
 	{
 		saved = 1;
 	}
-
 	if (utf8len - saved > YWPANEL_width)
 	{
 		memset(buf, ' ', sizeof(buf));
@@ -332,7 +331,6 @@ static int draw_thread(void *arg)
 		memcpy(buf, data->data, len);
 		buf[len] = 0;
 	}
-
 	draw_thread_status = DRAW_THREAD_STATUS_RUNNING;
 
 	if (utf8len - saved > YWPANEL_width + 1)
@@ -349,18 +347,15 @@ static int draw_thread(void *arg)
 				draw_thread_status = DRAW_THREAD_STATUS_STOPPED;
 				return 0;
 			}
-
 			if (fp_type == FP_LED && (b + 2 < buf + sizeof(buf)) && (b[2] == '.' || b[2] == ','|| b[2] == ':'))
 			{
 				dot = b[2];
 			}
-
 			if (dot)
 			{
 				b[2] = ' ';
 			}
 			YWPANEL_FP_ShowString(b);
-
 			if (dot)
 			{
 				b[2] = dot;
@@ -376,12 +371,10 @@ static int draw_thread(void *arg)
 				}
 				msleep(40);
 			}
-
 			// advance to next UTF-8 character
 			b += utf8charlen(*b);
 		}
 	}
-
 	if (utf8len > 0)
 	{
 		YWPANEL_FP_ShowString(buf + off);
@@ -508,7 +501,7 @@ static struct vfd_ioctl_data last_draw_data;
 
 static int run_draw_thread(struct vfd_ioctl_data *draw_data)
 {
-	if (down_interruptible (&draw_thread_sem))
+	if (down_interruptible(&draw_thread_sem))
 	{
 		return -ERESTARTSYS;
 	}
@@ -600,7 +593,7 @@ int vfd_init_func(void)
 
 static ssize_t AOTOMdev_write(struct file *filp, const char *buff, size_t len, loff_t *off)
 {
-	char* kernel_buf;
+	char *kernel_buf;
 	int res = 0;
 
 	struct vfd_ioctl_data data;
@@ -690,7 +683,7 @@ static int AOTOMdev_ioctl(struct inode *Inode, struct file *File, unsigned int c
 	int res = -EINVAL;
 	dprintk(5, "%s > 0x%.8x\n", __func__, cmd);
 
-	if (down_interruptible (&write_sem))
+	if (down_interruptible(&write_sem))
 	{
 		return -ERESTARTSYS;
 	}
@@ -1381,7 +1374,7 @@ int button_dev_init(void)
 	button_dev->open  = button_input_open;
 	button_dev->close = button_input_close;
 
-	set_bit(EV_KEY,    button_dev->evbit );
+	set_bit(EV_KEY,    button_dev->evbit);
 	set_bit(KEY_UP,    button_dev->keybit);
 	set_bit(KEY_DOWN,  button_dev->keybit);
 	set_bit(KEY_LEFT,  button_dev->keybit);

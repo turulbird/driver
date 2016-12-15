@@ -91,7 +91,7 @@
 #define SAA_SRC_SCART      1
 
 #define AVS_DEBUG          0
-//static int debug=0;
+
 
 #define dprintk(fmt...) \
 	do { \

@@ -690,10 +690,10 @@ frontend_error:
 	dvb_dmxdev_release(&client->dmxdev);
 
 //dmxdev_error:
-	dvb_dmx_release(&client->demux);
+//	dvb_dmx_release(&client->demux);
 
 //dvbdmx_error:
-	dvb_unregister_adapter(&client->adapter);
+//	dvb_unregister_adapter(&client->adapter);
 
 adapter_error:
 	kfree(client);

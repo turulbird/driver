@@ -413,30 +413,30 @@ struct iconToInternal
 
 #if defined(HS7119) || defined(HS7810A) || defined(HS7819)
 static int _7seg_fonts[] =
-/* character layout:
+	/* character layout:
 
-    aaaaaaaaa
-   f         b
-   f         b
-   f         b  i
-   f         b
-    ggggggggg
-   e         c
-   e         c  i
-   e         c
-   e         c
-    ddddddddd  h
+	    aaaaaaaaa
+	   f         b
+	   f         b
+	   f         b  i
+	   f         b
+	    ggggggggg
+	   e         c
+	   e         c  i
+	   e         c
+	   e         c
+	    ddddddddd  h
 
-segment a is bit 0 (  1)
-segment b is bit 1 (  2)
-segment c is bit 2 (  4)
-segment d is bit 3 (  8)
-segment e is bit 4 ( 16, 0x10)
-segment f is bit 5 ( 32, 0x20)
-segment g is bit 6 ( 64, 0x40)
-segment h is bit 7 (128, 0x80, positions 2, 3 & 4, cmd byte 2, 3 & 5, not on HS7119)
-segment i is bit 7 (128, 0x80, position 3 only, cmd byte 4)
-NOTE: period on 1st position cannot be controlled */
+	segment a is bit 0 (  1)
+	segment b is bit 1 (  2)
+	segment c is bit 2 (  4)
+	segment d is bit 3 (  8)
+	segment e is bit 4 ( 16, 0x10)
+	segment f is bit 5 ( 32, 0x20)
+	segment g is bit 6 ( 64, 0x40)
+	segment h is bit 7 (128, 0x80, positions 2, 3 & 4, cmd byte 2, 3 & 5, not on HS7119)
+	segment i is bit 7 (128, 0x80, position 3 only, cmd byte 4)
+	NOTE: period on 1st position cannot be controlled */
 
 {
 //	' '   '!'    '"'   '#'   '$'   '%'   '&'  '
@@ -727,7 +727,7 @@ int nuvotonSetIcon(int which, int on)
 int nuvotonSetIcon(int which, int on)  //works for icons 1 - 16 only on later production models
 {
 	char buffer[5];
-	u8   internalCode1, SymbolData1, internalCode2, SymbolData2;
+	u8 internalCode1, SymbolData1, internalCode2, SymbolData2;
 	int  vLoop, res = 0;
 
 	dprintk(100, "%s > %d, %d\n", __func__, which, on);
@@ -1355,8 +1355,6 @@ int nuvotonWriteString(unsigned char *aBuf, int len)
 	int res = 0;
 
 	dprintk(100, "%s > %d\n", __func__, len);
-
-
 	max = (len > 8) ? 8 : len;
 	for (i = max; i < 8; i++)
 	{
@@ -1539,7 +1537,7 @@ int nuvotonWriteString(unsigned char *aBuf, int len)
 	return res;
 }
 #else // not HS7119, HS7420, HS7429, HS7810A, HS7819, OCTAGON1008, FORTIS_HDBOX or ATEVIO7500 -> HS7110
-int nuvotonWriteString(unsigned char* aBuf, int len)
+int nuvotonWriteString(unsigned char *aBuf, int len)
 {
 	dprintk(100, "%s >\n", __func__);
 	dprintk(100, "%s <\n", __func__);
@@ -1952,7 +1950,7 @@ static int NUVOTONdev_ioctl(struct inode *Inode, struct file *File, unsigned int
 	struct nuvoton_ioctl_data *nuvoton = (struct nuvoton_ioctl_data *) arg;
 	struct vfd_ioctl_data *data = (struct vfd_ioctl_data *) arg;
 	int res = 0;
-	
+
 	dprintk(100, "%s > 0x%.8x\n", __func__, cmd);
 
 	if (down_interruptible(&write_sem))

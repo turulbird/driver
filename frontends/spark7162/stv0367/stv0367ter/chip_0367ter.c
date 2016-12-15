@@ -34,6 +34,9 @@
 
 extern IOARCH_HandleData_t IOARCH_Handle[TUNER_IOARCH_MAX_HANDLES];
 
+extern int debug_fe7162;
+#define _DEBUG if (debug_fe7162)
+
 #define REPEATER_ON    1
 #define REPEATER_OFF   0
 #define WAITFORLOCK    1
@@ -102,15 +105,15 @@ YW_ErrorType_T ChipSetOneRegister_0367ter(TUNER_IOREG_DeviceMap_t *DeviceMap, IO
 }
 
 void D0367ter_write(TUNER_IOREG_DeviceMap_t *DeviceMap,
-					IOARCH_Handle_t IOHandle,
-					unsigned char *pcData, int nbdata)
+		    IOARCH_Handle_t IOHandle,
+		    unsigned char *pcData, int nbdata)
 {
 	D0367_write(DeviceMap, IOHandle, pcData, nbdata);
 }
 
 void D0367ter_read(TUNER_IOREG_DeviceMap_t *DeviceMap,
-				   IOARCH_Handle_t IOHandle,
-				   unsigned char *pcData, int NbRegs)
+		   IOARCH_Handle_t IOHandle,
+		   unsigned char *pcData, int NbRegs)
 {
 	D0367_read(DeviceMap, IOHandle, pcData, NbRegs);
 }
@@ -231,6 +234,7 @@ YW_ErrorType_T  ChipSetRegisters_0367ter(TUNER_IOREG_DeviceMap_t *DeviceMap, IOA
 	else
 		return YWHAL_ERROR_INVALID_HANDLE;
 
+	_DEBUG
 	if (DeviceMap->Error != 0)
 	{
 		printk("d0367ter DeviceMap->Error=%d,FirstRegAddr=%x\n", DeviceMap->Error, FirstRegAddr); //for test
@@ -250,8 +254,8 @@ YW_ErrorType_T  ChipSetRegisters_0367ter(TUNER_IOREG_DeviceMap_t *DeviceMap, IOA
 *****************************************************/
 YW_ErrorType_T
 ChipSetField_0367ter(TUNER_IOREG_DeviceMap_t *DeviceMap,
-					 IOARCH_Handle_t IOHandle,
-					 U32 FieldId, int Value)
+		     IOARCH_Handle_t IOHandle,
+		     U32 FieldId, int Value)
 {
 
 	int regValue;
@@ -293,6 +297,7 @@ ChipSetField_0367ter(TUNER_IOREG_DeviceMap_t *DeviceMap,
 	else
 		return YWHAL_ERROR_INVALID_HANDLE;
 
+	_DEBUG
 	if (DeviceMap->Error != 0)
 	{
 		printk("d0376ter chip.c DeviceMap->Error=%d,FirstRegAddr=%x\n", DeviceMap->Error, FieldId); //for test
@@ -525,10 +530,10 @@ U8 ChipGetField_0367ter(TUNER_IOREG_DeviceMap_t *DeviceMap, IOARCH_Handle_t IOHa
 YW_ErrorType_T ChipSetFieldImage_0367ter(TUNER_IOREG_DeviceMap_t *DeviceMap, IOARCH_Handle_t    IOHandle, U32 FieldId, S32 Value)
 {
 	S32 regIndex,
-		mask,
-		sign,
-		bits, regAddress,
-		pos;
+	    mask,
+	    sign,
+	    bits, regAddress,
+	    pos;
 
 	if (DeviceMap != NULL)
 	{
@@ -573,10 +578,10 @@ S32 ChipGetFieldImage_0367ter(TUNER_IOREG_DeviceMap_t *DeviceMap, IOARCH_Handle_
 {
 	S32 value = 0xFF;
 	S32 regIndex,
-		mask,
-		sign,
-		bits, regAddress,
-		pos;
+	    mask,
+	    sign,
+	    bits, regAddress,
+	    pos;
 
 	if (DeviceMap != NULL)
 	{

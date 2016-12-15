@@ -27,7 +27,8 @@
 
 #ifdef RTMP_MAC_USB
 
-#include "rt_config.h"
+
+#include	"rt_config.h"
 
 
 static NDIS_STATUS RTMPAllocUsbBulkBufStruct(
@@ -203,11 +204,13 @@ Return Value:
 Note:
 ========================================================================
 */
-VOID	RTMPFreeTxRxRingMemory(IN PRTMP_ADAPTER pAd)
+VOID	RTMPFreeTxRxRingMemory(
+	IN	PRTMP_ADAPTER	pAd)
 {
-	UINT        i, acidx;
-	PTX_CONTEXT pNullContext   = &pAd->NullContext;
-	PTX_CONTEXT pPsPollContext = &pAd->PsPollContext;
+	UINT                i, acidx;
+	PTX_CONTEXT			pNullContext   = &pAd->NullContext;
+	PTX_CONTEXT			pPsPollContext = &pAd->PsPollContext;
+
 
 	DBGPRINT(RT_DEBUG_ERROR, ("---> RTMPFreeTxRxRingMemory\n"));
 
@@ -217,25 +220,25 @@ VOID	RTMPFreeTxRxRingMemory(IN PRTMP_ADAPTER pAd)
 		PRX_CONTEXT  pRxContext = &(pAd->RxContext[i]);
 		if (pRxContext)
 			RTMPFreeUsbBulkBufStruct(pAd, 
-						&pRxContext->pUrb, 
-						(UCHAR **)&pRxContext->TransferBuffer, 
-						MAX_RXBULK_SIZE, 
-						pRxContext->data_dma);
+										&pRxContext->pUrb, 
+										(UCHAR **)&pRxContext->TransferBuffer, 
+										MAX_RXBULK_SIZE, 
+										pRxContext->data_dma);
 	}
 
 	// Free PsPoll frame resource
 	RTMPFreeUsbBulkBufStruct(pAd, 
-				&pPsPollContext->pUrb, 
-				(UCHAR **)&pPsPollContext->TransferBuffer, 
-				sizeof(TX_BUFFER), 
-				pPsPollContext->data_dma);
+								&pPsPollContext->pUrb, 
+								(UCHAR **)&pPsPollContext->TransferBuffer, 
+								sizeof(TX_BUFFER), 
+								pPsPollContext->data_dma);
 
 	// Free NULL frame resource
 	RTMPFreeUsbBulkBufStruct(pAd, 
-				&pNullContext->pUrb, 
-				(UCHAR **)&pNullContext->TransferBuffer, 
-				sizeof(TX_BUFFER), 
-				pNullContext->data_dma);
+								&pNullContext->pUrb, 
+								(UCHAR **)&pNullContext->TransferBuffer, 
+								sizeof(TX_BUFFER), 
+								pNullContext->data_dma);
 
 	// Free mgmt frame resource
 	for(i = 0; i < MGMT_RING_SIZE; i++)
@@ -269,10 +272,10 @@ VOID	RTMPFreeTxRxRingMemory(IN PRTMP_ADAPTER pAd)
 		PHT_TX_CONTEXT pHTTXContext = &(pAd->TxContext[acidx]);
 		if (pHTTXContext)
 			RTMPFreeUsbBulkBufStruct(pAd, 
-						&pHTTXContext->pUrb, 
-						(UCHAR **)&pHTTXContext->TransferBuffer, 
-						sizeof(HTTX_BUFFER), 
-						pHTTXContext->data_dma);
+										&pHTTXContext->pUrb, 
+										(UCHAR **)&pHTTXContext->TransferBuffer, 
+										sizeof(HTTX_BUFFER), 
+										pHTTXContext->data_dma);
 	}
 	
 	if (pAd->FragFrame.pFragPacket)
@@ -498,10 +501,10 @@ err:
 			pMLMEContext = (PTX_CONTEXT) pAd->MgmtRing.Cell[i].AllocVa;
 			if (pMLMEContext)
 				RTMPFreeUsbBulkBufStruct(pAd, 
-							&pMLMEContext->pUrb, 
-							(UCHAR **)&pMLMEContext->TransferBuffer, 
-							sizeof(TX_BUFFER), 
-							pMLMEContext->data_dma);
+											&pMLMEContext->pUrb, 
+											(UCHAR **)&pMLMEContext->TransferBuffer, 
+											sizeof(TX_BUFFER), 
+											pMLMEContext->data_dma);
 		}
 		os_free_mem(pAd, pAd->MgmtDescRing.AllocVa);
 		pAd->MgmtDescRing.AllocVa = NULL;
@@ -519,7 +522,7 @@ Routine Description:
     Allocate DMA memory blocks for send, receive.
 
 Arguments:
-    pAd	Pointer to our adapter
+    pAd					Pointer to our adapter
 
 Return Value:
 	NDIS_STATUS_SUCCESS
@@ -556,11 +559,11 @@ NDIS_STATUS	RTMPAllocTxRxRingMemory(
 			NdisZeroMemory(pHTTXContext, sizeof(HT_TX_CONTEXT));
 			//Allocate URB and bulk buffer
 			Status = RTMPAllocUsbBulkBufStruct(pAd, 
-							&pHTTXContext->pUrb, 
-							(VOID **)&pHTTXContext->TransferBuffer, 
-							sizeof(HTTX_BUFFER), 
-							&pHTTXContext->data_dma,
-							"HTTxContext");
+												&pHTTXContext->pUrb, 
+												(VOID **)&pHTTXContext->TransferBuffer, 
+												sizeof(HTTX_BUFFER), 
+												&pHTTXContext->data_dma,
+												"HTTxContext");
 			if (Status != NDIS_STATUS_SUCCESS)
 				goto err;
 		}
@@ -586,11 +589,11 @@ NDIS_STATUS	RTMPAllocTxRxRingMemory(
 		NdisZeroMemory(pNullContext, sizeof(TX_CONTEXT));
 		//Allocate URB
 		Status = RTMPAllocUsbBulkBufStruct(pAd, 
-						&pNullContext->pUrb, 
-						(VOID **)&pNullContext->TransferBuffer, 
-						sizeof(TX_BUFFER), 
-						&pNullContext->data_dma,
-						"TxNullContext");
+											&pNullContext->pUrb, 
+											(VOID **)&pNullContext->TransferBuffer, 
+											sizeof(TX_BUFFER), 
+											&pNullContext->data_dma,
+											"TxNullContext");
 		if (Status != NDIS_STATUS_SUCCESS)
 			goto err;
 
@@ -600,11 +603,11 @@ NDIS_STATUS	RTMPAllocTxRxRingMemory(
 		NdisZeroMemory(pPsPollContext, sizeof(TX_CONTEXT));
 		//Allocate URB
 		Status = RTMPAllocUsbBulkBufStruct(pAd, 
-						&pPsPollContext->pUrb, 
-						(VOID **)&pPsPollContext->TransferBuffer, 
-						sizeof(TX_BUFFER), 
-						&pPsPollContext->data_dma,
-						"TxPsPollContext");
+											&pPsPollContext->pUrb, 
+											(VOID **)&pPsPollContext->TransferBuffer, 
+											sizeof(TX_BUFFER), 
+											&pPsPollContext->data_dma,
+											"TxPsPollContext");
 		if (Status != NDIS_STATUS_SUCCESS)
 			goto err;
 
@@ -618,11 +621,11 @@ NDIS_STATUS	RTMPAllocTxRxRingMemory(
 
 			//Allocate URB
 			Status = RTMPAllocUsbBulkBufStruct(pAd, 
-						&pRxContext->pUrb, 
-						(VOID **)&pRxContext->TransferBuffer, 
-						MAX_RXBULK_SIZE, 
-						&pRxContext->data_dma, 
-						"RxContext");
+												&pRxContext->pUrb, 
+												(VOID **)&pRxContext->TransferBuffer, 
+												MAX_RXBULK_SIZE, 
+												&pRxContext->data_dma, 
+												"RxContext");
 			if (Status != NDIS_STATUS_SUCCESS)
 				goto err;
 		
@@ -648,10 +651,11 @@ err:
 }
 
 
-NDIS_STATUS RTMPInitTxRxRingMemory(IN RTMP_ADAPTER *pAd)
+NDIS_STATUS RTMPInitTxRxRingMemory
+	(IN RTMP_ADAPTER *pAd)
 {
-	INT		num;
-	NDIS_STATUS	Status;
+	INT				num;
+	NDIS_STATUS		Status;
 
 	// Init the CmdQ and CmdQLock
 	NdisAllocateSpinLock(&pAd->CmdQLock);	

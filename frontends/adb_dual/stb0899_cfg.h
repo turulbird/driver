@@ -22,7 +22,8 @@
 #ifndef __STB0899_CFG_H
 #define __STB0899_CFG_H
 
-static const struct stb0899_s2_reg  stb0899_s2_init_2[] = {
+static const struct stb0899_s2_reg  stb0899_s2_init_2[] =
+{
 
 	{ STB0899_OFF0_DMD_STATUS	, STB0899_BASE_DMD_STATUS	, 0x00000103 },	/* DMDSTATUS	*/
 	{ STB0899_OFF0_CRL_FREQ		, STB0899_BASE_CRL_FREQ		, 0x3ed1da56 },	/* CRLFREQ	*/
@@ -205,7 +206,8 @@ static const struct stb0899_s2_reg  stb0899_s2_init_2[] = {
 	{ 0xffff			, 0xffffffff			, 0xffffffff },
 };
 #if 0
-static const struct stb0899_s1_reg stb0899_s1_init_3[] = {
+static const struct stb0899_s1_reg stb0899_s1_init_3[] =
+{
 	{ STB0899_DEMOD         	, 0x00 },
 	{ STB0899_RCOMPC        	, 0xc9 },
 	{ STB0899_AGC1CN        	, 0x01 },
@@ -338,7 +340,8 @@ static const struct stb0899_s1_reg stb0899_s1_init_3[] = {
 	{ 0xffff			, 0xff },
 };
 #endif
-static const struct stb0899_s2_reg stb0899_s2_init_4[] = {
+static const struct stb0899_s2_reg stb0899_s2_init_4[] =
+{
 	{ STB0899_OFF0_BLOCK_LNGTH	, STB0899_BASE_BLOCK_LNGTH	, 0x00000008 },	/* BLOCKLNGTH	*/
 	{ STB0899_OFF0_ROW_STR		, STB0899_BASE_ROW_STR		, 0x000000b4 },	/* ROWSTR	*/
 	{ STB0899_OFF0_BN_END_ADDR	, STB0899_BASE_BN_END_ADDR	, 0x000004b5 },	/* BNANDADDR	*/
@@ -362,7 +365,8 @@ static const struct stb0899_s2_reg stb0899_s2_init_4[] = {
 	{ 0xffff			, 0xffffffff			, 0xffffffff },
 };
 
-static const struct stb0899_s1_reg stb0899_s1_init_5[] = {
+static const struct stb0899_s1_reg stb0899_s1_init_5[] =
+{
 	{ STB0899_TSTCK		, 0x00 },
 	{ STB0899_TSTRES	, 0x00 },
 	{ STB0899_TSTOUT	, 0x00 },

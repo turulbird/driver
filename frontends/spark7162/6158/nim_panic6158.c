@@ -7,9 +7,9 @@
 *
 *    History:
 *
-*           Date            Athor        Version          Reason
-*       ============    =============   =========   =================
-*   1.2011/12/12     DMQ      Ver 0.1       Create file.
+*           Date            Author        Version          Reason
+*        ============    =============   =========   =================
+*   1.20 11/12/12        DMQ             Ver 0.1     Create file.
 *
 *****************************************************************************/
 #include <linux/kernel.h>  /* Kernel support */
@@ -48,9 +48,9 @@ static const char *nim_panic6158_name[] =
 #endif  /* 0 */
 
 INT32 tun_mxl301_set_addr(UINT32 tuner_idx, UINT8 addr, UINT32 i2c_mutex_id);
-INT32 MxL_Check_RF_Input_Power(UINT32 tuner_idx, U32* RF_Input_Level);
+INT32 MxL_Check_RF_Input_Power(UINT32 tuner_idx, U32 *RF_Input_Level);
 
-INT32 i2c_write(INT32 id, UINT8 slvadr, UINT8 *adr , UINT8 len)
+INT32 i2c_write(INT32 id, UINT8 slvadr, UINT8 *adr, UINT8 len)
 {
 	(void)id;
 	(void)slvadr;
@@ -63,7 +63,7 @@ INT32 i2c_write(INT32 id, UINT8 slvadr, UINT8 *adr , UINT8 len)
 	return SUCCESS;
 }
 
-INT32 i2c_read(INT32 id, UINT8 slvadr, UINT8 *adr , UINT8 len)
+INT32 i2c_read(INT32 id, UINT8 slvadr, UINT8 *adr, UINT8 len)
 {
 	(void)id;
 	(void)slvadr;
@@ -81,7 +81,7 @@ INT32 i2c_read(INT32 id, UINT8 slvadr, UINT8 *adr , UINT8 len)
 //=============================================================================
 
 /*! Write 1byte */
-INT32 DMD_I2C_Write(struct nim_panic6158_private* param, UINT8  slvadr , UINT8 adr , UINT8 data)
+INT32 DMD_I2C_Write(struct nim_panic6158_private *param, UINT8  slvadr, UINT8 adr, UINT8 data)
 {
 	/* '11/08/01 : OKAMOTO  Implement I2C read / write handler. */
 	UINT8 apData[2];
@@ -103,7 +103,7 @@ INT32 DMD_I2C_Write(struct nim_panic6158_private* param, UINT8  slvadr , UINT8 a
 }
 
 /*! Read 1byte */
-INT32 DMD_I2C_Read(struct nim_panic6158_private* param, UINT8   slvadr , UINT8 adr , UINT8 *data)
+INT32 DMD_I2C_Read(struct nim_panic6158_private *param, UINT8   slvadr, UINT8 adr, UINT8 *data)
 {
 	/* '11/08/01 : OKAMOTO  Implement I2C read / write handler. */
 	UINT8 apData[1];
@@ -127,14 +127,14 @@ INT32 DMD_I2C_Read(struct nim_panic6158_private* param, UINT8   slvadr , UINT8 a
 	return ret;
 }
 
-INT32   DMD_I2C_MaskWrite(struct nim_panic6158_private* param, UINT8    slvadr , UINT8 adr , UINT8 mask , UINT8  data)
+INT32 DMD_I2C_MaskWrite(struct nim_panic6158_private *param, UINT8 slvadr, UINT8 adr, UINT8 mask, UINT8  data)
 {
-	UINT8   rd;
+	UINT8 rd;
 	INT32 ret = SUCCESS;
-	ret = DMD_I2C_Read(param, slvadr , adr , &rd);
+	ret = DMD_I2C_Read(param, slvadr, adr, &rd);
 	rd |= mask & data;
 	rd &= (mask ^ 0xff) | data;
-	ret |= DMD_I2C_Write(param, slvadr , adr , rd);
+	ret |= DMD_I2C_Write(param, slvadr, adr, rd);
 
 	return ret;
 }
@@ -148,7 +148,7 @@ INT32   DMD_I2C_MaskWrite(struct nim_panic6158_private* param, UINT8    slvadr ,
                     <Common Prametor>
                      slvadr (Slave Addr of demod without R/W bit.)
                     <Write Prametors>
-                     adr (Address of demod.) ,
+                     adr (Address of demod.),
                      wdata (Write data)
                      wlen (Write length)
                     <Read Prametors>
@@ -156,7 +156,7 @@ INT32   DMD_I2C_MaskWrite(struct nim_panic6158_private* param, UINT8    slvadr ,
                      rlen (Read length)
     Return Value    DMD_ERROR_t (DMD_E_OK:success, DMD_E_ERROR:error)
  *====================================================*/
-INT32 DMD_I2C_WriteRead(struct nim_panic6158_private* param, UINT8  slvadr , UINT8 adr , UINT8* wdata , U32 wlen , UINT8* rdata , U32 rlen)
+INT32 DMD_I2C_WriteRead(struct nim_panic6158_private *param, UINT8 slvadr, UINT8 adr, UINT8 *wdata, U32 wlen, UINT8 *rdata, U32 rlen)
 {
 	{
 		//Write
@@ -174,7 +174,7 @@ INT32 DMD_I2C_WriteRead(struct nim_panic6158_private* param, UINT8  slvadr , UIN
 			UINT8 buf[128]; //In order to avoid to call malloc() frequently for small size command.
 			if (length > 128)
 			{
-				pNewBuf = (UINT8*)malloc(length);
+				pNewBuf = (UINT8 *)malloc(length);
 				data = pNewBuf;
 			}
 			else
@@ -220,26 +220,26 @@ INT32 DMD_I2C_WriteRead(struct nim_panic6158_private* param, UINT8  slvadr , UIN
 /* **************************************************** */
 /*! Write&Read any length from/to Tuner via Demodulator */
 /* **************************************************** */
-INT32 DMD_TCB_WriteRead(void* nim_dev_priv, UINT8   tuner_address , UINT8* wdata , int wlen , UINT8* rdata , int rlen)
+INT32 DMD_TCB_WriteRead(void *nim_dev_priv, UINT8   tuner_address, UINT8 *wdata, int wlen, UINT8 *rdata, int rlen)
 {
 	//PANIC6158_T2_ADDR: T2 demodulator address.
 	//data[]: data submitted by tuner driver, they will be sent to tuner.
 	UINT8   d[DMD_TCB_DATA_MAX];
 	int i;
 	INT32 ret = SUCCESS;
-	struct nim_panic6158_private* param = (struct nim_panic6158_private*)nim_dev_priv;
+	struct nim_panic6158_private *param = (struct nim_panic6158_private *)nim_dev_priv;
 
 	if (wlen >= DMD_TCB_DATA_MAX || rlen >= DMD_TCB_DATA_MAX)
 		return !SUCCESS;
 
 	/* Set TCB Through Mode */
 #if 0
-	ret  = DMD_I2C_Write(param,  PANIC6158_T2_ADDR , DMD_TCBSET , 0x53);
+	ret  = DMD_I2C_Write(param,  PANIC6158_T2_ADDR, DMD_TCBSET, 0x53);
 #else
 	/* '11/11/14 : OKAMOTO  Update to "MN88472_Device_Driver_111028". */
-	ret  = DMD_I2C_MaskWrite(param, PANIC6158_T2_ADDR , DMD_TCBSET , 0x7f , 0x53);
+	ret  = DMD_I2C_MaskWrite(param, PANIC6158_T2_ADDR, DMD_TCBSET, 0x7f, 0x53);
 #endif
-	ret |= DMD_I2C_Write(param,  PANIC6158_T2_ADDR , DMD_TCBADR , 0x00);
+	ret |= DMD_I2C_Write(param,  PANIC6158_T2_ADDR, DMD_TCBADR, 0x00);
 
 	if ((wlen == 0 && rlen == 0) || (wlen != 0))
 	{
@@ -248,13 +248,13 @@ INT32 DMD_TCB_WriteRead(void* nim_dev_priv, UINT8   tuner_address , UINT8* wdata
 		for (i = 0; i < wlen; i++)
 			d[i + 1] = wdata[i];
 #if 0
-//		ret |= DMD_I2C_WriteRead(param, PANIC6158_T2_ADDR , DMD_TCBCOM , d , wlen + 2 , 0 , 0 );
-		ret |= DMD_I2C_WriteRead(param, PANIC6158_T2_ADDR , DMD_TCBCOM , d , wlen + 1 , 0 , 0);
+//		ret |= DMD_I2C_WriteRead(param, PANIC6158_T2_ADDR, DMD_TCBCOM, d, wlen + 2, 0, 0 );
+		ret |= DMD_I2C_WriteRead(param, PANIC6158_T2_ADDR, DMD_TCBCOM, d, wlen + 1, 0, 0);
 #else
 		/* Read/Write *//*看ret 的直，如果是0则通*/
 		if (!rdata && rlen != 0)
 			return !SUCCESS;
-		ret |= DMD_I2C_WriteRead(param, PANIC6158_T2_ADDR , DMD_TCBCOM , d , wlen + 1 , rdata , rlen);
+		ret |= DMD_I2C_WriteRead(param, PANIC6158_T2_ADDR, DMD_TCBCOM, d, wlen + 1, rdata, rlen);
 #endif
 	}
 	else
@@ -265,11 +265,11 @@ INT32 DMD_TCB_WriteRead(void* nim_dev_priv, UINT8   tuner_address , UINT8* wdata
 
 		d[0] = tuner_address | 1;
 //		d[1] = PANIC6158_T2_ADDR | 1;
-//		ret |= DMD_I2C_WriteRead(param, PANIC6158_T2_ADDR , DMD_TCBCOM , d , 2 , 0 , 0 );
-//        ret |= DMD_I2C_Read(param, PANIC6158_T2_ADDR , DMD_TCBCOM , data);
+//		ret |= DMD_I2C_WriteRead(param, PANIC6158_T2_ADDR, DMD_TCBCOM, d, 2, 0, 0 );
+//        ret |= DMD_I2C_Read(param, PANIC6158_T2_ADDR, DMD_TCBCOM, data);
 
-//		ret |= DMD_I2C_WriteRead(param, PANIC6158_T2_ADDR , DMD_TCBCOM , d , 2 , rdata , 1 );
-		ret |= DMD_I2C_WriteRead(param, PANIC6158_T2_ADDR , DMD_TCBCOM , d , 1 , rdata , 1);
+//		ret |= DMD_I2C_WriteRead(param, PANIC6158_T2_ADDR, DMD_TCBCOM, d, 2, rdata, 1 );
+		ret |= DMD_I2C_WriteRead(param, PANIC6158_T2_ADDR, DMD_TCBCOM, d, 1, rdata, 1);
 	}
 	return ret;
 }
@@ -370,8 +370,8 @@ static INT32 nim_reg_read(struct nim_device *dev, UINT8 mode, UINT8 bMemAdr, UIN
 
 	struct i2c_msg msg[] =
 	{
-		{ .addr = priv_mem->i2c_addr[mode] >> 1 , .flags = 0,        .buf = b0,   .len = 1 },
-		{ .addr = priv_mem->i2c_addr[mode] >> 1 , .flags = I2C_M_RD, .buf = pData, .len = bLen }
+		{ .addr = priv_mem->i2c_addr[mode] >> 1, .flags = 0,        .buf = b0,   .len = 1 },
+		{ .addr = priv_mem->i2c_addr[mode] >> 1, .flags = I2C_M_RD, .buf = pData, .len = bLen }
 	};
 
 	ret = i2c_transfer(priv_mem->i2c_adap, msg, 2);
@@ -409,7 +409,7 @@ static INT32 nim_reg_write(struct nim_device *dev, UINT8 mode, UINT8 bMemAdr, UI
 
 	struct nim_panic6158_private *priv_mem = (struct nim_panic6158_private *)dev->priv;
 
-	struct i2c_msg i2c_msg = {.addr = priv_mem->i2c_addr[mode] >> 1 , .flags = 0, .buf = buf, .len = 1 + bLen };
+	struct i2c_msg i2c_msg = {.addr = priv_mem->i2c_addr[mode] >> 1, .flags = 0, .buf = buf, .len = 1 + bLen };
 
 #if 0
 	int i;
@@ -431,7 +431,7 @@ static INT32 nim_reg_write(struct nim_device *dev, UINT8 mode, UINT8 bMemAdr, UI
 	{
 		//if (ret != -ERESTARTSYS)
 		printk("WRITE ERR:Reg=[0x%04x], Data=[0x%02x ...], Count=%u, Status=%d\n",
-			   bMemAdr, pData[0], bLen, ret);
+		       bMemAdr, pData[0], bLen, ret);
 		return ret < 0 ? ret : -EREMOTEIO;
 	}
 	return SUCCESS;
@@ -504,7 +504,7 @@ static INT32 nim_calculate_ber(struct nim_device *dev, UINT32 *err, UINT32 *len,
 	else if (DEMO_BANK_T2 == priv->system)
 	{
 		UINT8 common = 0;
-		nim_reg_read(dev, DEMO_BANK_T2, DMD_BERSET , data, 1);
+		nim_reg_read(dev, DEMO_BANK_T2, DMD_BERSET, data, 1);
 
 		if (common == 0)
 		{
@@ -890,7 +890,7 @@ static INT32 nim_panic6158_set_ts_output(struct nim_device *dev, DMD_TSOUT ts_ou
 	return SUCCESS;
 }
 
-INT32 nim_panic6158_set_info(struct nim_device *dev, UINT8 system, UINT32 id , UINT32 val)
+INT32 nim_panic6158_set_info(struct nim_device *dev, UINT8 system, UINT32 id, UINT32 val)
 {
 	INT32 ret = !SUCCESS;
 	UINT8 rd, data;
@@ -901,12 +901,12 @@ INT32 nim_panic6158_set_info(struct nim_device *dev, UINT8 system, UINT32 id , U
 			switch (id)
 			{
 				case DMD_E_INFO_DVBT_HIERARCHY_SELECT:
-					nim_reg_read(dev, system , DMD_RSDSET_T, &rd, 1);
+					nim_reg_read(dev, system, DMD_RSDSET_T, &rd, 1);
 					if (val == 1)
 						rd |= 0x10;
 					else
 						rd &= 0xef;
-					nim_reg_write(dev, system, DMD_RSDSET_T , &rd, 1);
+					nim_reg_write(dev, system, DMD_RSDSET_T, &rd, 1);
 					//param->info[DMD_E_INFO_DVBT_HIERARCHY_SELECT] = (rd >> 4) & 0x1;//dmq modify
 					ret = SUCCESS;
 					break;
@@ -923,7 +923,7 @@ INT32 nim_panic6158_set_info(struct nim_device *dev, UINT8 system, UINT32 id , U
 					}
 					else
 					{
-						nim_reg_mask_write(dev, system , DMD_MDSET_T, 0xf0 , 0xf0);
+						nim_reg_mask_write(dev, system, DMD_MDSET_T, 0xf0, 0xf0);
 						data = 0;
 						nim_reg_write(dev, system, DMD_MDASET_T, &data, 1);
 						switch (val)
@@ -953,9 +953,9 @@ INT32 nim_panic6158_set_info(struct nim_device *dev, UINT8 system, UINT32 id , U
 					}
 					else
 					{
-						nim_reg_mask_write(dev, system, DMD_MDSET_T , 0xf0, 0xf0);
+						nim_reg_mask_write(dev, system, DMD_MDSET_T, 0xf0, 0xf0);
 						data = 0;
-						nim_reg_write(dev, system , DMD_MDASET_T, &data, 1);
+						nim_reg_write(dev, system, DMD_MDASET_T, &data, 1);
 						switch (val)
 						{
 							case DMD_E_DVBT_GI_1_32:
@@ -989,7 +989,7 @@ INT32 nim_panic6158_set_info(struct nim_device *dev, UINT8 system, UINT32 id , U
 					break;
 			}
 
-		/* '11/10/19 : OKAMOTO  Correct warning: enumeration value DMD_E_ISDBT is not handled in switch */
+		/* '11/10/19 : OKAMOTO  Correct warning: enumeration value "DMD_E_ISDBT" not handled in switch */
 		default:
 			ret = !SUCCESS;
 			break;
@@ -1054,7 +1054,7 @@ INT32 nim_panic6158_get_AGC_301(struct nim_device *dev, UINT8 *agc)
 	return SUCCESS;
 }
 
-UINT32  DMD_AGC(struct nim_device * dev)
+UINT32  DMD_AGC(struct nim_device *dev)
 {
 	UINT8   rd;
 	UINT32  ret;
@@ -1647,7 +1647,7 @@ static INT32 nim_panic6158_ioctl(struct nim_device *dev, INT32 cmd, UINT32 param
 	return ret;
 }
 
-static INT32 nim_panic6158_ioctl_ext(struct nim_device *dev, INT32 cmd, void* param_list)
+static INT32 nim_panic6158_ioctl_ext(struct nim_device *dev, INT32 cmd, void *param_list)
 {
 	INT32 ret = SUCCESS;
 	struct nim_t10023_private *priv;
@@ -1716,7 +1716,7 @@ INT32 nim_panic6158_open(struct nim_device *dev)
 	ret |= nim_reg_write(dev, DEMO_BANK_T, DMD_PSEQSET, &data, 1);
 
 	/* Check Parity bit */
-	ret |= nim_reg_read(dev, DEMO_BANK_T, DMD_PSEQFLG , &data, 1);
+	ret |= nim_reg_read(dev, DEMO_BANK_T, DMD_PSEQFLG, &data, 1);
 	if (data & 0x10)
 	{
 		NIM_PANIC6158_PRINTF("ERROR: PSEQ Parity");
@@ -1794,10 +1794,10 @@ INT32 nim_panic6158_attach(UINT8 Handle, PCOFDM_TUNER_CONFIG_API pConfig, TUNER_
 
 	YWLIB_Memset(dev, 0, sizeof(struct nim_device));
 	YWLIB_Memset(priv, 0, sizeof(struct nim_panic6158_private));
-	YWLIB_Memcpy((void*) & (priv->tc), (void*)pConfig, sizeof(struct COFDM_TUNER_CONFIG_API));
+	YWLIB_Memcpy((void *) & (priv->tc), (void *)pConfig, sizeof(struct COFDM_TUNER_CONFIG_API));
 
 	//priv->tuner_if_freq = pConfig->tuner_config.wTuner_IF_Freq;
-	dev->priv = (void*)priv;
+	dev->priv = (void *)priv;
 
 	//jhy add start
 	if (YWTUNER_DELIVER_TER == Inst->Device)
@@ -1861,7 +1861,7 @@ INT32 nim_panic6158_attach(UINT8 Handle, PCOFDM_TUNER_CONFIG_API pConfig, TUNER_
 	priv->i2c_mutex_id = OSAL_INVALID_ID;
 	priv->first_tune_t2 = pConfig->tune_t2_first;
 	priv->tuner_id = Handle;  //jhy added
-	//priv->system = DEMO_BANK_T2;//jhy added ,DEMO_BANK_T or DEMO_BANK_T2
+	//priv->system = DEMO_BANK_T2;//jhy added,DEMO_BANK_T or DEMO_BANK_T2
 
 	ret = SUCCESS;
 	for (i = 0; i < 3; i++)
@@ -2356,7 +2356,7 @@ INT32 nim_panic6158_ioctl_earda(struct nim_device *dev, INT32 cmd, UINT32 param)
 	return ret;
 }
 
-static INT32 nim_panic6158_ioctl_ext_earda(struct nim_device *dev, INT32 cmd, void* param_list)
+static INT32 nim_panic6158_ioctl_ext_earda(struct nim_device *dev, INT32 cmd, void *param_list)
 {
 	INT32 ret = SUCCESS;
 	struct nim_t10023_private *priv;
@@ -2427,10 +2427,10 @@ INT32 nim_panic6158_attach_earda(UINT8 Handle, PCOFDM_TUNER_CONFIG_API pConfig, 
 		return ERR_NO_MEM;
 	}
 	MEMSET(priv, 0, sizeof(struct nim_panic6158_private));
-	MEMCPY((void*) & (priv->tc), (void*)pConfig, sizeof(struct COFDM_TUNER_CONFIG_API));
+	MEMCPY((void *) & (priv->tc), (void *)pConfig, sizeof(struct COFDM_TUNER_CONFIG_API));
 
 	//priv->tuner_if_freq = pConfig->tuner_config.wTuner_IF_Freq;
-	dev->priv = (void*)priv;
+	dev->priv = (void *)priv;
 
 	if (YWTUNER_DELIVER_TER == Inst->Device)
 	{

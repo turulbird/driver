@@ -18,7 +18,7 @@ typedef struct
 	u32 scrollDelay:8;    // byte 8
 	s32 gmtOffset:16;     // bytes 9+10
 	//--------------- for future enhancements: settings version 1 ends here
-}tTffpConfig;
+} tTffpConfig;
 
 int readTffpConfig(tTffpConfig *pCfg);
 

@@ -50,7 +50,7 @@ static unsigned char backup_regs[STV6418_MAX_REGS + 1];
 /* hold old values for standby */
 static unsigned char t_stnby=0;
 
-static struct stpio_pin* eMute;   // mute bin
+//static struct stpio_pin* eMute;   // mute bin
 
 #define MUTE_CLR() {stpio_set_pin(eMute, 0);}
 #define MUTE_SET() {stpio_set_pin(eMute, 1);}

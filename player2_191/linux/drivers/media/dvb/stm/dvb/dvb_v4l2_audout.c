@@ -121,15 +121,15 @@ static struct stm_v4l2_driver dvb_v4l2_audout_driver =
 	.mmap = NULL,
 };
 
-static int __init dvb_v4l2_audout_init(void)
-{
-	return stm_v4l2_register_driver(&dvb_v4l2_audout_driver);
-}
-
-static void __exit dvb_v4l2_audout_exit(void)
-{
-	stm_v4l2_unregister_driver(&dvb_v4l2_audout_driver);
-}
+//static int __init dvb_v4l2_audout_init(void)
+//{
+//	return stm_v4l2_register_driver(&dvb_v4l2_audout_driver);
+//}
+//
+//static void __exit dvb_v4l2_audout_exit(void)
+//{
+//	stm_v4l2_unregister_driver(&dvb_v4l2_audout_driver);
+//}
 
 //module_init (dvb_v4l2_audout_init);
 //module_exit (dvb_v4l2_audout_exit);

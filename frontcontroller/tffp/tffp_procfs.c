@@ -229,7 +229,7 @@ void create_proc_fp(void)
 {
 	int i;
 
-	for(i = 0; i < sizeof(fp_procs)/sizeof(fp_procs[0]); i++)
+	for (i = 0; i < sizeof(fp_procs) / sizeof(fp_procs[0]); i++)
 	{
 		install_e2_procs(fp_procs[i].name, fp_procs[i].read_proc, fp_procs[i].write_proc, NULL);
 	}
@@ -239,7 +239,7 @@ void remove_proc_fp(void)
 {
 	int i;
 
-	for(i = sizeof(fp_procs)/sizeof(fp_procs[0]) - 1; i >= 0; i--)
+	for (i = sizeof(fp_procs) / sizeof(fp_procs[0]) - 1; i >= 0; i--)
 	{
 		remove_e2_procs(fp_procs[i].name, fp_procs[i].read_proc, fp_procs[i].write_proc);
 	}

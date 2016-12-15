@@ -36,7 +36,7 @@ unsigned short int VFDSegmentMap14[256] =
 	// the rest is set to 0 by default
 };
 
-unsigned int VFDSegmentMap17[256] = 
+unsigned int VFDSegmentMap17[256] =
 {
 	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, // 0x00
 	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
