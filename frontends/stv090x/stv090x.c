@@ -6952,15 +6952,21 @@ static int hdbox_set_voltage(struct dvb_frontend *fe, enum fe_sec_voltage voltag
 	switch (voltage)
 	{
 		case SEC_VOLTAGE_OFF:
+		{
 			dprintk(20, "Switch LNB voltage off\n");
-			if (_12v_isON == 0)
-				if (state->tuner == STV090x_TUNER1)
-					res |= 0x10;
-				else
-					res |= 0x20;
-			break;
 
+			if (state->tuner == STV090x_TUNER1)
+			{
+				res |= 0x10;
+			}
+			else
+			{
+				res |= 0x20;
+			}
+			break;
+		}
 		case SEC_VOLTAGE_13: /* vertical */
+		{
 			dprintk(20, "Set LNB voltage vertical\n");
 			if (state->tuner == STV090x_TUNER1)
 			{
@@ -6977,8 +6983,9 @@ static int hdbox_set_voltage(struct dvb_frontend *fe, enum fe_sec_voltage voltag
 				res |= 0x2;
 			}
 			break;
-
+		}
 		case SEC_VOLTAGE_18: /* horizontal */
+		{
 			dprintk(20, "Set LNB voltage horizontal\n");
 			if (state->tuner == STV090x_TUNER1)
 			{
@@ -6995,8 +7002,11 @@ static int hdbox_set_voltage(struct dvb_frontend *fe, enum fe_sec_voltage voltag
 				res &= ~0x2;
 			}
 			break;
+		}
 		default:
+		{
 			break;
+		}
 	}
 	ctrl_outb(res, 0xa2800000);
 	dprintk(10, "%s <out:0x%x\n", __func__, res);
