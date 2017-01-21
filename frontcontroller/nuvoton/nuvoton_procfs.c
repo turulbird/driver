@@ -61,10 +61,7 @@ extern int remove_e2_procs(char *name, read_proc_t *read_proc, write_proc_t *wri
 extern int nuvotonSetIcon(int which, int on);
 extern void VFD_set_all_icons(int onoff);
 extern int nuvotonWriteString(char *buf, size_t len);
-#if !defined(HS7110) \
- && !defined(HS7119) \
- && !defined(HS7810A) \
- && !defined(HS7819)
+#if !defined(HS7110)
 extern int nuvotonSetBrightness(int level);
 #endif
 extern void clear_display(void);
@@ -531,10 +528,7 @@ static int led_pattern_speed_read(char *page, char **start, off_t off, int count
 	return len;
 }
 
-#if !defined(HS7110) \
- && !defined(HS7119) \
- && !defined(HS7810A) \
- && !defined(HS7819)
+#if !defined(HS7110)
 static int oled_brightness_write(struct file *file, const char __user *buf, unsigned long count, void *data)
 {
 	char *page;
@@ -580,10 +574,7 @@ struct fp_procs
 	{ "stb/fp/led0_pattern", led0_pattern_read, led0_pattern_write },
 	{ "stb/fp/led1_pattern", led1_pattern_read, led1_pattern_write },
 	{ "stb/fp/led_pattern_speed", led_pattern_speed_read, led_pattern_speed_write },
-#if !defined(HS7110) \
- && !defined(HS7119) \
- && !defined(HS7810A) \
- && !defined(HS7819)
+#if !defined(HS7110)
 	{ "stb/fp/oled_brightness", NULL, oled_brightness_write },
 #else
 	{ "stb/fp/oled_brightness", NULL, NULL },

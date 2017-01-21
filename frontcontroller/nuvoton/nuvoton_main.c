@@ -19,7 +19,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
  *
- * Fortis HDBOX FS9000/9200 / HS9510 / HS7XXX Front panel driver.
+ * Fortis HDBOX FS9000/9200 / HS8200 / HS9510 / HS8200 / HS7XXX Front panel driver.
  *
  * Devices:
  *  - /dev/vfd (vfd ioctls and read/write function)
@@ -34,6 +34,7 @@
  * --------------------------------------------------------------------------------------
  * 20130929 Audioniek       Initial version.
  * 20160523 Audioniek       procfs added.
+ * 20170115 Audioniek       Response on getFrontInfo added.
  *
  ****************************************************************************************/
 
@@ -77,6 +78,7 @@
 #include <asm/io.h>
 #include <asm/uaccess.h>
 #include <asm/termbits.h>
+#include <linux/kthread.h>
 #include <linux/version.h>
 #include <linux/module.h>
 #include <linux/delay.h>
@@ -103,9 +105,12 @@
 
 #define EVENT_ANSWER_GETTIME       0x15
 #define EVENT_ANSWER_WAKEUP_REASON 0x81
-#define EVENT_ANSWER_FRONTINFO     0xe4 /* unused */
+#define EVENT_ANSWER_GETIRCODE     0xa5
+#define EVENT_ANSWER_FRONTINFO     0xd4
 #define EVENT_ANSWER_GETIRCODE     0xa5 /* unused */
 #define EVENT_ANSWER_GETPORT       0xb3 /* unused */
+#define EVENT_ANSWER_E9            0xe9 /* unused */
+#define EVENT_ANSWER_F9            0xf9 /* unused */
 
 #define DATA_BTN_EVENT             2
 
@@ -113,7 +118,7 @@
 
 short paramDebug = 10;
 int waitTime = 1000;
-
+int dataflag = 0;
 static unsigned char expectEventData = 0;
 static unsigned char expectEventId   = 1;
 
@@ -125,6 +130,10 @@ static unsigned char expectEventId   = 1;
 
 #define cGetTimeSize         9
 #define cGetWakeupReasonSize 5
+#define cGetGetIrCodeSize   18
+#define cGetFrontInfoSize    8
+#define cGetE9Size          13
+#define cGetF9Size          13
 
 #if defined(ATEVIO7500) \
  || defined(FORTIS_HDBOX) \
@@ -181,17 +190,18 @@ int ack_sem_down(void)
 	err  = wait_event_interruptible_timeout(ack_wq, dataReady == 1, ACK_WAIT_TIME);
 	if (err == -ERESTARTSYS)
 	{
-		printk("wait_event_interruptible failed\n");
+		dprintk(1, "wait_event_interruptible failed\n");
 		return err;
 	}
 	else if (err == 0)
 	{
-		printk("timeout waiting on ack\n");
+		dprintk(1, "Timeout waiting on ACK\n");
 	}
 	else
 	{
-		dprintk(20, "command processed - remaining jiffies %d\n", err);
+		dprintk(20, "Command processed - remaining jiffies %d\n", err);
 	}
+	dataflag = dataReady;
 	return 0;
 }
 
@@ -243,7 +253,7 @@ void getRCData(unsigned char *data, int *len)
 
 		if (wait_event_interruptible(wq, KeyBufferStart != KeyBufferEnd))
 		{
-			printk("wait_event_interruptible failed\n");
+			dprintk(1, "wait_event_interruptible failed\n");
 			return;
 		}
 	}
@@ -300,6 +310,7 @@ void handleCopyData(int len)
 	while (i != len - 4)
 	{
 		data[i] = RCVBuffer[j];
+//		dprintk(1, "Received data[%02d]=0x%02x\n", i, data[i]);
 		j++;
 		i++;
 
@@ -334,7 +345,7 @@ void dumpData(void)
 	i = RCVBufferEnd;
 	for (j = 0; j < len; j++)
 	{
-		printk("0x%02x ", RCVBuffer[i]);
+		dprintk(1, "Dump #%02d: 0x%02x\n", i, RCVBuffer[i]);
 		i++;
 
 		if (i >= BUFFERSIZE)
@@ -375,7 +386,6 @@ static void processResponse(void)
 	{
 		return;
 	}
-
 	dumpData();
 
 	if (expectEventId)
@@ -492,13 +502,75 @@ static void processResponse(void)
 					goto out_switch;
 				}
 				handleCopyData(len);
-				dprintk(1, "Pos. response received\n");
+				dprintk(20, "Pos. response received\n");
 				errorOccured = 0;
 				ack_sem_up();
 				RCVBufferEnd = (RCVBufferEnd + cGetWakeupReasonSize) % BUFFERSIZE;
 				break;
 			}
 			case EVENT_ANSWER_FRONTINFO:
+			{
+
+				len = getLen(cGetFrontInfoSize);
+
+				if (len == 0)
+				{
+					goto out_switch;
+				}
+
+				if (len < cGetFrontInfoSize)
+				{
+					goto out_switch;
+				}
+				handleCopyData(len);
+				dprintk(20, "Pos. response received\n");
+				errorOccured = 0;
+				ack_sem_up();
+				RCVBufferEnd = (RCVBufferEnd + cGetFrontInfoSize) % BUFFERSIZE;
+				break;
+			}
+#if 0
+			case EVENT_ANSWER_E9:
+			{
+				len = getLen(cGetE9Size);
+
+				if (len == 0)
+				{
+					goto out_switch;
+				}
+
+				if (len < cGetE9Size)
+				{
+					goto out_switch;
+				}
+				handleCopyData(len);
+				dprintk(20, "Pos. response received\n");
+				errorOccured = 0;
+				ack_sem_up();
+				RCVBufferEnd = (RCVBufferEnd + cGetE9Size) % BUFFERSIZE;
+				break;
+			}
+			case EVENT_ANSWER_F9:
+			{
+				len = getLen(cGetF9Size);
+
+				if (len == 0)
+				{
+					goto out_switch;
+				}
+
+				if (len < cGetF9Size)
+				{
+					goto out_switch;
+				}
+				handleCopyData(len);
+				dprintk(20, "Pos. response received\n");
+				errorOccured = 0;
+				ack_sem_up();
+				RCVBufferEnd = (RCVBufferEnd + cGetF9Size) % BUFFERSIZE;
+				break;
+			}
+#endif
 			case EVENT_ANSWER_GETIRCODE:
 			case EVENT_ANSWER_GETPORT:
 			default: // Ignore Response
@@ -530,7 +602,7 @@ static irqreturn_t FP_interrupt(int irq, void *dev_id)
 
 	if (paramDebug > 100)
 	{
-		printk("i - ");
+		dprintk(1, "i - ");
 	}
 
 	while (*ASC_X_INT_STA & ASC_INT_STA_RBF)
@@ -546,7 +618,7 @@ static irqreturn_t FP_interrupt(int irq, void *dev_id)
 
 		if (RCVBufferStart == RCVBufferEnd)
 		{
-			printk("FP: RCV buffer overflow!!! (%d - %d)\n", RCVBufferStart, RCVBufferEnd);
+			dprintk(1, "FP: RCV buffer overflow!!! (%d - %d)\n", RCVBufferStart, RCVBufferEnd);
 		}
 	}
 
@@ -587,7 +659,7 @@ int nuvotonTask(void *dummy)
 		int dataAvailable = 0;
 		if (wait_event_interruptible(rx_wq, (RCVBufferStart != RCVBufferEnd)))
 		{
-			printk("wait_event_interruptible failed\n");
+			dprintk(1, "wait_event_interruptible failed\n");
 			continue;
 		}
 
@@ -612,6 +684,163 @@ int nuvotonTask(void *dummy)
 
 //----------------------------------------------
 
+#if defined(FORTIS_HDBOX)
+/*********************************************************************
+ *
+ * animated_icon_thread: Thread to display the spinner on FS9000/9200
+ * TODO: expand to animated icons on HS8500
+ *
+ */
+static int animated_icon_thread(void *arg)
+{
+	int icon = (int)arg;
+	int i = 0;
+	int res = 0;
+	char buffer[9];
+
+	buffer[0] = SOP;
+	buffer[1] = cCommandSetIconII;
+	buffer[2] = 0x20;
+	buffer[8] = EOP;
+
+	if (icon_state[icon].status == ICON_THREAD_STATUS_RUNNING)
+	{
+		return 0;
+	}
+	icon_state[icon].status = ICON_THREAD_STATUS_RUNNING;
+
+	while (!kthread_should_stop())
+	{
+		if (!down_interruptible(&icon_state[icon].icon_sem))
+		{
+			if (kthread_should_stop())
+			{
+				break;
+			}
+			dprintk(1, "Start animated_icon_thread for icon #%d, period = %d ms\n", icon, icon_state[icon].period);
+			while (!down_trylock(&icon_state[icon].icon_sem));
+
+			while ((icon_state[icon].state) && !kthread_should_stop())
+			{
+				switch (i) // display a rotating disc in 16 states
+				{
+					case 0:
+					{
+						regs[0x24] |= 0x01; // Circ0 on
+						regs[0x20] |= 0x01; // Circ1 on
+						regs[0x21] &= 0xfc; // Circ3 & Circ8 off
+						regs[0x22] &= 0xfc; // Circ2 & Circ6 off
+						regs[0x23] &= 0xfc; // Circ4 & Circ7 off
+						regs[0x24] &= 0xfd; // Circ5 off
+						break;
+					}
+					case 1:
+					{
+						regs[0x22] |= 0x01; // Circ2 on
+						break;
+					}
+					case 2:
+					{
+						regs[0x21] |= 0x02; // Circ3 on
+						break;
+					}
+					case 3:
+					{
+						regs[0x23] |= 0x02; // Circ4 on
+						break;
+					}
+					case 4:
+					{
+						regs[0x24] |= 0x02; // Circ5 on
+						break;
+					}
+					case 5:
+					{
+						regs[0x22] |= 0x02; // Circ6 on
+						break;
+					}
+					case 6:
+					{
+						regs[0x23] |= 0x01; // Circ7 on
+						break;
+					}
+					case 7:
+					{
+						regs[0x21] |= 0x01; // Circ8 on
+						break;
+					}
+					case 8:
+					{
+						regs[0x20] &= 0xfe; // Circ1 off
+						break;
+					}
+					case 9:
+					{
+						regs[0x20] &= 0xfe; // Circ1 off
+						break;
+					}
+					case 10:
+					{
+						regs[0x22] &= 0xfe; // Circ2 off
+						break;
+					}
+					case 11:
+					{
+						regs[0x21] &= 0xfd; // Circ3 off
+						break;
+					}
+					case 12:
+					{
+						regs[0x23] &= 0xfd; // Circ4 off
+						break;
+					}
+					case 13:
+					{
+						regs[0x24] &= 0xfd; // Circ5 off
+						break;
+					}
+					case 14:
+					{
+						regs[0x22] &= 0xfd; // Circ6 off
+						break;
+					}
+					case 15:
+					{
+						regs[0x23] &= 0xfe; // Circ7 off
+						break;
+					}
+					case 16:
+					{
+						regs[0x21] &= 0xfe; // Circ8 off
+						break;
+					}
+				}
+				buffer[3] = regs[0x20];
+				buffer[4] = regs[0x21];
+				buffer[5] = regs[0x22];
+				buffer[6] = regs[0x23];
+				buffer[7] = regs[0x24];
+				res = nuvotonWriteCommand(buffer, 9, 0);
+				i++;
+				i %= 17;
+				msleep(icon_state[icon].period);
+			}
+			dprintk(1, "Stopping %s for icon #%d\n", __func__, icon);
+			buffer[3] = regs[0x20] &= 0xfe; // Circ1 off
+			buffer[4] = regs[0x21] &= 0xfc; // Circ3 & Circ8 off
+			buffer[5] = regs[0x22] &= 0xfc; // Circ2 & Circ6 off
+			buffer[6] = regs[0x23] &= 0xfc; // Circ4 & Circ7 off
+			buffer[7] = regs[0x24] &= 0xfc; // Circ0 & Circ5 off
+			res |= nuvotonWriteCommand(buffer, 9, 0);
+		}
+	}
+	dprintk(1, "%s for icon #%d stopped\n", __func__, icon);
+	icon_state[icon].status = ICON_THREAD_STATUS_STOPPED;
+	icon_state[icon].icon_task = 0;
+	return res;
+}
+#endif
+
 extern void create_proc_fp(void);
 extern void remove_proc_fp(void);
 
@@ -621,7 +850,7 @@ static int __init nuvoton_init_module(void)
 
 	// Address for Interrupt enable/disable
 	unsigned int *ASC_X_INT_EN = (unsigned int *)(ASCXBaseAddress + ASC_INT_EN);
-	// Address for FiFo enable/disable
+	// Address for FIFO enable/disable
 	unsigned int *ASC_X_CTRL   = (unsigned int *)(ASCXBaseAddress + ASC_CTRL);
 	dprintk(100, "%s >\n", __func__);
 	//Disable all ASC 2 interrupts
@@ -655,7 +884,7 @@ static int __init nuvoton_init_module(void)
 	}
 	else
 	{
-		printk("FP: Cannot get irq\n");
+		dprintk(1, "Cannot get irq\n");
 	}
 
 	msleep(waitTime);
@@ -663,19 +892,68 @@ static int __init nuvoton_init_module(void)
 
 	if (register_chrdev(VFD_MAJOR, "VFD", &vfd_fops))
 	{
-		printk("Unable to get major %d for VFD/NUVOTON\n", VFD_MAJOR);
+		dprintk(1, "Unable to get major %d for VFD/NUVOTON\n", VFD_MAJOR);
 	}
 
+#if defined(FORTIS_HDBOX)
+//	for (i = 0; i < ICON_MAX + 2; i++)
+//	{
+//		icon_state[i].state = 0;
+//		icon_state[i].period = 0;
+//		icon_state[i].status = ICON_THREAD_STATUS_STOPPED;
+//		sema_init(&icon_state[i].icon_sem, 0);
+//		if (i == ICON_SPINNER)
+//		{
+		icon_state[ICON_SPINNER].state = 0;
+		icon_state[ICON_SPINNER].period = 0;
+		icon_state[ICON_SPINNER].status = ICON_THREAD_STATUS_STOPPED;
+		sema_init(&icon_state[ICON_SPINNER].icon_sem, 0);
+		icon_state[ICON_SPINNER].icon_task = kthread_run(animated_icon_thread, (void *) ICON_SPINNER, "spinner_thread");
+//		}
+//	}
+#endif
 	create_proc_fp();
 
 	dprintk(100, "%s <\n", __func__);
 	return 0;
 }
 
+#if 0
+static int icon_thread_active(void)
+{
+	int i;
+
+	for (i = 0; i < ICON_SPINNER + 2; i++)
+	{
+		if (!icon_state[i].status && icon_state[i].icon_task)
+		{
+			return -1;
+		}
+	}
+	return 0;
+}
+#endif
+
 static void __exit nuvoton_cleanup_module(void)
 {
-	printk("NUVOTON frontcontroller module unloading\n");
+	dprintk(1, "NUVOTON frontcontroller module unloading\n");
 	remove_proc_fp();
+
+#if defined(FORTIS_HDBOX)
+	{
+		int i;
+
+		for (i = 0; i < ICON_SPINNER + 2; i++)
+		{
+			if (!icon_state[i].status && icon_state[i].icon_task)
+			{
+				dprintk(50, "Stopping icon thread for icon #%d\n", i);
+				up(&icon_state[i].icon_sem);
+				kthread_stop(icon_state[i].icon_task);
+			}
+		}
+	}
+#endif
 	unregister_chrdev(VFD_MAJOR, "VFD");
 	free_irq(InterruptLine, NULL);
 }
@@ -686,7 +964,7 @@ module_init(nuvoton_init_module);
 module_exit(nuvoton_cleanup_module);
 
 MODULE_DESCRIPTION("NUVOTON frontcontroller module");
-MODULE_AUTHOR("Dagobert & Schischu & Konfetti");
+MODULE_AUTHOR("Dagobert, Schischu, Konfetti & Audioniek");
 MODULE_LICENSE("GPL");
 
 module_param(paramDebug, short, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
@@ -694,3 +972,5 @@ MODULE_PARM_DESC(paramDebug, "Debug Output 0=disabled >0=enabled(debuglevel)");
 
 module_param(waitTime, int, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
 MODULE_PARM_DESC(waitTime, "Wait before init in ms (default=1000)");
+
+// vim:ts=4
