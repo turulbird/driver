@@ -58,8 +58,8 @@ extern int install_e2_procs(char *name, read_proc_t *read_proc, write_proc_t *wr
 extern int remove_e2_procs(char *name, read_proc_t *read_proc, write_proc_t *write_proc);
 
 /* from other nuvoton modules */
-extern int nuvotonSetIcon(int which, int on);
-extern void VFD_set_all_icons(int onoff);
+//extern int nuvotonSetIcon(int which, int on);
+//extern void VFD_set_all_icons(int onoff);
 extern int nuvotonWriteString(char *buf, size_t len);
 #if !defined(HS7110)
 extern int nuvotonSetBrightness(int level);

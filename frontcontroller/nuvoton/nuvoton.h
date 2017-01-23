@@ -77,7 +77,7 @@ extern tFrontPanelOpen FrontPanelOpen[LASTMINOR];
 #define VFDDRIVERINIT         0xc0425a08
 #define VFDICONDISPLAYONOFF   0xc0425a0a
 
-//#define VFDTEST               0xc0425af0 // added by audioniek
+#define VFDTEST               0xc0425af0 // added by audioniek
 #define VFDGETBLUEKEY         0xc0425af1 // unused, used by other boxes
 #define VFDSETBLUEKEY         0xc0425af2 // unused, used by other boxes
 #define VFDGETSTBYKEY         0xc0425af3 // unused, used by other boxes
@@ -464,7 +464,7 @@ extern void getRCData(unsigned char *data, int *len);
 extern int nuvotonSetIcon(int which, int on);
 extern int nuvotonWriteCommand(char *buffer, int len, int needAck);
 #if defined(FORTIS_HDBOX)
-extern tIconState icon_state[ICON_SPINNER];
+extern tIconState icon_state[ICON_SPINNER + 1];
 #endif
 void dumpValues(void);
 

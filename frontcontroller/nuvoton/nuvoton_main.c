@@ -698,6 +698,11 @@ static int animated_icon_thread(void *arg)
 	int res = 0;
 	char buffer[9];
 
+	if (icon != ICON_SPINNER)
+	{
+		return 0;
+	}
+
 	buffer[0] = SOP;
 	buffer[1] = cCommandSetIconII;
 	buffer[2] = 0x20;
@@ -717,121 +722,124 @@ static int animated_icon_thread(void *arg)
 			{
 				break;
 			}
-			dprintk(1, "Start animated_icon_thread for icon #%d, period = %d ms\n", icon, icon_state[icon].period);
-			while (!down_trylock(&icon_state[icon].icon_sem));
 
-			while ((icon_state[icon].state) && !kthread_should_stop())
+			dprintk(1, "Start animated_icon_thread for icon #%d, period = %d ms\n", icon, icon_state[icon].period);
+
+			while (!down_trylock(&icon_state[icon].icon_sem));
 			{
-				switch (i) // display a rotating disc in 16 states
+				while ((icon_state[icon].state) && !kthread_should_stop())
 				{
-					case 0:
+					switch (i) // display a rotating disc in 16 states
 					{
-						regs[0x24] |= 0x01; // Circ0 on
-						regs[0x20] |= 0x01; // Circ1 on
-						regs[0x21] &= 0xfc; // Circ3 & Circ8 off
-						regs[0x22] &= 0xfc; // Circ2 & Circ6 off
-						regs[0x23] &= 0xfc; // Circ4 & Circ7 off
-						regs[0x24] &= 0xfd; // Circ5 off
-						break;
+						case 0:
+						{
+							regs[0x24] |= 0x01; // Circ0 on
+							regs[0x20] |= 0x01; // Circ1 on
+							regs[0x21] &= 0xfc; // Circ3 & Circ8 off
+							regs[0x22] &= 0xfc; // Circ2 & Circ6 off
+							regs[0x23] &= 0xfc; // Circ4 & Circ7 off
+							regs[0x24] &= 0xfd; // Circ5 off
+							break;
+						}
+						case 1:
+						{
+							regs[0x22] |= 0x01; // Circ2 on
+							break;
+						}
+						case 2:
+						{
+							regs[0x21] |= 0x02; // Circ3 on
+							break;
+						}
+						case 3:
+						{
+							regs[0x23] |= 0x02; // Circ4 on
+							break;
+						}
+						case 4:
+						{
+							regs[0x24] |= 0x02; // Circ5 on
+							break;
+						}
+						case 5:
+						{
+							regs[0x22] |= 0x02; // Circ6 on
+							break;
+						}
+						case 6:
+						{
+							regs[0x23] |= 0x01; // Circ7 on
+							break;
+						}
+						case 7:
+						{
+							regs[0x21] |= 0x01; // Circ8 on
+							break;
+						}
+						case 8:
+						{
+							regs[0x20] &= 0xfe; // Circ1 off
+							break;
+						}
+						case 9:
+						{
+							regs[0x20] &= 0xfe; // Circ1 off
+							break;
+						}
+						case 10:
+						{
+							regs[0x22] &= 0xfe; // Circ2 off
+							break;
+						}
+						case 11:
+						{
+							regs[0x21] &= 0xfd; // Circ3 off
+							break;
+						}
+						case 12:
+						{
+							regs[0x23] &= 0xfd; // Circ4 off
+							break;
+						}
+						case 13:
+						{
+							regs[0x24] &= 0xfd; // Circ5 off
+							break;
+						}
+						case 14:
+						{
+							regs[0x22] &= 0xfd; // Circ6 off
+							break;
+						}
+						case 15:
+						{
+							regs[0x23] &= 0xfe; // Circ7 off
+							break;
+						}
+						case 16:
+						{
+							regs[0x21] &= 0xfe; // Circ8 off
+							break;
+						}
 					}
-					case 1:
-					{
-						regs[0x22] |= 0x01; // Circ2 on
-						break;
-					}
-					case 2:
-					{
-						regs[0x21] |= 0x02; // Circ3 on
-						break;
-					}
-					case 3:
-					{
-						regs[0x23] |= 0x02; // Circ4 on
-						break;
-					}
-					case 4:
-					{
-						regs[0x24] |= 0x02; // Circ5 on
-						break;
-					}
-					case 5:
-					{
-						regs[0x22] |= 0x02; // Circ6 on
-						break;
-					}
-					case 6:
-					{
-						regs[0x23] |= 0x01; // Circ7 on
-						break;
-					}
-					case 7:
-					{
-						regs[0x21] |= 0x01; // Circ8 on
-						break;
-					}
-					case 8:
-					{
-						regs[0x20] &= 0xfe; // Circ1 off
-						break;
-					}
-					case 9:
-					{
-						regs[0x20] &= 0xfe; // Circ1 off
-						break;
-					}
-					case 10:
-					{
-						regs[0x22] &= 0xfe; // Circ2 off
-						break;
-					}
-					case 11:
-					{
-						regs[0x21] &= 0xfd; // Circ3 off
-						break;
-					}
-					case 12:
-					{
-						regs[0x23] &= 0xfd; // Circ4 off
-						break;
-					}
-					case 13:
-					{
-						regs[0x24] &= 0xfd; // Circ5 off
-						break;
-					}
-					case 14:
-					{
-						regs[0x22] &= 0xfd; // Circ6 off
-						break;
-					}
-					case 15:
-					{
-						regs[0x23] &= 0xfe; // Circ7 off
-						break;
-					}
-					case 16:
-					{
-						regs[0x21] &= 0xfe; // Circ8 off
-						break;
-					}
+					buffer[3] = regs[0x20];
+					buffer[4] = regs[0x21];
+					buffer[5] = regs[0x22];
+					buffer[6] = regs[0x23];
+					buffer[7] = regs[0x24];
+					res = nuvotonWriteCommand(buffer, 9, 0);
+					i++;
+					i %= 17;
+					msleep(icon_state[icon].period);
 				}
-				buffer[3] = regs[0x20];
-				buffer[4] = regs[0x21];
-				buffer[5] = regs[0x22];
-				buffer[6] = regs[0x23];
-				buffer[7] = regs[0x24];
-				res = nuvotonWriteCommand(buffer, 9, 0);
-				i++;
-				i %= 17;
-				msleep(icon_state[icon].period);
+				dprintk(1, "Stopping %s for icon #%d\n", __func__, icon);
+				buffer[3] = regs[0x20] &= 0xfe; // Circ1 off
+				buffer[4] = regs[0x21] &= 0xfc; // Circ3 & Circ8 off
+				buffer[5] = regs[0x22] &= 0xfc; // Circ2 & Circ6 off
+				buffer[6] = regs[0x23] &= 0xfc; // Circ4 & Circ7 off
+				buffer[7] = regs[0x24] &= 0xfc; // Circ0 & Circ5 off
+				res |= nuvotonWriteCommand(buffer, 9, 0);
 			}
-			dprintk(1, "Stopping %s for icon #%d\n", __func__, icon);
-			buffer[3] = regs[0x20] &= 0xfe; // Circ1 off
-			buffer[4] = regs[0x21] &= 0xfc; // Circ3 & Circ8 off
-			buffer[5] = regs[0x22] &= 0xfc; // Circ2 & Circ6 off
-			buffer[6] = regs[0x23] &= 0xfc; // Circ4 & Circ7 off
-			buffer[7] = regs[0x24] &= 0xfc; // Circ0 & Circ5 off
-			res |= nuvotonWriteCommand(buffer, 9, 0);
 		}
 	}
 	dprintk(1, "%s for icon #%d stopped\n", __func__, icon);
