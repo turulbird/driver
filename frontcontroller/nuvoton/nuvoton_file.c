@@ -145,6 +145,7 @@ struct saved_data_s
 #if !defined(HS7110)
 	int icon_state[ICON_MAX + 2];
 	int brightness;
+	int display_on;
 #endif
 #if defined(HS7119) || defined(HS7810A) || defined(HS7819)
 	unsigned char buf[7];
@@ -610,22 +611,22 @@ struct iconToInternal
 	{ "ICON_REC"      , ICON_REC      , {0x1c, 0x3e, 0x3e, 0x3e, 0x1c}}, // 02
 	{ "ICON_TIMESHIFT", ICON_TIMESHIFT, {0x01, 0x3f, 0x01, 0x2c, 0x34}}, // 03
 	{ "ICON_TIMER"    , ICON_TIMER    , {0x3e, 0x49, 0x4f, 0x41, 0x3e}}, // 04
-	{ "ICON_HD"       , ICON_HD       , {0x3f, 0x08, 0x3f, 0x21, 0x1e}}, // 05
+	{ "ICON_HD"       , ICON_HD       , {0x3e, 0x08, 0x3e, 0x22, 0x1c}}, // 05
 	{ "ICON_USB"      , ICON_USB      , {0x10, 0x18, 0x34, 0x54, 0x50}}, // 06
 	{ "ICON_SCRAMBLED", ICON_SCRAMBLED, {0x78, 0x4c, 0x4a, 0x4c, 0x78}}, // 07
-	{ "ICON_DOLBY"    , ICON_DOLBY    , {0x7c, 0x44, 0x38, 0x44, 0x7c}}, // 08
+	{ "ICON_DOLBY"    , ICON_DOLBY    , {0x3e, 0x22, 0x1c, 0x22, 0x3e}}, // 08
 	{ "ICON_MUTE"     , ICON_MUTE     , {0x1e, 0x12, 0x1e, 0x21, 0x3f}}, // 09
 	{ "ICON_TUNER1"   , ICON_TUNER1   , {0x01, 0x3f, 0x01, 0x04, 0x3e}}, // 10
 	{ "ICON_TUNER2"   , ICON_TUNER2   , {0x01, 0x3f, 0x01, 0x34, 0x2c}}, // 11
 	{ "ICON_MP3"      , ICON_MP3      , {0x77, 0x37, 0x00, 0x49, 0x77}}, // 12
-	{ "ICON_REPEAT"   , ICON_REPEAT   , {0x28, 0x68, 0x28, 0x2c, 0x28}}, // 13
+	{ "ICON_REPEAT"   , ICON_REPEAT   , {0x14, 0x34, 0x14, 0x16, 0x14}}, // 13
 	{ "ICON_PLAY"     , ICON_PLAY     , {0x00, 0x7f, 0x3e, 0x1c, 0x08}}, // 14
-	{ "ICON_STOP"     , ICON_STOP     , {0x78, 0x78, 0x78, 0x78, 0x78}}, // 15
-	{ "ICON_PAUSE"    , ICON_PAUSE    , {0x7c, 0x7c, 0x00, 0x7c, 0x7c}}, // 16
-	{ "ICON_REWIND"   , ICON_REWIND   , {0x10, 0x38, 0x10, 0x38, 0x00}}, // 17
-	{ "ICON_FF"       , ICON_FF       , {0x00, 0x38, 0x10, 0x38, 0x10}}, // 18
-	{ "ICON_STEP_BACK", ICON_STEP_BACK, {0x10, 0x38, 0x7c, 0x00, 0x7c}}, // 19
-	{ "ICON_STEP_FWD" , ICON_STEP_FWD , {0x7c, 0x00, 0x7c, 0x38, 0x10}}, // 20 
+	{ "ICON_STOP"     , ICON_STOP     , {0x3C, 0x3C, 0x3C, 0x3C, 0x3C}}, // 15
+	{ "ICON_PAUSE"    , ICON_PAUSE    , {0x3e, 0x3e, 0x00, 0x3e, 0x3e}}, // 16
+	{ "ICON_REWIND"   , ICON_REWIND   , {0x08, 0x1c, 0x08, 0x1c, 0x00}}, // 17
+	{ "ICON_FF"       , ICON_FF       , {0x00, 0x1c, 0x08, 0x1c, 0x08}}, // 18
+	{ "ICON_STEP_BACK", ICON_STEP_BACK, {0x08, 0x1c, 0x3e, 0x00, 0x3e}}, // 19
+	{ "ICON_STEP_FWD" , ICON_STEP_FWD , {0x3e, 0x00, 0x3e, 0x1c, 0x08}}, // 20 
 	{ "ICON_TV"       , ICON_TV       , {0x01, 0x3f, 0x1d, 0x20, 0x1c}}, // 21
 	{ "ICON_RADIO"    , ICON_RADIO    , {0x78, 0x4a, 0x4c, 0x4a, 0x79}}  // 22
 };
@@ -811,8 +812,10 @@ int nuvotonSetIcon(int which, int on)
 			buffer[3] = regs[registernumber];
 			buffer[4] = EOP;
 
-			res = nuvotonWriteCommand(buffer, 5, 0);
-
+			if (lastdata.display_on)
+			{
+				res = nuvotonWriteCommand(buffer, 5, 0);
+			}
 			if (which == ICON_TIMESHIFT) // handle SHIFT icon
 			{
 				regs[0x32] = ((on) ? regs[0x32] | 0x02 : regs[0x32] & 0xfd);
@@ -822,7 +825,10 @@ int nuvotonSetIcon(int which, int on)
 				buffer[3] = regs[0x32];
 				buffer[4] = EOP;
 
-				res |= nuvotonWriteCommand(buffer, 5, 0);
+				if (lastdata.display_on)
+				{
+					res |= nuvotonWriteCommand(buffer, 5, 0);
+				}
 			}
 			break;
 		}
@@ -844,7 +850,10 @@ int nuvotonSetIcon(int which, int on)
 			buffer[3] = regs[registernumber];
 			buffer[4] = EOP;
 
-			res = nuvotonWriteCommand(buffer, 5, 0);
+			if (lastdata.display_on)
+			{
+				res = nuvotonWriteCommand(buffer, 5, 0);
+			}
 			msleep(1);
 			break;
 		}
@@ -874,8 +883,11 @@ int nuvotonSetIcon(int which, int on)
 			buffer[7] = regs[0x24];
 			buffer[8] = EOP;
 
-			res = nuvotonWriteCommand(buffer, 9, 0);
-			which ++;
+			if (lastdata.display_on)
+			{
+				res = nuvotonWriteCommand(buffer, 9, 0);
+			}
+		which ++;
 			break;
 		}
 	}
@@ -899,7 +911,7 @@ int nuvotonSetIcon(int which, int on)
 		printk("Icon number %d out of range (%d-%d)\n", which, ICON_MIN + 1, ICON_MAX - 1);
 		return -EINVAL;
 	}
-	dprintk(5, "Set icon %s (number %d) to %d\n", nuvotonIcons[which - 1].name, which, on);
+	dprintk(10, "Set icon %s (number %d) to %d\n", nuvotonIcons[which - 1].name, which, on);
 
 	which--;
 	memset(buffer, 0, 9);  //clear buffer
@@ -910,7 +922,7 @@ int nuvotonSetIcon(int which, int on)
 	}
 
 	// construct front processor command to set icon data
-	if (on)
+	if (on && lastdata.display_on)
 	{
 		buffer[0] = SOP;
 		buffer[1] = cCommandSetIconII;
@@ -931,11 +943,14 @@ int nuvotonSetIcon(int which, int on)
 	buffer[2] = 0x10;
 	buffer[3] = regs[0x10];
 	buffer[4] = EOP;
-	res |= nuvotonWriteCommand(buffer, 5, 0);
-
+	if (lastdata.display_on)
+	{
+		res |= nuvotonWriteCommand(buffer, 5, 0);
+	}
+	memset(lastdata.icon_state, 0, ICON_MAX + 2);  // flag all icons off
 	if (res == 0)
 	{
-		lastdata.icon_state[which + 1] = on;
+		lastdata.icon_state[which + 1] = on; // and this one on
 	}
 	dprintk(100, "%s <\n", __func__);
 	return res;
@@ -981,7 +996,7 @@ int nuvotonSetIcon(int which, int on)
 		}
 	}
 #endif
-	printk("Set icon #%d to %d\n", which, on);
+	dprintk(10, "Set icon #%d to %d\n", which, on);
 	memcpy(&cmd_buf, lastdata.buf, 7);
 	res = nuvotonWriteCommand(cmd_buf, 7, 0);
 
@@ -1100,6 +1115,7 @@ int nuvotonSetBrightness(int level)
 		printk("VFD brightness level %d out of range (0-%d)\n", level, 7);
 		return -EINVAL;
 	}
+	dprintk(10, "Set VFD brightness level to %d\n", level);
 
 	memset(buffer, 0, 5);
 
@@ -1127,9 +1143,10 @@ int nuvotonSetBrightness(int level)
 	dprintk(100, "%s > %d\n", __func__, level);
 	if (level < 0 || level > 7)
 	{
-		printk("VFD brightness level %d out of range (0-%d)\n", level, 7);
+		printk("LED brightness level %d out of range (0-%d)\n", level, 7);
 		return -EINVAL;
 	}
+	dprintk(10, "Set LED brightness level to %d\n", level);
 
 	switch (level) // adjust level 0..7 to 0..10
 	{
@@ -1173,6 +1190,7 @@ int nuvotonSetBrightness(int level)
 int nuvotonSetBrightness(int level)
 {
 	dprintk(100, "%s >\n", __func__);
+	dprintk(10, "Set LED brightness level not supported.\n");
 	dprintk(100, "%s <\n", __func__);
 	return -EFAULT;
 }
@@ -1430,7 +1448,7 @@ int nuvotonSetDisplayOnOff(char level)
 	res = nuvotonWriteCommand(buffer, 5, 0);
 #elif defined(FORTIS_HDBOX) \
  || defined(ATEVIO7500)
-// TODO: save/restore icon state, spinner
+// TODO: save/restore spinner state
 	int  i;
 	char buf[128];
 	int  len;
@@ -1446,26 +1464,31 @@ int nuvotonSetDisplayOnOff(char level)
 		lastdata.length = len;
 		memcpy(&lastdata.data, buf, lastdata.length);
 		
-#if defined(FORTIS_HDBOX)
 		for (i = ICON_MIN + 1; i < ICON_MAX; i++)
 		{
 				ibuf[i] = lastdata.icon_state[i];
 				res |= nuvotonSetIcon(i, 0);
 				lastdata.icon_state[i] = ibuf[i];
 		}
-//		res |= nuvotonSetIcon(ICON_SPINNER, 0);
-#else
-		res |= nuvotonSetIcon(1, 0);
+#if defined(FORTIS_HDBOX)
+		icon_state[ICON_SPINNER].state = 0;
 #endif
+		lastdata.display_on = 0; 
 	}
 	else
 	{
+		lastdata.display_on = 1; 
 		res |= nuvotonWriteString(lastdata.data, lastdata.length);
 		for (i = ICON_MIN + 1; i < ICON_MAX; i++)
 		{
+			if (lastdata.icon_state[i] == 1)
+			{
 				res |= nuvotonSetIcon(i, lastdata.icon_state[i]);
+			}
 		}
-//		res |= nuvotonSetIcon(ICON_SPINNER, lastdata.icon_state[ICON_SPINNER]);
+#if defined(FORTIS_HDBOX)
+		icon_state[ICON_SPINNER].state = lastdata.icon_state[ICON_SPINNER];
+#endif
 	}
 #elif defined(HS7810A) \
  || defined(HS7119) \
@@ -1573,7 +1596,7 @@ int nuvotonGetVersion(int *version)
 	*version = -1;
 #endif
 #endif
-	printk("FP version is %d.%02d\n", *version / 100, *version % 100);
+	printk("Bootloader version is %d.%02d\n", *version / 100, *version % 100);
 
 	dprintk(100, "%s <\n", __func__);
 	return res;
@@ -1943,8 +1966,10 @@ int nuvotonWriteString(unsigned char *aBuf, int len)
 	bBuf[15] = 0x20; // Audioniek: this character is not on the display!
 	bBuf[16] = EOP;
 
-	res = nuvotonWriteCommand(bBuf, 17, 0);
-
+	if (lastdata.display_on)
+	{
+		res = nuvotonWriteCommand(bBuf, 17, 0);
+	}
 	dprintk(100, "%s <\n", __func__);
 	return res;
 }
@@ -2168,7 +2193,9 @@ int nuvoton_init_func(void)
 
 	dprintk(100, "%s >\n", __func__);
 
+	lastdata.display_on = 1;
 	sema_init(&write_sem, 1);
+
 #if defined(OCTAGON1008)
 	printk("Fortis HS9510");
 #elif defined(FORTIS_HDBOX)
@@ -2563,8 +2590,8 @@ static int NUVOTONdev_ioctl(struct inode *Inode, struct file *File, unsigned int
 #if !defined(HS7110)
 	int icon_nr, on;
 #endif
-#if !defined(ATEVIO7500) \
- && !defined(HS7110)
+#if !defined(HS7110) \
+ && !defined(ATEVIO7500)
 	int i;
 #endif
 
@@ -2595,6 +2622,7 @@ static int NUVOTONdev_ioctl(struct inode *Inode, struct file *File, unsigned int
 #if !defined(HS7110)
 			if (mode == 0)
 			{
+				dprintk(5, "%s Set brightness to %d (mode 0)\n", __func__, data->start_address);
 				res = nuvotonSetBrightness(data->start_address);
 			}
 			else
@@ -2607,6 +2635,7 @@ static int NUVOTONdev_ioctl(struct inode *Inode, struct file *File, unsigned int
 				{
 					nuvoton->u.brightness.level = 7;
 				}
+				dprintk(5, "%s Set brightness to %d (mode 1)\n", __func__, nuvoton->u.brightness.level);
 				res = nuvotonSetBrightness(nuvoton->u.brightness.level);
 			}
 #endif //HS7110
@@ -2672,6 +2701,7 @@ static int NUVOTONdev_ioctl(struct inode *Inode, struct file *File, unsigned int
 					case ICON_SPINNER:
 					{
 						icon_state[ICON_SPINNER].state = on;
+						lastdata.icon_state[ICON_SPINNER] = on;
 						if (on)
 						{
 							if (!icon_state[icon_nr].icon_task || on < 1)
@@ -2714,6 +2744,7 @@ static int NUVOTONdev_ioctl(struct inode *Inode, struct file *File, unsigned int
 				// compatible mode
 				dprintk(5, "%s Set icon %2d to %d (mode 1)\n", __func__, nuvoton->u.icon.icon_nr, nuvoton->u.icon.on);
 
+#if defined(FORTIS_HDBOX)
 				if (nuvoton->u.icon.icon_nr == ICON_MAX)
 				{
 					for (i = ICON_MIN + 1; i < ICON_MAX; i++)
@@ -2721,7 +2752,6 @@ static int NUVOTONdev_ioctl(struct inode *Inode, struct file *File, unsigned int
 						res = nuvotonSetIcon(i, nuvoton->u.icon.on);
 					}
 				}
-#if defined(FORTIS_HDBOX)
 				else if (nuvoton->u.icon.icon_nr == ICON_SPINNER)
 				{
 					icon_state[nuvoton->u.icon.icon_nr].state = nuvoton->u.icon.on;
@@ -2746,11 +2776,13 @@ static int NUVOTONdev_ioctl(struct inode *Inode, struct file *File, unsigned int
 						}
 					}
 				}
-#endif
 				else
 				{
 					res = nuvotonSetIcon(nuvoton->u.icon.icon_nr, nuvoton->u.icon.on);
 				}
+#else //ATEVIO7500
+				res = nuvotonSetIcon(nuvoton->u.icon.icon_nr, nuvoton->u.icon.on);
+#endif
 			}
 #elif defined(OCTAGON1008) \
  || defined(HS7420) \
