@@ -73,6 +73,9 @@
  * 20170121 Audioniek       Brightness control for LED models added.
  * 20170123 Audioniek       nuvotonSetDisplayOnOff on FS9000/9200 fixed.
  * 20170123 Audioniek       Typos and small errors removed.
+ * 20170125 Audioniek       nuvotonSetDisplayOnOff on HS8200 fixed.
+ * 20170126 Audioniek       nuvotonSetDisplayOnOff on HS7119/7420/7429/
+ *                          7810A/7819 fixed.
  *
  *****************************************************************************/
 
@@ -703,7 +706,7 @@ int nuvotonSetIcon(int which, int on)
 	dprintk(5, "Set icon %s (number %d) to %d\n", nuvotonIcons[which].name, which + 1, on);
 
 
-	memset(buffer, 0, 7);
+	memset(buffer, 0, sizeof(buffer));
 
 	buffer[0] = SOP;
 	buffer[1] = cCommandSetVFD;
@@ -742,6 +745,10 @@ int nuvotonSetIcon(int which, int on)
 
 	res = nuvotonWriteCommand(buffer, 7, 0);
 
+	if (res == 0)
+	{
+		lastdata.icon_state[which + 1] = on;
+	}
 	dprintk(100, "%s <\n", __func__);
 	return res;
 }
@@ -804,7 +811,7 @@ int nuvotonSetIcon(int which, int on)
 
 			regs[registernumber] = ((on) ? regs[registernumber] | 0x02 : regs[registernumber] & 0xfd);
 
-			memset(buffer, 0, 5);  // clear buffer
+			memset(buffer, 0, sizeof(buffer));  // clear buffer
 			// construct front processor command
 			buffer[0] = SOP;
 			buffer[1] = cCommandSetIconI;
@@ -842,7 +849,7 @@ int nuvotonSetIcon(int which, int on)
 
 			regs[registernumber] = ((on) ? regs[registernumber] | 0x01 : regs[registernumber] & 0xfe);
 
-			memset(buffer, 0, 5);  // clear buffer
+			memset(buffer, 0, sizeof(buffer)); // clear buffer
 			// construct front processor command
 			buffer[0] = SOP;
 			buffer[1] = cCommandSetIconI;
@@ -871,7 +878,7 @@ int nuvotonSetIcon(int which, int on)
 				regs[registernumber] = ((on) ? regs[registernumber] | nuvotonIcons[which].bit_mask2 : regs[registernumber] & ~nuvotonIcons[which].bit_mask2);
 			}
 
-			memset(buffer, 0, 9);  //clear buffer
+			memset(buffer, 0, sizeof(buffer));  //clear buffer
 			// construct front processor command
 			buffer[0] = SOP;
 			buffer[1] = cCommandSetIconII;
@@ -887,10 +894,11 @@ int nuvotonSetIcon(int which, int on)
 			{
 				res = nuvotonWriteCommand(buffer, 9, 0);
 			}
-		which ++;
+			which ++;
 			break;
 		}
 	}
+	// update lastdata state
 	if (res == 0)
 	{
 		lastdata.icon_state[which] = on;
@@ -913,15 +921,13 @@ int nuvotonSetIcon(int which, int on)
 	}
 	dprintk(10, "Set icon %s (number %d) to %d\n", nuvotonIcons[which - 1].name, which, on);
 
-	which--;
-	memset(buffer, 0, 9);  //clear buffer
+	memset(buffer, 0, sizeof(buffer)); //clear buffer
 
 	for (i = 0; i < 5; i++)
 	{
-		regs[0x27 + i] = ((on) ? nuvotonIcons[which].pixeldata[i] : 0);
+		regs[0x27 + i] = ((on) ? nuvotonIcons[which - 1].pixeldata[i] : 0);
 	}
 
-	// construct front processor command to set icon data
 	if (on && lastdata.display_on)
 	{
 		buffer[0] = SOP;
@@ -937,20 +943,25 @@ int nuvotonSetIcon(int which, int on)
 	}
 
 	regs[0x10] = ((on) ? 7 : 0);
-	// construct front processor command to switch icon on / off
 	buffer[0] = SOP;
 	buffer[1] = cCommandSetIconI;
 	buffer[2] = 0x10;
 	buffer[3] = regs[0x10];
 	buffer[4] = EOP;
+
 	if (lastdata.display_on)
 	{
 		res |= nuvotonWriteCommand(buffer, 5, 0);
 	}
-	memset(lastdata.icon_state, 0, ICON_MAX + 2);  // flag all icons off
-	if (res == 0)
+	// update lastdata state
+	if (res == 0 && on) // if switched on
 	{
-		lastdata.icon_state[which + 1] = on; // and this one on
+		memset(lastdata.icon_state, 0, sizeof(lastdata.icon_state)); // flag all other icons off
+		lastdata.icon_state[which] = 1; // and this one on
+	}
+	else
+	{
+		lastdata.icon_state[which] = 0; // flag this one off
 	}
 	dprintk(100, "%s <\n", __func__);
 	return res;
@@ -971,7 +982,7 @@ int nuvotonSetIcon(int which, int on)
 
 #if defined(HS7119)
 	lastdata.buf[3] = ((on) ? lastdata.buf[3] | 0x80 : lastdata.buf[3] & 0x7f);
-#else
+#else // HS7810A & HS7819
 	switch (which)
 	{
 		case ICON_COLON:
@@ -1076,7 +1087,7 @@ int nuvotonSetLED(int which, int level)
 		return -EINVAL;
 	}
 
-	memset(buffer, 0, 6);
+	memset(buffer, 0, sizeof(buffer));
 
 	buffer[0] = SOP;
 	buffer[1] = cCommandSetLed;
@@ -1117,7 +1128,7 @@ int nuvotonSetBrightness(int level)
 	}
 	dprintk(10, "Set VFD brightness level to %d\n", level);
 
-	memset(buffer, 0, 5);
+	memset(buffer, 0, sizeof(buffer));
 
 	buffer[0] = SOP;
 	buffer[1] = cCommandSetVFDBrightness;
@@ -1170,7 +1181,7 @@ int nuvotonSetBrightness(int level)
 			break;
 		}
 	}
-	memset(buffer, 0, 6);
+	memset(buffer, 0, sizeof(buffer));
 
 	buffer[0] = SOP;
 	buffer[1] = cCommandSetLEDBrightness;
@@ -1206,16 +1217,16 @@ EXPORT_SYMBOL(nuvotonSetBrightness);
  */
 int nuvotonSetStandby(char *wtime)
 {
-	char     buffer[8];
-	char     power_off[] = {SOP, cCommandPowerOffReplay, 0x01, EOP};
-	int      res = 0;
+	char buffer[8];
+	char power_off[] = {SOP, cCommandPowerOffReplay, 0x01, EOP};
+	int  res = 0;
 
 	dprintk(100, "%s >\n", __func__);
 
 //	res = nuvotonWriteString("Bye bye ...", strlen("Bye bye ..."));
 
 	/* set wakeup time */
-	memset(buffer, 0, 8);
+	memset(buffer, 0, sizeof(buffer));
 
 	buffer[0] = SOP;
 	buffer[1] = cCommandSetWakeupMJD;
@@ -1244,7 +1255,7 @@ int nuvotonSetTime(char *time)
 
 	dprintk(100, "%s >\n", __func__);
 
-	memset(buffer, 0, 8);
+	memset(buffer, 0, sizeof(buffer));
 
 	buffer[0] = SOP;
 	buffer[1] = cCommandSetMJD;
@@ -1271,7 +1282,7 @@ int nuvotonGetTime(char *time)
 
 	dprintk(100, "%s >\n", __func__);
 
-	memset(buffer, 0, 3);
+	memset(buffer, 0, sizeof(buffer));
 
 	buffer[0] = SOP;
 	buffer[1] = cCommandGetMJD;
@@ -1283,7 +1294,7 @@ int nuvotonGetTime(char *time)
 	if (errorOccured == 1)
 	{
 		/* error */
-		memset(ioctl_data, 0, 8);
+		memset(ioctl_data, 0, sizeof(ioctl_data));
 		printk("[nuvoton] Error receiving time.\n");
 		res = -ETIMEDOUT;
 	}
@@ -1315,7 +1326,7 @@ int nuvotonSetWakeUpTime(char *wtime)
 	dprintk(100, "%s >\n", __func__);
 
 	/* set wakeup time */
-	memset(buffer, 0, 7);
+	memset(buffer, 0, sizeof(buffer));
 
 	buffer[0] = SOP;
 	buffer[1] = cCommandSetWakeupMJD;
@@ -1363,7 +1374,7 @@ int nuvotonGetWakeUpMode(int *wakeup_mode)
 
 	dprintk(100, "%s >\n", __func__);
 
-	memset(buffer, 0, 3);
+	memset(buffer, 0, sizeof(buffer));
 
 	buffer[0] = SOP;
 	buffer[1] = cCommandGetPowerOnSrc;
@@ -1375,7 +1386,7 @@ int nuvotonGetWakeUpMode(int *wakeup_mode)
 	if (errorOccured == 1)
 	{
 		/* error */
-		memset(ioctl_data, 0, 8);
+		memset(ioctl_data, 0, sizeof(ioctl_data));
 		*wakeup_mode = -1;
 		printk("Error receiving wake up mode.\n");
 		res = -ETIMEDOUT;
@@ -1426,33 +1437,16 @@ int nuvotonSetTimeFormat(char format)
 int nuvotonSetDisplayOnOff(char level)
 {
 	int  res = 0;
-#if defined(OCTAGON1008) \
+#if defined(FORTIS_HDBOX) \
+ || defined(OCTAGON1008) \
+ || defined(ATEVIO7500) \
  || defined(HS7420) \
  || defined(HS7429)
-
-	char buffer[5];
-
-	dprintk(100, "%s >\n", __func__);
-	if (level != 0)
-	{
-		level = lastdata.brightness;
-	}
-
-	memset(buffer, 0, 5);
-	buffer[0] = SOP;
-	buffer[1] = cCommandSetVFDBrightness;
-	buffer[2] = 0x00;
-	buffer[3] = level;
-	buffer[4] = EOP;
-
-	res = nuvotonWriteCommand(buffer, 5, 0);
-#elif defined(FORTIS_HDBOX) \
- || defined(ATEVIO7500)
-// TODO: save/restore spinner state
+// TODO: save/restore spinner state on FS9000/9200
 	int  i;
 	char buf[128];
 	int  len;
-	char ibuf[ICON_MAX];
+	int  ibuf[ICON_MAX];
 
 	dprintk(100, "%s >\n", __func__);
 
@@ -1483,7 +1477,7 @@ int nuvotonSetDisplayOnOff(char level)
 		{
 			if (lastdata.icon_state[i] == 1)
 			{
-				res |= nuvotonSetIcon(i, lastdata.icon_state[i]);
+				res |= nuvotonSetIcon(i, 1);
 			}
 		}
 #if defined(FORTIS_HDBOX)
@@ -1501,7 +1495,7 @@ int nuvotonSetDisplayOnOff(char level)
 		level = lastdata.brightness;
 	}
 
-	memset(buffer, 0, 6);
+	memset(buffer, 0, sizeof(buffer));
 	buffer[0] = SOP;
 	buffer[1] = cCommandSetLEDBrightness;
 	buffer[2] = 0x03;
@@ -1618,8 +1612,8 @@ int nuvotonVfdTest(char *data)
 
 	dprintk(100, "%s >\n", __func__);
 
-	memset(buffer, 0, 18);
-	memset(ioctl_data, 0, 9);
+	memset(buffer, 0, sizeof(buffer));
+	memset(ioctl_data, 0, sizeof(ioctl_data));
 
 	buffer[0] = SOP; // add SOP and EOP
 	memcpy(buffer + 1, data + 1, data[0]);
@@ -1649,7 +1643,7 @@ int nuvotonVfdTest(char *data)
 	{
 		if (dataflag == 0)
 		{
-			memset(data, 0, 11);
+			memset(data, 0, sizeof(data));
 		}
 		else
 		{
@@ -1683,8 +1677,8 @@ int nuvotonWriteString(unsigned char *aBuf, int len)
 
 	dprintk(100, "%s > %d\n", __func__, len);
 
-	memset(cmd_buf, 0, 7);
-	memset(bBuf, 0, 5);
+	memset(cmd_buf, 0, sizeof(cmd_buf));
+	memset(bBuf, 0, sizeof(bBuf));
 	buflen = len;
 	bBuf[0] = aBuf[0];
 	bBuf[1] = aBuf[1];
@@ -1769,7 +1763,7 @@ int nuvotonWriteString(unsigned char *aBuf, int len)
 
 	dprintk(100, "%s > %d\n", __func__, len);
 
-	memset(cmd_buf, 0, 7);
+	memset(cmd_buf, 0, sizeof(cmd_buf));
 	buflen = len;
 	bBuf[0] = aBuf[0];
 	bBuf[1] = aBuf[1];
@@ -1869,7 +1863,7 @@ int nuvotonWriteString(unsigned char *aBuf, int len)
 
 	dprintk(100, "%s >\n", __func__);
 
-	memset(bBuf, ' ', 128);
+	memset(bBuf, ' ', sizeof(bBuf));
 
 	/* start of command write */
 	bBuf[0] = SOP;
@@ -2194,6 +2188,7 @@ int nuvoton_init_func(void)
 	dprintk(100, "%s >\n", __func__);
 
 	lastdata.display_on = 1;
+	lastdata.brightness = 7;
 	sema_init(&write_sem, 1);
 
 #if defined(OCTAGON1008)
@@ -2302,7 +2297,7 @@ static void clear_display(void)
 
 	dprintk(100, "%s >\n", __func__);
 
-	memset(bBuf, ' ', 12);
+	memset(bBuf, ' ', sizeof(bBuf));
 	res = nuvotonWriteString(bBuf, DISP_SIZE);
 }
 
@@ -2472,7 +2467,7 @@ static ssize_t NUVOTONdev_read(struct file *filp, char __user *buff, size_t len,
 		int size = 0;
 		unsigned char data[20];
 
-		memset(data, 0, 20);
+		memset(data, 0, sizeof(data));
 
 		getRCData(data, &size);
 
