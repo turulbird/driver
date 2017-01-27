@@ -38,9 +38,10 @@ extern short paramDebug;
 #define TAGDEBUG "[nuvoton] "
 
 #ifndef dprintk
-#define dprintk(level, x...) do { \
-		if ((paramDebug) && (paramDebug >= level)) printk(TAGDEBUG x); \
-	} while (0)
+#define dprintk(level, x...) do \
+{ \
+	if ((paramDebug) && (paramDebug >= level)) printk(TAGDEBUG x); \
+} while (0)
 #endif
 
 /****************************************************************************************/
@@ -100,92 +101,18 @@ extern tFrontPanelOpen FrontPanelOpen[LASTMINOR];
 #define VFDGETWAKEUPTIME      0xc0425b03 // added by audioniek, unused, used by other boxes
 #define VFDSETTIMEFORMAT      0xc0425b04 // added by audioniek
 
-struct set_test_s
-{
-	char data[19];
-};
-
-struct set_brightness_s
-{
-	int level;
-};
-
-struct set_pwrled_s
-{
-	int level;
-};
-
-struct set_icon_s
-{
-	int icon_nr;
-	int on;
-};
-
-struct set_led_s
-{
-	int led_nr;
-	int level;
-};
-
-struct set_light_s
-{
-	int onoff;
-};
-
-/* time must be given as follows:
- * time[0] & time[1] = MJD
- * time[2] = hour
- * time[3] = min
- * time[4] = sec
- */
-struct set_standby_s
-{
-	char time[5];
-};
-
-struct set_time_s
-{
-	char time[5];
-};
-
-struct set_timeformat_s
-{
-	char format;
-};
-
-/* This will set the mode temporarily (for one ioctl)
- * to the desired mode. Currently the "normal" mode
- * is the compatible vfd mode
- */
-struct set_mode_s
-{
-	int compat; /* 0 = compatibility mode to vfd driver; 1 = nuvoton mode */
-};
-
-struct nuvoton_ioctl_data
-{
-	union
-	{
-		struct set_test_s test;
-		struct set_icon_s icon;
-		struct set_led_s led;
-		struct set_brightness_s brightness;
-		struct set_pwrled_s pwrled;
-		struct set_light_s light;
-		struct set_mode_s mode;
-		struct set_standby_s standby;
-		struct set_time_s time;
-		struct set_timeformat_s timeformat;
-	} u;
-};
-
-struct vfd_ioctl_data
-{
-	unsigned char start_address;
-	unsigned char data[64];
-	unsigned char length;
-};
-
+#if defined(FORTIS_HDBOX) \
+ || defined(OCTAGON1008)
+#define LOADER_VERSION 0x000000f4 //offset to 32 bit word in mtd0 that holds the loader version
+#elif defined(ATEVIO7500) \
+ ||  defined(HS7110) \
+ ||  defined(HS7420) \
+ ||  defined(HS7810A) \
+ ||  defined(HS7119) \
+ ||  defined(HS7429) \
+ ||  defined(HS7819)
+#define LOADER_VERSION 0x00000434
+#endif
 /***************************************************************************
  *
  * Icon definitions.
@@ -435,6 +362,107 @@ enum
 
 /****************************************************************************************/
 
+struct set_test_s
+{
+	char data[19];
+};
+
+struct set_brightness_s
+{
+	int level;
+};
+
+struct set_pwrled_s
+{
+	int level;
+};
+
+struct set_icon_s
+{
+	int icon_nr;
+	int on;
+};
+
+struct set_led_s
+{
+	int led_nr;
+	int level;
+};
+
+struct set_light_s
+{
+	int onoff;
+};
+
+/* time must be given as follows:
+ * time[0] & time[1] = MJD
+ * time[2] = hour
+ * time[3] = min
+ * time[4] = sec
+ */
+struct set_standby_s
+{
+	char time[5];
+};
+
+struct set_time_s
+{
+	char time[5];
+};
+
+struct set_timeformat_s
+{
+	char format;
+};
+
+/* This will set the mode temporarily (for one ioctl)
+ * to the desired mode. Currently the "normal" mode
+ * is the compatible vfd mode
+ */
+struct set_mode_s
+{
+	int compat; /* 0 = compatibility mode to vfd driver; 1 = nuvoton mode */
+};
+
+struct nuvoton_ioctl_data
+{
+	union
+	{
+		struct set_test_s test;
+		struct set_icon_s icon;
+		struct set_led_s led;
+		struct set_brightness_s brightness;
+		struct set_pwrled_s pwrled;
+		struct set_light_s light;
+		struct set_mode_s mode;
+		struct set_standby_s standby;
+		struct set_time_s time;
+		struct set_timeformat_s timeformat;
+	} u;
+};
+
+struct vfd_ioctl_data
+{
+	unsigned char start_address;
+	unsigned char data[64];
+	unsigned char length;
+};
+
+struct saved_data_s
+{
+	int length;
+	char data[128];
+#if !defined(HS7110)
+	int icon_state[ICON_MAX + 2];
+	int brightness;
+	int display_on;
+#endif
+#if defined(HS7119) || defined(HS7810A) || defined(HS7819)
+	unsigned char buf[7];
+#endif
+};
+extern struct saved_data_s lastdata;
+
 #if defined(OCTAGON1008) \
  || defined(HS7420) \
  || defined(HS7429)
@@ -473,3 +501,4 @@ extern int errorOccured;
 extern struct file_operations vfd_fops;
 
 #endif //_123_nuvoton
+// vim:ts=4

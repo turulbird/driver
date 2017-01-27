@@ -106,11 +106,10 @@
 #define EVENT_ANSWER_GETTIME       0x15
 #define EVENT_ANSWER_WAKEUP_REASON 0x81
 #define EVENT_ANSWER_GETIRCODE     0xa5
-#define EVENT_ANSWER_FRONTINFO     0xd4
-#define EVENT_ANSWER_GETIRCODE     0xa5 /* unused */
 #define EVENT_ANSWER_GETPORT       0xb3 /* unused */
-#define EVENT_ANSWER_E9            0xe9 /* unused */
-#define EVENT_ANSWER_F9            0xf9 /* unused */
+#define EVENT_ANSWER_FRONTINFO     0xd4
+#define EVENT_ANSWER_E9            0xe9
+#define EVENT_ANSWER_F9            0xf9
 
 #define DATA_BTN_EVENT             2
 
@@ -377,7 +376,7 @@ void dumpValues(void)
 
 static void processResponse(void)
 {
-	int len, i;
+	int len, sizelen, i;
 
 	dumpData();
 	len = getLen(-1);
@@ -470,96 +469,41 @@ static void processResponse(void)
 			}
 			case EVENT_ANSWER_GETTIME:
 			{
-				len = getLen(cGetTimeSize);
-				if (len == 0)
-				{
-					goto out_switch;
-				}
-				if (len < cGetTimeSize)
-				{
-					goto out_switch;
-				}
-				handleCopyData(len);
-
-				dprintk(20, "Pos. response received\n");
-				errorOccured = 0;
-				ack_sem_up();
-
-				RCVBufferEnd = (RCVBufferEnd + cGetTimeSize) % BUFFERSIZE;
-				break;
+				sizelen = cGetTimeSize;
+				goto rsp_common;
 			}
 			case EVENT_ANSWER_WAKEUP_REASON:
 			{
-				len = getLen(cGetWakeupReasonSize);
-
-				if (len == 0)
-				{
-					goto out_switch;
-				}
-
-				if (len < cGetWakeupReasonSize)
-				{
-					goto out_switch;
-				}
-				handleCopyData(len);
-				dprintk(20, "Pos. response received\n");
-				errorOccured = 0;
-				ack_sem_up();
-				RCVBufferEnd = (RCVBufferEnd + cGetWakeupReasonSize) % BUFFERSIZE;
-				break;
+				sizelen = cGetWakeupReasonSize;
+				goto rsp_common;
 			}
 			case EVENT_ANSWER_FRONTINFO:
 			{
-
-				len = getLen(cGetFrontInfoSize);
-
-				if (len == 0)
-				{
-					goto out_switch;
-				}
-
-				if (len < cGetFrontInfoSize)
-				{
-					goto out_switch;
-				}
-				handleCopyData(len);
-				dprintk(20, "Pos. response received\n");
-				errorOccured = 0;
-				ack_sem_up();
-				RCVBufferEnd = (RCVBufferEnd + cGetFrontInfoSize) % BUFFERSIZE;
-				break;
+				sizelen = cGetFrontInfoSize;
+				goto rsp_common;
 			}
-#if 0
+#if 1
 			case EVENT_ANSWER_E9:
 			{
-				len = getLen(cGetE9Size);
-
-				if (len == 0)
-				{
-					goto out_switch;
-				}
-
-				if (len < cGetE9Size)
-				{
-					goto out_switch;
-				}
-				handleCopyData(len);
-				dprintk(20, "Pos. response received\n");
-				errorOccured = 0;
-				ack_sem_up();
-				RCVBufferEnd = (RCVBufferEnd + cGetE9Size) % BUFFERSIZE;
-				break;
+				sizelen = cGetE9Size;
+				goto rsp_common;
 			}
 			case EVENT_ANSWER_F9:
 			{
-				len = getLen(cGetF9Size);
+				sizelen = cGetF9Size;
+				goto rsp_common;
+			}
+#endif
+rsp_common:
+			{
+				len = getLen(sizelen);
 
 				if (len == 0)
 				{
 					goto out_switch;
 				}
 
-				if (len < cGetF9Size)
+				if (len < sizelen)
 				{
 					goto out_switch;
 				}
@@ -567,10 +511,9 @@ static void processResponse(void)
 				dprintk(20, "Pos. response received\n");
 				errorOccured = 0;
 				ack_sem_up();
-				RCVBufferEnd = (RCVBufferEnd + cGetF9Size) % BUFFERSIZE;
+				RCVBufferEnd = (RCVBufferEnd + sizelen) % BUFFERSIZE;
 				break;
 			}
-#endif
 			case EVENT_ANSWER_GETIRCODE:
 			case EVENT_ANSWER_GETPORT:
 			default: // Ignore Response
@@ -688,7 +631,7 @@ int nuvotonTask(void *dummy)
 /*********************************************************************
  *
  * animated_icon_thread: Thread to display the spinner on FS9000/9200
- * TODO: expand to animated icons on HS8500
+ * TODO: expand to animated icons on HS8200
  *
  */
 static int animated_icon_thread(void *arg)
@@ -722,8 +665,7 @@ static int animated_icon_thread(void *arg)
 			{
 				break;
 			}
-
-			dprintk(1, "Start animated_icon_thread for icon #%d, period = %d ms\n", icon, icon_state[icon].period);
+			dprintk(10, "Start animated_icon_thread for icon #%d, period = %d ms\n", icon, icon_state[icon].period);
 
 			while (!down_trylock(&icon_state[icon].icon_sem));
 			{
@@ -733,7 +675,6 @@ static int animated_icon_thread(void *arg)
 					{
 						case 0:
 						{
-							regs[0x24] |= 0x01; // Circ0 on
 							regs[0x20] |= 0x01; // Circ1 on
 							regs[0x21] &= 0xfc; // Circ3 & Circ8 off
 							regs[0x22] &= 0xfc; // Circ2 & Circ6 off
@@ -783,45 +724,41 @@ static int animated_icon_thread(void *arg)
 						}
 						case 9:
 						{
-							regs[0x20] &= 0xfe; // Circ1 off
+							regs[0x22] &= 0xfe; // Circ2 off
 							break;
 						}
 						case 10:
 						{
-							regs[0x22] &= 0xfe; // Circ2 off
+							regs[0x21] &= 0xfd; // Circ3 off
 							break;
 						}
 						case 11:
 						{
-							regs[0x21] &= 0xfd; // Circ3 off
+							regs[0x23] &= 0xfd; // Circ4 off
 							break;
 						}
 						case 12:
 						{
-							regs[0x23] &= 0xfd; // Circ4 off
+							regs[0x24] &= 0xfd; // Circ5 off
 							break;
 						}
 						case 13:
 						{
-							regs[0x24] &= 0xfd; // Circ5 off
+							regs[0x22] &= 0xfd; // Circ6 off
 							break;
 						}
 						case 14:
 						{
-							regs[0x22] &= 0xfd; // Circ6 off
-							break;
-						}
-						case 15:
-						{
 							regs[0x23] &= 0xfe; // Circ7 off
 							break;
 						}
-						case 16:
+						case 15:
 						{
 							regs[0x21] &= 0xfe; // Circ8 off
 							break;
 						}
 					}
+					regs[0x24] |= 0x01; // Circ0 on
 					buffer[3] = regs[0x20];
 					buffer[4] = regs[0x21];
 					buffer[5] = regs[0x22];
@@ -829,7 +766,7 @@ static int animated_icon_thread(void *arg)
 					buffer[7] = regs[0x24];
 					res = nuvotonWriteCommand(buffer, 9, 0);
 					i++;
-					i %= 17;
+					i %= 16;
 					msleep(icon_state[icon].period);
 				}
 				dprintk(1, "Stopping %s for icon #%d\n", __func__, icon);
@@ -944,7 +881,7 @@ static int icon_thread_active(void)
 
 static void __exit nuvoton_cleanup_module(void)
 {
-	dprintk(1, "NUVOTON frontcontroller module unloading\n");
+	printk("NUVOTON frontcontroller module unloading\n");
 	remove_proc_fp();
 
 #if defined(FORTIS_HDBOX)
