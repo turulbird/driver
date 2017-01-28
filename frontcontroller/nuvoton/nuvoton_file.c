@@ -76,6 +76,8 @@
  * 20170125 Audioniek       nuvotonSetDisplayOnOff on HS8200 fixed.
  * 20170126 Audioniek       nuvotonSetDisplayOnOff on HS7119/7420/7429/
  *                          7810A/7819 fixed.
+ * 20170128 Audioniek       nuvotonGetVersion now returns actual bootloader
+ *                          version instead of string constant.
  *
  *****************************************************************************/
 
@@ -1510,7 +1512,7 @@ int nuvotonSetDisplayOnOff(char level)
 int nuvotonGetVersion(int *version)
 {
 	int res = 0;
-	int i, retlen = 0;
+	int i, j = 0;
 	struct mtd_info *mtd_info = NULL;
 	unsigned char buf[3];
 
@@ -1535,31 +1537,29 @@ int nuvotonGetVersion(int *version)
 //		put_mtd_device(mtd_info);
 //		return -1;
 //	}
-	dprintk(10, "MTD name       : %s\n", mtd_info->name);
-	dprintk(10, "MTD type       : %u\n", mtd_info->type);
-	dprintk(10, "MTD total size : %u bytes\n", (unsigned int)mtd_info->size);
-	dprintk(10, "MTD erase size : %u bytes\n", mtd_info->erasesize);
+//	dprintk(10, "MTD name       : %s\n", mtd_info->name);
+//	dprintk(10, "MTD type       : %u\n", mtd_info->type);
+//	dprintk(10, "MTD total size : %u bytes\n", (unsigned int)mtd_info->size);
+//	dprintk(10, "MTD erase size : %u bytes\n", mtd_info->erasesize);
 
-	mtd_info->read(mtd_info, LOADER_VERSION, 4, &retlen, buf);
+	res = mtd_info->read(mtd_info, LOADER_VERSION, 4, &j, buf);
 
-	if (retlen != 4)
+	if (j != 4)
 	{
 		printk("[nuvoton] Error reading boot loader version\n");
 		return -1;
 	}
 
-	*version = 0;
+	j = 0;
 	for (i = 3; i > 0; i--)
 	{
-		retlen = (((buf[i] & 0xf0) >> 4) * 10) + (buf[i] & 0x0f);
-		printk("Byte[%1d]=0x%02x (%02d)\n", i, buf[i], retlen & 0xff);
-
-		*version *= 100;
-		*version += (((buf[i] & 0xf0) >> 4) * 10) + (buf[i] & 0x0f);
+		j *= 100;
+		j += (((buf[i] & 0xf0) >> 4) * 10) + (buf[i] & 0x0f);
 	}
+	memcpy(version, &j, sizeof(j));
 
 	dprintk(100, "%s <\n", __func__);
-	return 0;
+	return res;
 }
 
 #if defined(VFDTEST)
@@ -1581,7 +1581,7 @@ int nuvotonVfdTest(char *data)
 	memset(buffer, 0, sizeof(buffer));
 	memset(ioctl_data, 0, sizeof(ioctl_data));
 
-	buffer[0] = SOP; // add SOP and EOP
+	buffer[0] = SOP;
 	memcpy(buffer + 1, data + 1, data[0]);
 	buffer[data[0] + 1] = EOP;
 
@@ -2884,7 +2884,7 @@ static int NUVOTONdev_ioctl(struct inode *Inode, struct file *File, unsigned int
 
 			res = nuvotonGetVersion(&version);
 			dprintk(10, "Boot loader version is %d.%02d\n", version / 100, version % 100);
-			res |= copy_to_user((void *)arg, &version, 1);
+			res |= copy_to_user((void *)arg, &version, sizeof(version));
 			mode = 0; // go back to vfd mode
 			break;
 		}
