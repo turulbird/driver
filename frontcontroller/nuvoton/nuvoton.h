@@ -63,12 +63,14 @@ extern tFrontPanelOpen FrontPanelOpen[LASTMINOR];
 #define SOP                   0x02
 #define EOP                   0x03
 
-#if defined(FORTIS_HDBOX)
+#if defined(FORTIS_HDBOX) \
+ || defined(ATEVIO7500)
 #define ICON_THREAD_STATUS_RUNNING 0
 #define ICON_THREAD_STATUS_STOPPED 1
 #define ICON_THREAD_STATUS_INIT    2
+#define ICON_THREAD_STATUS_HALTED  3 // (semaphore down)
+//#define ICON_THREAD_STATUS_PAUSED  4 // (state == 0)
 #endif
-
 
 /* ioctl numbers ->hacky */
 #define VFDDISPLAYCHARS       0xc0425a00
@@ -103,7 +105,7 @@ extern tFrontPanelOpen FrontPanelOpen[LASTMINOR];
 
 #if defined(FORTIS_HDBOX) \
  || defined(OCTAGON1008)
-#define LOADER_VERSION 0x000000f4 //offset to 32 bit word in mtd0 that holds the loader version
+#define RESELLER_OFFSET 0x000000f0 // offset to 32 bit word in mtd0 that holds the resellerID & loader version
 #elif defined(ATEVIO7500) \
  ||  defined(HS7110) \
  ||  defined(HS7420) \
@@ -111,7 +113,7 @@ extern tFrontPanelOpen FrontPanelOpen[LASTMINOR];
  ||  defined(HS7119) \
  ||  defined(HS7429) \
  ||  defined(HS7819)
-#define LOADER_VERSION 0x00000434
+#define RESELLER_OFFSET 0x00000430
 #endif
 /***************************************************************************
  *
@@ -164,7 +166,7 @@ enum //HS9510 icon numbers and their names
  * Icons for HS742X
  *
  */
-enum //HS72X icon numbers and their names
+enum //HS742X icon numbers and their names
 {
 	ICON_MIN,     // 00
 	ICON_DOT,     // 01, pos 7, byte 2, bit 7
@@ -180,7 +182,7 @@ enum //HS72X icon numbers and their names
  * Icons for FS9000/9200
  *
  */
-enum
+enum //FS9X00 icon numbers and their names
 {
 	ICON_MIN,       // 00
 	ICON_STANDBY,   // 01
@@ -232,7 +234,7 @@ enum
  * Icons for HS8200
  *
  */ 
-enum
+enum //HS8200 icon numbers and their names
 {
 	ICON_MIN,       // 00
 	ICON_STANDBY,   // 01
@@ -257,7 +259,8 @@ enum
 	ICON_STEP_FWD,  // 20
 	ICON_TV,        // 21
 	ICON_RADIO,     // 22
-	ICON_MAX        // 23
+	ICON_MAX,       // 23
+	ICON_SPINNER    // 24
 };
 #elif defined(HS7119)
 /***************************************************************
@@ -265,7 +268,7 @@ enum
  * Icons for HS7119
  *
  */ 
-enum
+enum //HS7119 icon numbers and their names
 {
 	ICON_MIN,       // 00
 	ICON_COLON,     // 01
@@ -277,7 +280,7 @@ enum
  * Icons for HS7810A and HS7819
  *
  */ 
-enum
+enum //HS7810A/7819 icon numbers and their names
 {
 	ICON_MIN,       // 00
 	ICON_COLON,     // 01
@@ -415,6 +418,11 @@ struct set_timeformat_s
 	char format;
 };
 
+struct get_version_s
+{
+	unsigned int data[2]; // data[0] = boot loader version, data[1] = resellerID
+};
+
 /* This will set the mode temporarily (for one ioctl)
  * to the desired mode. Currently the "normal" mode
  * is the compatible vfd mode
@@ -438,6 +446,7 @@ struct nuvoton_ioctl_data
 		struct set_standby_s standby;
 		struct set_time_s time;
 		struct set_timeformat_s timeformat;
+		struct get_version_s version;
 	} u;
 };
 
@@ -454,6 +463,9 @@ struct saved_data_s
 	char data[128];
 #if !defined(HS7110)
 	int icon_state[ICON_MAX + 2];
+#if defined(ATEVIO7500)
+	int icon_count; // number of icons switched on
+#endif
 	int brightness;
 	int display_on;
 #endif
@@ -474,15 +486,16 @@ struct vfd_buffer
 };
 #endif
 
-#if defined(FORTIS_HDBOX)
+#if defined(FORTIS_HDBOX) \
+ || defined(ATEVIO7500)
 typedef struct
 {
 	int state;
 	int period;
 	int status;
 	int enable;
-	struct task_struct *icon_task;
-	struct semaphore icon_sem;
+	struct task_struct *task;
+	struct semaphore sem;
 } tIconState;
 #endif
 
@@ -492,11 +505,16 @@ extern void getRCData(unsigned char *data, int *len);
 extern int nuvotonSetIcon(int which, int on);
 extern int nuvotonWriteCommand(char *buffer, int len, int needAck);
 #if defined(FORTIS_HDBOX)
-extern tIconState icon_state[ICON_SPINNER + 1];
+extern tIconState spinner_state;
+#endif
+#if defined(ATEVIO7500)
+extern tIconState spinner_state;
+extern tIconState icon_state;
+extern int icon_thread(void *arg);
 #endif
 void dumpValues(void);
 
-extern u8 regs[0xff];  // array with copy values of FP registers
+extern u8 regs[0x100];  // array with copy values of FP registers
 extern int errorOccured;
 extern struct file_operations vfd_fops;
 

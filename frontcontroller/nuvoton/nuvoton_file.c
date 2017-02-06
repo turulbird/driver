@@ -78,6 +78,13 @@
  *                          7810A/7819 fixed.
  * 20170128 Audioniek       nuvotonGetVersion now returns actual bootloader
  *                          version instead of string constant.
+ * 20170128 Audioniek       Spinner for HS8200 added.
+ * 20170202 Audioniek       Multiple icons now displayed in a thread on
+ *                          HS8200; spinner code simplified.
+ * 20170204 Audioniek       Spinner switched off when using (re)set all icons;
+ *                          in addition on FS9000/9200 when one of the circle
+ *                          icons is (re)set.
+ * 20170205 Audioniek       nuvotonGetVersion reports resellerID as well.
  *
  *****************************************************************************/
 
@@ -122,7 +129,10 @@
 #endif
 
 #if defined(FORTIS_HDBOX)
-tIconState icon_state[ICON_SPINNER + 1];
+tIconState spinner_state;
+#elif defined(ATEVIO7500)
+tIconState spinner_state;
+tIconState icon_state;
 #endif
 
 extern void ack_sem_up(void);
@@ -138,7 +148,7 @@ static char wakeup_time[5];
 
 tFrontPanelOpen FrontPanelOpen [LASTMINOR];
 struct saved_data_s lastdata;
-u8 regs[0xff];  // array with copy values of FP registers
+u8 regs[0x100];  // array with copy values of FP registers
 
 /***************************************************************************
  *
@@ -572,17 +582,27 @@ struct iconToInternal
  *
  * A character on the HS8200 display is simply a pixel matrix
  * consisting of five columns of seven pixels high.
- * Column1 is the leftmost.
+ * Column 1 is the leftmost.
  *
  * Format of pixel data:
  *
- * pixeldata1: column1
+ * pixeldata1: column 1
  *  ...
- * pixeldata5: column5
+ * pixeldata5: column 5
  *
  * Each bit in the pixel data represents one pixel in the column, with the
  * LSbit being the top pixel and bit 6 the bottom one. The pixel will be on
- * when the corresponding bit is one.
+ * when the corresponding bit is one. The resulting map is:
+ *
+ *  Register    0x27 0x28 0x29 0x2a 0x2b
+ *              ------------------------
+ *  Bitmask     0x01 0x01 0x01 0x01 0x01
+ *              0x02 0x02 0x02 0x02 0x02
+ *              0x04 0x04 0x04 0x04 0x04
+ *              0x08 0x08 0x08 0x08 0x08
+ *              0x10 0x10 0x10 0x10 0x10
+ *              0x20 0x20 0x20 0x20 0x20
+ *              0x40 0x40 0x40 0x40 0x40
  */
 struct iconToInternal
 {
@@ -597,8 +617,8 @@ struct iconToInternal
 	{ "ICON_TIMESHIFT", ICON_TIMESHIFT, {0x01, 0x3f, 0x01, 0x2c, 0x34}}, // 03
 	{ "ICON_TIMER"    , ICON_TIMER    , {0x3e, 0x49, 0x4f, 0x41, 0x3e}}, // 04
 	{ "ICON_HD"       , ICON_HD       , {0x3e, 0x08, 0x3e, 0x22, 0x1c}}, // 05
-	{ "ICON_USB"      , ICON_USB      , {0x10, 0x18, 0x34, 0x54, 0x50}}, // 06
-	{ "ICON_SCRAMBLED", ICON_SCRAMBLED, {0x78, 0x4c, 0x4a, 0x4c, 0x78}}, // 07
+	{ "ICON_USB"      , ICON_USB      , {0x08, 0x0c, 0x1a, 0x2a, 0x28}}, // 06
+	{ "ICON_SCRAMBLED", ICON_SCRAMBLED, {0x3c, 0x26, 0x25, 0x26, 0x3c}}, // 07
 	{ "ICON_DOLBY"    , ICON_DOLBY    , {0x3e, 0x22, 0x1c, 0x22, 0x3e}}, // 08
 	{ "ICON_MUTE"     , ICON_MUTE     , {0x1e, 0x12, 0x1e, 0x21, 0x3f}}, // 09
 	{ "ICON_TUNER1"   , ICON_TUNER1   , {0x01, 0x3f, 0x01, 0x04, 0x3e}}, // 10
@@ -736,8 +756,9 @@ int nuvotonSetIcon(int which, int on)
 }
 
 #elif defined(FORTIS_HDBOX)
-/* New nuvotonSetIcon, using both cCommandSetIconI and
- * cCommandSetIconII opcodes
+/* ****************************************************************************
+ *
+ * nuvotonSetIcon, using both cCommandSetIconI and cCommandSetIconII opcodes
  *
  * The icons on the FS9000/9200 can be divided into two classes:
  * - Icons present on registernumbers 0x31 through 0x3c
@@ -768,7 +789,7 @@ int nuvotonSetIcon(int which, int on)
 
 	if (which < ICON_MIN + 1 || which > ICON_MAX - 1)
 	{
-		printk("Icon number %d out of range (%d-%d)\n", which, ICON_MIN + 1, ICON_MAX - 1);
+		printk("[nuvoton] Icon number %d out of range (%d-%d)\n", which, ICON_MIN + 1, ICON_MAX - 1);
 		return -EINVAL;
 	}
 	dprintk(10, "Set icon %s (number %d) to %d\n", nuvotonIcons[which - 1].name, which, on);
@@ -898,7 +919,7 @@ int nuvotonSetIcon(int which, int on)
 
 	if (which < ICON_MIN + 1 || which > ICON_MAX - 1)
 	{
-		printk("Icon number %d out of range (%d-%d)\n", which, ICON_MIN + 1, ICON_MAX - 1);
+		printk("[nuvoton] Icon number %d out of range (%d-%d)\n", which, ICON_MIN + 1, ICON_MAX - 1);
 		return -EINVAL;
 	}
 	dprintk(10, "Set icon %s (number %d) to %d\n", nuvotonIcons[which - 1].name, which, on);
@@ -910,40 +931,31 @@ int nuvotonSetIcon(int which, int on)
 		regs[0x27 + i] = ((on) ? nuvotonIcons[which - 1].pixeldata[i] : 0);
 	}
 
-	if (on && lastdata.display_on)
+	if (lastdata.display_on)
 	{
-		buffer[0] = SOP;
-		buffer[1] = cCommandSetIconII;
-		buffer[2] = 0x27;
-		buffer[3] = regs[0x27];
-		buffer[4] = regs[0x28];
-		buffer[5] = regs[0x29];
-		buffer[6] = regs[0x2A];
-		buffer[7] = regs[0x2B];
-		buffer[8] = EOP;
-		res |= nuvotonWriteCommand(buffer, 9, 0);
+			buffer[0] = SOP;
+			buffer[1] = cCommandSetIconII;
+			buffer[2] = 0x27;
+			buffer[3] = regs[0x27];
+			buffer[4] = regs[0x28];
+			buffer[5] = regs[0x29];
+			buffer[6] = regs[0x2A];
+			buffer[7] = regs[0x2B];
+			buffer[8] = EOP;
+			res |= nuvotonWriteCommand(buffer, 9, 0);
 	}
 
-	regs[0x10] = ((on) ? 7 : 0);
+	regs[0x10] = 7;
 	buffer[0] = SOP;
 	buffer[1] = cCommandSetIconI;
 	buffer[2] = 0x10;
 	buffer[3] = regs[0x10];
 	buffer[4] = EOP;
+	res |= nuvotonWriteCommand(buffer, 5, 0);
 
-	if (lastdata.display_on)
+	if (res == 0)
 	{
-		res |= nuvotonWriteCommand(buffer, 5, 0);
-	}
-	// update lastdata state
-	if (res == 0 && on) // if switched on
-	{
-		memset(lastdata.icon_state, 0, sizeof(lastdata.icon_state)); // flag all other icons off
-		lastdata.icon_state[which] = 1; // and this one on
-	}
-	else
-	{
-		lastdata.icon_state[which] = 0; // flag this one off
+		lastdata.icon_state[which] = on;
 	}
 	dprintk(100, "%s <\n", __func__);
 	return res;
@@ -1003,6 +1015,8 @@ int nuvotonSetIcon(int which, int on)
 #else // HS7110 (no display)
 int nuvotonSetIcon(int which, int on)
 {
+	dprintk(100, "%s > %d, %d\n", __func__, which, on);
+	dprintk(100, "%s <\n", __func__);
 	return 0;
 }
 #endif
@@ -1054,21 +1068,21 @@ int nuvotonSetLED(int which, int level)
 #endif
 
 #if defined(HS7110)
-	printk("Function %s is not supported on HS7110 (yet)\n", __func__);
+	printk("[nuvoton] Function %s is not supported on HS7110 (yet)\n", __func__);
 	return -EINVAL;
 #else
 	if (which < 1 || which > MAX_LED)
 	{
-		printk("LED number %d out of range (1-%d)\n", which, MAX_LED);
+		printk("[nuvoton] LED number %d out of range (1-%d)\n", which, MAX_LED);
 		return -EINVAL;
 	}
 
 	if (level < 0 || level > MAX_BRIGHT)
 	{
-		printk("LED brightness level %d out of range (0-%d)\n", level, MAX_BRIGHT);
+		printk("[nuvoton] LED brightness level %d out of range (0-%d)\n", level, MAX_BRIGHT);
 		return -EINVAL;
 	}
-	dprintk(10, "Set LED %d brightness level to %d\n", which, level);
+	dprintk(10, "Set LED 0x%02x brightness level to %d\n", which, level);
 
 	memset(buffer, 0, sizeof(buffer));
 
@@ -1106,7 +1120,7 @@ int nuvotonSetBrightness(int level)
 	dprintk(100, "%s > %d\n", __func__, level);
 	if (level < 0 || level > 7)
 	{
-		printk("VFD brightness level %d out of range (0-%d)\n", level, 7);
+		printk("[nuvoton] VFD brightness level %d out of range (0-%d)\n", level, 7);
 		return -EINVAL;
 	}
 	dprintk(10, "Set VFD brightness level to %d\n", level);
@@ -1137,7 +1151,7 @@ int nuvotonSetBrightness(int level)
 	dprintk(100, "%s > %d\n", __func__, level);
 	if (level < 0 || level > 7)
 	{
-		printk("LED brightness level %d out of range (0-%d)\n", level, 7);
+		printk("[nuvoton] LED brightness level %d out of range (0-%d)\n", level, 7);
 		return -EINVAL;
 	}
 	dprintk(10, "Set LED brightness level to %d\n", level);
@@ -1284,7 +1298,7 @@ int nuvotonGetTime(char *time)
 	else
 	{
 		/* time received */
-		printk("time received\n");
+		printk("[nuvoton] Time received\n");
 		dprintk(20, "Time= 0x%04x (MJD) %02d:%02d:%02d (local)\n", ((ioctl_data[0] << 8) + ioctl_data[1]),
 				ioctl_data[2], ioctl_data[3], ioctl_data[4]);
 		for (i = 0; i < 5; i++)
@@ -1371,13 +1385,13 @@ int nuvotonGetWakeUpMode(int *wakeup_mode)
 		/* error */
 		memset(ioctl_data, 0, sizeof(ioctl_data));
 		*wakeup_mode = -1;
-		printk("Error receiving wake up mode.\n");
+		printk("[nuvoton] Error receiving wake up mode.\n");
 		res = -ETIMEDOUT;
 	}
 	else
 	{
 		/* mode received */
-		printk("Wake up mode received\n");
+		printk("[nuvoton] Wake up mode received\n");
 		*wakeup_mode = ioctl_data[0] + 1;
 		dprintk(20, "Wakeup mode is: %1d\n", *wakeup_mode);
 	}
@@ -1447,9 +1461,16 @@ int nuvotonSetDisplayOnOff(char level)
 				lastdata.icon_state[i] = ibuf[i];
 		}
 #if defined(FORTIS_HDBOX)
-		if (icon_state[ICON_SPINNER].state)
+		if (spinner_state.state)
 		{
-			icon_state[ICON_SPINNER].state = 0;
+			lastdata.icon_state[ICON_SPINNER] = 1;
+			spinner_state.state = 0;
+		}
+#elif defined(ATEVIO7500)
+		if (spinner_state.state)
+		{
+			lastdata.icon_state[ICON_SPINNER] = 1;
+			spinner_state.state = 0;
 		}
 #endif
 		lastdata.display_on = 0; 
@@ -1465,11 +1486,12 @@ int nuvotonSetDisplayOnOff(char level)
 				res |= nuvotonSetIcon(i, 1);
 			}
 		}
-#if defined(FORTIS_HDBOX)
+#if defined(FORTIS_HDBOX) \
+ || defined(ATEVIO7500)
 		if (lastdata.icon_state[ICON_SPINNER] != 0)
 		{
-			icon_state[ICON_SPINNER].state = 1;
-			up(&icon_state[ICON_SPINNER].icon_sem);
+			spinner_state.state = 1;
+			up(&spinner_state.sem);
 		}
 #endif
 	}
@@ -1508,13 +1530,18 @@ int nuvotonSetDisplayOnOff(char level)
  *
  * nuvotonGetVersion: read version info from front panel.
  *
+ * NOTE: The front processor does not seem to have an
+ *       opcode to retrieve version information from it;
+ *       in stead this function returns the boot loader
+ *       version in the format (major * 100) + minor
+ *       and the resellerID.
  */
-int nuvotonGetVersion(int *version)
+int nuvotonGetVersion(unsigned int *data)
 {
 	int res = 0;
-	int i, j = 0;
+	int i = 0;
+	unsigned char buf[8];
 	struct mtd_info *mtd_info = NULL;
-	unsigned char buf[3];
 
 	dprintk(100, "%s >\n", __func__);
 
@@ -1522,41 +1549,50 @@ int nuvotonGetVersion(int *version)
 
 	if (IS_ERR(mtd_info))
 	{
-		printk("No device for mtd0\n");
+		printk("[nuvoton] No device for mtd0\n");
 		return -1;
 	}
 	if (mtd_info->type == MTD_ABSENT)
 	{
-		printk("mtd0 is absent\n");
+		printk("[nuvoton] mtd0 is absent\n");
 		put_mtd_device(mtd_info);
 		return -1;
 	}
-//	if (strcmp(mtd_info->name, "Boot_firmware"))
-//	{
-//		printk("mtd0 is not the Boot_firmware\n");
-//		put_mtd_device(mtd_info);
-//		return -1;
-//	}
-//	dprintk(10, "MTD name       : %s\n", mtd_info->name);
-//	dprintk(10, "MTD type       : %u\n", mtd_info->type);
-//	dprintk(10, "MTD total size : %u bytes\n", (unsigned int)mtd_info->size);
-//	dprintk(10, "MTD erase size : %u bytes\n", mtd_info->erasesize);
-
-	res = mtd_info->read(mtd_info, LOADER_VERSION, 4, &j, buf);
-
-	if (j != 4)
+#if 0
+	if (strcmp(mtd_info->name, "Boot_firmware"))
 	{
-		printk("[nuvoton] Error reading boot loader version\n");
+		printk([nuvoton] "mtd0 is not the Boot_firmware\n");
+		put_mtd_device(mtd_info);
+		return -1;
+	}
+	dprintk(10, "MTD name       : %s\n", mtd_info->name);
+	dprintk(10, "MTD type       : %u\n", mtd_info->type);
+	dprintk(10, "MTD total size : %u bytes\n", (unsigned int)mtd_info->size);
+	dprintk(10, "MTD erase size : %u bytes\n", mtd_info->erasesize);
+#endif
+	res = mtd_info->read(mtd_info, RESELLER_OFFSET, 8, &i, buf);
+
+	if (i != 8)
+	{
+		printk("[nuvoton] Error reading boot loader info\n");
 		return -1;
 	}
 
-	j = 0;
-	for (i = 3; i > 0; i--)
+	// determine version as (100 * major) + minor
+	data[0] = 0;
+	for (i = 7; i > 4; i--) // version number is stored big endian
 	{
-		j *= 100;
-		j += (((buf[i] & 0xf0) >> 4) * 10) + (buf[i] & 0x0f);
+		data[0] *= 100;
+		data[0] += (((buf[i] & 0xf0) >> 4) * 10) + (buf[i] & 0x0f);
 	}
-	memcpy(version, &j, sizeof(j));
+
+	// get resellerID
+	data[1] = 0;
+	for (i = 0; i < 4; i++)
+	{
+		data[1] <<= 8;
+		data[1] += buf[i];
+	}
 
 	dprintk(100, "%s <\n", __func__);
 	return res;
@@ -2034,15 +2070,15 @@ int nuvoton_init_func(void)
  * SOP a5 01 00 01 00 01 EOP   cCommandSetIrCode   (note: other data and also uses:
  * SOP a1 01 03                cCommandGetIrCodeExt this one)
  */
-	char init1[] = {SOP, cCommandSetVFD, 0x00, 0x00, 0x00, 0x00, EOP}; //blank display (pos 0)
-	char init2[] = {SOP, cCommandSetVFD, 0x01, 0x00, 0x00, 0x00, EOP}; //blank display (pos 1)
-	char init3[] = {SOP, cCommandSetVFD, 0x02, 0x00, 0x00, 0x00, EOP}; //blank display (pos 2)
-	char init4[] = {SOP, cCommandSetVFD, 0x03, 0x00, 0x00, 0x00, EOP}; //blank display (pos 3)
-	char init5[] = {SOP, cCommandSetVFD, 0x04, 0x00, 0x00, 0x00, EOP}; //blank display (pos 4)
-	char init6[] = {SOP, cCommandSetVFD, 0x05, 0x00, 0x00, 0x00, EOP}; //blank display (pos 5)
-	char init7[] = {SOP, cCommandSetVFD, 0x06, 0x00, 0x00, 0x00, EOP}; //blank display (pos 6)
-	char init8[] = {SOP, cCommandSetVFD, 0x07, 0x00, 0x00, 0x00, EOP}; //blank display (pos 7)
-	char init9[] = {SOP, cCommandSetVFD, 0x08, 0x00, 0x00, 0x00, EOP}; //blank display (pos 8)
+	char init1[] = {SOP, cCommandSetVFD, 0x00, 0x00, 0x00, 0x00, EOP}; // blank display (pos 0)
+	char init2[] = {SOP, cCommandSetVFD, 0x01, 0x00, 0x00, 0x00, EOP}; // blank display (pos 1)
+	char init3[] = {SOP, cCommandSetVFD, 0x02, 0x00, 0x00, 0x00, EOP}; // blank display (pos 2)
+	char init4[] = {SOP, cCommandSetVFD, 0x03, 0x00, 0x00, 0x00, EOP}; // blank display (pos 3)
+	char init5[] = {SOP, cCommandSetVFD, 0x04, 0x00, 0x00, 0x00, EOP}; // blank display (pos 4)
+	char init6[] = {SOP, cCommandSetVFD, 0x05, 0x00, 0x00, 0x00, EOP}; // blank display (pos 5)
+	char init7[] = {SOP, cCommandSetVFD, 0x06, 0x00, 0x00, 0x00, EOP}; // blank display (pos 6)
+	char init8[] = {SOP, cCommandSetVFD, 0x07, 0x00, 0x00, 0x00, EOP}; // blank display (pos 7)
+	char init9[] = {SOP, cCommandSetVFD, 0x08, 0x00, 0x00, 0x00, EOP}; // blank display (pos 8)
 	char initA[] = {SOP, cCommandSetVFDBrightness, 0x00, 0x07, EOP};   // VFD brightness 7
 	char initB[] = {SOP, cCommandSetTimeFormat, 0x81, EOP};            // set 24h clock format
 	char initC[] = {SOP, cCommandSetWakeupTime, 0xff, 0xff, EOP};      // delete/invalidate wakeup time
@@ -2106,29 +2142,10 @@ int nuvoton_init_func(void)
 #else //HS7110
 /* Shortened essential factory sequence HS7110
  *
- * SOP 23 03 0a 02 SOP         cCommandSetLEDBrightness 10
- * SOP 74 e1 a9 15 34 SOP      cCommandSetWakeupMJD to today, current time
- * SOP a5 11 02 f9 10 1b SOP   cCommandSetIrCode
- * SOP 31 01 SOP               cCommandPowerOffReplay
- * SOP d2 00 07 SOP            cCommandSetVFDBrightness 7 (!)
- * SOP 24 b8 7c 66 7c SOP      cCommandSetLEDText
- * SOP 31 02 SOP               cCommandPowerOffReplay
- * SOP 31 04 SOP               cCommandPowerOffReplay
- * SOP 31 02 SOP               cCommandPowerOffReplay
- * SOP 31 04 SOP               cCommandPowerOffReplay
- * SOP 24 38 3f 77 de SOP      cCommandSetLEDText (!)
- * SOP 24 73 7a 78 00 SOP      cCommandSetLEDText (!)
- * SOP 24 6d 39 77 54 SOP      cCommandSetLEDText (!)
- * SOP 24 71 38 77 6d SOP      cCommandSetLEDText (1)
- * SOP d0 SOP                  cCommandGetFrontInfo
- * SOP 24 50 3e b7 00 SOP      cCommandSetLEDText (!)
- * SOP d0 SOP                  cCommandGetFrontInfo
- * SOP 24 50 3e b7 80 SOP      cCommandSetLEDText (!)
  * SOP d0 SOP                  cCommandGetFrontInfo
  * SOP 80 SOP                  cCommandGetPowerOnSrc
  * SOP 24 20 20 20 20 SOP      cCommandSetLEDText "----" (!)
  * SOP d2 00 0a SOP            cCommandSetVFDBrightness 10 (!)
- * SOP 24 6d 78 00 06 SOP      cCommandSetLEDText
  * SOP a5 01 02 f9 10 0b SOP   cCommandSetIrCode
  * SOP 15 dc 5d 00 00 02 SOP   cCommandSetMJD to 01-05-2013 00:00:02
  * SOP 11 81 SOP               cCommandSetTimeFormat 24h
@@ -2137,8 +2154,6 @@ int nuvoton_init_func(void)
  * SOP 93 f2 08 00 SOP         cCommandSetLed f2 8 cross+blue 8 (!)
  * SOP 24 76 5e 5e 7b SOP      cCommandSetLEDText (!)
  * SOP 41 44 SOP               cCommandSetBootOnExt
- * SOP 24 3f 3f 3f 06 SOP      cCommandSetLEDText (!)
- * SOP 24 3f 3f 3f 06 SOP      cCommandSetLEDText  (!)
  * SOP 15 e1 a9 0b 11 31 03    cCommandSetMJD current date/time 
  */
 	char init1[] = {SOP, cCommandSetLEDBrightness, 0x03, 0x0a, 0x02, EOP};      // set display brightness
@@ -2222,7 +2237,7 @@ int nuvoton_init_func(void)
 	res |= nuvotonWriteCommand(initE, sizeof(initE), 0);
 #endif
 
-	for (vLoop = 0x00; vLoop < 0xff; vLoop++)
+	for (vLoop = 0x00; vLoop <= 0xff; vLoop++)
 	{
 		regs[vLoop] = 0x00;  // initialize local shadow registers
 	}
@@ -2234,6 +2249,9 @@ int nuvoton_init_func(void)
 	{
 		res |= nuvotonSetIcon(vLoop, 0); //switch all icons off
 	}
+#endif
+#if defined(ATEVIO7500)
+	lastdata.icon_count = 0;
 #endif
 
 #if defined(HS7119) \
@@ -2548,11 +2566,9 @@ static int NUVOTONdev_ioctl(struct inode *Inode, struct file *File, unsigned int
 	struct nuvoton_ioctl_data *nuvoton = (struct nuvoton_ioctl_data *)arg;
 	struct vfd_ioctl_data *data = (struct vfd_ioctl_data *)arg;
 	int res = 0;
+	int level;
 #if !defined(HS7110)
 	int icon_nr, on;
-#endif
-#if !defined(HS7110) \
- && !defined(ATEVIO7500)
 	int i;
 #endif
 
@@ -2583,22 +2599,23 @@ static int NUVOTONdev_ioctl(struct inode *Inode, struct file *File, unsigned int
 #if !defined(HS7110)
 			if (mode == 0)
 			{
-				dprintk(10, "%s Set brightness to %d (mode 0)\n", __func__, data->start_address);
-				res = nuvotonSetBrightness(data->start_address);
+				level = data->start_address;
+				dprintk(10, "%s Set display brightness to %d (mode 0)\n", __func__, level);
 			}
 			else
 			{
-				if (nuvoton->u.brightness.level < 0)
-				{
-					nuvoton->u.brightness.level = 0;
-				}
-				else if (nuvoton->u.brightness.level > 7)
-				{
-					nuvoton->u.brightness.level = 7;
-				}
-				dprintk(10, "%s Set brightness to %d (mode 1)\n", __func__, nuvoton->u.brightness.level);
-				res = nuvotonSetBrightness(nuvoton->u.brightness.level);
+				level = nuvoton->u.brightness.level;
+				dprintk(10, "%s Set display brightness to %d (mode 1)\n", __func__, data->start_address);
 			}
+			if (level < 0)
+			{
+				level = 0;
+			}
+			else if (level > 7)
+			{
+				level = 7;
+			}
+			res = nuvotonSetBrightness(level);
 #endif //HS7110
 			mode = 0;
 			break;
@@ -2612,17 +2629,18 @@ static int NUVOTONdev_ioctl(struct inode *Inode, struct file *File, unsigned int
 		case VFDICONDISPLAYONOFF:
 		{
 #if !defined(HS7110)
+			icon_nr = mode == 0 ? data->data[0] : nuvoton->u.icon.icon_nr;
+			on = mode == 0 ? data->data[4] : nuvoton->u.icon.on;
+			dprintk(10, "%s Set icon %d to %d (mode %d)\n", __func__, icon_nr, on, mode);
+			on = on != 0 ? 1 : 0;
+
+			// Part one: translate E2 icon numbers to own icon numbers (vfd mode only)
 			if (mode == 0) // vfd mode
 			{
-				icon_nr = data->data[0];
-				on = data->data[4] != 0 ? 1 : 0;
-				dprintk(10, "%s Set icon %d to %d (mode 0)\n", __func__, icon_nr, data->data[4]);
-
-			// Part one: translate E2 icon numbers to own icon numbers
-#if defined(FORTIS_HDBOX) \
- || defined(ATEVIO7500)
 				switch (icon_nr)
 				{
+#if defined(FORTIS_HDBOX) \
+ || defined(ATEVIO7500)
 					case 0x13: // crypted
 					{
 						icon_nr = ICON_SCRAMBLED;
@@ -2633,11 +2651,13 @@ static int NUVOTONdev_ioctl(struct inode *Inode, struct file *File, unsigned int
 						icon_nr = ICON_DOLBY;
 						break;
 					}
+#if !defined(ATEVIO7500)
 					case 0x15: // MP3
 					{
 						icon_nr = ICON_MP3;
 						break;
 					}
+#endif
 					case 0x11: // HD
 					{
 						icon_nr = ICON_HD;
@@ -2653,17 +2673,7 @@ static int NUVOTONdev_ioctl(struct inode *Inode, struct file *File, unsigned int
 						icon_nr = ICON_PLAY;
 						break;
 					}
-					default:
-					{
-						break;
-					}
-				}
-#elif defined(OCTAGON1008) \
- || defined(HS7420) \
- || defined(HS7429)
-				switch (icon_nr)
-				{
-#if defined(OCTAGON1008)
+#elif defined(OCTAGON1008)
 					case 0x13:  // crypted
 					{
 						icon_nr = ICON_CRYPTED;
@@ -2684,7 +2694,8 @@ static int NUVOTONdev_ioctl(struct inode *Inode, struct file *File, unsigned int
 						icon_nr = ICON_REC;
 						break;
 					}
-#else //HS742X
+#elif defined(HS7420) \
+ || defined(HS7429)
 					case 30:    // record
 					{
 						icon_nr = ICON_DOT;
@@ -2696,95 +2707,173 @@ static int NUVOTONdev_ioctl(struct inode *Inode, struct file *File, unsigned int
 						break;
 					}
 				}
-#endif // Part one
+			}
+
 			// Part two: decide: one icon, all or spinner
-#if defined(FORTIS_HDBOX)
-				if (icon_nr == ICON_SPINNER)
+			switch (icon_nr)
+			{
+#if defined(FORTIS_HDBOX) \
+ || defined(ATEVIO7500)
+				case ICON_SPINNER:
 				{
-					icon_state[ICON_SPINNER].state = on;
+					if (mode == 0) // vfd mode
+					{
+						on = data->data[4];
+					}
+					else
+					{
+						on = nuvoton->u.icon.on;
+					}
+					spinner_state.state = on;
 					lastdata.icon_state[ICON_SPINNER] = on;
+#if defined(FORTIS_HDBOX)
 					if (on)
 					{
-						if (!icon_state[ICON_SPINNER].icon_task || on < 1)
+						if (on == 1)
 						{
-							dprintk(10, "%s Spinner thread already running", __func__);
-							res = -EINVAL;
+							on = 100; // set default value: 1 change/sec
 						}
-						else // start spinner (period = on * 10 ms)
-						{
-							if (data->data[4] == 1)
-							{
-								data->data[4] = 100; // set default value
-							}
-							dprintk(10, "%s Start spinner, period = %d ms\n", __func__, data->data[4] * 10);
-							icon_state[ICON_SPINNER].period = data->data[4] * 10;
-							up(&icon_state[ICON_SPINNER].icon_sem);
-						}
+						spinner_state.period = on * 10;
+						up(&spinner_state.sem);
 					}
-					res = 0;
-				}
+#elif defined(ATEVIO7500)
+					if (on)
+					{
+						if (icon_state.state == 1)
+						{
+							dprintk(50, "%s Stop icon thread\n", __func__);
+							icon_state.state = 0;
+							do
+							{
+								msleep(250);
+							}
+							while (icon_state.status != ICON_THREAD_STATUS_HALTED);
+							dprintk(50, "%s Icon thread stopped\n", __func__);
+						}
+						if (on == 1) // handle default
+						{
+							on = 25; // full cycle takes 16 * 250 ms = 4 sec
+						}
+						spinner_state.period = on * 10;
+						up(&spinner_state.sem);
+					}
+					else
+					{
+						if (spinner_state.state == 1)
+						{
+							dprintk(50, "%s Stop spinner\n", __func__);
+							spinner_state.state = 0;
+							do
+							{
+								msleep(250);
+							}
+							while (spinner_state.status != ICON_THREAD_STATUS_HALTED);
+							dprintk(50, "%s Spinner stopped\n", __func__);
+						}
+						dprintk(50, "%s Restart icon thread\n", __func__);
+						icon_state.state = 1;
+						up(&icon_state.sem);
+					}
 #endif
-#if !defined(ATEVIO7500)
-				if (icon_nr == ICON_MAX)
+					res = 0;
+					break;
+				}
+#endif // ATEVIO7500 or FORTIS HD_BOX
+				case ICON_MAX:
 				{
-					for (i = ICON_MIN + 1; i < ICON_MAX; i++)
+#if defined(ATEVIO7500)
+					if (spinner_state.state == 1) // switch spinner off if on
 					{
-						res = nuvotonSetIcon(i, on);
+						dprintk(50, "%s Stop spinner\n", __func__);
+						spinner_state.state = 0;
+						do
+						{
+							msleep(250);
+						}
+						while (spinner_state.status != ICON_THREAD_STATUS_HALTED);
+						dprintk(50, "%s Spinner stopped\n", __func__);
+						dprintk(50, "%s Restart icon thread\n", __func__);
+						icon_state.state = 1;
+						up(&icon_state.sem);
 					}
-				}
-				else
-				{
-					res = nuvotonSetIcon(icon_nr, on);
-				}
-#else
-				res = nuvotonSetIcon(icon_nr, on);
-#endif // !ATEVIO7500
-			}
-			else // compatible mode
-			{
-				dprintk(10, "%s Set icon %d to %d (mode 1)\n", __func__, nuvoton->u.icon.icon_nr, nuvoton->u.icon.on);
-#if !defined(ATEVIO7500)
-				if (nuvoton->u.icon.icon_nr == ICON_MAX)
-				{
-					for (i = ICON_MIN + 1; i < ICON_MAX; i++)
-					{
-						res = nuvotonSetIcon(i, nuvoton->u.icon.on);
-					}
-				}
-#if defined(FORTIS_HDBOX)
-				else if (nuvoton->u.icon.icon_nr == ICON_SPINNER)
-				{
-					icon_state[nuvoton->u.icon.icon_nr].state = nuvoton->u.icon.on;
-					lastdata.icon_state[ICON_SPINNER] = nuvoton->u.icon.on;
 
-					if (nuvoton->u.icon.on)
+					for (i = ICON_MIN + 1; i < ICON_MAX; i++)
 					{
-						if (!icon_state[nuvoton->u.icon.icon_nr].icon_task || nuvoton->u.icon.on < 1)
+						if (on != lastdata.icon_state[i])
 						{
-							dprintk(10, "%s Spinner thread already running", __func__);
-							res = -EINVAL;
+							on ? lastdata.icon_count++ : lastdata.icon_count--;
 						}
-						else // start spinner (period on * 10)
+
+						if (lastdata.icon_state[i] == 1 && !on)							
 						{
-							if (nuvoton->u.icon.on == 1)
-							{
-								nuvoton->u.icon.on = 100; // set default value
-							}
-							dprintk(10, "%s Start spinner, period = %d ms \n", __func__, nuvoton->u.icon.on * 10);
-							icon_state[nuvoton->u.icon.icon_nr].period = nuvoton->u.icon.on * 10;
-							up(&icon_state[nuvoton->u.icon.icon_nr].icon_sem);
-							res = 0;
+							res |= nuvotonSetIcon(i, 0);
+						}
+							lastdata.icon_state[i] = on;
+					}
+					break;
+#elif defined(FORTIS_HDBOX)
+					if (spinner_state.state == 1) // switch spinner off if on
+					{
+						dprintk(50, "%s Stop spinner\n", __func__);
+						spinner_state.state = 0;
+						do
+						{
+							msleep(250);
+						}
+						while (spinner_state.status != ICON_THREAD_STATUS_HALTED);
+						dprintk(50, "%s Spinner stopped\n", __func__);
+					}
+					//fall through to:
+#endif
+					for (i = ICON_MIN + 1; i < ICON_MAX; i++)
+					{
+						res |= nuvotonSetIcon(i, on);
+					}
+					break;
+				}
+				default:
+				{
+#if defined(ATEVIO7500)
+					if (on != lastdata.icon_state[icon_nr])
+					{
+						on ? lastdata.icon_count++ : lastdata.icon_count--;
+					}
+					lastdata.icon_state[icon_nr] = on;
+
+					if (icon_state.state == 0) // if spinner off
+					{
+						if ((icon_state.state == !on) && on) // if switched on
+						{
+							dprintk(50, "%s Start icon thread\n", __func__);
+							icon_state.state = 1;
+							up(&icon_state.sem);
+						}
+						if (!on)
+						{
+							res = nuvotonSetIcon(icon_nr, 0);
 						}
 					}
-				}
-#endif // HDBOX (spinner)
-				else
-				{
-					res = nuvotonSetIcon(nuvoton->u.icon.icon_nr, nuvoton->u.icon.on);
-				}
+#elif defined(FORTIS_HDBOX)
+					if (spinner_state.state == 1 && icon_nr >= ICON_Circ0 && icon_nr <= ICON_Circ8)
+					{
+						dprintk(50, "%s Stop spinner\n", __func__);
+						spinner_state.state = 0;
+						do
+						{
+							msleep(250);
+						}
+						while (spinner_state.status != ICON_THREAD_STATUS_HALTED);
+						dprintk(50, "%s Spinner stopped\n", __func__);
+						msleep(100);
+
+					}
+					res = nuvotonSetIcon(icon_nr, on);
 #else
-				res = nuvotonSetIcon(nuvoton->u.icon.icon_nr, nuvoton->u.icon.on);
-#endif // !ATEVIO7500
+
+					res = nuvotonSetIcon(icon_nr, on);
+#endif
+					break;
+				}
 			}
 #endif // HS7110 (no display)
 			mode = 0;
@@ -2817,7 +2906,8 @@ static int NUVOTONdev_ioctl(struct inode *Inode, struct file *File, unsigned int
 		{
 			if (nuvoton->u.time.time != 0)
 			{
-				dprintk(10, "Set frontpanel time to (MJD=) %d - %02d:%02d:%02d (local)\n", (nuvoton->u.time.time[0] & 0xff) * 256 + (nuvoton->u.time.time[1] & 0xff), nuvoton->u.time.time[2], nuvoton->u.time.time[3], nuvoton->u.time.time[4]);
+				dprintk(10, "Set frontpanel time to (MJD=) %d - %02d:%02d:%02d (local)\n", (nuvoton->u.time.time[0] & 0xff) * 256 + (nuvoton->u.time.time[1] & 0xff),
+					nuvoton->u.time.time[2], nuvoton->u.time.time[3], nuvoton->u.time.time[4]);
 				res = nuvotonSetTime(nuvoton->u.time.time);
 			}
 			break;
@@ -2827,7 +2917,8 @@ static int NUVOTONdev_ioctl(struct inode *Inode, struct file *File, unsigned int
 			char time[5];
 
 			res = nuvotonGetTime(time);
-			dprintk(10, "Get frontpanel time: (MJD=) %d - %02d:%02d:%02d (local)\n", (ioctl_data[0] & 0xff) * 256 + (ioctl_data[1] & 0xff), ioctl_data[2], ioctl_data[3], ioctl_data[4]);
+			dprintk(10, "Get frontpanel time: (MJD=) %d - %02d:%02d:%02d (local)\n", (ioctl_data[0] & 0xff) * 256 + (ioctl_data[1] & 0xff),
+				ioctl_data[2], ioctl_data[3], ioctl_data[4]);
 			copy_to_user((void *)arg, &ioctl_data, 5);
 			break;
 		}
@@ -2853,9 +2944,9 @@ static int NUVOTONdev_ioctl(struct inode *Inode, struct file *File, unsigned int
 			else
 			{
 				dprintk(10, "Write string (mode 1): not supported!\n");
+				mode = 0;  // go back to vfd mode
 			}
 #endif
-			mode = 0;  // go back to vfd mode
 			break;
 		}
 		case VFDDISPLAYWRITEONOFF:
@@ -2880,11 +2971,11 @@ static int NUVOTONdev_ioctl(struct inode *Inode, struct file *File, unsigned int
 		}
 		case VFDGETVERSION:
 		{
-			int version = 0;
-
-			res = nuvotonGetVersion(&version);
-			dprintk(10, "Boot loader version is %d.%02d\n", version / 100, version % 100);
-			res |= copy_to_user((void *)arg, &version, sizeof(version));
+			unsigned int data[2];
+			res = nuvotonGetVersion(data);
+			dprintk(10, "Boot loader version is %d.%02d\n", data[0] / 100, data[0] % 100);
+			dprintk(10, "reseller ID is %08X\n", data[1]);
+			res |= copy_to_user((void *)arg, &(data), sizeof(data));
 			mode = 0; // go back to vfd mode
 			break;
 		}

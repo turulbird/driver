@@ -29,6 +29,7 @@
  * Date     By              Description
  * --------------------------------------------------------------------------
  * 20160523 Audioniek       Initial version based on tffpprocfs.c.
+ * 20170206 Audioniek       /procfs/stb/fp/resellerID added.
  * 
  ****************************************************************************/
 
@@ -41,7 +42,8 @@
 /*
  *  /proc/stb/fp
  *             |
- *             +--- version (r)             SW version of front processor (hundreds = major, ten/units = minor)
+ *             +--- version (r)             SW version of boot loader (hundreds = major, ten/units = minor)
+ *             +--- resellerID (r)          resellerID in boot loader
  *             +--- rtc (rw)                RTC time (UTC, seconds since Unix epoch))
  *             +--- rtc_offset (rw)         RTC offset in seconds from UTC
  *             +--- wakeup_time (rw)        Next wakeup time (absolute, local, seconds since Unix epoch)
@@ -49,7 +51,7 @@
  *             +--- led0_pattern (rw)       Blink pattern for LED 1 (currently limited to on (0xffffffff) or off (0))
  *             +--- led1_pattern (rw)       Blink pattern for LED 2 (currently limited to on (0xffffffff) or off (0))
  *             +--- led_patternspeed (rw)   Blink speed for pattern (not implemented)
- *             +--- oled_brightness (w)     Direct control of display brightness (VFD models only)
+ *             +--- oled_brightness (w)     Direct control of display brightness
  *             +--- text (w)                Direct writing of display text
  */
 
@@ -67,7 +69,7 @@ extern int nuvotonSetBrightness(int level);
 extern void clear_display(void);
 extern int nuvotonGetTime(char *time);
 extern int nuvotonGetWakeUpMode(int *wakeup_mode);
-extern int nuvotonGetVersion(int *version);
+extern int nuvotonGetVersion(unsigned int *data);
 extern int nuvotonSetTime(char *time);
 extern int nuvotonSetLED(int which, int level);
 extern int nuvotonGetWakeUpTime(char *time);
@@ -253,7 +255,7 @@ static int write_rtc(struct file *file, const char __user *buffer, unsigned long
 		if (test > 0)
 		{
 //			calcSetNuvotonTime((argument + rtc_offset), time); //set time as u32
-			calcSetNuvotonTime((argument), time); //set time as u32 (Fortis FP is in UTC)
+			calcSetNuvotonTime((argument), time); //set time as u32 (Fortis FP is in local time)
 			ret = nuvotonSetTime(time);
 		}
 		/* always return count to avoid endless loop */
@@ -336,7 +338,7 @@ static int wakeup_time_write(struct file *file, const char __user *buffer, unsig
 		if (0 < test)
 		{
 //			calcSetNuvotonTime((wakeup_time + rtc_offset), wtime); //set time as u32
-			calcSetNuvotonTime((wakeup_time), wtime); //set time as u32 (Fortis FP is in UTC)
+			calcSetNuvotonTime((wakeup_time), wtime); //set time as u32 (Fortis FP is in local time)
 			ret = nuvotonSetWakeUpTime(wtime);
 		}
 		/* always return count to avoid endless loop */
@@ -362,7 +364,7 @@ static int wakeup_time_read(char *page, char **start, off_t off, int count, int 
 		w_time = calcGetNuvotonTime(wtime);
 
 //		len = sprintf(page, "%u\n", w_time - rtc_offset);
-		len = sprintf(page, "%u\n", w_time); //Fortis FP uses UTC
+		len = sprintf(page, "%u\n", w_time); //Fortis FP uses local time
 	}
 	return len;
 }
@@ -401,12 +403,27 @@ static int was_timer_wakeup_read(char *page, char **start, off_t off, int count,
 static int fp_version_read(char *page, char **start, off_t off, int count, int *eof, void *data_unused)
 {
 	int len = 0;
-	int version;
+	unsigned int data[2];
 
-	version = -1;
-	if (nuvotonGetVersion(&version) == 0)
+	if (nuvotonGetVersion(data) == 0)
 	{
-		len = sprintf(page, "%d\n", version);
+		len = sprintf(page, "%d\n", (int)data[1]);
+	}
+	else
+	{
+		return -EFAULT;
+	}
+	return len;
+}
+
+static int fp_reseller_read(char *page, char **start, off_t off, int count, int *eof, void *data_unused)
+{
+	int len = 0;
+	unsigned int data[2];
+
+	if (nuvotonGetVersion(data) == 0)
+	{
+		len = sprintf(page, "%08x\n", (int)data[0]);
 	}
 	else
 	{
@@ -583,6 +600,7 @@ struct fp_procs
 	{ "stb/fp/wakeup_time", wakeup_time_read, wakeup_time_write },
 	{ "stb/fp/was_timer_wakeup", was_timer_wakeup_read, NULL },
 	{ "stb/fp/version", fp_version_read, NULL },
+	{ "stb/fp/resellerID", fp_reseller_read, NULL },
 };
 
 void create_proc_fp(void)

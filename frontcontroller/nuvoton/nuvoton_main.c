@@ -35,6 +35,9 @@
  * 20130929 Audioniek       Initial version.
  * 20160523 Audioniek       procfs added.
  * 20170115 Audioniek       Response on getFrontInfo added.
+ * 20170120 Audioniek       Spinner thread for FS9000/9200 added.
+ * 20170128 Audioniek       Spinner thread for HS8200 added.
+ * 20170202 Audioniek       Icon thread for HS8200 added.
  *
  ****************************************************************************************/
 
@@ -630,47 +633,47 @@ int nuvotonTask(void *dummy)
 #if defined(FORTIS_HDBOX)
 /*********************************************************************
  *
- * animated_icon_thread: Thread to display the spinner on FS9000/9200
- * TODO: expand to animated icons on HS8200
+ * spinner_thread: Thread to display the spinner on FS9000/9200.
  *
  */
-static int animated_icon_thread(void *arg)
+static int spinner_thread(void *arg)
 {
-	int icon = (int)arg;
 	int i = 0;
 	int res = 0;
 	char buffer[9];
 
-	if (icon != ICON_SPINNER)
+	if (spinner_state.status == ICON_THREAD_STATUS_RUNNING)
 	{
 		return 0;
 	}
+	dprintk(10, "%s: starting\n", __func__);
+	spinner_state.status = ICON_THREAD_STATUS_INIT;
 
 	buffer[0] = SOP;
 	buffer[1] = cCommandSetIconII;
 	buffer[2] = 0x20;
 	buffer[8] = EOP;
 
-	if (icon_state[icon].status == ICON_THREAD_STATUS_RUNNING)
-	{
-		return 0;
-	}
-	icon_state[icon].status = ICON_THREAD_STATUS_RUNNING;
+	spinner_state.status = ICON_THREAD_STATUS_RUNNING;
+	dprintk(10, "%s: started\n", __func__);
 
 	while (!kthread_should_stop())
 	{
-		if (!down_interruptible(&icon_state[icon].icon_sem))
+		if (!down_interruptible(&spinner_state.sem))
 		{
 			if (kthread_should_stop())
 			{
 				break;
 			}
-			dprintk(10, "Start animated_icon_thread for icon #%d, period = %d ms\n", icon, icon_state[icon].period);
 
-			while (!down_trylock(&icon_state[icon].icon_sem));
+			while (!down_trylock(&spinner_state.sem));
 			{
-				while ((icon_state[icon].state) && !kthread_should_stop())
+				dprintk(10, "Start spinner, period = %d ms\n", spinner_state.period);
+				regs[0x20] |= 0x01; // Circ0 on
+
+				while ((spinner_state.state) && !kthread_should_stop())
 				{
+					spinner_state.status == ICON_THREAD_STATUS_RUNNING;
 					switch (i) // display a rotating disc in 16 states
 					{
 						case 0:
@@ -758,7 +761,6 @@ static int animated_icon_thread(void *arg)
 							break;
 						}
 					}
-					regs[0x24] |= 0x01; // Circ0 on
 					buffer[3] = regs[0x20];
 					buffer[4] = regs[0x21];
 					buffer[5] = regs[0x22];
@@ -767,21 +769,277 @@ static int animated_icon_thread(void *arg)
 					res = nuvotonWriteCommand(buffer, 9, 0);
 					i++;
 					i %= 16;
-					msleep(icon_state[icon].period);
+					msleep(spinner_state.period);
 				}
-				dprintk(1, "Stopping %s for icon #%d\n", __func__, icon);
 				buffer[3] = regs[0x20] &= 0xfe; // Circ1 off
 				buffer[4] = regs[0x21] &= 0xfc; // Circ3 & Circ8 off
 				buffer[5] = regs[0x22] &= 0xfc; // Circ2 & Circ6 off
 				buffer[6] = regs[0x23] &= 0xfc; // Circ4 & Circ7 off
 				buffer[7] = regs[0x24] &= 0xfc; // Circ0 & Circ5 off
 				res |= nuvotonWriteCommand(buffer, 9, 0);
+				spinner_state.status = ICON_THREAD_STATUS_HALTED;
+				dprintk(1, "%s: Spinner stopped\n", __func__);
 			}
 		}
 	}
-	dprintk(1, "%s for icon #%d stopped\n", __func__, icon);
-	icon_state[icon].status = ICON_THREAD_STATUS_STOPPED;
-	icon_state[icon].icon_task = 0;
+	dprintk(1, "%s stopped\n", __func__);
+	spinner_state.status = ICON_THREAD_STATUS_STOPPED;
+	spinner_state.task = 0;
+	return res;
+}
+#endif
+
+#if defined(ATEVIO7500)
+/*********************************************************************
+ *
+ * spinner_thread: Thread to display the spinner on HS8200.
+ *
+ */
+static int spinner_thread(void *arg)
+{
+	int i = 0;
+	int res = 0;
+	char buffer[9];
+
+	if (spinner_state.status == ICON_THREAD_STATUS_RUNNING)
+	{
+		return 0;
+	}
+	dprintk(10, "%s: starting\n", __func__);
+	spinner_state.status = ICON_THREAD_STATUS_INIT;
+
+	buffer[0] = SOP;
+	buffer[1] = cCommandSetIconII;
+	buffer[2] = 0x27;
+	buffer[8] = EOP;
+
+	dprintk(10, "%s: started\n", __func__);
+	spinner_state.status = ICON_THREAD_STATUS_RUNNING;
+
+	while (!kthread_should_stop())
+	{
+		if (!down_interruptible(&spinner_state.sem))
+		{
+			if (kthread_should_stop())
+			{
+				goto stop;
+			}
+
+			while (!down_trylock(&spinner_state.sem));
+			{
+				dprintk(10, "%s: start spinner, period = %d ms\n", __func__, spinner_state.period);
+				while ((spinner_state.state) && !kthread_should_stop())
+				{
+					spinner_state.status = ICON_THREAD_STATUS_RUNNING;
+					switch (i) // display a bar in 16 states
+					{
+						case 0: 
+						{
+							regs[0x27] = 0x00;
+							regs[0x28] = 0x00;
+							regs[0x29] = 0x0e;
+							regs[0x2a] = 0x00;
+							regs[0x2b] = 0x00;
+							break;
+						}
+						case 1:
+						{
+							regs[0x2a] |= 0x04;
+							regs[0x2b] |= 0x02;
+							break;
+						}
+						case 2:
+						{
+							regs[0x2a] |= 0x08;
+							regs[0x2b] |= 0x08;
+							break;
+						}
+						case 3:
+						{
+							regs[0x2a] |= 0x10;
+							regs[0x2b] |= 0x20;
+							break;
+						}
+						case 4:
+						{
+							regs[0x29] |= 0x30;
+							break;
+						}
+						case 5:
+						{
+							regs[0x27] |= 0x20;
+							regs[0x28] |= 0x10;
+							break;
+						}
+						case 6:
+						{
+							regs[0x27] |= 0x08;
+							regs[0x28] |= 0x08;
+							break;
+						}
+						case 7: // full 8 segments
+						{
+							regs[0x27] |= 0x02;
+							regs[0x28] |= 0x04;
+							break;
+						}
+						case 8: 
+						{
+							regs[0x29] &= 0xf8;
+							break;
+						}
+						case 9:
+						{
+							regs[0x2a] &= 0xfb;
+							regs[0x2b] &= 0xfd;
+							break;
+						}
+						case 10:
+						{
+							regs[0x2a] &= 0xf7;
+							regs[0x2b] &= 0xf7;
+							break;
+						}
+						case 11:
+						{
+							regs[0x2a] &= 0xef;
+							regs[0x2b] &= 0xdf;
+							break;
+						}
+						case 12:
+						{
+							regs[0x29] &= 0xcf;
+							break;
+						}
+						case 13:
+						{
+							regs[0x27] &= 0xdf;
+							regs[0x28] &= 0xef;
+							break;
+						}
+						case 14:
+						{
+							regs[0x27] &= 0xf7;
+							regs[0x28] &= 0xf7;
+							break;
+						}
+						case 15:
+						{
+							regs[0x27] &= 0xfd;
+							regs[0x28] &= 0xfb;
+							break;
+						}
+					}
+					buffer[3] = regs[0x27];
+					buffer[4] = regs[0x28];
+					buffer[5] = regs[0x29];
+					buffer[6] = regs[0x2a];
+					buffer[7] = regs[0x2b];
+					res = nuvotonWriteCommand(buffer, 9, 0);
+					i++;
+					i %= 16;
+					msleep(spinner_state.period);
+				}
+				spinner_state.status = ICON_THREAD_STATUS_HALTED;
+			}
+stop:
+			buffer[3] = regs[0x27] = 0x00;
+			buffer[4] = regs[0x28] = 0x00;
+			buffer[5] = regs[0x29] = 0x00;
+			buffer[6] = regs[0x2a] = 0x00;
+			buffer[7] = regs[0x2b] = 0x00;
+			res |= nuvotonWriteCommand(buffer, 9, 0);
+			dprintk(1, "%s: Spinner stopped\n", __func__);
+		}
+	}
+	spinner_state.status = ICON_THREAD_STATUS_STOPPED;
+	spinner_state.task = 0;
+	dprintk(1, "%s: stopped\n", __func__);
+	return res;
+}
+
+/*********************************************************************
+ *
+ * icon_thread: Thread to display icons on HS8200.
+ * TODO: expand to animated icons
+ *
+ */
+int icon_thread(void *arg)
+{
+	int i = 0;
+	int res = 0;
+	char buffer[9];
+
+	if (icon_state.status == ICON_THREAD_STATUS_RUNNING || lastdata.icon_state[ICON_SPINNER])
+	{
+		return 0;
+	}
+	dprintk(10, "%s: starting\n", __func__);
+	spinner_state.status = ICON_THREAD_STATUS_INIT;
+
+	buffer[0] = SOP;
+	buffer[1] = cCommandSetIconII;
+	buffer[2] = 0x27;
+	buffer[8] = EOP;
+
+	icon_state.status = ICON_THREAD_STATUS_RUNNING;
+	dprintk(10, "%s: started\n", __func__);
+
+	while (!kthread_should_stop())
+	{
+		if (!down_interruptible(&icon_state.sem))
+		{
+			if (kthread_should_stop())
+			{
+				goto stop_icon;
+			}
+			while (!down_trylock(&icon_state.sem));
+			{
+				while ((icon_state.state) && !kthread_should_stop())
+				{
+					icon_state.status = ICON_THREAD_STATUS_RUNNING;
+					if (lastdata.icon_count > 1)
+					{
+//						dprintk(1, "Display multiple icons\n");
+						for (i = ICON_MIN + 1; i < ICON_MAX; i++)
+						{
+							if (lastdata.icon_state[i])
+							{
+								res |= nuvotonSetIcon(i, 1);
+								msleep(3000);
+							}
+							if (!icon_state.state)
+							{
+								break;
+							}
+						}
+					}
+					else if (lastdata.icon_count == 1)
+					{
+						for (i = ICON_MIN + 1; i < ICON_MAX; i++)
+						{
+							if (lastdata.icon_state[i])
+							{
+//								dprintk(1, "Show icon %02d in animation\n", i);
+// TODO: animation routine
+								res = nuvotonSetIcon(i, 1);
+								msleep(1500);
+							}			
+							if (!icon_state.state)
+							{
+								break;
+							}
+						}
+					}
+				}
+				icon_state.status = ICON_THREAD_STATUS_HALTED;
+			}
+		}
+	}
+stop_icon:
+	icon_state.status = ICON_THREAD_STATUS_STOPPED;
+	icon_state.task = 0;
+	dprintk(1, "%s stopped\n", __func__);
 	return res;
 }
 #endif
@@ -840,22 +1098,20 @@ static int __init nuvoton_init_module(void)
 		dprintk(1, "Unable to get major %d for VFD/NUVOTON\n", VFD_MAJOR);
 	}
 
-#if defined(FORTIS_HDBOX)
-//	for (i = 0; i < ICON_MAX + 2; i++)
-//	{
-//		icon_state[i].state = 0;
-//		icon_state[i].period = 0;
-//		icon_state[i].status = ICON_THREAD_STATUS_STOPPED;
-//		sema_init(&icon_state[i].icon_sem, 0);
-//		if (i == ICON_SPINNER)
-//		{
-		icon_state[ICON_SPINNER].state = 0;
-		icon_state[ICON_SPINNER].period = 0;
-		icon_state[ICON_SPINNER].status = ICON_THREAD_STATUS_STOPPED;
-		sema_init(&icon_state[ICON_SPINNER].icon_sem, 0);
-		icon_state[ICON_SPINNER].icon_task = kthread_run(animated_icon_thread, (void *) ICON_SPINNER, "spinner_thread");
-//		}
-//	}
+#if defined(FORTIS_HDBOX) \
+ || defined(ATEVIO7500)
+	spinner_state.state = 0;
+	spinner_state.period = 0;
+	spinner_state.status = ICON_THREAD_STATUS_STOPPED;
+	sema_init(&spinner_state.sem, 0);
+	spinner_state.task = kthread_run(spinner_thread, (void *) ICON_SPINNER, "spinner_thread");
+#if defined(ATEVIO7500)
+	icon_state.state = 0;
+	icon_state.period = 0;
+	icon_state.status = ICON_THREAD_STATUS_STOPPED;
+	sema_init(&icon_state.sem, 0);
+	icon_state.task = kthread_run(icon_thread, (void *) ICON_MIN, "icon_thread");
+#endif
 #endif
 	create_proc_fp();
 
@@ -885,18 +1141,24 @@ static void __exit nuvoton_cleanup_module(void)
 	remove_proc_fp();
 
 #if defined(FORTIS_HDBOX)
+	if (!(spinner_state.status == ICON_THREAD_STATUS_STOPPED) && spinner_state.task)
 	{
-		int i;
-
-		for (i = 0; i < ICON_SPINNER + 2; i++)
-		{
-			if (!icon_state[i].status && icon_state[i].icon_task)
-			{
-				dprintk(50, "Stopping icon thread for icon #%d\n", i);
-				up(&icon_state[i].icon_sem);
-				kthread_stop(icon_state[i].icon_task);
-			}
-		}
+		dprintk(50, "Stopping spinner thread\n");
+		up(&spinner_state.sem);
+		kthread_stop(spinner_state.task);
+	}
+#elif defined(ATEVIO7500)
+	if (!(spinner_state.status == ICON_THREAD_STATUS_STOPPED) && spinner_state.task)
+	{
+		dprintk(50, "Stopping spinner thread\n");
+		up(&icon_state.sem);
+		kthread_stop(spinner_state.task);
+	}
+	if (!(icon_state.status == ICON_THREAD_STATUS_STOPPED) && icon_state.task)
+	{
+		dprintk(50, "Stopping icon thread\n");
+		up(&icon_state.sem);
+		kthread_stop(icon_state.task);
 	}
 #endif
 	unregister_chrdev(VFD_MAJOR, "VFD");

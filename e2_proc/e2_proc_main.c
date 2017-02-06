@@ -737,7 +737,20 @@ struct ProcStructure_s e2Proc[] =
 	{cProcEntry, "stb/fp/wakeup_time"                                               , NULL, wakeup_time_read, wakeup_time_write, NULL, ""},
 	{cProcEntry, "stb/fp/was_timer_wakeup"                                          , NULL, NULL, NULL, NULL, ""},
 
-#if defined(SPARK) || defined(SPARK7162)
+#if defined(FORTIS_HDBOX) \
+ || defined(OCTAGON1008) \
+ || defined(ATEVIO7500) \
+ || defined(HS7110) \
+ || defined(HS7119) \
+ || defined(HS7420) \
+ || defined(HS7429) \
+ || defined(HS7810A) \
+ || defined(HS7819)
+	{cProcEntry, "stb/fp/resellerID"                                                , NULL, NULL, NULL, NULL, ""},
+#endif
+
+#if defined(SPARK) \
+ || defined(SPARK7162)
 	{cProcEntry, "stb/fp/aotom"                                                     , NULL, NULL, NULL, NULL, ""},
 	{cProcEntry, "stb/fp/displaytype"                                               , NULL, NULL, NULL, NULL, ""},
 	{cProcEntry, "stb/fp/timemode"                                                  , NULL, NULL, NULL, NULL, ""},
