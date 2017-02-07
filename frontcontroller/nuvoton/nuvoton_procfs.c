@@ -29,7 +29,9 @@
  * Date     By              Description
  * --------------------------------------------------------------------------
  * 20160523 Audioniek       Initial version based on tffpprocfs.c.
- * 20170206 Audioniek       /procfs/stb/fp/resellerID added.
+ * 20170206 Audioniek       /proc/stb/fp/resellerID added.
+ * 20170207 Audioniek       /proc/stb/fp/resellerID and /proc/stb/fp/version
+ *                          were reversed.
  * 
  ****************************************************************************/
 
@@ -407,7 +409,7 @@ static int fp_version_read(char *page, char **start, off_t off, int count, int *
 
 	if (nuvotonGetVersion(data) == 0)
 	{
-		len = sprintf(page, "%d\n", (int)data[1]);
+		len = sprintf(page, "%d\n", (int)data[0]);
 	}
 	else
 	{
@@ -423,7 +425,7 @@ static int fp_reseller_read(char *page, char **start, off_t off, int count, int 
 
 	if (nuvotonGetVersion(data) == 0)
 	{
-		len = sprintf(page, "%08x\n", (int)data[0]);
+		len = sprintf(page, "%08X\n", (int)data[1]);
 	}
 	else
 	{
