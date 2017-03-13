@@ -1,7 +1,5 @@
 #ifndef _123_micom
 #define _123_micom
-/*
- */
 
 extern short paramDebug;
 
@@ -18,24 +16,23 @@ extern void copyData(unsigned char *data, int len);
 extern void getRCData(unsigned char *data, int *len);
 void dumpValues(void);
 
-extern int                  errorOccured;
+extern int errorOccured;
 
 extern struct file_operations vfd_fops;
 
 typedef struct
 {
 	struct file      *fp;
-	int               read;
-	struct semaphore  sem;
-
+	int              read;
+	struct semaphore sem;
 } tFrontPanelOpen;
 
-#define FRONTPANEL_MINOR_RC   1
-#define LASTMINOR             2
+#define FRONTPANEL_MINOR_RC  1
+#define LASTMINOR            2
 
 extern tFrontPanelOpen FrontPanelOpen[LASTMINOR];
 
-#define VFD_MAJOR           147
+#define VFD_MAJOR            147
 
 /* ioctl numbers ->hacky */
 #define VFDBRIGHTNESS        0xc0425a03
@@ -57,9 +54,12 @@ extern tFrontPanelOpen FrontPanelOpen[LASTMINOR];
 
 #define VFDSETRCCODE         0xc0425af6
 
+#define NO_ACK               0
+#define NEED_ACK             1
+
 struct set_brightness_s
 {
-	int level;
+	char level;
 };
 
 struct set_icon_s
@@ -74,8 +74,13 @@ struct set_led_s
 	int on;
 };
 
+struct set_light_s
+{
+	int onoff;
+};
+
 /* time must be given as follows:
- * time[0] & time[1] = mjd ???
+ * time[0] & time[1] = MJD
  * time[2] = hour
  * time[3] = min
  * time[4] = sec
@@ -106,6 +111,7 @@ struct micom_ioctl_data
 		struct set_icon_s icon;
 		struct set_led_s led;
 		struct set_brightness_s brightness;
+		struct set_light_s light;
 		struct set_mode_s mode;
 		struct set_standby_s standby;
 		struct set_time_s time;
@@ -129,7 +135,19 @@ enum
 	LED_VOL,
 	LED_WHEEL
 };
+#endif
 
+#if defined(UFS912) || defined(UFS913)
+enum
+{
+	LED_GREEN = 0x2,
+	LED_RED,
+	LED_LEFT,
+	LED_RIGHT
+};
+#endif
+
+#if defined(UFS912) || defined(UFS913) || defined(UFS922) || defined(UFC960)
 enum
 {
 	ICON_MIN = 0x0,
