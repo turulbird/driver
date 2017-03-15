@@ -26,6 +26,7 @@
  * Devices:
  *  - /dev/vfd (vfd ioctls and read/write function)
  *  - /dev/rc  (reading of key events)
+ *  - /dev/rtc (battery clock)
  *
  * TODO:
  * - implement a real led and button driver?!
@@ -138,16 +139,16 @@ int ack_sem_down(void)
 	err  = wait_event_interruptible_timeout(ack_wq, dataReady == 1, ACK_WAIT_TIME);
 	if (err == -ERESTARTSYS)
 	{
-		printk("wait_event_interruptible failed\n");
+		printk("[micom] %s: wait_event_interruptible failed\n", __func__);
 		return err;
 	}
 	else if (err == 0)
 	{
-		printk("timeout waiting on ack\n");
+		printk("[micom] %s: Timeout waiting on ACK\n", __func__);
 	}
 	else
 	{
-		dprintk(20, "command processed - remaining jiffies %d\n", err);
+		dprintk(30, "Command processed - remaining jiffies %d\n", err);
 	}
 	return 0;
 }
@@ -268,7 +269,7 @@ void getRCData(unsigned char *data, int *len)
 
 		if (wait_event_interruptible(wq, KeyBufferStart != KeyBufferEnd))
 		{
-			printk("wait_event_interruptible failed\n");
+			printk("[micom] %s: wait_event_interruptible failed\n", __func__);
 			return;
 		}
 	}
@@ -365,7 +366,7 @@ static void processResponse(void)
 					goto out_switch;
 				}
 				dprintk(1, "EVENT_RC complete\n");
-				dprintk(1, "start %d end %d\n",  RCVBufferStart,  RCVBufferEnd);
+				dprintk(30, "Buffer start=%d, Buffer end=%d\n",  RCVBufferStart,  RCVBufferEnd);
 
 				if (paramDebug >= 50)
 				{
@@ -414,7 +415,7 @@ static void processResponse(void)
 				{
 					goto out_switch;
 				}
-				dprintk(20, "EVENT_OK1/2: Pos. response received\n");
+				dprintk(30, "EVENT_OK1/2: Pos. response received\n");
 
 				/* if there is a waiter for an acknowledge ... */
 				errorOccured = 0;
@@ -438,7 +439,7 @@ static void processResponse(void)
 				handleCopyData(len);
 
 				/* if there is a waiter for an acknowledge ... */
-				dprintk(20, "EVENT_ANSWER_GETTIME: Pos. response received\n");
+				dprintk(30, "EVENT_ANSWER_GETTIME: Pos. response received\n");
 				errorOccured = 0;
 				ack_sem_up();
 
@@ -460,7 +461,7 @@ static void processResponse(void)
 				handleCopyData(len);
 
 				/* if there is a waiter for an acknowledge ... */
-				dprintk(1, "EVENT_ANSWER_WAKEUP_REASON: Pos. response received\n");
+				dprintk(30, "EVENT_ANSWER_WAKEUP_REASON: Pos. response received\n");
 				errorOccured = 0;
 				ack_sem_up();
 
@@ -481,7 +482,7 @@ static void processResponse(void)
 				}
 				handleCopyData(len);
 				/* if there is a waiter for an acknowledge ... */
-				dprintk(1, "EVENT_ANSWER_VERSION: Pos. response received\n");
+				dprintk(30, "EVENT_ANSWER_VERSION: Pos. response received\n");
 				errorOccured = 0;
 				ack_sem_up();
 				RCVBufferEnd = (RCVBufferEnd + cGetVersionSize) % BUFFERSIZE;
@@ -489,8 +490,8 @@ static void processResponse(void)
 			}
 			default: // Ignore Response
 			{
-				dprintk(1, "Invalid Response %02x\n", expectEventData);
-				dprintk(1, "start %d end %d\n",  RCVBufferStart,  RCVBufferEnd);
+				dprintk(1, "Invalid/unknown Response %02x\n", expectEventData);
+				dprintk(30, "Buffer start=%d, Buffer end=%d\n",  RCVBufferStart,  RCVBufferEnd);
 				dumpData();
 				/* discard all data, because this happens currently
 				 * sometimes. dont know the problem here.
@@ -519,10 +520,7 @@ static irqreturn_t FP_interrupt(int irq, void *dev_id)
 		// Save the new read byte at the proper place in the received buffer
 		RCVBuffer[RCVBufferStart] = *ASC_X_RX_BUFF;
 
-		if (paramDebug >= 201)
-		{
-			printk("RCVBuffer[%03u] = %02X\n", RCVBufferStart, RCVBuffer[RCVBufferStart]);
-		}
+		dprintk(201, "%s: RCVBuffer[%03u] = %02X\n", RCVBufferStart, RCVBuffer[RCVBufferStart], __func__);
 		// We are too fast, let's make a break
 		udelay(0);
 
@@ -534,13 +532,10 @@ static irqreturn_t FP_interrupt(int irq, void *dev_id)
 
 		// If the buffer counter == the buffer end, throw error.
 		// What is this ?
-		if (paramDebug >= 201)
-		{
-			printk("RCVBufferStart(%03u) == RCVBufferEnd(%03u)\n", RCVBufferStart, RCVBufferEnd);
-		}
+		dprintk(201, "RCVBufferStart(%03u) == RCVBufferEnd(%03u)\n", RCVBufferStart, RCVBufferEnd);
 		if (RCVBufferStart == RCVBufferEnd)
 		{
-			printk("FP: RCV buffer overflow!!!\n");
+			printk("[micom] %s: FP: RCV buffer overflow!!!\n", __func__);
 		}
 	}
 	if (dataArrived)
@@ -607,7 +602,115 @@ int micomTask(void *dummy)
 	return 0;
 }
 
+#if 0
 //----------------------------------------------
+
+/*----- RTC driver -----*/
+static int micom_rtc_read_time(struct device *dev, struct rtc_time *tm)
+{
+	u32 uTime = 0;
+
+	dprintk(5, "%s >\n", __func__);
+	uTime = YWPANEL_FP_GetTime();
+	rtc_time_to_tm(uTime, tm);
+	dprintk(5, "%s < %d\n", __func__, uTime);
+	return 0;
+}
+
+static int tm2time(struct rtc_time *tm)
+{
+	return mktime(tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday, tm->tm_hour, tm->tm_min, tm->tm_sec);
+}
+
+static int micom_rtc_set_time(struct device *dev, struct rtc_time *tm)
+{
+	int res = 0;
+
+	u32 uTime = tm2time(tm);
+	dprintk(5, "%s > uTime %d\n", __func__, uTime);
+//	res = YWPANEL_FP_SetTime(uTime);
+//	YWPANEL_FP_ControlTimer(true);
+	dprintk(5, "%s < res: %d\n", __func__, res);
+	return res;
+}
+static int micom_rtc_read_alarm(struct device *dev, struct rtc_wkalrm *al)
+{
+	u32 a_time = 0;
+
+	dprintk(5, "%s >\n", __func__);
+//	a_time = YWPANEL_FP_GetPowerOnTime();
+	if (al->enabled)
+	{
+		rtc_time_to_tm(a_time, &al->time);
+	}
+	dprintk(5, "%s < Enabled: %d RTC alarm time: %d time: %d\n", __func__, al->enabled, (int)&a_time, a_time);
+	return 0;
+}
+
+static int micom_rtc_set_alarm(struct device *dev, struct rtc_wkalrm *al)
+{
+	u32 a_time = 0;
+	dprintk(5, "%s >\n", __func__);
+	if (al->enabled)
+	{
+		a_time = tm2time(&al->time);
+	}
+//	YWPANEL_FP_SetPowerOnTime(a_time);
+	dprintk(5, "%s < Enabled: %d time: %d\n", __func__, al->enabled, a_time);
+	return 0;
+}
+
+static const struct rtc_class_ops micom_rtc_ops =
+{
+	.read_time  = micom_rtc_read_time,
+	.set_time   = micom_rtc_set_time,
+	.read_alarm = micom_rtc_read_alarm,
+	.set_alarm  = micom_rtc_set_alarm
+};
+static int __devinit micom_rtc_probe(struct platform_device *pdev)
+{
+	struct rtc_device *rtc;
+
+	/* I have no idea where the pdev comes from, but it needs the can_wakeup = 1
+	 * otherwise we don't get the wakealarm sysfs attribute... :-) */
+	dprintk(5, "%s >\n", __func__);
+	printk("Micom front panel real time clock\n");
+	pdev->dev.power.can_wakeup = 1;
+	rtc = rtc_device_register("micom", &pdev->dev, &micom_rtc_ops, THIS_MODULE);
+	if (IS_ERR(rtc))
+	{
+		return PTR_ERR(rtc);
+	}
+	platform_set_drvdata(pdev, rtc);
+	dprintk(5, "%s < %p\n", __func__, rtc);
+	return 0;
+}
+
+static int __devexit micom_rtc_remove(struct platform_device *pdev)
+{
+	struct rtc_device *rtc = platform_get_drvdata(pdev);
+	dprintk(5, "%s %p >\n", __func__, rtc);
+	rtc_device_unregister(rtc);
+	platform_set_drvdata(pdev, NULL);
+	dprintk(5, "%s <\n", __func__);
+	return 0;
+}
+
+static struct platform_driver micom_rtc_driver =
+{
+	.probe = micom_rtc_probe,
+	.remove = __devexit_p(micom_rtc_remove),
+	.driver =
+	{
+		.name	= RTC_NAME,
+		.owner	= THIS_MODULE
+	},
+};
+#endif
+//----------------------------------------------
+
+extern void create_proc_fp(void);
+extern void remove_proc_fp(void);
 
 static int __init micom_init_module(void)
 {
@@ -658,6 +761,25 @@ static int __init micom_init_module(void)
 	{
 		printk("unable to get major %d for VFD/MICOM\n", VFD_MAJOR);
 	}
+
+#if 0
+	i = platform_driver_register(&micom_rtc_driver);
+	if (i)
+	{
+		dprintk(5, "%s platform_driver_register failed: %d\n", __func__, i);
+	}
+	else
+	{
+		rtc_pdev = platform_device_register_simple(RTC_NAME, -1, NULL, 0);
+	}
+
+	if (IS_ERR(rtc_pdev))
+	{
+		dprintk(5, "%s platform_device_register_simple failed: %ld\n", __func__, PTR_ERR(rtc_pdev));
+	}
+#endif
+
+	create_proc_fp();
 	dprintk(10, "%s <\n", __func__);
 	return 0;
 }
@@ -665,6 +787,11 @@ static int __init micom_init_module(void)
 static void __exit micom_cleanup_module(void)
 {
 	printk("MICOM frontcontroller module unloading\n");
+
+//	platform_driver_unregister(&micom_rtc_driver);
+//	platform_set_drvdata(rtc_pdev, NULL);
+//	platform_device_unregister(rtc_pdev);
+	remove_proc_fp();
 
 	unregister_chrdev(VFD_MAJOR, "VFD");
 

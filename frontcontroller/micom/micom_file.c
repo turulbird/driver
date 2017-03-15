@@ -55,6 +55,7 @@
 #include "micom_asc.h"
 #include "../vfd/utf.h"
 
+/* Global declarations */
 #if defined(UFI510) || defined(UFC960)
 // ROM_PT6315
 unsigned int VFD_CHARTABLE[256] =
@@ -615,7 +616,7 @@ extern void micom_putc(unsigned char data);
 
 struct semaphore write_sem;
 int errorOccured = 0;
-static char ioctl_data[8];
+char ioctl_data[8];
 tFrontPanelOpen FrontPanelOpen [LASTMINOR];
 
 struct saved_data_s
@@ -629,6 +630,7 @@ struct saved_data_s
 static struct saved_data_s lastdata;
 
 /* start of code */
+
 void write_sem_up(void)
 {
 	up(&write_sem);
@@ -641,7 +643,7 @@ int write_sem_down(void)
 
 void copyData(unsigned char *data, int len)
 {
-	printk("%s len %d\n", __func__, len);
+//	printk("%s len %d\n", __func__, len);
 	memcpy(ioctl_data, data, len);
 }
 
@@ -649,7 +651,7 @@ int micomWriteCommand(char command, char *buffer, int len, int needAck)
 {
 	int i;
 
-	dprintk(100, "%s >\n", __func__);
+//	dprintk(100, "%s >\n", __func__);
 
 #ifdef DIRECT_ASC
 	serial_putc(command);
@@ -673,7 +675,7 @@ int micomWriteCommand(char command, char *buffer, int len, int needAck)
 			return -ERESTARTSYS;
 		}
 	}
-	dprintk(100, "%s < \n", __func__);
+//	dprintk(100, "%s < \n", __func__);
 	return 0;
 }
 
@@ -726,7 +728,6 @@ int micomSetIcon(int which, int on)
 	dprintk(100, "%s <\n", __func__);
 	return res;
 }
-
 /* export for later use in e2_proc */
 EXPORT_SYMBOL(micomSetIcon);
 
@@ -836,6 +837,7 @@ int micomSetLedBrightness(unsigned char level)
 	dprintk(100, "%s <\n", __func__);
 	return res;
 }
+/* export for later use in e2_proc */
 EXPORT_SYMBOL(micomSetLedBrightness);
 
 #if defined(UFS922) || defined(UFC960)
@@ -884,14 +886,13 @@ int micomInitialize(void)
 }
 #endif
 
-int micomSetStandby(char *time)
+int micomSetWakeUpTime(char *time)
 {
 	char buffer[8];
 	int  res = 0;
 
 	dprintk(100, "%s >\n", __func__);
 
-	memset(buffer, 0, sizeof(buffer));
 	if (time[0] == '\0')
 	{
 		/* clear wakeup time */
@@ -905,10 +906,38 @@ int micomSetStandby(char *time)
 	}
 	if (res < 0)
 	{
-		printk("%s <res %d \n", __func__, res);
+		printk("%s < res %d \n", __func__, res);
 		return res;
 	}
+	dprintk(100, "%s <\n", __func__);
+	return res;
+}
 
+int micomSetStandby(char *time)
+{
+	char buffer[8];
+	int  res = 0;
+
+	dprintk(100, "%s >\n", __func__);
+
+//	memset(buffer, 0, sizeof(buffer));
+//	if (time[0] == '\0')
+//	{
+//		/* clear wakeup time */
+//		res = micomWriteCommand(0x33, buffer, 7, NEED_ACK);
+//	}
+//	else
+//	{
+//		/* set wakeup time */
+//		memcpy(buffer, time, 5);
+//		res = micomWriteCommand(0x32, buffer, 7, NEED_ACK);
+//	}
+//	if (res < 0)
+//	{
+//		printk("%s < res %d \n", __func__, res);
+//		return res;
+//	}
+	res = micomSetWakeUpTime(time);
 	/* enter standby */
 	memset(buffer, 0, sizeof(buffer));
 	res = micomWriteCommand(0x41, buffer, 7, NO_ACK);
@@ -966,13 +995,13 @@ int micomGetVersion(void)
 
 	if (res < 0)
 	{
-		printk("%s < res %d\n", __func__, res);
+		printk("[micom] %s < res %d\n", __func__, res);
 		return res;
 	}
 	if (errorOccured)
 	{
-		memset(ioctl_data, 0, 8);
-		printk("error\n");
+		memset(ioctl_data, 0, sizeof(ioctl_data));
+		printk("[micom] %s: error\n", __func__);
 		res = -ETIMEDOUT;
 	}
 //	else
@@ -998,13 +1027,13 @@ int micomGetTime(void)
 
 	if (res < 0)
 	{
-		printk("%s < res %d\n", __func__, res);
+		printk("[micom] %s < res %d\n", __func__, res);
 		return res;
 	}
 	if (errorOccured)
 	{
 		memset(ioctl_data, 0, 8);
-		printk("error\n");
+		printk("micom] %s: error\n", __func__);
 		res = -ETIMEDOUT;
 	}
 //	else
@@ -1029,18 +1058,17 @@ int micomGetWakeUpMode(void)
 	dprintk(100, "%s >\n", __func__);
 
 	memset(buffer, 0, sizeof(buffer));
-
 	errorOccured   = 0;
 	res = micomWriteCommand(0x43, buffer, 7, NEED_ACK);
 	if (res < 0)
 	{
-		printk("%s < res %d\n", __func__, res);
+		printk("[micom] %s < res %d\n", __func__, res);
 		return res;
 	}
 	if (errorOccured)
 	{
 		memset(ioctl_data, 0, sizeof(buffer));
-		printk("error\n");
+		printk("micom] %s: error\n", __func__);
 		res = -ETIMEDOUT;
 	}
 //	else
@@ -1230,7 +1258,7 @@ int micom_init_func(void)
 {
 	int vLoop;
 
-	dprintk(5, "%s >\n", __func__);
+	dprintk(100, "%s >\n", __func__);
 
 	sema_init(&write_sem, 1);
 
@@ -1251,7 +1279,7 @@ int micom_init_func(void)
 //#if VFD_LENGTH < 16
 //	micomWriteString(" T D T  ", strlen(" T D T  "));
 //#else
-//	micomWriteString(" Team Ducktales ", strlen(" Team Ducktales "));
+//	micomWriteString("Team Ducktales", strlen("Team Ducktales"));
 //#endif
 //	msleep(10);
 
@@ -1261,7 +1289,7 @@ int micom_init_func(void)
 		micomSetIcon(vLoop, 0);
 	}
 //#endif
-	dprintk(10, "%s <\n", __func__);
+	dprintk(100, "%s <\n", __func__);
 	return 0;
 }
 
@@ -1275,10 +1303,11 @@ static int clear_display(void)
 	unsigned char bBuf[VFD_LENGTH];
 	int res = 0;
 
-	dprintk(100, "%s >\n", __func__);
+//	dprintk(100, "%s >\n", __func__);
 
 	memset(bBuf, ' ', sizeof(bBuf));
 	res = micomWriteString(bBuf, VFD_LENGTH);
+//	dprintk(100, "%s >\n", __func__);
 	return res;
 }
 
@@ -1343,8 +1372,8 @@ static ssize_t MICOMdev_write(struct file *filp, const char *buff, size_t len, l
 	}
 
 	/* Dagobert: echo add a \n which will be counted as a char
-	 * Audioniek: actually ignores a trailing LF!
-         */
+	 * Audioniek: actually ignores a trailing LF! 
+     */
 	if (kernel_buf[len - 1] == '\n')
 	{
 		llen--;
@@ -1424,7 +1453,7 @@ static ssize_t MICOMdev_read(struct file *filp, char __user *buff, size_t len, l
 	}
 	if (minor == -1)
 	{
-		printk("Error Bad Minor\n");
+		printk("[micom] %s: Error Bad Minor\n", __func__);
 		return -EUSERS;
 	}
 	dprintk(70, "minor = %d\n", minor);
@@ -1457,7 +1486,7 @@ static ssize_t MICOMdev_read(struct file *filp, char __user *buff, size_t len, l
 	/* copy the current display string to the user */
 	if (down_interruptible(&FrontPanelOpen[minor].sem))
 	{
-		printk("%s: res = erestartsys<\n", __func__);
+		printk("[micom] %s: res = erestartsys<\n", __func__);
 		return -ERESTARTSYS;
 	}
 
@@ -1466,7 +1495,7 @@ static ssize_t MICOMdev_read(struct file *filp, char __user *buff, size_t len, l
 		FrontPanelOpen[minor].read = 0;
 
 		up(&FrontPanelOpen[minor].sem);
-		printk("%s: res = 0 <\n", __func__);
+		printk("[micom] %s: < res = 0\n", __func__);
 		return 0;
 	}
 
@@ -1607,7 +1636,7 @@ static int MICOMdev_ioctl(struct inode *Inode, struct file *File, unsigned int c
 			int on = mode == 0 ? data->data[4] : micom->u.icon.on;
 			on = on != 0 ? 1 : 0;
 
-			dprintk(10, "%s Set icon %d to %d (mode %d)\n", __func__, icon_nr, on, mode);
+//			dprintk(10, "%s Set icon %d to %d (mode %d)\n", __func__, icon_nr, on, mode);
 
 			if (mode == 0)  // vfd mode
 			{
@@ -1675,6 +1704,8 @@ static int MICOMdev_ioctl(struct inode *Inode, struct file *File, unsigned int c
 		{
 			if (micom->u.time.time != 0)
 			{
+//				dprintk(10, "Set frontpanel time to (MJD=) %d - %02d:%02d:%02d (UTC)\n", (micom->u.time.time[0] & 0xff) * 256 + (micom->u.time.time[1] & 0xff),
+//					micom->u.time.time[2], micom->u.time.time[3], micom->u.time.time[4]);
 				res = micomSetTime(micom->u.time.time);
 			}
 			break;
@@ -1682,50 +1713,54 @@ static int MICOMdev_ioctl(struct inode *Inode, struct file *File, unsigned int c
 		case VFDGETTIME:
 		{
 			res = micomGetTime();
-			copy_to_user((void *)arg, &ioctl_data, 8);
+//			dprintk(10, "Get frontpanel time: (MJD=) %d - %02d:%02d:%02d (UTC)\n", (ioctl_data[1] & 0xff) * 256 + (ioctl_data[2] & 0xff),
+//				ioctl_data[3], ioctl_data[4], ioctl_data[5]);
+			copy_to_user((void *)arg, &ioctl_data, sizeof(ioctl_data));
 			break;
 		}
 		case VFDGETVERSION:
 		{
 			res = micomGetVersion();
-			copy_to_user((void *)arg, &ioctl_data, 8);
+//			dprintk(10, "Get frontpanel version info %02x, %02x\n", ioctl_data[1] & 0xff, ioctl_data[2] & 0xff);
+			copy_to_user((void *)arg, &ioctl_data, sizeof(ioctl_data));
 			break;
 		}
 		case VFDGETWAKEUPMODE:
 		{
 			res = micomGetWakeUpMode();
-			copy_to_user((void *)arg, &ioctl_data, 8);
+			dprintk(10, "Get wakeupmode info %02x\n", ioctl_data[1] & 0xff);
+			copy_to_user((void *)arg, &ioctl_data, sizeof(ioctl_data));
 			break;
 		}
 		case VFDDISPLAYCHARS:
 		{
-//			if (mode == 0)
-//			{
-			res = micomWriteString(data->data, data->length);
+			if (mode == 0)
+			{
+				res = micomWriteString(data->data, data->length);
 //			}
 //			else
 //			{
 //				//not supported
-//			}
-//			mode = 0;
+			}
+			mode = 0;
 			break;
 		}
 		case VFDSETRCCODE:
 		{
-//			if (mode == 0)
-//			{
-			int rc_code = data->data[0];
-
-			if (rc_code > 0 && rc_code < 5)
+			if (mode == 0)
 			{
-				res = micomSetRCcode(rc_code);
-			}
+				int rc_code = data->data[0];
+
+				if (rc_code > 0 && rc_code < 5)
+				{
+					res = micomSetRCcode(rc_code);
+				}
 //			}
 //			else
 //			{
 //				//not supported
-//			}
-//			mode = 0;
+			}
+			mode = 0;
 			break;
 		}
 		case VFDDISPLAYWRITEONOFF:
@@ -1752,11 +1787,11 @@ static int MICOMdev_ioctl(struct inode *Inode, struct file *File, unsigned int c
 
 struct file_operations vfd_fops =
 {
-	.owner = THIS_MODULE,
-	.ioctl = MICOMdev_ioctl,
-	.write = MICOMdev_write,
-	.read  = MICOMdev_read,
-	.open  = MICOMdev_open,
-	.release  = MICOMdev_close
+	.owner   = THIS_MODULE,
+	.ioctl   = MICOMdev_ioctl,
+	.write   = MICOMdev_write,
+	.read    = MICOMdev_read,
+	.open    = MICOMdev_open,
+	.release = MICOMdev_close
 };
 // vim:ts=4
