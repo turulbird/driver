@@ -126,8 +126,6 @@
  *  |
  *  ---------- hdmi
  *  |           |
- *  |           --------- bypass_edid_checking
- *  |           |
  *  |           --------- enable_hdmi_resets
  *  |           |
  *  |           --------- audio_source
@@ -802,7 +800,6 @@ struct ProcStructure_s e2Proc[] =
 	{cProcEntry, "stb/vmpeg/1/framerate"                                            , NULL, NULL, NULL, NULL, ""},
 
 	{cProcDir  , "stb/hdmi"                                                         , NULL, NULL, NULL, NULL, ""},
-	{cProcEntry, "stb/hdmi/bypass_edid_checking"                                    , NULL, NULL, NULL, NULL, ""},
 	{cProcEntry, "stb/hdmi/enable_hdmi_resets"                                      , NULL, NULL, NULL, NULL, ""},
 	{cProcEntry, "stb/hdmi/output"                                                  , NULL, NULL, NULL, NULL, ""},
 	{cProcEntry, "stb/hdmi/output_choices"                                          , NULL, NULL, NULL, NULL, ""},
