@@ -445,9 +445,9 @@ struct e2_procs
 	{"stb/fb/dst_width", proc_vmpeg_0_dst_width_read, proc_vmpeg_0_dst_width_write, 0},
 	{"stb/fb/dst_height", proc_vmpeg_0_dst_height_read, proc_vmpeg_0_dst_height_write, 0},
 
-	{"stb/hdmi/bypass_edid_checking", proc_hdmi_edid_handling_read, proc_hdmi_edid_handling_write, 0},
 	/*
-	 {"stb/hdmi/enable_hdmi_resets", NULL, NULL, 0},
+	{"stb/hdmi/bypass_edid_checking", proc_hdmi_edid_handling_read, proc_hdmi_edid_handling_write, 0},
+	{"stb/hdmi/enable_hdmi_resets", NULL, NULL, 0},
 	*/
 	{"stb/hdmi/audio_source", proc_hdmi_audio_source_read, proc_hdmi_audio_source_write, 0},
 	{"stb/hdmi/audio_source_choices", proc_hdmi_audio_source_choices_read, NULL, 0},
