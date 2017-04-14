@@ -113,21 +113,6 @@
 #include "nuvoton_asc.h"
 #include "nuvoton_utf.h"
 
-#if defined(OCTAGON1008) \
- || defined(HS7420) \
- || defined(HS7429)
-#define DISP_SIZE 8
-#elif defined(FORTIS_HDBOX) \
- || defined(ATEVIO7500)
-#define DISP_SIZE 12
-#elif defined(HS7810A) \
- || defined(HS7119) \
- || defined(HS7819)
-#define DISP_SIZE 4
-#elif defined(HS7110)
-#define DISP_SIZE 0
-#endif
-
 #if defined(FORTIS_HDBOX)
 tIconState spinner_state;
 #elif defined(ATEVIO7500)
@@ -1090,7 +1075,12 @@ int nuvotonSetLED(int which, int level)
 	buffer[1] = cCommandSetLed;
 	buffer[2] = which;
 	buffer[3] = level;
-	buffer[4] = 0x08; //what is this: previous level?
+#if	defined(FORTIS_HDBOX) \
+ || defined(ATEVIO7500) 
+	buffer[4] = (which == 1 ? 8 : 0); //handle deep standby brighness (red = 8, others = off)
+#else
+	buffer[4] = 0;
+#endif
 	buffer[5] = EOP;
 
 	res = nuvotonWriteCommand(buffer, 6, 0);
@@ -2274,7 +2264,7 @@ int nuvoton_init_func(void)
  * code for writing to /dev/vfd
  *
  */
-static void clear_display(void)
+void clear_display(void)
 {
 	unsigned char bBuf[12];
 	int res = 0;
@@ -2283,6 +2273,7 @@ static void clear_display(void)
 
 	memset(bBuf, ' ', sizeof(bBuf));
 	res = nuvotonWriteString(bBuf, DISP_SIZE);
+	dprintk(100, "%s <\n", __func__);
 }
 
 static ssize_t NUVOTONdev_write(struct file *filp, const char *buff, size_t len, loff_t *off)

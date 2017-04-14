@@ -46,6 +46,21 @@ extern short paramDebug;
 
 /****************************************************************************************/
 
+#if defined(OCTAGON1008) \
+ || defined(HS7420) \
+ || defined(HS7429)
+#define DISP_SIZE 8
+#elif defined(FORTIS_HDBOX) \
+ || defined(ATEVIO7500)
+#define DISP_SIZE 12
+#elif defined(HS7810A) \
+ || defined(HS7119) \
+ || defined(HS7819)
+#define DISP_SIZE 4
+#elif defined(HS7110)
+#define DISP_SIZE 0
+#endif
+
 typedef struct
 {
 	struct file     *fp;

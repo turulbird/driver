@@ -32,16 +32,22 @@
  * 20170206 Audioniek       /proc/stb/fp/resellerID added.
  * 20170207 Audioniek       /proc/stb/fp/resellerID and /proc/stb/fp/version
  *                          were reversed.
+ * 20170414 Audioniek       /proc/progress handling added.
  * 
  ****************************************************************************/
 
 #include <linux/proc_fs.h>      /* proc fs */
 #include <asm/uaccess.h>        /* copy_from_user */
 #include <linux/time.h>
+#include <linux/delay.h>
 #include <linux/kernel.h>
 #include "nuvoton.h"
 
 /*
+ *  /proc/------
+ *             |
+ *             +--- progress (rw)           Progress of E2 startup in %
+ *
  *  /proc/stb/fp
  *             |
  *             +--- version (r)             SW version of boot loader (hundreds = major, ten/units = minor)
@@ -62,8 +68,6 @@ extern int install_e2_procs(char *name, read_proc_t *read_proc, write_proc_t *wr
 extern int remove_e2_procs(char *name, read_proc_t *read_proc, write_proc_t *write_proc);
 
 /* from other nuvoton modules */
-//extern int nuvotonSetIcon(int which, int on);
-//extern void VFD_set_all_icons(int onoff);
 extern int nuvotonWriteString(char *buf, size_t len);
 #if !defined(HS7110)
 extern int nuvotonSetBrightness(int level);
@@ -79,11 +83,139 @@ extern int nuvotonSetWakeUpTime(char *time);
 
 /* Globals */
 static int rtc_offset = 3600;
-//static int progress = 0;
-//static int progress_done = 0;
+static int progress = 0;
+static int progress_done = 0;
+//#endif
 static u32 led0_pattern = 0;
 static u32 led1_pattern = 0;
 static int led_pattern_speed = 20;
+
+static int progress_write(struct file *file, const char __user *buf, unsigned long count, void *data)
+{
+	char* page;
+	char* myString;
+	ssize_t ret = -ENOMEM;
+
+	page = (char*)__get_free_page(GFP_KERNEL);
+
+	if (page)
+	{
+		ret = -EFAULT;
+
+		if (copy_from_user(page, buf, count))
+		{
+			goto out;
+		}
+
+		myString = (char*) kmalloc(count + 1, GFP_KERNEL);
+		strncpy(myString, page, count);
+		myString[count - 1] = '\0';
+
+		sscanf(myString, "%d", &progress);
+		kfree(myString);
+
+		if (progress > 98 && progress_done == 0)
+		{
+			progress_done = 1;
+			clear_display();
+#if defined(FORTIS_HDBOX) \
+ || defined(ATEVIO7500)
+			spinner_state.state = 0;
+			lastdata.icon_state[ICON_SPINNER] = 0;
+#if defined(ATEVIO7500)
+			spinner_state.state = 0;
+			do
+			{
+				msleep(250);
+			}
+			while (spinner_state.status != ICON_THREAD_STATUS_HALTED);
+			icon_state.state = 1;
+			up(&icon_state.sem);
+#endif
+#endif
+			ret = DISP_SIZE;
+			goto out;
+		}
+#if defined(FORTIS_HDBOX) \
+ || defined(ATEVIO7500)
+		if (progress_done == 0 && spinner_state.state == 0)
+		{
+			spinner_state.state = 1;
+			lastdata.icon_state[ICON_SPINNER] = 1;
+#if defined(FORTIS_HDBOX)
+			spinner_state.period = 1000;
+#elif defined(ATEVIO7500)
+			if (icon_state.state == 1)
+			{
+				dprintk(50, "%s Stop icon thread\n", __func__);
+				icon_state.state = 0;
+				do
+				{
+					msleep(250);
+				}
+				while (icon_state.status != ICON_THREAD_STATUS_HALTED);
+				dprintk(50, "%s Icon thread stopped\n", __func__);
+			}
+			spinner_state.period = 250;
+#endif
+			up(&spinner_state.sem);
+		}
+#endif
+		if (progress > 19 && progress < 99 && progress_done == 0)
+		{
+			myString = (char*)kmalloc(count + DISP_SIZE, GFP_KERNEL);
+			if (myString)
+			{
+#if defined(OCTAGON1008) \
+ || defined(HS7420) \
+ || defined(HS7429)
+				strcpy(myString, "Start ");
+				strncat(myString, page, count);
+				ret = nuvotonWriteString(myString, (count + 6) < 8 ? (count + 6) : 8);
+#elif defined(FORTIS_HDBOX) \
+ || defined(ATEVIO7500)
+				strcpy(myString, "E2 start:");
+				strncat(myString, page, count - 2);
+				strcat(myString, "%");
+				ret = nuvotonWriteString(myString, (count + 8) < 12 ? (count + 8) : 12);
+//#elif defined(HS7810A) \
+// || defined(HS7119) \
+// || defined(HS7819)
+//				dprintk(5, "%s count = %d\n", __func__, count);
+//				dprintk(5, "%s page = %s\n", __func__, page);
+//				strcpy(myString, "St");
+//				strncat(myString, page, count - 2);
+//				ret = nuvotonWriteString(myString, (count + 8) < 4 ? (count + 8) : 4);
+#endif
+				kfree(myString);
+			}
+		}
+//		else
+//		{
+//			clear_display();
+//			ret = DISP_SIZE;
+//		}
+		
+		if (ret >= 0)
+		{
+			ret = count;
+		}
+	}
+out:
+	free_page((unsigned long)page);
+	return ret;
+}
+
+static int progress_read(char *page, char **start, off_t off, int count, int *eof, void *data)
+{
+	int len = 0;
+
+	if (NULL != page)
+	{
+		len = sprintf(page,"%d", progress);
+	}
+	return len;
+}	
 
 static int text_write(struct file *file, const char __user *buf, unsigned long count, void *data)
 {
@@ -588,6 +720,7 @@ struct fp_procs
 	write_proc_t *write_proc;
 } fp_procs[] =
 {
+	{ "progress", progress_read, progress_write },
 	{ "stb/fp/rtc", read_rtc, write_rtc },
 	{ "stb/fp/rtc_offset", read_rtc_offset, write_rtc_offset },
 	{ "stb/fp/led0_pattern", led0_pattern_read, led0_pattern_write },
