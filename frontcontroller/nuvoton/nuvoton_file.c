@@ -2185,7 +2185,7 @@ int nuvoton_init_func(void)
 #endif
 	printk(" VFD/Nuvoton module initializing.\n");
 	/* must be called before standby_disable */
-	res = nuvotonWriteCommand(boot_on, sizeof(init1), 0);  // SetBootOn
+	res = nuvotonWriteCommand(boot_on, sizeof(boot_on), 0);  // SetBootOn
 
 	/* setup: frontpanel should not power down the receiver if standby is selected */
 	res = nuvotonWriteCommand(standby_disable, sizeof(standby_disable), 0);
