@@ -532,6 +532,8 @@ void dumpValues(void);
 extern u8 regs[0x100];  // array with copy values of FP registers
 extern int errorOccured;
 extern struct file_operations vfd_fops;
+extern char *gmt_offset;  // module param, string
+extern int rtc_offset;
 
 #endif //_123_nuvoton
 // vim:ts=4

@@ -32,7 +32,11 @@
  * 20170206 Audioniek       /proc/stb/fp/resellerID added.
  * 20170207 Audioniek       /proc/stb/fp/resellerID and /proc/stb/fp/version
  *                          were reversed.
- * 20170414 Audioniek       /proc/progress handling added.
+ * 20170415 Audioniek       /proc/progress handling added.
+ * 20170417 Audioniek       /proc/stb/fp/rtc behaviour changed. It is now
+ *                          in UTC as Enigma2 expects that. Front panel clock
+ *                          is maintained in local time to ensure correct
+ *                          front panel clock display when in deep standby.
  * 
  ****************************************************************************/
 
@@ -82,10 +86,8 @@ extern int nuvotonGetWakeUpTime(char *time);
 extern int nuvotonSetWakeUpTime(char *time);
 
 /* Globals */
-static int rtc_offset = 3600;
 static int progress = 0;
 static int progress_done = 0;
-//#endif
 static u32 led0_pattern = 0;
 static u32 led1_pattern = 0;
 static int led_pattern_speed = 20;
@@ -133,7 +135,7 @@ static int progress_write(struct file *file, const char __user *buf, unsigned lo
 			up(&icon_state.sem);
 #endif
 #endif
-			ret = DISP_SIZE;
+			ret = count;
 			goto out;
 		}
 #if defined(FORTIS_HDBOX) \
@@ -147,14 +149,14 @@ static int progress_write(struct file *file, const char __user *buf, unsigned lo
 #elif defined(ATEVIO7500)
 			if (icon_state.state == 1)
 			{
-				dprintk(50, "%s Stop icon thread\n", __func__);
+//				dprintk(50, "%s Stop icon thread\n", __func__);
 				icon_state.state = 0;
 				do
 				{
 					msleep(250);
 				}
 				while (icon_state.status != ICON_THREAD_STATUS_HALTED);
-				dprintk(50, "%s Icon thread stopped\n", __func__);
+//				dprintk(50, "%s Icon thread stopped\n", __func__);
 			}
 			spinner_state.period = 250;
 #endif
@@ -178,14 +180,12 @@ static int progress_write(struct file *file, const char __user *buf, unsigned lo
 				strncat(myString, page, count - 2);
 				strcat(myString, "%");
 				ret = nuvotonWriteString(myString, (count + 8) < 12 ? (count + 8) : 12);
-//#elif defined(HS7810A) \
-// || defined(HS7119) \
-// || defined(HS7819)
-//				dprintk(5, "%s count = %d\n", __func__, count);
-//				dprintk(5, "%s page = %s\n", __func__, page);
-//				strcpy(myString, "St");
-//				strncat(myString, page, count - 2);
-//				ret = nuvotonWriteString(myString, (count + 8) < 4 ? (count + 8) : 4);
+#elif defined(HS7810A) \
+ || defined(HS7119) \
+ || defined(HS7819)
+				strcpy(myString, "St");
+				strncat(myString, page, count - 2);
+				ret = nuvotonWriteString(myString, (count + 2) < 4 ? (count + 2) : 4);
 #endif
 				kfree(myString);
 			}
@@ -282,7 +282,7 @@ static struct tm * gmtime(register const time_t time)
 	register unsigned long dayclock, dayno;
 	int year = 70;
 
-	dprintk(5, "%s < Time to convert: %d seconds\n", __func__, (int)time);
+//	dprintk(5, "%s < Time to convert: %d seconds\n", __func__, (int)time);
 	dayclock = (unsigned long)time % 86400;
 	dayno = (unsigned long)time / 86400;
 
@@ -335,6 +335,7 @@ void calcSetNuvotonTime(time_t theTime, char *destString)
 	struct tm *now_tm;
 	int mjd;
 
+//	dprintk(10, "%s > Time to calcluate: %d %02d:%02d:%02d\n", __func__, (int)theTime);
 	now_tm = gmtime(theTime);
 	mjd = getMJD(now_tm);
 	destString[0] = (mjd >> 8);
@@ -342,6 +343,8 @@ void calcSetNuvotonTime(time_t theTime, char *destString)
 	destString[2] = now_tm->tm_hour;
 	destString[3] = now_tm->tm_min;
 	destString[4] = now_tm->tm_sec;
+//	dprintk(10, "%s < Calculated time: MJD=%d %02d:%02d:%02d\n", __func__, mjd, destString[2], destString[3], destString[4]);
+
 }
 
 static int read_rtc(char *page, char **start, off_t off, int count, int *eof, void *data)
@@ -351,13 +354,12 @@ static int read_rtc(char *page, char **start, off_t off, int count, int *eof, vo
 	long rtc_time;
 	char fptime[5];
 
-	res = nuvotonGetTime(fptime);
-	rtc_time = calcGetNuvotonTime(fptime);
+	res = nuvotonGetTime(fptime);  // get front panel clock time (local)
+	rtc_time = calcGetNuvotonTime(fptime) - rtc_offset;  // return UTC
 
 	if (NULL != page)
 	{
-//		len = sprintf(page,"%u\n", (int)(rtc_time - rtc_offset));
-		len = sprintf(page,"%u\n", (int)(rtc_time)); //Fortis FP is in UTC
+		len = sprintf(page,"%u\n", (int)(rtc_time));
 	}
 	return len;
 }
@@ -388,9 +390,8 @@ static int write_rtc(struct file *file, const char __user *buffer, unsigned long
 
 		if (test > 0)
 		{
-//			calcSetNuvotonTime((argument + rtc_offset), time); //set time as u32
-			calcSetNuvotonTime((argument), time); //set time as u32 (Fortis FP is in local time)
-			ret = nuvotonSetTime(time);
+			calcSetNuvotonTime((argument + rtc_offset), time);
+			ret = nuvotonSetTime(time); // update front panel clock in local time
 		}
 		/* always return count to avoid endless loop */
 		ret = count;
@@ -398,7 +399,6 @@ static int write_rtc(struct file *file, const char __user *buffer, unsigned long
 out:
 	free_page((unsigned long)page);
 	kfree(myString);
-	dprintk(10, "%s <\n", __func__);
 	return ret;
 }
 
@@ -440,7 +440,6 @@ static int write_rtc_offset(struct file *file, const char __user *buffer, unsign
 out:
 	free_page((unsigned long)page);
 	kfree(myString);
-	dprintk(10, "%s <\n", __func__);
 	return ret;
 }
 
@@ -465,14 +464,12 @@ static int wakeup_time_write(struct file *file, const char __user *buffer, unsig
 		}
 		strncpy(myString, page, count);
 		myString[count] = '\0';
-		dprintk(5, "%s > %s\n", __func__, myString);
 
 		test = sscanf(myString, "%u", (unsigned int *)&wakeup_time);
 
 		if (0 < test)
 		{
-//			calcSetNuvotonTime((wakeup_time + rtc_offset), wtime); //set time as u32
-			calcSetNuvotonTime((wakeup_time), wtime); //set time as u32 (Fortis FP is in local time)
+			calcSetNuvotonTime((wakeup_time + rtc_offset), wtime);  //set FP wake up time (local)
 			ret = nuvotonSetWakeUpTime(wtime);
 		}
 		/* always return count to avoid endless loop */
@@ -481,7 +478,7 @@ static int wakeup_time_write(struct file *file, const char __user *buffer, unsig
 out:
 	free_page((unsigned long)page);
 	kfree(myString);
-	dprintk(10, "%s <\n", __func__);
+//	dprintk(10, "%s <\n", __func__);
 	return ret;
 }
 
@@ -494,11 +491,10 @@ static int wakeup_time_read(char *page, char **start, off_t off, int count, int 
 	if (NULL != page)
 	{
 		
-		nuvotonGetWakeUpTime(wtime);
-		w_time = calcGetNuvotonTime(wtime);
+		nuvotonGetWakeUpTime(wtime);  // get wakeup time from FP clock (local)
+		w_time = calcGetNuvotonTime(wtime) - rtc_offset;  // UTC
 
-//		len = sprintf(page, "%u\n", w_time - rtc_offset);
-		len = sprintf(page, "%u\n", w_time); //Fortis FP uses local time
+		len = sprintf(page, "%u\n", w_time);
 	}
 	return len;
 }
@@ -515,7 +511,6 @@ static int was_timer_wakeup_read(char *page, char **start, off_t off, int count,
 
 		if (res == 0)
 		{
-			dprintk(5, "%s > wakeup_mode= %d\n", __func__, wakeup_mode);
 			if (wakeup_mode == 3) // if timer wakeup
 			{
 				wakeup_mode = 1;

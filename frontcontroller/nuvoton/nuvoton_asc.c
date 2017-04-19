@@ -103,7 +103,7 @@ int serial_putc(char Data)
 
 	if (Counter == 0)
 	{
-		dprintk(1, "Error writing char\n");
+		dprintk(1, "Error writing data byte.\n");
 	}
 
 	*ASCn_TX_BUFF = Data;
