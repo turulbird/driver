@@ -1687,11 +1687,15 @@ int nuvotonWriteString(unsigned char *aBuf, int len)
 
 	memset(cmd_buf, 0, sizeof(cmd_buf));
 	memset(bBuf, 0, sizeof(bBuf));
+
 	if (len > 8)
 	{
 		len = 8;
 	}
 	buflen = len;
+
+	/* save last string written to fp */
+	memcpy(&lastdata.data, aBuf, len);
 
 	/* Handle periods and colon in text in order to set
        the corresponding LED segments in the display. */
@@ -1729,7 +1733,7 @@ int nuvotonWriteString(unsigned char *aBuf, int len)
 	if (bBuf[2] == '.')  // if next input character is period
 	{
 		cmd_buf[4] = 0x80;  // switch on period on position 3
-		bBuf[2] = ' '; // replace with a space
+		bBuf[2] = ' ';  // replace with a space
 
 //		if ((buflen == 3)
 //		{
@@ -1751,6 +1755,7 @@ int nuvotonWriteString(unsigned char *aBuf, int len)
 	else if (bBuf[3] == '.')
 	{
 		cmd_buf[4] = 0x80;  // switch on period on position 3
+
 		if (buflen > 4)
 		{
 			for (i = 4; i <= buflen; i++)
@@ -1770,7 +1775,7 @@ int nuvotonWriteString(unsigned char *aBuf, int len)
 	if (bBuf[3] == '.')
 	{
 		cmd_buf[5] = 0x80;  // switch on period on position 4
-		bBuf[3] = ' '; // replace with a space
+		bBuf[3] = ' ';  // replace with a space
 		
 		if (buflen > 4)
 		{
@@ -1780,17 +1785,13 @@ int nuvotonWriteString(unsigned char *aBuf, int len)
 			}
 			buflen--;
 		}
-		else
-		{
-			bBuf[3] = ' ';
-		}
 	}
 	else
 	{
 		if (bBuf[4] == '.')
 		{
 			cmd_buf[5] = 0x80;  // switch on period on position 4
-			dprintk(10, "String (step 5a period pos 4) [%s], l=%d\n", bBuf, buflen);
+//			dprintk(10, "String (step 5a period pos 4) [%s], l=%d\n", bBuf, buflen);
 			if (buflen > 4)
 			{
 				for (i = 5; i <= buflen; i++)
@@ -1830,8 +1831,6 @@ int nuvotonWriteString(unsigned char *aBuf, int len)
 	cmd_buf[6] = EOP;
 	res = nuvotonWriteCommand(cmd_buf, 7, 0);
 
-	/* save last string written to fp */
-	memcpy(&lastdata.data, aBuf, len);
 	memcpy(&lastdata.buf, cmd_buf, 7);
 	lastdata.length = len;
 
@@ -2067,6 +2066,8 @@ int nuvotonWriteString(unsigned char *aBuf, int len)
  */
 int nuvoton_init_func(void)
 {
+	// Start of declarations, model dependent
+
 	// FP commands commands common to all models
 	char boot_on[] = {SOP, cCommandSetBootOn, EOP};
 	char standby_disable[] = {SOP, cCommandPowerOffReplay, 0x02, EOP};
@@ -2247,6 +2248,7 @@ int nuvoton_init_func(void)
 
 	int  vLoop;
 	int  res = 0;
+	// End of declarations
 
 	dprintk(100, "%s >\n", __func__);
 
@@ -2276,12 +2278,11 @@ int nuvoton_init_func(void)
 	printk("Fortis");
 #endif
 	printk(" Nuvoton front panel driver initializing.\n");
+
+	/* Initialise the front processor */
+
 	/* must be called before standby_disable */
-<<<<<<< HEAD
-	res = nuvotonWriteCommand(boot_on, sizeof(boot_on), 0);
-=======
 	res = nuvotonWriteCommand(boot_on, sizeof(boot_on), 0);  // SetBootOn
->>>>>>> 6aab74dfb9e04b5b1bdfc475e468f4f265896f32
 
 	/* setup: frontpanel should not power down the receiver if standby is selected */
 	res = nuvotonWriteCommand(standby_disable, sizeof(standby_disable), 0);
