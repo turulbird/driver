@@ -82,6 +82,12 @@ enum stv090x_adc_range
 	STV090x_ADC_1Vpp     = 1
 };
 
+enum tuner_mode
+{
+	TUNER_SLEEP = 1,
+	TUNER_WAKE,
+};
+
 struct stv090x_config
 {
 	enum stv090x_device  device;

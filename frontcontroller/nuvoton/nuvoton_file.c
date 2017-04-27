@@ -1679,8 +1679,6 @@ int nuvotonWriteString(unsigned char *aBuf, int len)
 {
 	int i, res;
 	int buflen;
-	int dot_count = 0;
-	int colon_count = 0;
 	unsigned char cmd_buf[7], bBuf[9];
 
 	dprintk(100, "%s > %d\n", __func__, len);
