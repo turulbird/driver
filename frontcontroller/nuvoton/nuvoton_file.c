@@ -82,14 +82,38 @@
  * 20170202 Audioniek       Multiple icons now displayed in a thread on
  *                          HS8200; spinner code simplified.
  * 20170204 Audioniek       Spinner switched off when using (re)set all icons;
- *                          in addition on FS9000/9200 when one of the circle
- *                          icons is (re)set.
+ *                          on FS9000/9200 this is also done when one of the
+ *                          circle icons is (re)set.
  * 20170205 Audioniek       nuvotonGetVersion reports resellerID as well.
  * 20170417 Audioniek       New nuvoton module parameter: gmt_offset.
  * 20170418 Audioniek       Init: bug fixed with boot_on string length.
  * 20170419 Audioniek       nuvotonWriteString for HS7810A/7819 rewritten.
+ * 20170516 Audioniek       Missing character entries for : and ; added for
+ *                          HS9510/7420/7429 added.
  *
- *****************************************************************************/
+ *****************************************************************************
+ *
+ * Note on model designations: Three Fortis models have historically been
+ * indicated by a reseller model number instead of the generic internal Fortis
+ * model designation:
+ *
+ * FORTIS_HDBOX: Strictly speaking the FS9000. The chosen name is confusing,
+ *               as HDBOX is one of the resellers selling Fortis receivers.
+ *               In Germany the FS9000 was sold as Octagon SF1018 and
+ *               Atevio AV7000.
+ *               The FS9200 is completely hardware compatible with the FS9000
+ *               and does not have a separate designation. In Germany this
+ *               model was sold as Astro ASR1200.
+ * OCTAGON1008:  The HS9510 and its variants. In Germany sold as
+ *               Octagon SF1008P, Octagon SF1008SE, Atevio AV700 and
+ *               Astro ASR1100.
+ * ATEVIO7500:   The HS8200. In Germany sold as Octagon SF1028, Atevio AV7500,
+ *               Atemio AV7600 and Opticum Actus Duo.
+ * All other Fortis models are designated by the internal Fortis model
+ * number that can be found on the component side of the main board, usually
+ * near the front panel.
+ */
+
 
 #include <asm/io.h>
 #include <asm/uaccess.h>
@@ -165,7 +189,7 @@ u8 regs[0x100];  // array with copy values of FP registers
  * Added by Audioniek:
  * Command format for set icon (Octagon1008 and HS742X only):
  * SOP 0xc4 byte_pos byte_1 byte_2 byte_3 EOP
- * byte pos is 0..8 (0=rightmost, 8 is collection of icons on left)
+ * byte pos is 0..8 (0=rightmost, 8 is collection of icons on left; HS9510 only)
  *
  * Character layout for positions 0..7:
  *      icon
@@ -193,7 +217,7 @@ u8 regs[0x100];  // array with copy values of FP registers
  * segment n is byte_2, bit 4 ( 16)
  * segment o is byte_2, bit 5 ( 32)
  * segment d is byte_2, bit 6 ( 64)
- * segment p is byte_2, bit 7 (128) (colon, only on positions 1, 3 & 5 and only on Octagon1008)
+ * segment p is byte_2, bit 7 (128) (colon, only on positions 1, 3 & 5)
  *
  * segment a is byte_3, bit 0 (  1)
  * segment h is byte_3, bit 1 (  2)
@@ -205,12 +229,12 @@ u8 regs[0x100];  // array with copy values of FP registers
  * segment g is byte_3, bit 7 (128)
  *
  * top icons on positions 0 .. 7: (see below)
- * Octagon1008:
+ * HS9510 (Octagon1008):
  * (0) ICON_DOLBY, ICON_DTS, ICON_VIDEO, ICON_AUDIO, ICON_LINK, ICON_HDD, ICON_DISC, ICON_DVB (7)
  * HS742X:
  * (0) none, none, ICON_COLON3, none, ICON_COLON2, none, ICON_COLON3, ICON_DOT (7)
  *
- * Position (leftmost) 8 is a collection of icons (see below, Octagon1008 only)
+ * Position 8 (leftmost!) is a collection of icons (see below, Octagon1008 only)
  */
 struct vfd_buffer vfdbuf[9];
 
@@ -218,7 +242,7 @@ struct chars
 {
 	u8 s1;
 	u8 s2;
-	u8 c;
+	u8 character;
 } octagon_chars[] =
 {
 	{0x00, 0x00, ' '},
@@ -237,7 +261,7 @@ struct chars
 	{0x01, 0xc0, '-'},
 	{0x04, 0x00, '.'},
 	{0x20, 0x82, '/'},
-	{0x46, 0x31, '0'},
+	{0x46, 0x31, '0'}, //x030
 	{0x02, 0x12, '1'},
 	{0x60, 0xd1, '2'},
 	{0x43, 0xd1, '3'},
@@ -247,6 +271,8 @@ struct chars
 	{0x20, 0x83, '7'},
 	{0x47, 0xf1, '8'},
 	{0x43, 0xf1, '9'},
+	{0x10, 0x04, ':'}, //x03A
+	{0x20, 0x04, ';'},
 	{0x08, 0x82, '<'},
 	{0x41, 0xc0, '='},
 	{0x20, 0x88, '>'},
@@ -1912,7 +1938,7 @@ int nuvotonWriteString(unsigned char *aBuf, int len)
 
 		for (j = 0; j < ARRAY_SIZE(octagon_chars); j++)
 		{
-			if (octagon_chars[j].c == aBuf[i])  // look up character
+			if (octagon_chars[j].character == aBuf[i])  // look up character
 			{
 				bBuf[4] = octagon_chars[j].s1 | (vfdbuf[7 - i].buf1 & 0x80);  // preserve colon icon state
 				vfdbuf[7 - i].buf1 = bBuf[4];
