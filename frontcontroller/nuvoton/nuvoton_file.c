@@ -997,6 +997,7 @@ int nuvotonSetIcon(int which, int on)
 		printk("[nuvoton] Icon number %d out of range (%d-%d)\n", which, ICON_MIN + 1, ICON_MAX - 1);
 		return -EINVAL;
 	}
+	dprintk(10, "Set icon #%d to %d\n", which, on);
 
 #if defined(HS7119)
 	lastdata.buf[3] = ((on) ? lastdata.buf[3] | 0x80 : lastdata.buf[3] & 0x7f);
@@ -1025,7 +1026,6 @@ int nuvotonSetIcon(int which, int on)
 		}
 	}
 #endif
-	dprintk(10, "Set icon #%d to %d\n", which, on);
 	memcpy(&cmd_buf, lastdata.buf, 7);
 	res = nuvotonWriteCommand(cmd_buf, 7, 0);
 
@@ -1839,7 +1839,14 @@ int nuvotonWriteString(unsigned char *aBuf, int len)
 	// add character data
 	for (i = 0; i < 4; i++)
 	{
-		cmd_buf[i + 2] |= _7seg_fonts[(bBuf[i] - 0x20)];
+		if (bBuf[i] < 0x20)
+		{
+			cmd_buf[i + 2] &= 0x80;
+		}
+		else
+		{
+			cmd_buf[i + 2] |= _7seg_fonts[(bBuf[i] - 0x20)];
+		}
 	}
 
 	if (buflen < 4)
@@ -2992,7 +2999,7 @@ static int NUVOTONdev_ioctl(struct inode *Inode, struct file *File, unsigned int
 					}
 					res = nuvotonSetIcon(icon_nr, on);
 #else
-
+					dprintk(50, "%s Set single icon #%d to %d\n", __func__, icon_nr, on);
 					res = nuvotonSetIcon(icon_nr, on);
 #endif
 					break;
