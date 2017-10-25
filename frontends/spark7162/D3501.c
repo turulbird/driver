@@ -4435,9 +4435,9 @@ static INT32 nim_s3501_get_new_PER(struct nim_device *dev, UINT32 *per)
 static int d3501_init(struct dvb_frontend *fe)
 {
 	struct dvb_d3501_fe_state *state = fe->demodulator_priv;
+
 	//dprintk(10, "%s <\n", __FUNCTION__);
 	return nim_s3501_open(&state->spark_nimdev);
-	return 0;
 }
 
 static void d3501_release(struct dvb_frontend *fe)
@@ -4462,7 +4462,7 @@ static int d3501_read_ber(struct dvb_frontend *fe, u32 *ber)
 
 static int d3501_read_snr(struct dvb_frontend *fe, u16 *snr)
 {
-	int     iRet;
+	int iRet;
 	struct dvb_d3501_fe_state *state = fe->demodulator_priv;
 
 	iRet = nim_s3501_get_SNR(&state->spark_nimdev, (UINT16 *)snr); //quality
