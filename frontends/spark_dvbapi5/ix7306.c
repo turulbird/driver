@@ -26,8 +26,8 @@
 
 struct ix7306_state
 {
-	struct dvb_frontend     *fe;
-	struct i2c_adapter      *i2c;
+	struct dvb_frontend *fe;
+	struct i2c_adapter *i2c;
 	const struct ix7306_config  *config;
 
 	/* state cache */
@@ -612,7 +612,7 @@ static int ix7306_init(struct dvb_frontend *fe)
 		return -1;
 	}
 
-	/*D¡ä tuner*/
+	/*D tuner*/
 	if (ix7306_write(state, init_data1, sizeof(init_data1)) < 0)
 	{
 		printk("nim_vz7306_control: I2C write error init_data1\n");
@@ -706,7 +706,7 @@ int ix7306_set_frequency(struct dvb_frontend *fe, u32 frequency)
 	if (&frontend_ops->tuner_ops)
 		tuner_ops = &frontend_ops->tuner_ops;
 
-	if (tuner_ops->set_state)
+	if (tuner_ops && tuner_ops->set_state)
 	{
 		if ((err = tuner_ops->set_state(fe, DVBFE_TUNER_FREQUENCY, &t_state)) < 0)
 		{
