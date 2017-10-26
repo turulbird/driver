@@ -1476,11 +1476,7 @@ static INT32 nim_s3501_get_bit_rate(struct nim_device *dev, UINT8 work_mode, UIN
 			YWOSTRACE((YWOS_TRACE_ERROR, "Map type error: %02x \n", map_type));
 		}
 
-		if ((priv->Tuner_Config_Data.QPSK_Config & M3501_USE_188_MODE) == M3501_USE_188_MODE)
-		{
-			temp = temp;
-		}
-		else
+		if ((priv->Tuner_Config_Data.QPSK_Config & M3501_USE_188_MODE) != M3501_USE_188_MODE)
 		{
 			temp = (temp * 204 + 94) / 188;
 		}
@@ -1795,15 +1791,25 @@ static INT32 nim_s3501_set_ts_mode(struct nim_device *dev, UINT8 work_mode, UINT
 	{
 		//M3501A
 		if ((priv->Tuner_Config_Data.QPSK_Config & 0xc0) == M3501_1BIT_MODE)
+		{
 			data = 0x60;
+		}
 		else if ((priv->Tuner_Config_Data.QPSK_Config & 0xc0) == M3501_2BIT_MODE)
+		{
 			data = 0x00;
+		}
 		else if ((priv->Tuner_Config_Data.QPSK_Config & 0xc0) == M3501_4BIT_MODE)
+		{
 			data = 0x20;
+		}
 		else if ((priv->Tuner_Config_Data.QPSK_Config & 0xc0) == M3501_8BIT_MODE)
+		{
 			data = 0x40;
+		}
 		else
+		{
 			data = 0x40;
+		}
 		nim_reg_write(dev, RAD_TSOUT_SYMB + 0x01, &data, 1);
 	}
 	return SUCCESS;
@@ -3569,15 +3575,25 @@ INT32 nim_s3501_get_bitmode(struct nim_device *dev, UINT8 *bitMode)
 	struct nim_s3501_private *priv = (struct nim_s3501_private *) dev->priv;
 
 	if ((priv->Tuner_Config_Data.QPSK_Config & 0xc0) == M3501_1BIT_MODE)
+	{
 		*bitMode = 0x60;
+	}
 	else if ((priv->Tuner_Config_Data.QPSK_Config & 0xc0) == M3501_2BIT_MODE)
+	{
 		*bitMode = 0x00;
+	}
 	else if ((priv->Tuner_Config_Data.QPSK_Config & 0xc0) == M3501_4BIT_MODE)
+	{
 		*bitMode = 0x20;
-	else if ((priv->Tuner_Config_Data.QPSK_Config & 0xc0) == M3501_8BIT_MODE)
-		*bitMode = 0x40;
+	}
+//	else if ((priv->Tuner_Config_Data.QPSK_Config & 0xc0) == M3501_8BIT_MODE)
+//	{
+//		*bitMode = 0x40;
+//	}
 	else
+	{
 		*bitMode = 0x40;
+	}
 	return SUCCESS;
 }
 
@@ -3853,6 +3869,7 @@ static INT32 nim_s3501_cr_setting(struct nim_device *dev, UINT8 s_Case)
 	switch (s_Case)
 	{
 		case NIM_OPTR_SOFT_SEARCH:
+		{
 			// set CR parameter
 			data = 0xaa;
 			nim_reg_write(dev, R33_CR_CTRL + 0x03, &data, 1);
@@ -3862,13 +3879,18 @@ static INT32 nim_s3501_cr_setting(struct nim_device *dev, UINT8 s_Case)
 			nim_reg_write(dev, R33_CR_CTRL + 0x05, &data, 1);
 
 			if (priv->ul_status.m_s3501_type == NIM_CHIP_ID_M3501B)
+			{
 				data = 0x9a;
+			}
 			else
+			{
 				data = 0xaa; // S2 CR parameter
-
+			}
 			nim_reg_write(dev, RB5_CR_PRS_TRA, &data, 1);
 			break;
+		}
 		case NIM_OPTR_CHL_CHANGE:
+		{
 			// set CR parameter
 			data = 0xaa;
 			nim_reg_write(dev, R33_CR_CTRL + 0x03, &data, 1);
@@ -3877,16 +3899,16 @@ static INT32 nim_s3501_cr_setting(struct nim_device *dev, UINT8 s_Case)
 			data = 0x87;
 			nim_reg_write(dev, R33_CR_CTRL + 0x05, &data, 1);
 
-			if (priv->ul_status.m_s3501_type == NIM_CHIP_ID_M3501B)
-				data = 0xaa;
-			else
-				data = 0xaa; // S2 CR parameter
+//			if (priv->ul_status.m_s3501_type == NIM_CHIP_ID_M3501B)
+//				data = 0xaa;
+//			else
+			data = 0xaa; // S2 CR parameter
 
 			nim_reg_write(dev, RB5_CR_PRS_TRA, &data, 1);
 
 			break;
+		}
 	}
-
 	return SUCCESS;
 }
 
@@ -3898,6 +3920,7 @@ static INT32 nim_s3501_ldpc_setting(struct nim_device *dev, UINT8 s_Case, UINT8 
 	switch (s_Case)
 	{
 		case NIM_OPTR_CHL_CHANGE:
+		{
 			if (priv->ul_status.m_s3501_type == NIM_CHIP_ID_M3501B)
 			{
 				UINT8 temp[3] =
@@ -3919,7 +3942,9 @@ static INT32 nim_s3501_ldpc_setting(struct nim_device *dev, UINT8 s_Case, UINT8 
 			nim_reg_write(dev, RC1_DVBS2_FEC_LDPC, &data, 1);
 
 			break;
+		}
 		case NIM_OPTR_SOFT_SEARCH:
+		{
 			if (priv->ul_status.m_s3501_type == NIM_CHIP_ID_M3501B)
 			{
 				UINT8 temp[3] =
@@ -3940,11 +3965,14 @@ static INT32 nim_s3501_ldpc_setting(struct nim_device *dev, UINT8 s_Case, UINT8 
 			nim_reg_write(dev, RC1_DVBS2_FEC_LDPC, &data, 1);
 
 			break;
+		}
 		case NIM_OPTR_DYNAMIC_POW:
+		{
 			data = c_ldpc - priv->ul_status.c_RS;
 			nim_reg_write(dev, R57_LDPC_CTRL, &data, 1);
 
 			break;
+		}
 	}
 	data = c_fec;
 	nim_reg_write(dev, RC1_DVBS2_FEC_LDPC, &data, 1);
@@ -3987,9 +4015,13 @@ static INT32 nim_s3501_hw_init(struct nim_device *dev)
 
 	//-----set analog pad driving and first TS gate open.
 	if ((priv->Tuner_Config_Data.QPSK_Config & 0xc0) == M3501_1BIT_MODE)
+	{
 		data = 0x08;
+	}
 	else
+	{
 		data = 0x00;
+	}
 	nim_reg_write(dev, RAF_TSOUT_PAD, &data, 1);
 
 	data = 0x00;
@@ -4035,6 +4067,7 @@ static INT32 nim_s3501_hbcd_timeout(struct nim_device *dev, UINT8 s_Case)
 	{
 		case NIM_OPTR_CHL_CHANGE:
 		case NIM_OPTR_IOCTL:
+		{
 			if (priv->t_Param.t_reg_setting_switch & NIM_SWITCH_HBCD)
 			{
 				if (priv->ul_status.m_enable_dvbs2_hbcd_mode)
@@ -4045,7 +4078,9 @@ static INT32 nim_s3501_hbcd_timeout(struct nim_device *dev, UINT8 s_Case)
 				priv->t_Param.t_reg_setting_switch &= ~NIM_SWITCH_HBCD;
 			}
 			break;
+		}
 		case NIM_OPTR_SOFT_SEARCH:
+		{
 			if (!(priv->t_Param.t_reg_setting_switch & NIM_SWITCH_HBCD))
 			{
 				data = 0x00;
@@ -4053,9 +4088,12 @@ static INT32 nim_s3501_hbcd_timeout(struct nim_device *dev, UINT8 s_Case)
 				priv->t_Param.t_reg_setting_switch |= NIM_SWITCH_HBCD;
 			}
 			break;
+		}
 		case NIM_OPTR_HW_OPEN:
+		{
 			nim_reg_read(dev, R47_HBCD_TIMEOUT, &(priv->ul_status.m_dvbs2_hbcd_enable_value), 1);
 			break;
+		}
 	}
 	return SUCCESS;
 }
@@ -4068,10 +4106,13 @@ static INT32 nim_s3501_set_acq_workmode(struct nim_device *dev, UINT8 s_Case)
 	{
 		case NIM_OPTR_CHL_CHANGE0:
 		case NIM_OPTR_DYNAMIC_POW0:
+		{
 			data = 0x73;
 			nim_reg_write(dev, R5B_ACQ_WORK_MODE, &data, 1);
 			break;
+		}
 		case NIM_OPTR_CHL_CHANGE:
+		{
 			printk("####nim_s3501_set_acq_workmode NIM_OPTR_CHL_CHANGE \n");
 			nim_s3501_reg_get_work_mode(dev, &work_mode);
 			if (work_mode != M3501_DVBS2_MODE)// not in DVBS2 mode, key word: power_ctrl
@@ -4084,12 +4125,16 @@ static INT32 nim_s3501_set_acq_workmode(struct nim_device *dev, UINT8 s_Case)
 				nim_reg_write(dev, R5B_ACQ_WORK_MODE, &data, 1);
 			}
 			break;
+		}
 		case NIM_OPTR_SOFT_SEARCH:
 		case NIM_OPTR_DYNAMIC_POW:
+		{
 			data = 0x77;
 			nim_reg_write(dev, R5B_ACQ_WORK_MODE, &data, 1);
 			break;
+		}
 		case NIM_OPTR_HW_OPEN:
+		{
 			if (priv->ul_status.m_s3501_type == NIM_CHIP_ID_M3501B)
 			{
 				// enable ADC
@@ -4100,7 +4145,9 @@ static INT32 nim_s3501_set_acq_workmode(struct nim_device *dev, UINT8 s_Case)
 				nim_reg_write(dev, R5B_ACQ_WORK_MODE, &data, 1);
 			}
 			break;
+		}
 		case NIM_OPTR_HW_CLOSE:
+		{
 			if (priv->ul_status.m_s3501_type == NIM_CHIP_ID_M3501B)
 			{
 				// close ADC
@@ -4115,6 +4162,7 @@ static INT32 nim_s3501_set_acq_workmode(struct nim_device *dev, UINT8 s_Case)
 			}
 			nim_reg_write(dev, R5B_ACQ_WORK_MODE, &data, 1);
 			break;
+		}
 	}
 	return SUCCESS;
 }
@@ -4128,15 +4176,22 @@ static INT32 nim_s3501_set_FC_Search_Range(struct nim_device *dev, UINT8 s_Case,
 	switch (s_Case)
 	{
 		case NIM_OPTR_SOFT_SEARCH:
+		{
 			if (!(priv->t_Param.t_reg_setting_switch & NIM_SWITCH_FC))
 			{
 				//CR62, fc search range.
 				if (rs > 16000)
+				{
 					temp = 5 * 16; //(4*90*16)/(CRYSTAL_FREQ*99/135);
+				}
 				else if (rs > 5000)
+				{
 					temp = 4 * 16; //(3*90*16)/(CRYSTAL_FREQ*99/135);
+				}
 				else
+				{
 					temp = 3 * 16; //(2*90*16)/(CRYSTAL_FREQ*99/135);
+				}
 				data = temp & 0xff;
 				nim_reg_write(dev, R62_FC_SEARCH, &data, 1);
 				nim_reg_read(dev, R62_FC_SEARCH, &ver_data, 1);
@@ -4147,11 +4202,17 @@ static INT32 nim_s3501_set_FC_Search_Range(struct nim_device *dev, UINT8 s_Case,
 				//CR63
 				data = (temp >> 8) & 0x3;
 				if (rs > 10000)
+				{
 					data |= 0xa0;
+				}
 				else if (rs > 3000)
+				{
 					data |= 0xc0;       //amy change for 91.5E 3814/V/6666
+				}
 				else
+				{
 					data |= 0xb0;       //amy change for 91.5E 3629/V/2200
+				}
 				nim_reg_write(dev, R62_FC_SEARCH + 0x01, &data, 1);
 				nim_reg_read(dev, R62_FC_SEARCH + 0x01, &ver_data, 1);
 				if (data != ver_data)
@@ -4161,15 +4222,20 @@ static INT32 nim_s3501_set_FC_Search_Range(struct nim_device *dev, UINT8 s_Case,
 				priv->t_Param.t_reg_setting_switch |= NIM_SWITCH_FC;
 			}
 			break;
+		}
 		case NIM_OPTR_CHL_CHANGE:
+		{
 			if (priv->t_Param.t_reg_setting_switch & NIM_SWITCH_FC)
 			{
 				// set sweep range
 				if (priv->ul_status.m_s3501_type == NIM_CHIP_ID_M3501B)
+				{
 					temp = (3 * 90 * 16) / (CRYSTAL_FREQ * 90 / 135);
+				}
 				else
+				{
 					temp = (3 * 90 * 16) / (CRYSTAL_FREQ * 99 / 135);
-
+				}
 				data = temp & 0xff;
 				nim_reg_write(dev, R62_FC_SEARCH, &data, 1);
 
@@ -4178,8 +4244,8 @@ static INT32 nim_s3501_set_FC_Search_Range(struct nim_device *dev, UINT8 s_Case,
 				nim_reg_write(dev, R62_FC_SEARCH + 0x01, &data, 1);
 				priv->t_Param.t_reg_setting_switch &= ~NIM_SWITCH_FC;
 			}
-
 			break;
+		}
 	}
 	return SUCCESS;
 }
@@ -4192,21 +4258,32 @@ static INT32 nim_s3501_RS_Search_Range(struct nim_device *dev, UINT8 s_Case, UIN
 	switch (s_Case)
 	{
 		case NIM_OPTR_SOFT_SEARCH:
+		{
 			if (!(priv->t_Param.t_reg_setting_switch & NIM_SWITCH_RS))
 			{
 				//CR64
 				//  temp = (3*90*16)/(CRYSTAL_FREQ*99/135);
 				//  data = temp&0xff;
 				if (rs > 16000)
+				{
 					temp = rs / 4000;
+				}
 				else if (rs > 5000)
+				{
 					temp = rs / 3000;
+				}
 				else
+				{
 					temp = rs / 2000;
+				}
 				if (temp < 3)
+				{
 					temp = 3;
+				}
 				else if (temp > 11)
+				{
 					temp = 11;
+				}
 				temp = temp << 4;
 				//   temp = temp/(CRYSTAL_FREQ/135);
 				data = temp & 0xff;
@@ -4220,10 +4297,13 @@ static INT32 nim_s3501_RS_Search_Range(struct nim_device *dev, UINT8 s_Case, UIN
 
 				data = (temp >> 8) & 0x3;
 				if (rs > 6500)
+				{
 					data |= 0xb0;
+				}
 				else
+				{
 					data |= 0xa0;
-
+				}
 				//    data |= 0xb0;
 				nim_reg_write(dev, R64_RS_SEARCH + 0x01, &data, 1);
 				nim_reg_read(dev, R64_RS_SEARCH + 0x01, &ver_data, 1);
@@ -4233,16 +4313,20 @@ static INT32 nim_s3501_RS_Search_Range(struct nim_device *dev, UINT8 s_Case, UIN
 				}
 				priv->t_Param.t_reg_setting_switch |= NIM_SWITCH_RS;
 			}
-
 			break;
+		}
 		case NIM_OPTR_CHL_CHANGE:
+		{
 			if (priv->t_Param.t_reg_setting_switch & NIM_SWITCH_RS)
 			{
 				if (priv->ul_status.m_s3501_type == NIM_CHIP_ID_M3501B)
+				{
 					temp = (3 * 90 * 16) / (CRYSTAL_FREQ * 90 / 135);
+				}
 				else
+				{
 					temp = (3 * 90 * 16) / (CRYSTAL_FREQ * 99 / 135);
-
+				}
 				data = temp & 0xff;
 				nim_reg_write(dev, R64_RS_SEARCH, &data, 1);
 
@@ -4251,8 +4335,8 @@ static INT32 nim_s3501_RS_Search_Range(struct nim_device *dev, UINT8 s_Case, UIN
 				nim_reg_write(dev, R64_RS_SEARCH + 0x01, &data, 1);
 				priv->t_Param.t_reg_setting_switch &= ~NIM_SWITCH_RS;
 			}
-
 			break;
+		}
 	}
 	return SUCCESS;
 }
@@ -4264,7 +4348,8 @@ static INT32 nim_s3501_TR_CR_Setting(struct nim_device *dev, UINT8 s_Case)
 	switch (s_Case)
 	{
 		case NIM_OPTR_SOFT_SEARCH:
-			if (!(priv->t_Param.t_reg_setting_switch & NIM_SWITCH_TR_CR))
+		{
+		if (!(priv->t_Param.t_reg_setting_switch & NIM_SWITCH_TR_CR))
 			{
 				data = 0x4d;
 				nim_reg_write(dev, R66_TR_SEARCH, &data, 1);
@@ -4273,7 +4358,9 @@ static INT32 nim_s3501_TR_CR_Setting(struct nim_device *dev, UINT8 s_Case)
 				priv->t_Param.t_reg_setting_switch |= NIM_SWITCH_TR_CR;
 			}
 			break;
+		}
 		case NIM_OPTR_CHL_CHANGE:
+		{
 			if (priv->t_Param.t_reg_setting_switch & NIM_SWITCH_TR_CR)
 			{
 				// set reg to default value
@@ -4284,6 +4371,7 @@ static INT32 nim_s3501_TR_CR_Setting(struct nim_device *dev, UINT8 s_Case)
 				priv->t_Param.t_reg_setting_switch &= ~NIM_SWITCH_TR_CR;
 			}
 			break;
+		}
 	}
 	return SUCCESS;
 }
@@ -4377,7 +4465,9 @@ static void nim_s3501_task(UINT32 param1, UINT32 param2)
 			}
 		}
 		else
+		{
 			break;
+		}
 		msleep(100);
 	}
 }
@@ -4467,34 +4557,47 @@ static int d3501_read_snr(struct dvb_frontend *fe, u16 *snr)
 
 	iRet = nim_s3501_get_SNR(&state->spark_nimdev, (UINT16 *)snr); //quality
 	if (*snr < 30)
+	{
 		*snr = *snr * 7 / 3;
+	}
 	else
+	{
 		*snr = *snr / 3 + 60;
+	}
 	if (*snr > 90)
+	{
 		*snr = 90;
+	}
 	*snr = *snr * 255 * 255 / 100;
 	printk("*snr = %d\n", *snr);
 	return iRet;
 }
 
-static int d3501_read_signal_strength(struct dvb_frontend *fe,
-				      u16 *strength)
+static int d3501_read_signal_strength(struct dvb_frontend *fe, u16 *strength)
 {
-	int     iRet;
-	UINT16  *Intensity = (UINT16 *)strength;
+	int iRet;
+	UINT16 *Intensity = (UINT16 *)strength;
 	struct dvb_d3501_fe_state *state = fe->demodulator_priv;
 
 	iRet = nim_s3501_get_AGC(&state->spark_nimdev, (UINT16 *)Intensity); //level
 #if 0
 	//lwj add begin
 	if (*Intensity > 90)
+	{
 		*Intensity = 90;
+	}
 	if (*Intensity < 10)
+	{
 		*Intensity = *Intensity * 11 / 2;
+	}
 	else
+	{
 		*Intensity = *Intensity / 2 + 50;
+	}
 	if (*Intensity > 90)
+	{
 		*Intensity = 90;
+	}
 	printk("*Intensity = %d\n", *Intensity);
 	*strength = *Intensity;
 	printk("*strength = %d\n", *strength);
@@ -4509,9 +4612,9 @@ static int d3501_read_signal_strength(struct dvb_frontend *fe,
 static int d3501_read_status(struct dvb_frontend *fe, enum fe_status *status)
 
 {
-	int     iRet;
-//	int     iTunerLock;
-	UINT8   lock;
+	int iRet;
+//	int iTunerLock;
+	UINT8 lock;
 	struct dvb_d3501_fe_state *state = fe->demodulator_priv;
 
 	iRet = nim_s3501_get_lock(&state->spark_nimdev, &lock);
@@ -4519,14 +4622,13 @@ static int d3501_read_status(struct dvb_frontend *fe, enum fe_status *status)
 #if defined(NIM_S3501_DEBUG)
 	printk("lock = %d\n", lock);
 #endif
-
 	if (lock)
 	{
-		*status = FE_HAS_SIGNAL |
-			  FE_HAS_CARRIER |
-			  FE_HAS_VITERBI |
-			  FE_HAS_SYNC |
-			  FE_HAS_LOCK;
+		*status = FE_HAS_SIGNAL
+		        | FE_HAS_CARRIER
+		        | FE_HAS_VITERBI
+		        | FE_HAS_SYNC
+		        | FE_HAS_LOCK;
 	}
 	else
 	{
@@ -4558,7 +4660,6 @@ static int d3501_read_status(struct dvb_frontend *fe, enum fe_status *status)
 	if (nim_s3501_i2c_close(&state->spark_nimdev))
 		return S3501_ERR_I2C_NO_ACK;
 #endif  /* 0 */
-
 	return iRet;
 }
 
@@ -4567,9 +4668,7 @@ static enum dvbfe_algo d3501_frontend_algo(struct dvb_frontend *fe)
 	return DVBFE_ALGO_CUSTOM;
 }
 
-static int d3501_set_tuner_params(struct dvb_frontend *fe,
-				  UINT32  freq,
-				  UINT32  sym)
+static int d3501_set_tuner_params(struct dvb_frontend *fe, UINT32 freq, UINT32 sym)
 {
 	int err = 0;
 
@@ -4599,36 +4698,29 @@ static int d3501_set_tuner_params(struct dvb_frontend *fe,
 	{
 		return 0;
 	}
-
 	err = tuner_ops->set_params(fe, &param);
 	if (err < 0)
 	{
 		printk("%s: Invalid parameter\n", __func__);
 		return -1;
 	}
-
 	return 0;
 }
 
 #if 1
 #if (DVB_API_VERSION < 5)
-static enum dvbfe_search d3501_Search(struct dvb_frontend *fe,
-				      struct dvbfe_params *p)
+static enum dvbfe_search d3501_Search(struct dvb_frontend *fe, struct dvbfe_params *p)
 {
-	//IOARCH_Handle_t               IOHandle;
-	struct nim_device           *dev;
-	struct nim_s3501_private    *priv;
-	//U32                         TuneStartTime;
-
-	UINT32  freq;
-	UINT32  sym;
-	//UINT8     result;
-
-	UINT8   data = 0x10;
-	UINT8   low_sym;
-
-	int     err;
-
+	//IOARCH_Handle_t IOHandle;
+	struct nim_device *dev;
+	struct nim_s3501_private *priv;
+	//U32 TuneStartTime;
+	UINT32 freq;
+	UINT32 sym;
+	//UINT8 result;
+	UINT8 data = 0x10;
+	UINT8 low_sym;
+	int err;
 	struct dvb_d3501_fe_state *state = fe->demodulator_priv;
 
 	/******************************************/
@@ -4664,14 +4756,14 @@ static enum dvbfe_search d3501_Search(struct dvb_frontend *fe,
 	priv->t_Param.phase_noise_detect_finish = 0x00;
 
 	/*#ifdef CHANNEL_CHANGE_ASYNC
-	    UINT32 flag_ptn = 0;
-	    if (NIM_FLAG_WAIT(&flag_ptn, priv->flag_id, NIM_FLAG_CHN_CHG_START | NIM_FLAG_CHN_CHANGING, OSAL_TWF_ORW, 0) == OSAL_E_OK)
-	    {
-	        // channel chaning, stop the old changing first.
-	        priv->ul_status.s3501_chanscan_stop_flag = 1;
-	        //libc_printf("channel changing already, stop it first\n");
-	        msleep(2); //sleep 2ms
-	    }
+	UINT32 flag_ptn = 0;
+	if (NIM_FLAG_WAIT(&flag_ptn, priv->flag_id, NIM_FLAG_CHN_CHG_START | NIM_FLAG_CHN_CHANGING, OSAL_TWF_ORW, 0) == OSAL_E_OK)
+	{
+		// channel chaning, stop the old changing first.
+		priv->ul_status.s3501_chanscan_stop_flag = 1;
+		//libc_printf("channel changing already, stop it first\n");
+		msleep(2); //sleep 2ms
+	}
 	#endif*/  //lwj remove
 	if (priv->ul_status.m_s3501_type == NIM_CHIP_ID_M3501B)
 	{
@@ -4679,7 +4771,6 @@ static enum dvbfe_search d3501_Search(struct dvb_frontend *fe,
 		priv->ul_status.phase_err_check_status = 0;
 		priv->ul_status.s3501d_lock_status = NIM_LOCK_STUS_NORMAL;
 	}
-
 	priv->ul_status.m_setting_freq = freq;
 
 	//reset first
@@ -4689,12 +4780,12 @@ static enum dvbfe_search d3501_Search(struct dvb_frontend *fe,
 	msleep(5); //sleep 5ms lwj add
 
 	if ((0 == freq) || (0 == sym))
+	{
 		return DVBFE_ALGO_SEARCH_ERROR;
-
+	}
 	printk("[%s][%d]\n", __FUNCTION__, __LINE__);
 	nim_s3501_sym_config(dev, sym);
 	printk("[%s][%d]\n", __FUNCTION__, __LINE__);
-
 #if 1
 	if (priv->ul_status.s3501_chanscan_stop_flag)
 	{
@@ -4707,7 +4798,6 @@ static enum dvbfe_search d3501_Search(struct dvb_frontend *fe,
 		return SUCCESS;
 	}
 #endif
-
 	// time for channel change and sof search.
 	// ttt
 	printk("[%s][%d]\n", __FUNCTION__, __LINE__);
@@ -4722,25 +4812,26 @@ static enum dvbfe_search d3501_Search(struct dvb_frontend *fe,
 
 	printk("[%s][%d]\n", __FUNCTION__, __LINE__);
 	if (nim_s3501_i2c_open(dev))
+	{
 		return DVBFE_ALGO_SEARCH_FAILED;
-
+	}
 	printk("[%s][%d]\n", __FUNCTION__, __LINE__);
 	err = d3501_set_tuner_params(fe, freq, sym);
 	if (err < 0)
 	{
 		return DVBFE_ALGO_SEARCH_FAILED;
 	}
-
 	printk("[%s][%d]\n", __FUNCTION__, __LINE__);
 	if (nim_s3501_i2c_close(dev))
+	{
 		return DVBFE_ALGO_SEARCH_FAILED;
-
+	}
 	msleep(1);
-
 	printk("[%s][%d]\n", __FUNCTION__, __LINE__);
 	if (nim_s3501_i2c_open(dev))
+	{
 		return DVBFE_ALGO_SEARCH_FAILED;
-
+	}
 	if (fe->ops.tuner_ops.get_status)
 	{
 		int iTunerLock;
@@ -4751,13 +4842,12 @@ static enum dvbfe_search d3501_Search(struct dvb_frontend *fe,
 			printk("1. Tuner get_status err\n");
 		}
 	}
-
 	printk("[%s][%d]\n", __FUNCTION__, __LINE__);
 	if (nim_s3501_i2c_close(dev))
+	{
 		return DVBFE_ALGO_SEARCH_FAILED;
-
+	}
 	//    nim_s3501_adc_setting(dev);
-
 	data = 0x10;
 
 	printk("[%s][%d]\n", __FUNCTION__, __LINE__);
@@ -4894,12 +4984,15 @@ static enum dvbfe_search d3501_Search(struct dvb_frontend *fe,
 	if (sym < 3000)
 	{
 		if (sym < 2000)
+		{
 			data = 0x08;
+		}
 		else
+		{
 			data = 0x0a;
+		}
 		nim_reg_write(dev, R1B_TR_TIMEOUT_BAND, &data, 1);
 	}
-
 	printk("[%s][%d]\n", __FUNCTION__, __LINE__);
 	nim_s3501_demod_ctrl(dev, NIM_DEMOD_CTRL_0X51);
 	////printk("1111111[%dms]\n", YWOS_TimeNow() - TuneStartTime);
@@ -4925,23 +5018,18 @@ static enum dvbfe_search d3501_Search(struct dvb_frontend *fe,
 	}
 }
 #else
-static enum dvbfe_search d3501_Search(struct dvb_frontend *fe,
-				      struct dvb_frontend_parameters *p)
+static enum dvbfe_search d3501_Search(struct dvb_frontend *fe, struct dvb_frontend_parameters *p)
 {
-	//IOARCH_Handle_t               IOHandle;
-	struct nim_device           *dev;
-	struct nim_s3501_private    *priv;
-	//U32                         TuneStartTime;
-
-	UINT32  freq;
-	UINT32  sym;
-	//UINT8     result;
-
-	UINT8   data = 0x10;
-	UINT8   low_sym;
-
-	int     err;
-
+	//IOARCH_Handle_t IOHandle;
+	struct nim_device *dev;
+	struct nim_s3501_private *priv;
+	//U32 TuneStartTime;
+	UINT32 freq;
+	UINT32 sym;
+	//UINT8 result;
+	UINT8 data = 0x10;
+	UINT8 low_sym;
+	int err;
 	struct dvb_d3501_fe_state *state = fe->demodulator_priv;
 
 	/******************************************/
@@ -4976,21 +5064,22 @@ static enum dvbfe_search d3501_Search(struct dvb_frontend *fe,
 	priv->t_Param.t_snr_thre3 = 256;
 	priv->t_Param.phase_noise_detect_finish = 0x00;
 
-	/*#ifdef CHANNEL_CHANGE_ASYNC
-	    UINT32 flag_ptn = 0;
-	    if (NIM_FLAG_WAIT(&flag_ptn, priv->flag_id, NIM_FLAG_CHN_CHG_START | NIM_FLAG_CHN_CHANGING, OSAL_TWF_ORW, 0) == OSAL_E_OK)
-	    {
-	        // channel chaning, stop the old changing first.
-	        priv->ul_status.s3501_chanscan_stop_flag = 1;
-	        //libc_printf("channel changing already, stop it first\n");
-	        msleep(2); //sleep 2ms
-	    }
+/*#ifdef CHANNEL_CHANGE_ASYNC
+	UINT32 flag_ptn = 0;
+
+	if (NIM_FLAG_WAIT(&flag_ptn, priv->flag_id, NIM_FLAG_CHN_CHG_START | NIM_FLAG_CHN_CHANGING, OSAL_TWF_ORW, 0) == OSAL_E_OK)
+	{
+		// channel chaning, stop the old changing first.
+		priv->ul_status.s3501_chanscan_stop_flag = 1;
+		//libc_printf("channel changing already, stop it first\n");
+		msleep(2); //sleep 2ms
+	}
 #endif*/  //lwj remove
 	if (priv->ul_status.m_s3501_type == NIM_CHIP_ID_M3501B)
 	{
-	printk("NIM_CHIP_ID_M3501B ########### d3501_Search\n");
-	priv->ul_status.phase_err_check_status = 0;
-	priv->ul_status.s3501d_lock_status = NIM_LOCK_STUS_NORMAL;
+		printk("NIM_CHIP_ID_M3501B ########### d3501_Search\n");
+		priv->ul_status.phase_err_check_status = 0;
+		priv->ul_status.s3501d_lock_status = NIM_LOCK_STUS_NORMAL;
 	}
 
 	priv->ul_status.m_setting_freq = freq;
@@ -5002,12 +5091,12 @@ static enum dvbfe_search d3501_Search(struct dvb_frontend *fe,
 	msleep(5); //sleep 5ms lwj add
 
 	if ((0 == freq) || (0 == sym))
-	return DVBFE_ALGO_SEARCH_ERROR;
-
+	{
+		return DVBFE_ALGO_SEARCH_ERROR;
+	}
 	printk("[%s][%d]\n", __FUNCTION__, __LINE__);
 	nim_s3501_sym_config(dev, sym);
 	printk("[%s][%d]\n", __FUNCTION__, __LINE__);
-
 #if 1
 	if (priv->ul_status.s3501_chanscan_stop_flag)
 	{
@@ -5017,7 +5106,7 @@ static enum dvbfe_search d3501_Search(struct dvb_frontend *fe,
 #else
 	if (Inst->ForceSearchTerm)
 	{
-	return SUCCESS;
+		return SUCCESS;
 	}
 #endif
 
@@ -5035,25 +5124,27 @@ static enum dvbfe_search d3501_Search(struct dvb_frontend *fe,
 
 	printk("[%s][%d]\n", __FUNCTION__, __LINE__);
 	if (nim_s3501_i2c_open(dev))
+	{
 		return DVBFE_ALGO_SEARCH_FAILED;
-
+	}
 	printk("[%s][%d]\n", __FUNCTION__, __LINE__);
 	err = d3501_set_tuner_params(fe, freq, sym);
 	if (err < 0)
 	{
 		return DVBFE_ALGO_SEARCH_FAILED;
 	}
-
 	printk("[%s][%d]\n", __FUNCTION__, __LINE__);
 	if (nim_s3501_i2c_close(dev))
+	{
 		return DVBFE_ALGO_SEARCH_FAILED;
-
+	}
 	msleep(1);
 
 	printk("[%s][%d]\n", __FUNCTION__, __LINE__);
 	if (nim_s3501_i2c_open(dev))
+	{
 		return DVBFE_ALGO_SEARCH_FAILED;
-
+	}
 	if (fe->ops.tuner_ops.get_status)
 	{
 		int iTunerLock;
@@ -5064,15 +5155,13 @@ static enum dvbfe_search d3501_Search(struct dvb_frontend *fe,
 			printk("1. Tuner get_status err\n");
 		}
 	}
-
 	printk("[%s][%d]\n", __FUNCTION__, __LINE__);
 	if (nim_s3501_i2c_close(dev))
+	{
 		return DVBFE_ALGO_SEARCH_FAILED;
-
+	}
 	//    nim_s3501_adc_setting(dev);
-
 	data = 0x10;
-
 	printk("[%s][%d]\n", __FUNCTION__, __LINE__);
 	nim_reg_write(dev, RB3_PIN_SHARE_CTRL, &data, 1);
 
@@ -5105,18 +5194,13 @@ static enum dvbfe_search d3501_Search(struct dvb_frontend *fe,
 	if (priv->ul_status.m_s3501_type == NIM_CHIP_ID_M3501B)
 	{
 		// Only for M3501B
-
 		printk("[%s][%d]\n", __FUNCTION__, __LINE__);
 		nim_set_ts_rs(dev, sym);
 	}
-
 	// Set carry offset
-
 	printk("[%s][%d]\n", __FUNCTION__, __LINE__);
 	nim_s3501_freq_offset_reset(dev, low_sym);
-
 	// ttt
-
 	printk("[%s][%d]\n", __FUNCTION__, __LINE__);
 	nim_s3501_cr_setting(dev, NIM_OPTR_CHL_CHANGE);
 
@@ -5126,28 +5210,20 @@ static enum dvbfe_search d3501_Search(struct dvb_frontend *fe,
 	//    data = 0x32;    // dvbs2-hbcd-s
 	//    data = 0x52;    // dvbs2-hbcd-s2
 	//    data = 0x73;    // auto
-
 	// ttt
-
 	printk("[%s][%d]\n", __FUNCTION__, __LINE__);
 	nim_s3501_set_acq_workmode(dev, NIM_OPTR_CHL_CHANGE0);
-
 	// set sweep range
 	// ttt
-
 	printk("[%s][%d]\n", __FUNCTION__, __LINE__);
 	nim_s3501_set_FC_Search_Range(dev, NIM_OPTR_CHL_CHANGE, 0x00);
 	// ttt
-
 	printk("[%s][%d]\n", __FUNCTION__, __LINE__);
 	nim_s3501_RS_Search_Range(dev, NIM_OPTR_CHL_CHANGE, 0x00);
-
 	// ttt
 	// LDPC parameter
-
 	printk("[%s][%d]\n", __FUNCTION__, __LINE__);
 	nim_s3501_ldpc_setting(dev, NIM_OPTR_CHL_CHANGE, 0x00, 0x01);
-
 	/*
 	// use RS to caculate MOCLK
 	data = 0x00;
@@ -5157,16 +5233,13 @@ static enum dvbfe_search d3501_Search(struct dvb_frontend *fe,
 	data = 0x00;
 	nim_reg_write(dev, RAF_TSOUT_PAD, &data, 1);
 	*/
-
 	// ttt
 	/*
 	data = 0x00;
 	nim_reg_write(dev,RB1_TSOUT_SMT, &data, 1);
 	*/
-
 	// Carcy disable HBCD check, let time out. 2008-03-12
 	// ttt
-
 	printk("[%s][%d]\n", __FUNCTION__, __LINE__);
 	nim_s3501_hbcd_timeout(dev, NIM_OPTR_CHL_CHANGE);
 
@@ -5207,12 +5280,15 @@ static enum dvbfe_search d3501_Search(struct dvb_frontend *fe,
 	if (sym < 3000)
 	{
 		if (sym < 2000)
+		{
 			data = 0x08;
+		}
 		else
+		{
 			data = 0x0a;
+		}
 		nim_reg_write(dev, R1B_TR_TIMEOUT_BAND, &data, 1);
 	}
-
 	printk("[%s][%d]\n", __FUNCTION__, __LINE__);
 	nim_s3501_demod_ctrl(dev, NIM_DEMOD_CTRL_0X51);
 	////printk("1111111[%dms]\n", YWOS_TimeNow() - TuneStartTime);
@@ -5227,7 +5303,6 @@ static enum dvbfe_search d3501_Search(struct dvb_frontend *fe,
 
 	////printk("    Leave Fuction nim_s3501_channel_change \n");
 	priv->ul_status.s3501_chanscan_stop_flag = 0;
-
 	if (priv->bLock)
 	{
 		return DVBFE_ALGO_SEARCH_SUCCESS;
@@ -5247,19 +5322,22 @@ static int d3501_i2c_gate_ctrl(struct dvb_frontend *fe, int enable)
 	if (enable)
 	{
 		if (nim_s3501_i2c_open(&state->spark_nimdev))
+		{
 			return S3501_ERR_I2C_NO_ACK;
+		}
 	}
 	else
 	{
 		if (nim_s3501_i2c_close(&state->spark_nimdev))
+		{
 			return S3501_ERR_I2C_NO_ACK;
+		}
 	}
 	return 0;
 }
 
 #if (DVB_API_VERSION < 5)
-static int d3501_get_info(struct dvb_frontend *fe,
-			  struct dvbfe_info *fe_info)
+static int d3501_get_info(struct dvb_frontend *fe, struct dvbfe_info *fe_info)
 {
 	//struct dvb_d0367_fe_ofdm_state* state = fe->demodulator_priv;
 	/* get delivery system info */
@@ -5286,9 +5364,13 @@ static int d3501_get_property(struct dvb_frontend *fe, struct dtv_property *tvp)
 			case SYS_DVBS2:
 			case SYS_DVBS:
 			case SYS_DSS:
+			{
 				break;
+			}
 			default:
+			{
 				return -EINVAL;
+			}
 		}
 	}
 	return 0;
@@ -5299,22 +5381,25 @@ static int d3501_set_tone(struct dvb_frontend *fe, fe_sec_tone_mode_t tone)
 {
 	UINT8 data;
 	struct dvb_d3501_fe_state *state = fe->demodulator_priv;
-	struct nim_device           *dev;
-	struct nim_s3501_private    *priv;
+	struct nim_device *dev;
+	struct nim_s3501_private *priv;
 
 	dev = (struct nim_device *)&state->spark_nimdev;
 	priv = (struct nim_s3501_private *) dev->priv;
 
 	if (priv->ul_status.m_s3501_type == NIM_CHIP_ID_M3501B)
+	{
 		data = (CRYSTAL_FREQ * 90 / 135);
+	}
 	else
+	{
 		data = (CRYSTAL_FREQ * 99 / 135);
-
+	}
 	nim_reg_write(dev, R7C_DISEQC_CTRL + 0x14, &data, 1);
 
 	printk("tone = %d\n", tone);
 
-	if (tone == SEC_TONE_ON)                /* Low band -> no 22KHz tone */
+	if (tone == SEC_TONE_ON)  /* Low band -> no 22KHz tone */
 	{
 		nim_reg_read(dev, R7C_DISEQC_CTRL, &data, 1);
 		data = ((data & 0xF8) | 1);
@@ -5336,11 +5421,13 @@ static int d3501_set_voltage(struct dvb_frontend *fe, fe_sec_voltage_t voltage)
 	switch (voltage)
 	{
 		case SEC_VOLTAGE_OFF:
+		{
 			printk("set_voltage_off\n");
 			stpio_set_pin(state->fe_lnb_on_off, 0);
 			break;
-
+		}
 		case SEC_VOLTAGE_13: /* vertical */
+		{
 			printk("set_voltage_vertical \n");
 			stpio_set_pin(state->fe_lnb_on_off, 1);
 			msleep(1);
@@ -5348,8 +5435,9 @@ static int d3501_set_voltage(struct dvb_frontend *fe, fe_sec_voltage_t voltage)
 			msleep(1);
 			nim_s3501_set_polar(&state->spark_nimdev, NIM_PORLAR_VERTICAL);
 			break;
-
+		}
 		case SEC_VOLTAGE_18: /* horizontal */
+		{
 			printk("set_voltage_horizontal\n");
 			stpio_set_pin(state->fe_lnb_on_off, 1);
 			msleep(1);
@@ -5357,15 +5445,16 @@ static int d3501_set_voltage(struct dvb_frontend *fe, fe_sec_voltage_t voltage)
 			msleep(1);
 			nim_s3501_set_polar(&state->spark_nimdev, NIM_PORLAR_HORIZONTAL);
 			break;
-
+		}
 		default:
+		{
 			break;
+		}
 	}
 	return 0;
 }
 
-int d3501_send_diseqc_msg(struct dvb_frontend *fe,
-			  struct dvb_diseqc_master_cmd *cmd)
+int d3501_send_diseqc_msg(struct dvb_frontend *fe, struct dvb_diseqc_master_cmd *cmd)
 {
 	struct dvb_d3501_fe_state *state = fe->demodulator_priv;
 
@@ -5380,10 +5469,13 @@ int d3501_send_diseqc_msg(struct dvb_frontend *fe,
 	priv = (struct nim_s3501_private *) dev->priv;
 
 	if (priv->ul_status.m_s3501_type == NIM_CHIP_ID_M3501B)
+	{
 		data = (CRYSTAL_FREQ * 90 / 135);
+	}
 	else
+	{
 		data = (CRYSTAL_FREQ * 99 / 135);
-
+	}
 	nim_reg_write(dev, R7C_DISEQC_CTRL + 0x14, &data, 1);
 
 	{
@@ -5439,55 +5531,52 @@ int d3501_send_diseqc_msg(struct dvb_frontend *fe,
 			return -1;
 		}
 	}
-
 	return (0);
 }
 
 static struct dvb_frontend_ops spark_d3501_ops =
 {
-
-	.info = {
-		.name           = "spark_d3501",
-		.type           = FE_QPSK,
-		.frequency_min      = 950000,
-		.frequency_max      = 2150000,
+	.info =
+	{
+		.name = "spark_d3501",
+		.type = FE_QPSK,
+		.frequency_min = 950000,
+		.frequency_max = 2150000,
 		.frequency_stepsize = 0,
-		.frequency_tolerance    = 0,
-		.symbol_rate_min    = 1000000,
-		.symbol_rate_max    = 45000000,
-		.caps           = FE_CAN_INVERSION_AUTO |
-		FE_CAN_FEC_AUTO       |
-		FE_CAN_QPSK
+		.frequency_tolerance = 0,
+		.symbol_rate_min = 1000000,
+		.symbol_rate_max = 45000000,
+		.caps = FE_CAN_INVERSION_AUTO
+		      | FE_CAN_FEC_AUTO
+		      | FE_CAN_QPSK
 	},
-
-	.init               = d3501_init,
-	.release            = d3501_release,
-	.read_ber           = d3501_read_ber,
-	.read_snr           = d3501_read_snr,
-	.read_signal_strength       = d3501_read_signal_strength,
-	.read_status        = d3501_read_status,
-	.get_frontend_algo  = d3501_frontend_algo,
-	.search             = d3501_Search,
-	.i2c_gate_ctrl      = d3501_i2c_gate_ctrl,
+	.init = d3501_init,
+	.release = d3501_release,
+	.read_ber = d3501_read_ber,
+	.read_snr = d3501_read_snr,
+	.read_signal_strength = d3501_read_signal_strength,
+	.read_status = d3501_read_status,
+	.get_frontend_algo = d3501_frontend_algo,
+	.search = d3501_Search,
+	.i2c_gate_ctrl = d3501_i2c_gate_ctrl,
 #if (DVB_API_VERSION < 5)
-	.get_info           = d3501_get_info,
+	.get_info = d3501_get_info,
 #else
-	.get_property       = d3501_get_property,
+	.get_property = d3501_get_property,
 #endif
 
-	.set_tone           = d3501_set_tone,
-	.set_voltage        = d3501_set_voltage,
-	.diseqc_send_master_cmd     = d3501_send_diseqc_msg,
+	.set_tone = d3501_set_tone,
+	.set_voltage = d3501_set_voltage,
+	.diseqc_send_master_cmd = d3501_send_diseqc_msg,
 #if 0
-	.sleep              = stv090x_sleep,
+	.sleep = stv090x_sleep,
 
-	.diseqc_send_burst      = stv090x_send_diseqc_burst,
-	.diseqc_recv_slave_reply    = stv090x_recv_slave_reply,
-
+	.diseqc_send_burst = stv090x_send_diseqc_burst,
+	.diseqc_recv_slave_reply = stv090x_recv_slave_reply,
 #endif
 };
 
-static int d3501_initition(struct nim_device *dev, struct i2c_adapter   *i2c)
+static int d3501_initition(struct nim_device *dev, struct i2c_adapter *i2c)
 {
 	struct nim_s3501_private *priv_mem;
 
@@ -5498,26 +5587,24 @@ static int d3501_initition(struct nim_device *dev, struct i2c_adapter   *i2c)
 		YWOSTRACE((YWOS_TRACE_ERROR, "[ERROR][demod_d3501_Open]Alloc nim device prive memory error! \n"));
 		return YWHAL_ERROR_NO_MEMORY;
 	}
-
 	YWLIB_Memset(dev, 0, sizeof(struct nim_device));
 	YWLIB_Memset(priv_mem, 0, sizeof(struct nim_s3501_private));
 
 	dev->priv = (void *) priv_mem;
-	//dev->base_addr = 0x66 ;    /* 3501 i2c base address*/
-	dev->base_addr = 0x66 >> 1 ;    /* 3501 i2c base address*/
+	//dev->base_addr = 0x66; /* 3501 i2c base address*/
+	dev->base_addr = 0x66 >> 1; /* 3501 i2c base address*/
 
-	priv_mem->i2c_type_id       =    0;//question
+	priv_mem->i2c_type_id = 0; //question
 
 	priv_mem->i2c_adap = i2c;
 	if (!priv_mem->i2c_adap)
 	{
 		return -1;
 	}
-
 	printk("priv_mem->i2c_adap = %0x\n", (int)priv_mem->i2c_adap);
 
 	//priv_mem->tuner_id = Handle; //lwj add important
-	priv_mem->ext_dm_config.i2c_type_id     = 0;
+	priv_mem->ext_dm_config.i2c_type_id = 0;
 	priv_mem->ext_dm_config.i2c_base_addr = 0x66; //3501 i2c base addr //0xC0; //7306 i2c base address
 
 	priv_mem->ul_status.m_enable_dvbs2_hbcd_mode = 0;
@@ -5557,14 +5644,13 @@ static int d3501_initition(struct nim_device *dev, struct i2c_adapter   *i2c)
 	//priv_mem->Tuner_Config_Data.QPSK_Config = 0x29;  //lf
 
 	nim_s3501_get_type(dev);
-	if (priv_mem->ul_status.m_s3501_type == NIM_CHIP_ID_M3501A &&           // Chip 3501A
-			(priv_mem->Tuner_Config_Data.QPSK_Config & 0xc0) == M3501_2BIT_MODE)    //TS 2bit mode
+	if (priv_mem->ul_status.m_s3501_type == NIM_CHIP_ID_M3501A           // Chip 3501A
+	&&  (priv_mem->Tuner_Config_Data.QPSK_Config & 0xc0) == M3501_2BIT_MODE)    //TS 2bit mode
 	{
 		//for M3606+M3501A full nim ssi-2bit patch, auto change to 1bit mode.
 		priv_mem->Tuner_Config_Data.QPSK_Config &= 0x3f; // set to TS 1 bit mode
 		//libc_printf("M3501A SSI 2bit mode, auto change to 1bit mode\n");
 	}
-
 	return 0;
 }
 
@@ -5573,23 +5659,21 @@ static int d3501_term(struct nim_device *dev)
 	struct nim_s3501_private *priv_mem;
 
 	priv_mem = (struct nim_s3501_private *)dev->priv;
-
 	i2c_put_adapter(priv_mem->i2c_adap);
-
 	kfree(priv_mem);
-
 	return 0;
 }
 
-struct dvb_frontend *dvb_d3501_fe_qpsk_attach(
-	const struct d3501_config *config,
-	struct i2c_adapter *i2c)
+struct dvb_frontend *dvb_d3501_fe_qpsk_attach(const struct d3501_config *config, struct i2c_adapter *i2c)
 {
 	struct dvb_d3501_fe_state *state = NULL;
 
 	/* allocate memory for the internal state */
 	state = kmalloc(sizeof(struct dvb_d3501_fe_state), GFP_KERNEL);
-	if (state == NULL) goto error;
+	if (state == NULL)
+	{
+		goto error;
+	}
 	memset(state, 0, sizeof(struct dvb_d3501_fe_state));
 
 	/* create dvb_frontend */
@@ -5599,9 +5683,7 @@ struct dvb_frontend *dvb_d3501_fe_qpsk_attach(
 		kfree(state);
 		return NULL;
 	}
-
 	memcpy(&state->frontend.ops.info.name, config->name, sizeof(config->name));
-
 	state->frontend.demodulator_priv = state;
 #if 1
 	switch (config->i)
@@ -5647,23 +5729,23 @@ struct dvb_frontend *dvb_d3501_fe_qpsk_attach(
 			break;
 		}
 		default:
-
+		{
 			break;
+		}
 	}
 #endif  /* 0 */
 
 	{
 		INT32 ret = ERR_FAILED;
+
 		ret = nim_s3501_hw_check(&state->spark_nimdev);
 		if (ret != SUCCESS)
 		{
 			d3501_term(&state->spark_nimdev);
 			kfree(state);
-
 			return NULL;
 		}
 	}
-
 	return &state->frontend;
 
 error:
