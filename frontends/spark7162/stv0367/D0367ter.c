@@ -143,10 +143,10 @@ static int dvb_d0367_fe_ofdm_read_status(struct dvb_frontend *fe, fe_status_t *s
 	if (bIsLocked)
 	{
 		*status = FE_HAS_SIGNAL
-			  | FE_HAS_CARRIER
-			  | FE_HAS_VITERBI
-			  | FE_HAS_SYNC
-			  | FE_HAS_LOCK;
+		        | FE_HAS_CARRIER
+		        | FE_HAS_VITERBI
+		        | FE_HAS_SYNC
+		        | FE_HAS_LOCK;
 	}
 	else
 	{
@@ -240,6 +240,7 @@ static int dvb_d0367_fe_ofdm_set_frontend(struct dvb_frontend *fe, struct dvb_fr
 	D0367ter_ScanFreq(DeviceMap, IOHandle);
 #if 0
 	BOOL bIsLocked;
+
 	bIsLocked = FE_367ofdm_lock(&state->DeviceMap, state->IOHandle);
 	printk("bIsLocked = %d\n", bIsLocked);
 #endif
@@ -281,12 +282,13 @@ static int dvb_d0367_fe_ofdm_init(struct dvb_frontend *fe)
 		U32 Quality = 0;
 		U32 Intensity = 0;
 		U32 Ber = 0;
-		FE_STV0367TER_GetSignalInfo(&state->DeviceMap, state->IOHandle, &Quality, &Intensity, &Ber);
 
+		FE_STV0367TER_GetSignalInfo(&state->DeviceMap, state->IOHandle, &Quality, &Intensity, &Ber);
 		printk("Quality = %d, Intensity = %d, Ber = %d\n", Quality, Intensity, Ber);
 	}
 	{
 		BOOL bIsLocked;
+
 		bIsLocked = FE_367ofdm_lock(&state->DeviceMap, state->IOHandle);
 		printk("bIsLocked = %d\n", bIsLocked);
 	}
@@ -311,8 +313,7 @@ static void dvb_d0367_fe_ofdm_release(struct dvb_frontend *fe)
 }
 
 #if 1
-static int
-dvb_d0367_fe_ofdm_i2c_gate_ctrl(struct dvb_frontend *fe, int enable)
+static int dvb_d0367_fe_ofdm_i2c_gate_ctrl(struct dvb_frontend *fe, int enable)
 {
 	struct dvb_d0367_fe_ofdm_state *state = fe->demodulator_priv;
 	TUNER_IOREG_DeviceMap_t *DeviceMap;
@@ -397,7 +398,8 @@ static int dvb_d0367_fe_ofdm_get_property(struct dvb_frontend *fe, struct dtv_pr
 static struct dvb_frontend_ops dvb_d0367_fe_ofdm_ops =
 {
 
-	.info = {
+	.info =
+	{
 		.name = "Tuner3-T(T/C)",
 		.type = FE_OFDM,
 		.frequency_min = 47000000,
@@ -441,8 +443,7 @@ static struct dvb_frontend_ops dvb_d0367_fe_ofdm_ops =
 void D0367ter_TunerSetFreq(TUNER_IOREG_DeviceMap_t *DeviceMap, IOARCH_Handle_t IOHandle)
 
 {
-	struct dvb_d0367_fe_ofdm_state *state =
-		(struct dvb_d0367_fe_ofdm_state *)DeviceMap->priv;
+	struct dvb_d0367_fe_ofdm_state *state = (struct dvb_d0367_fe_ofdm_state *)DeviceMap->priv;
 	struct dvb_frontend_parameters *p = state->p;
 	struct dvb_frontend *fe = &state->frontend;
 
@@ -450,7 +451,9 @@ void D0367ter_TunerSetFreq(TUNER_IOREG_DeviceMap_t *DeviceMap, IOARCH_Handle_t I
 	{
 		fe->ops.tuner_ops.set_params(fe, p);
 		if (fe->ops.i2c_gate_ctrl)
+		{
 			fe->ops.i2c_gate_ctrl(fe, 0);
+		}
 	}
 }
 
@@ -576,7 +579,9 @@ FE_LLA_Error_t D0367ter_Algo(TUNER_IOREG_DeviceMap_t *DeviceMap,
 			ChipSetField_0367ter(DeviceMap, IOHandle, F367ofdm_AUT_AGC_TARGET_MSB, 0xB);
 			/*ChipSetField_0367ter(DeviceMap, IOHandle,AUT_AGC_TARGET_LSB,0x04); */
 			if (!FE_367TER_IIR_FILTER_INIT(DeviceMap, IOHandle, pParams->ChannelBW, pParams->Crystal_Hz))
+			{
 				return FE_LLA_BAD_PARAMETER;
+			}
 			/*set IIR filter once for 6,7 or 8MHz BW*/
 			pParams->PreviousChannelBW = pParams->ChannelBW;
 			FE_367TER_AGC_IIR_RESET(DeviceMap, IOHandle);
@@ -658,8 +663,7 @@ FE_LLA_Error_t D0367ter_Algo(TUNER_IOREG_DeviceMap_t *DeviceMap,
 	return error;
 }
 
-U32 D0367ter_GeFrequency(TUNER_IOREG_DeviceMap_t *DeviceMap,
-			 IOARCH_Handle_t IOHandle)
+U32 D0367ter_GeFrequency(TUNER_IOREG_DeviceMap_t *DeviceMap, IOARCH_Handle_t IOHandle)
 {
 	U32 Frequency = 722000;
 	struct dvb_d0367_fe_ofdm_state *state = NULL;
@@ -701,17 +705,25 @@ U32 D0367ter_GeChannelBW(TUNER_IOREG_DeviceMap_t *DeviceMap, IOARCH_Handle_t IOH
 	switch (p->u.ofdm.bandwidth)
 	{
 		case BANDWIDTH_8_MHZ:
+		{
 			ChannelBW = 8;
 			break;
+		}
 		case BANDWIDTH_7_MHZ:
+		{
 			ChannelBW = 7;
 			break;
+		}
 		case BANDWIDTH_6_MHZ:
+		{
 			ChannelBW = 6;
 			break;
+		}
 		default:
+		{
 			ChannelBW = 8;
 			break;
+		}
 	}
 	return ChannelBW;
 }
@@ -775,6 +787,7 @@ YW_ErrorType_T D0367ter_ScanFreq(TUNER_IOREG_DeviceMap_t *DeviceMap, IOARCH_Hand
 	switch (flag) /* sw spectrum inversion for LP_IF &IQ &normal IF *db*  */
 	{
 		case 0: /*INV+ INV_NONE*/
+		{
 			if ((pParams.Inv == FE_TER_INVERSION_NONE) || (pParams.Inv == FE_TER_INVERSION))
 			{
 				num_trials = 1;
@@ -784,16 +797,21 @@ YW_ErrorType_T D0367ter_ScanFreq(TUNER_IOREG_DeviceMap_t *DeviceMap, IOARCH_Hand
 				num_trials = 2;
 			}
 			break;
+		}
 		case 1:/*AUTO*/
+		{
 			num_trials = 2;
 			if ((pParams.first_lock) && (pParams.Inv == FE_TER_INVERSION_AUTO))
 			{
 				num_trials = 1;
 			}
 			break;
+		}
 		default:
+		{
 			return FE_TER_NOLOCK;
 			break;
+		}
 	}
 	pResult.SignalStatus = FE_TER_NOLOCK;
 	index = 0;
@@ -820,25 +838,27 @@ YW_ErrorType_T D0367ter_ScanFreq(TUNER_IOREG_DeviceMap_t *DeviceMap, IOARCH_Hand
 		}
 		index++;
 	}
+#if 0
 	if (!Error)
 	{
-		//Inst->DriverParam.Ter.Result = Inst->DriverParam.Ter.Param;
+		Inst->DriverParam.Ter.Result = Inst->DriverParam.Ter.Param;
 		if (pResult.Locked)
 		{
-			//printk("TUNER_STATUS_LOCKED #######################\n");
-			//Inst->Status = TUNER_STATUS_LOCKED;
+			printk("TUNER_STATUS_LOCKED #######################\n");
+			Inst->Status = TUNER_STATUS_LOCKED;
 		}
 		else
 		{
-			//printk("TUNER_STATUS_UNLOCKED #######################\n");
-			//Inst->Status = TUNER_STATUS_UNLOCKED;
+			printk("TUNER_STATUS_UNLOCKED #######################\n");
+			Inst->Status = TUNER_STATUS_UNLOCKED;
 		}
 	}
 	else
 	{
-		//printk("TUNER_STATUS_UNLOCKED Error#######################\n");
-		//Inst->Status = TUNER_STATUS_UNLOCKED;
+		printk("TUNER_STATUS_UNLOCKED Error#######################\n");
+		Inst->Status = TUNER_STATUS_UNLOCKED;
 	}
+#endif
 	return (Error);
 }
 
@@ -877,3 +897,4 @@ MODULE_AUTHOR("oSaiYa");
 MODULE_LICENSE("GPL");
 
 EXPORT_SYMBOL(dvb_d0367_fe_ofdm_attach);
+

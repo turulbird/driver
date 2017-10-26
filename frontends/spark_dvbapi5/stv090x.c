@@ -7561,7 +7561,6 @@ static int spark_set_voltage(struct dvb_frontend *fe, enum fe_sec_voltage voltag
 
 static struct dvb_frontend_ops stv090x_ops =
 {
-
 	.info =
 	{
 		.name = "STV090x Multistandard",
@@ -7577,28 +7576,23 @@ static struct dvb_frontend_ops stv090x_ops =
 		      | FE_CAN_QPSK
 		      | FE_CAN_2G_MODULATION
 	},
-
 	.release = stv090x_release,
 	.init = stv090x_init,
 
-//workaround for tuner failed, a frontend open does not allways wakeup the tuner
+//workaround for tuner failed, a frontend open does not always wakeup the tuner
 	.sleep = stv090x_sleep,
 	.get_frontend_algo = stv090x_frontend_algo,
-
 	.i2c_gate_ctrl = stv090x_i2c_gate_ctrl,
-
 	.diseqc_send_master_cmd = stv090x_send_diseqc_msg,
 	.diseqc_send_burst = stv090x_send_diseqc_burst,
 	.diseqc_recv_slave_reply = stv090x_recv_slave_reply,
 	.set_tone = stv090x_set_tone,
-
 	.search = stv090x_search,
 	.read_status = stv090x_read_status,
 	.read_ber = stv090x_read_per,
 	.read_signal_strength = stv090x_read_signal_strength,
 	.read_snr = stv090x_read_cnr,
 	.get_property = stv090x_get_property,
-
 	.set_voltage = spark_set_voltage,
 };
 
