@@ -315,7 +315,6 @@ U32 D0367qam_GeSymbolRate(TUNER_IOREG_DeviceMap_t *DeviceMap, IOARCH_Handle_t IO
 	}
 
 	p = state->p;
-	_DEBUG
 	printk("p->u.qam.symbol_rate = %d\n", p->u.qam.symbol_rate);
 	SymbolRate = p->u.qam.symbol_rate;
 
