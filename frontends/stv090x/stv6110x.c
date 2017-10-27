@@ -123,7 +123,6 @@ static int stv6110x_write_init(struct stv6110x_state *stv6110x)
 	int ret;
 	const struct stv6110x_config *config = stv6110x->config;
 	static u8 init_data[] = {0x00, 0x07, 0x11, 0xdc, 0x85, 0x17, 0x01, 0xe6, 0x1e};
-
 	struct i2c_msg msg = { .addr = config->addr, .flags = 0, . buf = init_data, .len = 9};
 
 	stv6110x->stv6110x_regs[0] = 0x07;
