@@ -1732,11 +1732,11 @@ VOID STAFindCipherAlgorithm(
 			CipherAlg = CIPHER_NONE;
 		}
 		else if ((Cipher == Ndis802_11EncryptionDisabled)
-		        || (((Cipher == Ndis802_11Encryption1Enabled) && (pAd->SharedKey[BSS0][KeyIdx].KeyLen == 0))
-		        || ((((Cipher == Ndis802_11Encryption2Enabled) || (Cipher == Ndis802_11Encryption3Enabled) || (Cipher == Ndis802_11Encryption4Enabled))
-		        && pMacEntry && (pMacEntry->PairwiseKey.KeyLen == 0))
-		        && !ADHOC_ON(pAd)))
-		        || ((ADHOC_ON(pAd) && (pAd->SharedKey[BSS0][KeyIdx].KeyLen == 0))))
+		     || (((Cipher == Ndis802_11Encryption1Enabled) && (pAd->SharedKey[BSS0][KeyIdx].KeyLen == 0))
+		     || ((((Cipher == Ndis802_11Encryption2Enabled) || (Cipher == Ndis802_11Encryption3Enabled)
+		     || (Cipher == Ndis802_11Encryption4Enabled)) && pMacEntry && (pMacEntry->PairwiseKey.KeyLen == 0))
+		     && !ADHOC_ON(pAd)))
+		     || ((ADHOC_ON(pAd) && (pAd->SharedKey[BSS0][KeyIdx].KeyLen == 0))))
 		{
 			CipherAlg = CIPHER_NONE;
 		}
@@ -1757,13 +1757,15 @@ VOID STAFindCipherAlgorithm(
 				pKey = &pAd->SharedKey[BSS0][KeyIdx];
 			}
 			else if (((Cipher == Ndis802_11Encryption2Enabled)
-			     ||   (Cipher == Ndis802_11Encryption3Enabled)
-			     ||   (Cipher == Ndis802_11Encryption4Enabled))
+			     ||  (Cipher == Ndis802_11Encryption3Enabled)
+			     ||  (Cipher == Ndis802_11Encryption4Enabled))
 			     && pMacEntry)
 			{
 				CipherAlg = pMacEntry->PairwiseKey.CipherAlg;
 				pKey = &pMacEntry->PairwiseKey;
-			} else {
+			}
+			else
+			{
 				CipherAlg = pAd->SharedKey[BSS0][KeyIdx].CipherAlg;
 				pKey = &pAd->SharedKey[BSS0][KeyIdx];
 			}
