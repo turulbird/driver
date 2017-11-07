@@ -53,6 +53,9 @@
 #include "proton.h"
 #include "utf.h"
 
+#include <linux/device.h> /* class_creatre */
+#include <linux/cdev.h> /* cdev_init */
+
 static short paramDebug = 0;
 #define TAGDEBUG "[proton] "
 
@@ -63,8 +66,8 @@ static short paramDebug = 0;
 #define VFD_CS_CLR() {udelay(10); stpio_set_pin(cfg.cs, 0);}
 #define VFD_CS_SET() {udelay(10); stpio_set_pin(cfg.cs, 1);}
 
-#define VFD_CLK_CLR() {stpio_set_pin(cfg.clk, 0);udelay(1);}
-#define VFD_CLK_SET() {stpio_set_pin(cfg.clk, 1);udelay(1);}
+#define VFD_CLK_CLR() {stpio_set_pin(cfg.clk, 0);udelay(4);}
+#define VFD_CLK_SET() {stpio_set_pin(cfg.clk, 1);udelay(4);}
 
 #define VFD_DATA_CLR() {stpio_set_pin(cfg.data, 0);}
 #define VFD_DATA_SET() {stpio_set_pin(cfg.data, 1);}
@@ -99,6 +102,7 @@ typedef struct
 #define FRONTPANEL_MINOR_RC             1
 #define LASTMINOR                 	    2
 //#define ENABLE_SCROLL
+//#define ENABLE_CLOCK_SECTION
 
 static tFrontPanelOpen FrontPanelOpen [LASTMINOR];
 
@@ -212,7 +216,6 @@ static struct saved_data_s lastdata;
  * by a semaphore and the threads goes to sleep until
  * the answer has been received or a timeout occurs.
  */
-static char ioctl_data[BUFFERSIZE];
 
 int writePosition = 0;
 int readPosition = 0;
@@ -221,10 +224,7 @@ unsigned char receivedData[BUFFERSIZE];
 unsigned char str[64];
 static SegAddrVal_T VfdSegAddr[15];
 
-#define VFD_RW_SEM
-#ifdef VFD_RW_SEM
 struct rw_semaphore vfd_rws;
-#endif
 
 unsigned char ASCII[48][2] =
 {
@@ -316,9 +316,7 @@ unsigned char PROTONfp_RD(void)
 	int i;
 	unsigned char val = 0, data = 0;
 
-#ifdef VFD_RW_SEM
 	down_read(&vfd_rws);
-#endif
 
 	PROTONfp_Set_PIO_Mode(PIO_In);
 	for (i = 0; i < 8; i++)
@@ -338,9 +336,7 @@ unsigned char PROTONfp_RD(void)
 	udelay(1);
 	PROTONfp_Set_PIO_Mode(PIO_Out);
 
-#ifdef VFD_RW_SEM
 	up_read(&vfd_rws);
-#endif
 
 	return val;
 }
@@ -349,9 +345,7 @@ static int VFD_WR(unsigned char data)
 {
 	int i;
 
-#ifdef VFD_RW_SEM
 	down_write(&vfd_rws);
-#endif
 
 	for (i = 0; i < 8; i++)
 	{
@@ -368,9 +362,7 @@ static int VFD_WR(unsigned char data)
 		data >>= 1;
 	}
 
-#ifdef VFD_RW_SEM
 	up_write(&vfd_rws);
-#endif
 
 	return 0;
 }
@@ -409,7 +401,7 @@ static int VFD_Seg_Dig_Seg(unsigned char dignum, SegNum_T segnum, unsigned char 
 		VfdSegAddr[dignum].CurrValue2 = val ;
 	}
 	VFD_WR(addr);
-	udelay(5);
+	udelay(10);
 	VFD_WR(val);
 	VFD_CS_SET();
 	return  0;
@@ -532,13 +524,14 @@ void VFD_Draw_Num(unsigned char c, unsigned char position)
 	}
 }
 
-
 static int VFD_Show_Time(int hh, int mm)
 {
+	int res = 0;
+
 	if ((hh > 24) && (mm > 60))
 	{
 		dprintk(2, "%s bad parameter!\n", __func__);
-		return;
+		return res;
 	}
 
 	VFD_Draw_Num((hh / 10), 1);
@@ -549,7 +542,6 @@ static int VFD_Show_Time(int hh, int mm)
 
 	return 0;
 }
-
 
 static int VFD_Show_Ico(LogNum_T log_num, int log_stat)
 {
@@ -605,12 +597,10 @@ static int VFD_Show_Ico(LogNum_T log_num, int log_stat)
 	return 0 ;
 }
 
-
 static struct task_struct *thread;
 static int thread_stop  = 1;
 
-
-void clear_display()
+void clear_display(void)
 {
 	int j;
 	for (j = 0; j < 8; j++)
@@ -621,28 +611,25 @@ void clear_display()
 	VFD_Show_Content();
 }
 
-
 void draw_thread(void *arg)
 {
 	struct vfd_ioctl_data *data;
-	data = (struct vfd_ioctl_data *)arg;
-
 	struct vfd_ioctl_data draw_data;
+	int count = 0;
+	int pos = 0;
+	int k = 0;
+	int j = 0;
+	unsigned char c0;
+	unsigned char c1;
+	unsigned char temp;
+	unsigned char draw_buf[64][2];
+
+	data = (struct vfd_ioctl_data *)arg;
 
 	draw_data.length = data->length;
 	memcpy(draw_data.data, data->data, data->length);
 
 	thread_stop = 0;
-
-	unsigned char c = 0;
-	unsigned char c1 = 0;
-	unsigned char temp = 0;
-	unsigned char draw_buf[64][2];
-	int count = 0;
-	int pos = 0;
-
-	int k = 0;
-	int j = 0;
 
 	clear_display();
 
@@ -656,7 +643,7 @@ void draw_thread(void *arg)
 		}
 
 
-		c = c1 = temp = 0;
+		c0 = c1 = temp = 0;
 
 		if (draw_data.data[pos] == 32)
 		{
@@ -689,7 +676,7 @@ void draw_thread(void *arg)
 				temp = 47;
 			if (temp < 48)
 			{
-				c  = ASCII[temp][0];
+				c0 = ASCII[temp][0];
 				c1 = ASCII[temp][1];
 			}
 		}
@@ -699,27 +686,27 @@ void draw_thread(void *arg)
 			switch (draw_data.data[pos - 1])
 			{
 				case 0xc2:
-					c  = UTF_C2[draw_data.data[pos] & 0x3f][0];
+					c0 = UTF_C2[draw_data.data[pos] & 0x3f][0];
 					c1 = UTF_C2[draw_data.data[pos] & 0x3f][1];
 					break;
 				case 0xc3:
-					c  = UTF_C3[draw_data.data[pos] & 0x3f][0];
+					c0 = UTF_C3[draw_data.data[pos] & 0x3f][0];
 					c1 = UTF_C3[draw_data.data[pos] & 0x3f][1];
 					break;
 				case 0xc4:
-					c  = UTF_C4[draw_data.data[pos] & 0x3f][0];
+					c0 = UTF_C4[draw_data.data[pos] & 0x3f][0];
 					c1 = UTF_C4[draw_data.data[pos] & 0x3f][1];
 					break;
 				case 0xc5:
-					c  = UTF_C5[draw_data.data[pos] & 0x3f][0];
+					c0 = UTF_C5[draw_data.data[pos] & 0x3f][0];
 					c1 = UTF_C5[draw_data.data[pos] & 0x3f][1];
 					break;
 				case 0xd0:
-					c  = UTF_D0[draw_data.data[pos] & 0x3f][0];
+					c0 = UTF_D0[draw_data.data[pos] & 0x3f][0];
 					c1 = UTF_D0[draw_data.data[pos] & 0x3f][1];
 					break;
 				case 0xd1:
-					c  = UTF_D1[draw_data.data[pos] & 0x3f][0];
+					c0 = UTF_D1[draw_data.data[pos] & 0x3f][0];
 					c1 = UTF_D1[draw_data.data[pos] & 0x3f][1];
 					break;
 			}
@@ -737,14 +724,14 @@ void draw_thread(void *arg)
 		}
 
 
-		draw_buf[count][0] = c;
+		draw_buf[count][0] = c0;
 		draw_buf[count][1] = c1;
 		count++;
 
 		pos++;
 	}
 
-#if ENABLE_SCROLL // j00zek: disabled by default, interfere with GUI's
+#ifdef ENABLE_SCROLL // j00zek: disabled by default, interfere with GUI's
 	if (count > 8)
 	{
 		pos  = 0;
@@ -778,6 +765,11 @@ void draw_thread(void *arg)
 		k = 8;
 		if (count < 8)
 			k = count;
+		if(kthread_should_stop())
+		{
+			thread_stop = 1;
+			return;
+		}
 		clear_display();
 
 		for (j = 0; j < k; j++)
@@ -788,34 +780,35 @@ void draw_thread(void *arg)
 		VFD_Show_Content();
 	}
 
+	if(count == 0)
+		clear_display();
 	thread_stop = 1;
 }
 
 int run_draw_thread(struct vfd_ioctl_data *draw_data)
 {
-	if (!thread_stop)
+	if (!thread_stop && thread)
 		kthread_stop(thread);
 
 	//wait thread stop
 	while (!thread_stop)
 	{
-		msleep(1);
+		msleep(5);
 	}
+	msleep(10);
 
 
 	thread_stop = 2;
-	thread = kthread_run(draw_thread, draw_data, "draw_thread", NULL, true);
+	thread = kthread_run(draw_thread, draw_data, "draw_thread");
 
 	//wait thread run
 	while (thread_stop == 2)
 	{
-		msleep(1);
+		msleep(5);
 	}
 
 	return 0;
 }
-
-
 
 static int VFD_Show_Time_Off(void)
 {
@@ -865,6 +858,11 @@ static int PROTONfp_Get_Key_Value(void)
 
 	switch (byte)
 	{
+		case 0x01:
+		{
+			key_val = EXIT_KEY;
+			break;
+		}
 		case 0x02:
 		{
 			key_val = KEY_LEFT;
@@ -949,9 +947,7 @@ int vfd_init_func(void)
 		return -1;
 	}
 
-#ifdef VFD_RW_SEM
 	init_rwsem(&vfd_rws);
-#endif
 
 	VFD_CS_CLR();
 	VFD_WR(0x0C);
@@ -965,7 +961,7 @@ int vfd_init_func(void)
 	return 0;
 }
 
-static void VFD_CLR()
+static void VFD_CLR(void)
 {
 	VFD_CS_CLR();
 	VFD_WR(0x0C);
@@ -979,8 +975,7 @@ static void VFD_CLR()
 
 int protonSetIcon(int which, int on)
 {
-	char buffer[8];
-	int  res = 0, m = 0, n = 0;
+	int  res = 0;
 
 	dprintk(5, "%s > %d, %d\n", __func__, which, on);
 	if (which < 1 || which > 45)
@@ -1226,7 +1221,9 @@ static int PROTONdev_ioctl(struct inode *Inode, struct file *File, unsigned int 
 			break;
 		case VFDSETTIME:
 			//struct set_time_s *data2 = (struct set_time_s *) arg;
+#ifdef ENABLE_CLOCK_SECTION
 			res = protonSetTime((char *)arg);
+#endif
 			break;
 		case VFDGETTIME:
 			break;
@@ -1265,7 +1262,7 @@ static int PROTONdev_ioctl(struct inode *Inode, struct file *File, unsigned int 
 			//wait thread stop
 			while (!thread_stop)
 			{
-				msleep(1);
+				msleep(5);
 			}
 			VFD_CLR();
 			break;
@@ -1300,8 +1297,8 @@ static struct file_operations vfd_fops =
 {
 	.owner = THIS_MODULE,
 	.ioctl = PROTONdev_ioctl,
-	.write = PROTONdev_write,
-	.read  = PROTONdev_read,
+	.write = (void *) PROTONdev_write,
+	.read  = (void *) PROTONdev_read,
 	.poll  = (void *) PROTONdev_poll,
 	.open  = PROTONdev_open,
 	.release  = PROTONdev_close
@@ -1377,6 +1374,12 @@ void button_bad_polling(void)
 				case KEY_MENU:
 				{
 					input_report_key(button_dev, KEY_MENU, 1);
+					input_sync(button_dev);
+					break;
+				}
+				case KEY_EXIT:
+				{
+					input_report_key(button_dev, KEY_EXIT, 1);
 					input_sync(button_dev);
 					break;
 				}
@@ -1460,6 +1463,7 @@ int button_dev_init(void)
 	set_bit(KEY_POWER	, button_dev->keybit);
 	set_bit(KEY_MENU	, button_dev->keybit);
 	set_bit(KEY_OK		, button_dev->keybit);
+	set_bit(KEY_EXIT	, button_dev->keybit);
 
 	error = input_register_device(button_dev);
 	if (error)
@@ -1477,6 +1481,9 @@ void button_dev_exit(void)
 	input_unregister_device(button_dev);
 }
 
+static struct cdev   vfd_cdev;
+static struct class *vfd_class = 0;
+
 static int __init proton_init_module(void)
 {
 	int i;
@@ -1490,6 +1497,11 @@ static int __init proton_init_module(void)
 		printk("unable to init module\n");
 		return -1;
 	}
+
+	vfd_class = class_create(THIS_MODULE, "proton");
+	device_create(vfd_class, NULL, MKDEV(VFD_MAJOR, 0), NULL, "vfd");
+	cdev_init(&vfd_cdev, &vfd_fops);
+	cdev_add(&vfd_cdev, MKDEV(VFD_MAJOR, 0), 1);
 
 	if (button_dev_init() != 0)
 		return -1;
@@ -1524,7 +1536,10 @@ static void __exit proton_cleanup_module(void)
 
 	//kthread_stop(time_thread);
 
+	cdev_del(&vfd_cdev);
 	unregister_chrdev(VFD_MAJOR, "VFD");
+	device_destroy(vfd_class, MKDEV(VFD_MAJOR, 0));
+	class_destroy(vfd_class);
 	printk("HL101 FrontPanel module unloading\n");
 }
 

@@ -17,9 +17,9 @@
 #include <linux/mutex.h>
 #include <linux/version.h>
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,23)
-#  include <linux/stpio.h>
+# include <linux/stpio.h>
 #else
-#  include <linux/stm/pio.h>
+# include <linux/stm/pio.h>
 #endif
 
 #include <linux/dvb/version.h>
@@ -33,25 +33,25 @@
 
 struct core_config
 {
-	struct i2c_adapter	*i2c_adap; /* i2c bus of the tuner */
-	u8			i2c_addr; /* i2c address of the tuner */
-	u8			i2c_addr_lnb_supply; /* i2c address of the lnb_supply */
-	u8			vertical; /* i2c value */
-	u8			horizontal; /* i2c value */
-	struct stpio_pin	*lnb_enable;
-	struct stpio_pin	*lnb_vsel;	// 13/18V select pin
-	struct stpio_pin	*tuner_reset_pin;
-	u8			tuner_reset_act; /* active state of the pin */
+	struct i2c_adapter *i2c_adap; /* i2c bus of the tuner */
+	u8 i2c_addr; /* i2c address of the tuner */
+	u8 i2c_addr_lnb_supply; /* i2c address of the lnb_supply */
+	u8 vertical; /* i2c value */
+	u8 horizontal; /* i2c value */
+	struct stpio_pin *lnb_enable;
+	struct stpio_pin *lnb_vsel; // 13/18V select pin
+	struct stpio_pin *tuner_reset_pin;
+	u8 tuner_reset_act; /* active state of the pin */
 
 };
 
 struct fe_core_state
 {
-	struct dvb_frontend_ops 		ops;
-	struct dvb_frontend 			frontend;
-	const struct core_config 		*config;
-	int								thread_id;
-	int				       			not_responding;
+	struct dvb_frontend_ops ops;
+	struct dvb_frontend frontend;
+	const struct core_config *config;
+	int thread_id;
+	int not_responding;
 };
 
 struct core_info
@@ -98,27 +98,12 @@ struct core
 
 	spinlock_t debilock;
 
-	struct dvb_adapter 	*dvb_adapter;
-	struct dvb_frontend	*frontend[MAX_TUNERS_PER_ADAPTER];
+	struct dvb_adapter *dvb_adapter;
+	struct dvb_frontend *frontend[MAX_TUNERS_PER_ADAPTER];
 	int (*read_fe_status)(struct dvb_frontend *fe, fe_status_t *status);
 	int fe_synced;
 
 	void *priv;
-};
-
-struct tuner_devctl
-{
-	int (*tuner_init)(struct dvb_frontend *fe);
-	int (*tuner_sleep)(struct dvb_frontend *fe);
-	int (*tuner_set_mode)(struct dvb_frontend *fe, enum tuner_mode mode);
-	int (*tuner_set_frequency)(struct dvb_frontend *fe, u32 frequency);
-	int (*tuner_get_frequency)(struct dvb_frontend *fe, u32 *frequency);
-	int (*tuner_set_bandwidth)(struct dvb_frontend *fe, u32 bandwidth);
-	int (*tuner_get_bandwidth)(struct dvb_frontend *fe, u32 *bandwidth);
-	int (*tuner_set_bbgain)(struct dvb_frontend *fe, u32 gain);
-	int (*tuner_get_bbgain)(struct dvb_frontend *fe, u32 *gain);
-	int (*tuner_set_refclk)(struct dvb_frontend *fe, u32 refclk);
-	int (*tuner_get_status)(struct dvb_frontend *fe, u32 *status);
 };
 
 extern void fe_core_register_frontend(struct dvb_adapter *dvb_adap);

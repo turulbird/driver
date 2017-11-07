@@ -22,8 +22,8 @@
 
 enum ix7306_step
 {
-	IX7306_STEP_1000 = 0,	/* 1000 kHz */
-	IX7306_STEP_500		/*  500 kHz */
+	IX7306_STEP_1000 = 0, /* 1000 kHz */
+	IX7306_STEP_500 /* 500 kHz */
 };
 
 enum ix7306_bblpf
@@ -59,7 +59,12 @@ struct ix7306_config
 	enum ix7306_bbgain	bb_gain;
 };
 
-extern struct tuner_devctl *ix7306_attach(struct dvb_frontend *fe,
+int ix7306_get_frequency(struct dvb_frontend *fe, u32 *frequency);
+int ix7306_set_frequency(struct dvb_frontend *fe, u32 frequency);
+int ix7306_set_bandwidth(struct dvb_frontend *fe, u32 bandwidth);
+int ix7306_get_bandwidth(struct dvb_frontend *fe, u32 *bandwidth);
+
+extern struct dvb_frontend *ix7306_attach(struct dvb_frontend *fe,
 					  const struct ix7306_config *config,
 					  struct i2c_adapter *i2c);
 
