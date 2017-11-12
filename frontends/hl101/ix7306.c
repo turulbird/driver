@@ -185,15 +185,16 @@ static void calculate_pll_divider_byte_QM1D1B0004(long freq, int *byte_)
 	long data;
 	int P, N, A;
 	data = (long)((freq * 10LL) / calculate_pll_step_QM1D1B0004(*(byte_ + 3)) + 5) / 10 ;
+
 	P = calculate_dividing_factor_of_prescaler(byte_);
 	N = data / P;
 	A = data - P * N;
 	data = (N << 5) | A;
 	//040408
 	//BG should not be changed...
-	*(byte_ + 1) &= 0x60; //byte2:BG set
-	*(byte_ + 1) |= (int)((data >> 8) & 0x1F); //byte2
-	*(byte_ + 2) = (int)(data & 0xFF); //byte3
+	*(byte_ + 1) &= 0x60;  //byte2:BG set
+	*(byte_ + 1) |= (int)((data >> 8) & 0x1F);  //byte2
+	*(byte_ + 2) = (int)(data & 0xFF);  //byte3
 }
 
 static int calculate_pll_step_QM1D1B0004(int byte4)
@@ -201,6 +202,7 @@ static int calculate_pll_step_QM1D1B0004(int byte4)
 	int REF;
 	int R;
 	int pll_step;
+
 	REF = byte4 & 0x01;
 	if (REF == 0)
 	{
@@ -224,8 +226,14 @@ static int calculate_dividing_factor_of_prescaler(int *byte_)
 	int PSC;
 	PSC = (*(byte_ + 4) >> 4);
 	PSC &= 0x01;
-	if (PSC) return 16; //PSC=1
-	else return 32; //PSC=0
+	if (PSC)  //PSC=1
+	{
+		return 16;
+	}
+	else  //PSC=0
+	{
+		return 32;
+	}
 }
 
 static void calculate_pll_lpf_bw_from_baud_QM1D1B0004(long baud, int *byte_)
@@ -309,19 +317,23 @@ static long calculate_LPF_from_baud(long baud)
 	{
 		LPF = 10000;
 	}
-//	if (baud>=20000)
-//	{
-//		LPF=34000;
-//	}
-//	else
-//		LPF=20000;
-//	}
+#if 0
+	if (baud >= 20000)
+	{
+		LPF=34000;
+	}
+	else
+	{
+		LPF=20000;
+	}
+#endif
 	return LPF;
 }
 
 static void calculate_pll_lpf_to_byte(long LPF, int *byte)
 {
 	int data, PD2, PD3, PD4, PD5;
+
 	data = (int)(LPF / 1000 / 2 - 2);
 	PD2 = (data >> 3) & 0x01;
 	PD3 = (data >> 2) & 0x01;
@@ -337,7 +349,7 @@ static void pll_setdata_QM1D1B0004(struct dvb_frontend *fe, int *byte_)
 {
 	struct ix7306_state *state = fe->tuner_priv;
 	u8 ucOperData[5];
-	u8 byte1,/*byte2,*/byte3, byte4;
+	u8 byte1,/*byte2,*/ byte3, byte4;
 
 	//in this function ,we operator ucOperData instead of byte_
 	memset(ucOperData, 0, sizeof(ucOperData));
@@ -345,11 +357,11 @@ static void pll_setdata_QM1D1B0004(struct dvb_frontend *fe, int *byte_)
 	ucOperData[1] = *(byte_ + 2);
 	ucOperData[2] = *(byte_ + 3);
 	ucOperData[3] = *(byte_ + 4);
-	byte1 = ucOperData[0]; //byte2
-	byte3 = ucOperData[2]; //byte4
-	byte4 = ucOperData[3]; //byte5
-	ucOperData[2] &= 0xE3; //TM=0,LPF=4MHz
-	ucOperData[3] &= 0xF3; //LPF=4MHz
+	byte1 = ucOperData[0];  //byte2
+	byte3 = ucOperData[2];  //byte4
+	byte4 = ucOperData[3];  //byte5
+	ucOperData[2] &= 0xE3;  //TM=0,LPF=4MHz
+	ucOperData[3] &= 0xF3;  //LPF=4MHz
 	//byte2 / BG=01(VCO wait:2ms)
 	ucOperData[0] &= 0x9F;
 	ucOperData[0] |= 0x20;
@@ -387,13 +399,14 @@ static void pll_setdata_QM1D1B0004(struct dvb_frontend *fe, int *byte_)
 	msleep(12);
 
 	ucOperData[2] = byte3;
-	//[040108] TM bit always finis with "1".
+	//[040108] TM bit always finishes with "1".
 	ucOperData[2] |= 0x04;	//TM=1
 	/********************************************************************
-	*(byte_+3)|=0x04; //TM=1
-	*(byte_+3)=byte4; //byte_4 original value
+	*(byte_+3)|=0x04;  //TM=1
+	*(byte_+3)=byte4;  //byte_4 original value
 	********************************************************************/
-	ucOperData[3] = byte4; //byte_5 original value
+	ucOperData[3] = byte4;  //byte_5 original value
+
 	/*open i2c repeater gate*/
 	if (fe->ops.i2c_gate_ctrl(fe, 1) < 0)
 	{
@@ -439,9 +452,7 @@ static int ix7306_set_freq(struct dvb_frontend *fe, u32 freq_KHz, u32 tuner_BW)
 	return 0;
 }
 
-static int ix7306_set_state(struct dvb_frontend *fe,
-			    enum tuner_param param,
-			    struct tuner_state *tstate)
+static int ix7306_set_state(struct dvb_frontend *fe, enum tuner_param param, struct tuner_state *tstate)
 {
 	struct ix7306_state *state = fe->tuner_priv;
 
@@ -459,9 +470,7 @@ static int ix7306_set_state(struct dvb_frontend *fe,
 	return 0;
 }
 
-static int ix7306_get_state(struct dvb_frontend *fe,
-			    enum tuner_param param,
-			    struct tuner_state *tstate)
+static int ix7306_get_state(struct dvb_frontend *fe, enum tuner_param param, struct tuner_state *tstate)
 {
 	struct ix7306_state *state = fe->tuner_priv;
 	int err = 0;
@@ -479,6 +488,7 @@ static int ix7306_get_state(struct dvb_frontend *fe,
 			break;
 		}
 		default:
+		{
 			printk("%s: Unknown parameter (param=%d)\n", __func__, param);
 			err = -EINVAL;
 			break;
@@ -640,7 +650,9 @@ struct dvb_frontend *ix7306_attach(struct dvb_frontend *fe,
 	struct ix7306_state *state = NULL;
 
 	if ((state = kzalloc(sizeof(struct ix7306_state), GFP_KERNEL)) == NULL)
+	{
 		goto exit;
+	}
 	state->config = config;
 	state->i2c = i2c;
 	state->fe = fe;
