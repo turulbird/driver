@@ -158,6 +158,7 @@ obj-y += player2/
 ifndef SAGEMCOM88 #Sagemcom88 has own boxtype
 obj-y += boxtype/
 endif
+obj-y += cpu_frequ/
 obj-y += simu_button/
 obj-y += e2_proc/
 obj-y += frontends/
@@ -271,14 +272,12 @@ endif
 ifdef SPARK
 obj-y += cec/
 obj-y += smartcard/
-obj-y += cpu_frequ/
 endif
 
 ifdef SPARK7162
 obj-y += smartcard/
 obj-y += i2c_spi/
 obj-y += cec/
-obj-y += cpu_frequ/
 obj-y += dvbt/as102/
 obj-y += dvbt/siano/
 endif
