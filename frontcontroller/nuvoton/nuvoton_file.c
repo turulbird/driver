@@ -89,7 +89,8 @@
  * 20170418 Audioniek       Init: bug fixed with boot_on string length.
  * 20170419 Audioniek       nuvotonWriteString for HS7810A/7819 rewritten.
  * 20170516 Audioniek       Missing character entries for : and ; added for
- *                          HS9510/7420/7429 added.
+ *                          HS9510/7420/7429.
+ * 20180113 Audioniek       Fix build error with HS7110.
  *
  *****************************************************************************
  *
@@ -588,7 +589,7 @@ struct iconToInternal
  * Icons for HS8200
  *
  * These are displayed in the leftmost character position.
- * Basically oOly one icon can be displayed at a time; if more
+ * Basically only one icon can be displayed at a time; if more
  * are on they are displayed successively in circular fashion in
  * a thread.
  *
@@ -1219,7 +1220,7 @@ int nuvotonSetBrightness(int level)
 	dprintk(100, "%s <\n", __func__);
 	return res;
 }
-#else  //HS7110
+#else  // HS7110
 int nuvotonSetBrightness(int level)
 {
 	dprintk(100, "%s >\n", __func__);
@@ -1549,6 +1550,14 @@ int nuvotonSetDisplayOnOff(char level)
 	res = nuvotonWriteCommand(buffer, 6, 0);
 	dprintk(100, "%s <\n", __func__);
 	return res;
+}
+#else  // HS7110
+int nuvotonSetDisplayOnOff(char level)
+{
+	dprintk(100, "%s >\n", __func__);
+	dprintk(10, "Set display on or off not supported.\n");
+	dprintk(100, "%s <\n", __func__);
+	return -EFAULT;
 }
 #endif
 

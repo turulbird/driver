@@ -476,13 +476,13 @@ struct saved_data_s
 {
 	int length;
 	char data[128];
+	int brightness;
+	int display_on;
 #if !defined(HS7110)
 	int icon_state[ICON_MAX + 2];
 #if defined(ATEVIO7500)
 	int icon_count; // number of icons switched on
 #endif
-	int brightness;
-	int display_on;
 #endif
 #if defined(HS7119) || defined(HS7810A) || defined(HS7819)
 	unsigned char buf[7];
