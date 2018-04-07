@@ -173,7 +173,7 @@ YW_ErrorType_T demod_d6158_Repeat(IOARCH_Handle_t DemodIOHandle,
 	return 0;
 }
 
-YW_ErrorType_T demod_d6158_ScanFreqDVB(struct dvb_frontend_parameters *p, struct nim_device *dev, UINT8 System, UINT8 plp_id)
+YW_ErrorType_T demod_d6158_ScanFreq(struct dvb_frontend_parameters *p, struct nim_device *dev, UINT8 System, UINT8 plp_id)
 {
 	// struct nim_device *dev;
 	INT32 ret = 0;
@@ -184,14 +184,9 @@ YW_ErrorType_T demod_d6158_ScanFreqDVB(struct dvb_frontend_parameters *p, struct
 	{
 		return YWHAL_ERROR_BAD_PARAMETER;
 	}
-	if ((DEMO_BANK_T2 == System) || (DEMO_BANK_T == System))
+	if (SYS_DVBT2 == System)
 	{
-		//printf("TuneMode=%d\n", Inst->DriverParam.Ter.Param.TuneMode);
-		param.priv_param = DEMO_UNKNOWN;//T2 T
-		//param.priv_param = DEMO_DVBT;//T2 T
-		//param.priv_param = DEMO_DVBT2;//T2 T
-		//printk("p->frequency:%dKHz, bw:%dMHz\n",
-		// p->frequency, p->u.ofdm.bandwidth);
+		param.priv_param = DEMO_DVBT2;
 		param.freq = p->frequency;
 		param.PLP_id = plp_id;
 		switch (p->u.ofdm.bandwidth)
@@ -209,7 +204,26 @@ YW_ErrorType_T demod_d6158_ScanFreqDVB(struct dvb_frontend_parameters *p, struct
 				return YWHAL_ERROR_BAD_PARAMETER;
 		}
 	}
-	else if (DEMO_BANK_C == System)
+	else if (SYS_DVBT == System)
+	{
+		param.priv_param = DEMO_DVBT;//T2 T
+		param.freq = p->frequency;
+		switch (p->u.ofdm.bandwidth)
+		{
+			case BANDWIDTH_6_MHZ:
+				param.bandwidth = MxL_BW_6MHz;
+				break;
+			case BANDWIDTH_7_MHZ:
+				param.bandwidth = MxL_BW_7MHz;
+				break;
+			case BANDWIDTH_8_MHZ:
+				param.bandwidth = MxL_BW_8MHz;
+				break;
+			default:
+				return YWHAL_ERROR_BAD_PARAMETER;
+		}
+	}
+	else if (SYS_DVBC_ANNEX_AC == System)
 	{
 		param.priv_param = DEMO_DVBC;
 		param.bandwidth = MxL_BW_8MHz;
@@ -251,15 +265,10 @@ YW_ErrorType_T demod_d6158earda_ScanFreq(struct dvb_frontend_parameters *p, stru
 	{
 		return YWHAL_ERROR_BAD_PARAMETER;
 	}
-	if ((DEMO_BANK_T2 == System) || (DEMO_BANK_T == System))
+	if (SYS_DVBT2 == System)
 	{
-		//printf("TuneMode=%d\n", Inst->DriverParam.Ter.Param.TuneMode);
-		param.priv_param = DEMO_UNKNOWN;//T2 T
-		//param.priv_param = DEMO_DVBT;//T2 T
-		//param.priv_param = DEMO_DVBT2;//T2 T
-		//printk("p->frequency:%dKHz, bw:%dMHz\n",
-		// p->frequency, p->u.ofdm.bandwidth);
-		param.freq = p->frequency / 1000;
+		param.priv_param = DEMO_DVBT2;
+		param.freq = p->frequency;
 		param.PLP_id = plp_id;
 		switch (p->u.ofdm.bandwidth)
 		{
@@ -276,82 +285,31 @@ YW_ErrorType_T demod_d6158earda_ScanFreq(struct dvb_frontend_parameters *p, stru
 				return YWHAL_ERROR_BAD_PARAMETER;
 		}
 	}
-	else if (DEMO_BANK_C == System)
+	else if (SYS_DVBT == System)
 	{
-		param.priv_param = DEMO_DVBC;
-		param.bandwidth = MxL_BW_8MHz;
-		param.freq = p->frequency / 1000;
-		switch (p->u.qam.modulation)
+		param.priv_param = DEMO_DVBT;//T2 T
+		param.freq = p->frequency;
+		switch (p->u.ofdm.bandwidth)
 		{
-			case QAM_16:
-				param.modulation = QAM16;
-				break;
-			case QAM_32:
-				param.modulation = QAM32;
-				break;
-			case QAM_64:
-				param.modulation = QAM64;
-				break;
-			case QAM_128:
-				param.modulation = QAM128;
-				break;
-			case QAM_256:
-				param.modulation = QAM256;
-				break;
-			default:
-				return YWHAL_ERROR_BAD_PARAMETER;
-		}
-	}
-	//printf("[%s]%d,dev=0x%x\n",__FUNCTION__,__LINE__,dev);
-	ret = nim_panic6158_channel_change_earda(dev, &param);
-	return ret;
-}
-
-static YW_ErrorType_T demod_d6158_ScanFreq(U8 Handle, TUNER_TunerType_T TunerType)
-{
-	TUNER_ScanTaskParam_T *Inst = NULL;
-	struct nim_device *dev;
-	INT32 ret = 0;
-	struct NIM_Channel_Change param;
-	UINT8 *pPlpNum;
-
-	YWLIB_Memset((void *)&param, 0, sizeof(struct NIM_Channel_Change));
-	//printf("Handle = %d\n", Handle);
-	Inst = TUNER_GetScanInfo(Handle);
-	Inst->Status = TUNER_INNER_STATUS_SCANNING;
-	pPlpNum = &(Inst->DriverParam.Ter.Param.T2PlpNum);
-	dev = (struct nim_device *)Inst->userdata;
-	if (dev == NULL)
-	{
-		return YWHAL_ERROR_BAD_PARAMETER;
-	}
-	if (YWTUNER_DELIVER_TER == Inst->Device)
-	{
-		//printf("TuneMode=%d\n", Inst->DriverParam.Ter.Param.TuneMode);
-		param.priv_param = Inst->DriverParam.Ter.Param.TuneMode;//T2 T
-		//param.priv_param = DEMO_DVBT2;//T2 T
-		param.freq = Inst->DriverParam.Ter.Param.FreqKHz;
-		switch (Inst->DriverParam.Ter.Param.ChannelBW)
-		{
-			case YWTUNER_TER_BANDWIDTH_6_MHZ:
+			case BANDWIDTH_6_MHZ:
 				param.bandwidth = MxL_BW_6MHz;
 				break;
-			case YWTUNER_TER_BANDWIDTH_7_MHZ:
+			case BANDWIDTH_7_MHZ:
 				param.bandwidth = MxL_BW_7MHz;
 				break;
-			case YWTUNER_TER_BANDWIDTH_8_MHZ:
+			case BANDWIDTH_8_MHZ:
 				param.bandwidth = MxL_BW_8MHz;
 				break;
 			default:
 				return YWHAL_ERROR_BAD_PARAMETER;
 		}
 	}
-	else if (YWTUNER_DELIVER_CAB == Inst->Device)
+	else if (SYS_DVBC_ANNEX_AC == System)
 	{
 		param.priv_param = DEMO_DVBC;
 		param.bandwidth = MxL_BW_8MHz;
-		param.freq = Inst->DriverParam.Cab.Param.FreqKHz;
-		switch (Inst->DriverParam.Cab.Param.Modulation)
+		param.freq = p->frequency;
+		switch (p->u.qam.modulation)
 		{
 			case YWTUNER_MOD_QAM_16:
 				param.modulation = QAM16;
@@ -373,29 +331,8 @@ static YW_ErrorType_T demod_d6158_ScanFreq(U8 Handle, TUNER_TunerType_T TunerTyp
 		}
 	}
 	//printf("[%s]%d,dev=0x%x\n",__FUNCTION__,__LINE__,dev);
-	if (TUNER_TUNER_MXL301 == TunerType)
-	{
-		ret = nim_panic6158_channel_change(dev, &param);
-	}
-	else if (TUNER_TUNER_MXL603 == TunerType)
-	{
-		struct nim_panic6158_private *priv;
-		priv = (struct nim_panic6158_private *) dev->priv;
-		priv->PLP_id = Inst->DriverParam.Ter.Param.T2PlpID;
-		ret = nim_panic6158_channel_change_earda(dev, &param);
-		*pPlpNum = priv->PLP_num;
-	}
+	ret = nim_panic6158_channel_change_earda(dev, &param);
 	return ret;
-}
-
-static YW_ErrorType_T demod_d6158_ScanFreq_301(U8 Handle)
-{
-	return demod_d6158_ScanFreq(Handle, TUNER_TUNER_MXL301);
-}
-
-static YW_ErrorType_T demod_d6158_ScanFreq_603(U8 Handle)
-{
-	return demod_d6158_ScanFreq(Handle, TUNER_TUNER_MXL603);
 }
 
 YW_ErrorType_T demod_d6158_Reset(U8 Index)
@@ -411,10 +348,7 @@ YW_ErrorType_T demod_d6158_Reset(U8 Index)
 	return Error;
 }
 
-YW_ErrorType_T demod_d6158_GetSignalInfo(U8 Handle,
-					 unsigned int *Quality,
-					 unsigned int *Intensity,
-					 unsigned int *Ber)
+YW_ErrorType_T demod_d6158_GetSignalInfo(U8 Handle, unsigned int *Quality, unsigned int *Intensity, unsigned int *Ber)
 {
 	YW_ErrorType_T Error = YW_NO_ERROR;
 	TUNER_ScanTaskParam_T *Inst = NULL;
@@ -456,7 +390,7 @@ void nim_config_EARDATEK11658(struct COFDM_TUNER_CONFIG_API *Tuner_API_T, UINT32
 	Tuner_API_T->nim_Tuner_Control = tun_mxl603_control;
 	Tuner_API_T->nim_Tuner_Status = tun_mxl603_status;
 	Tuner_API_T->nim_Tuner_Command = tun_mxl603_command;
-	Tuner_API_T->tune_t2_first = 0;
+	Tuner_API_T->tune_t2_first = 1;
 
 	//Tuner_API_T->tuner_config.Tuner_Write = i2c_scb_write; //can be setted stb directly.
 	//Tuner_API_T->tuner_config.Tuner_Read = i2c_scb_read; //can be setted stb directly.
@@ -494,11 +428,12 @@ static void nim_config_d61558(struct COFDM_TUNER_CONFIG_API *Tuner_API_T, UINT32
 	Tuner_API_T->nim_Tuner_Init = tun_mxl301_init;
 	Tuner_API_T->nim_Tuner_Status = tun_mxl301_status;
 	Tuner_API_T->nim_Tuner_Control = tun_mxl301_control;
-	Tuner_API_T->tune_t2_first = 0;//when demod_d6158_ScanFreq,param.priv_param >DEMO_DVBT2,tuner tune T2 then t
+	Tuner_API_T->tune_t2_first = 1;//when demod_d6158_ScanFreq,param.priv_param >DEMO_DVBT2,tuner tune T2 then t
 	Tuner_API_T->tuner_config.demo_type = PANASONIC_DEMODULATOR;
 	Tuner_API_T->tuner_config.cTuner_Base_Addr = 0xC2;
 }
 
+#if 0
 void demod_d6158_OpenInstallFunc(TUNER_ScanTaskParam_T *Inst, TUNER_TunerType_T TunerType)
 {
 	if (YWTUNER_DELIVER_TER == Inst->Device)
@@ -575,6 +510,7 @@ YW_ErrorType_T demod_d6158_Open(U8 Handle)
 	}*/
 	return YW_ErrorCode;
 }
+#endif
 
 void osal_task_sleep(U32 ms)
 {
