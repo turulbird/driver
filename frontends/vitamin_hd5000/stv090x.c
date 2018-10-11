@@ -6904,8 +6904,8 @@ static int lnbh23_set_voltage(struct dvb_frontend *fe, enum fe_sec_voltage volta
 		case SEC_VOLTAGE_OFF:
 		{
 			dprintk(10, "set_voltage_off\n");
-			if (_12v_isON == 0)
-				writereg_lnb_supply(state, 0xd0);
+//			if (_12v_isON == 0)
+//				writereg_lnb_supply(state, 0xd0);
 #if defined(VITAMIN_HD5000)
 			stpio_set_pin(pin_notlnbpwr, 1);  /* off */
 #endif
