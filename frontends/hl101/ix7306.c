@@ -140,7 +140,7 @@ static int calculate_local_frequency_band(long freq)
 	if (1447000 <= freq && freq < 1615000)
 	{
 		band = 6;
-	|
+	}
 	if (1615000 <= freq && freq < 1791000)
 	{
 		band = 7;
