@@ -72,7 +72,7 @@
  *
  *  /proc/stb/lcd/
  *             |
- *             +--- symbol_circle (w)       Control of spinner (VFD only)
+ *             +--- symbol_circle (rw)       Control of spinner (VFD only)
  *
  *  /proc/stb/power/
  *             |
@@ -248,9 +248,7 @@ static int symbol_circle_write(struct file *file, const char __user *buf, unsign
 	char* page;
 	ssize_t ret = -ENOMEM;
 	char* myString;
-	int value;
 
-	dprintk(10, "%s >\n", __func__);
 	page = (char*)__get_free_page(GFP_KERNEL);
 
 	if (page)
@@ -264,20 +262,20 @@ static int symbol_circle_write(struct file *file, const char __user *buf, unsign
 		strncpy(myString, page, count);
 		myString[count - 1] = '\0';
 
-		sscanf(myString, "%d", &value);
+		sscanf(myString, "%d", &symbol_circle);
 		kfree(myString);
 
 		if (fp_type == FP_VFD) //VFD display
 		{
-			if (value > 255)
+			if (symbol_circle > 255)
 			{
-				value = 255;
+				symbol_circle = 255;
 			}
-			led_state[LED_SPINNER].state = ((value < 1) ? 0 : 1);
-			if (value != 0)
+			led_state[LED_SPINNER].state = ((symbol_circle < 1) ? 0 : 1);
+			if (symbol_circle != 0)
 			{
-				flashLED(LED_SPINNER, value); // start spinner thread
-//				aotomSetIcon(ICON_SPINNER, value);
+				flashLED(LED_SPINNER, symbol_circle); // start spinner thread
+//				aotomSetIcon(ICON_SPINNER, symbol_circle);
 			}
 		}
 		if (ret >= 0)
@@ -289,9 +287,7 @@ static int symbol_circle_write(struct file *file, const char __user *buf, unsign
 		
 	}
 out:
-	dprintk(10, "%s out\n", __func__);
 	free_page((unsigned long)page);
-	dprintk(10, "%s <\n", __func__);
 	return ret;
 }
 
