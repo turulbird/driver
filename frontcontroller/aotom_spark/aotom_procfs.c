@@ -37,6 +37,8 @@
  *                          /proc/stb/fp/rtc_offset automatically set when
  *                          /proc/stb/fp/rtc is written to and rtc_offset is
  *                          still set to default value of 3599.
+ * 20181203 Audioniek       /proc/stb/lcd/symbol_circle support added,
+ *                          E2 start code on write progress removed.
  * 
  ****************************************************************************/
 
@@ -68,6 +70,10 @@
  *             +--- timemode (rw)           Time display on/off (write on DVFD only)
  *             +--- text (w)                Direct writing of display text
  *
+ *  /proc/stb/lcd/
+ *             |
+ *             +--- symbol_circle (w)       Control of spinner (VFD only)
+ *
  *  /proc/stb/power/
  *             |
  *             +--- standbyled (w)          Standby LED enable
@@ -95,6 +101,7 @@ extern void clear_display(void);
 static int rtc_offset = 3600;
 static u32 wakeup_time;
 static int progress = 0;
+static int symbol_circle = 0;
 static int progress_done = 0;
 static u32 led0_pattern = 0;
 static u32 led1_pattern = 0;
@@ -140,20 +147,18 @@ static int text_write(struct file *file, const char __user *buf, unsigned long c
 static int progress_write(struct file *file, const char __user *buf, unsigned long count, void *data)
 {
 	char* page;
-	char* myString;
 	ssize_t ret = -ENOMEM;
+	char* myString;
 
 	page = (char*)__get_free_page(GFP_KERNEL);
 
 	if (page)
 	{
 		ret = -EFAULT;
-
 		if (copy_from_user(page, buf, count))
 		{
 			goto out;
 		}
-
 		myString = (char*) kmalloc(count + 1, GFP_KERNEL);
 		strncpy(myString, page, count);
 		myString[count - 1] = '\0';
@@ -161,6 +166,7 @@ static int progress_write(struct file *file, const char __user *buf, unsigned lo
 		sscanf(myString, "%d", &progress);
 		kfree(myString);
 
+#if 0
 		if (progress > 98 && progress_done == 0)
 		{
 			progress_done = 1;
@@ -212,11 +218,14 @@ static int progress_write(struct file *file, const char __user *buf, unsigned lo
 //			clear_display();
 //			ret = YWPANEL_width;
 //		}
-		
 		if (ret >= 0)
 		{
 			ret = count;
 		}
+#else
+		/* always return count to avoid endless loop */
+		ret = count;
+#endif		
 	}
 out:
 	free_page((unsigned long)page);
@@ -230,6 +239,69 @@ static int progress_read(char *page, char **start, off_t off, int count, int *eo
 	if (NULL != page)
 	{
 		len = sprintf(page,"%d", progress);
+	}
+	return len;
+}
+
+static int symbol_circle_write(struct file *file, const char __user *buf, unsigned long count, void *data)
+{
+	char* page;
+	ssize_t ret = -ENOMEM;
+	char* myString;
+	int value;
+
+	dprintk(10, "%s >\n", __func__);
+	page = (char*)__get_free_page(GFP_KERNEL);
+
+	if (page)
+	{
+		ret = -EFAULT;
+		if (copy_from_user(page, buf, count))
+		{
+			goto out;
+		}
+		myString = (char*) kmalloc(count + 1, GFP_KERNEL);
+		strncpy(myString, page, count);
+		myString[count - 1] = '\0';
+
+		sscanf(myString, "%d", &value);
+		kfree(myString);
+
+		if (fp_type == FP_VFD) //VFD display
+		{
+			if (value > 255)
+			{
+				value = 255;
+			}
+			led_state[LED_SPINNER].state = ((value < 1) ? 0 : 1);
+			if (value != 0)
+			{
+				flashLED(LED_SPINNER, value); // start spinner thread
+//				aotomSetIcon(ICON_SPINNER, value);
+			}
+		}
+		if (ret >= 0)
+		{
+			ret = count;
+		}
+		/* always return count to avoid endless loop */
+		ret = count;
+		
+	}
+out:
+	dprintk(10, "%s out\n", __func__);
+	free_page((unsigned long)page);
+	dprintk(10, "%s <\n", __func__);
+	return ret;
+}
+
+static int symbol_circle_read(char *page, char **start, off_t off, int count, int *eof, void *data)
+{
+	int len = 0;
+
+	if (NULL != page)
+	{
+		len = sprintf(page,"%d", symbol_circle);
 	}
 	return len;
 }
@@ -288,12 +360,10 @@ static int aotom_write(struct file *file, const char __user *buf, unsigned long 
 		}
 		free_page((unsigned long)page);
 	}
-	dprintk(10, "%s <\n", __func__);
-
 	return ret;
 }
 
-static int read_rtc(char *page, char **start, off_t off, int count, int *eof, void *data)
+static int rtc_read(char *page, char **start, off_t off, int count, int *eof, void *data)
 {
 	int len = 0;
 	u32 rtc_time = YWPANEL_FP_GetTime(); // UTC
@@ -305,7 +375,7 @@ static int read_rtc(char *page, char **start, off_t off, int count, int *eof, vo
 	return len;
 }
 
-static int write_rtc(struct file *file, const char __user *buffer, unsigned long count, void *data)
+static int rtc_write(struct file *file, const char __user *buf, unsigned long count, void *data)
 {
 	char *page = NULL;
 	ssize_t ret = -ENOMEM;
@@ -319,7 +389,7 @@ static int write_rtc(struct file *file, const char __user *buffer, unsigned long
 	{
 		ret = -EFAULT;
 
-		if (copy_from_user(page, buffer, count))
+		if (copy_from_user(page, buf, count))
 		{
 			goto out;
 		}
@@ -344,7 +414,7 @@ out:
 	return ret;
 }
 
-static int read_rtc_offset(char *page, char **start, off_t off, int count, int *eof, void *data)
+static int rtc_offset_read(char *page, char **start, off_t off, int count, int *eof, void *data)
 {
 	int len = 0;
 
@@ -355,7 +425,7 @@ static int read_rtc_offset(char *page, char **start, off_t off, int count, int *
 	return len;
 }
 
-static int write_rtc_offset(struct file *file, const char __user *buffer, unsigned long count, void *data)
+static int rtc_offset_write(struct file *file, const char __user *buf, unsigned long count, void *data)
 {
 	char *page = NULL;
 	ssize_t ret = -ENOMEM;
@@ -367,7 +437,7 @@ static int write_rtc_offset(struct file *file, const char __user *buffer, unsign
 	if (page)
 	{
 		ret = -EFAULT;
-		if (copy_from_user(page, buffer, count))
+		if (copy_from_user(page, buf, count))
 		{
 			goto out;
 		}
@@ -386,7 +456,7 @@ out:
 	return ret;
 }
 
-static int wakeup_time_write(struct file *file, const char __user *buffer, unsigned long count, void *data)
+static int wakeup_time_write(struct file *file, const char __user *buf, unsigned long count, void *data)
 {
 	char *page = NULL;
 	ssize_t ret = -ENOMEM;
@@ -399,7 +469,7 @@ static int wakeup_time_write(struct file *file, const char __user *buffer, unsig
 	{
 		ret = -EFAULT;
 
-		if (copy_from_user(page, buffer, count))
+		if (copy_from_user(page, buf, count))
 		{
 			goto out;
 		}
@@ -719,8 +789,9 @@ struct fp_procs
 } fp_procs[] =
 {
 	{ "progress", progress_read, progress_write },
-	{ "stb/fp/rtc", read_rtc, write_rtc },
-	{ "stb/fp/rtc_offset", read_rtc_offset, write_rtc_offset },
+	{ "stb/fp/rtc", rtc_read, rtc_write },
+	{ "stb/lcd/symbol_circle", symbol_circle_read, symbol_circle_write },
+	{ "stb/fp/rtc_offset", rtc_offset_read, rtc_offset_write },
 	{ "stb/fp/aotom", NULL, aotom_write },
 	{ "stb/fp/displaytype", displaytype_read, NULL },
 	{ "stb/fp/led0_pattern", led0_pattern_read, led0_pattern_write },
