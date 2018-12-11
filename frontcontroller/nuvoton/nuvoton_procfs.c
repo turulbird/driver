@@ -37,6 +37,8 @@
  *                          in UTC as Enigma2 expects that. Front panel clock
  *                          is maintained in local time to ensure correct
  *                          front panel clock display when in deep standby.
+ * 20181211 Audioniek       E2 startup display removed in anticipation of
+ *                          adding it to E2 itself.
  * 
  ****************************************************************************/
 
@@ -116,6 +118,7 @@ static int progress_write(struct file *file, const char __user *buf, unsigned lo
 		sscanf(myString, "%d", &progress);
 		kfree(myString);
 
+#if 0
 		if (progress > 98 && progress_done == 0)
 		{
 			progress_done = 1;
@@ -195,11 +198,11 @@ static int progress_write(struct file *file, const char __user *buf, unsigned lo
 //			clear_display();
 //			ret = DISP_SIZE;
 //		}
-		
-		if (ret >= 0)
-		{
-			ret = count;
-		}
+#endif		
+//		if (ret >= 0)
+//		{
+		ret = count;
+//		}
 	}
 out:
 	free_page((unsigned long)page);
