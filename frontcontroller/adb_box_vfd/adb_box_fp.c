@@ -117,7 +117,6 @@ void button_poll(struct work_struct *ignored)
 			}
 		}
 	}
-  }
 }
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,20)
@@ -633,4 +632,4 @@ MODULE_PARM_DESC(rec, "adb_box rec");
 MODULE_DESCRIPTION("fp pt6302 & pt6958 driver");
 MODULE_AUTHOR("B4Team");
 MODULE_LICENSE("GPL");
-
+// vim:ts=4

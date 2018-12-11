@@ -135,6 +135,7 @@
  *  ---------- info
  *  |           |
  *  |           --------- model <- Version String of out Box
+ *  |           |
  *  |           --------- chipset <- Version String of chipset
  *  |
  *  ---------- tsmux
@@ -204,6 +205,9 @@
  *  |           --------- rc
  *  |                      |
  *  |                      --------- type <- Type number of remote control in use
+ *  ---------- lcd
+ *  |           |
+ *  |           --------- symbol_circle <- control for spinner (if spinner available)
  *
  */
 
@@ -432,7 +436,7 @@ static int info_chipset_read(char *page, char **start, off_t off, int count, int
  || defined(VITAMIN_HD5000)
 	int len = sprintf(page, "STi7111\n");
 #elif defined(SPARK7162)
-	int len = sprintf(page, "STi7162\n");
+	int len = sprintf(page, "STi7162/7167\n");
 #else
 	int len = sprintf(page, "unknown\n");
 #endif
@@ -579,7 +583,7 @@ out:
 	return ret;
 }
 
-#if defined(IPBOX9900) || defined(CUBEREVO_MINI) || defined(CUBEREVO_MINI2) || defined(CUBEREVO_MINI_FTA) || defined(CUBEREVO) || defined(CUBEREVO_250HD) || defined(CUBEREVO_3000HD) || defined(CUBEREVO_2000HD) || defined(CUBEREVO_9500) 
+#if defined(IPBOX9900)
 int _12v_isON = 0;
 
 int proc_misc_12V_output_write(struct file *file, const char __user *buf, unsigned long count, void *data)
@@ -679,7 +683,13 @@ struct ProcStructure_s e2Proc[] =
 	{cProcDir  , "stb/ir"                                                           , NULL, NULL, NULL, NULL, ""},
 	{cProcDir  , "stb/ir/rc"                                                        , NULL, NULL, NULL, NULL, ""},
 	{cProcEntry, "stb/ir/rc/type"                                                   , NULL, info_rctype_read, info_rctype_write, NULL, ""},
-
+#if defined(FORTIS_HDBOX) \
+ || defined(ATEVIO7500) \
+ || defined(SPARK7162) \
+ || defined(TF7700)
+	{cProcDir  , "stb/lcd"                                                          , NULL, NULL, NULL, NULL, ""},
+	{cProcEntry, "stb/lcd/symbol_circle"                                            , NULL, NULL, NULL, NULL, ""},
+#endif
 	{cProcDir  , "stb/video"                                                        , NULL, NULL, NULL, NULL, ""},
 	{cProcEntry, "stb/video/alpha"                                                  , NULL, NULL, NULL, NULL, ""},
 	{cProcEntry, "stb/video/aspect"                                                 , NULL, NULL, NULL, NULL, ""},
@@ -768,10 +778,8 @@ struct ProcStructure_s e2Proc[] =
 	{cProcEntry, "stb/tsmux/lnb_b_input"                                            , NULL, NULL, NULL, NULL, ""},
 
 	{cProcDir  , "stb/misc"                                                         , NULL, NULL, NULL, NULL, ""},
-#if defined(IPBOX9900) || defined(CUBEREVO_MINI) || defined(CUBEREVO_MINI2) || defined(CUBEREVO_MINI_FTA) || defined(CUBEREVO) || defined(CUBEREVO_250HD) || defined(CUBEREVO_3000HD) || defined(CUBEREVO_2000HD) || defined(CUBEREVO_9500) 
+#if defined(IPBOX9900)
 	{cProcEntry, "stb/misc/12V_output"                                              , NULL, proc_misc_12V_output_read, proc_misc_12V_output_write, NULL, ""},
-//#else
-//	{cProcEntry, "stb/misc/12V_output"                                              , NULL, NULL, NULL, NULL, ""},
 #endif
 
 	{cProcDir  , "stb/vmpeg"                                                        , NULL, NULL, NULL, NULL, ""},
@@ -1262,3 +1270,5 @@ module_exit(e2_proc_cleanup_module);
 MODULE_DESCRIPTION("procfs module with enigma2 support");
 MODULE_AUTHOR("Team Ducktales");
 MODULE_LICENSE("GPL");
+// vim:ts=4
+

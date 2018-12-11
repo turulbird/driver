@@ -77,6 +77,12 @@
  * 20160511 Audioniek       /proc/stb/fp/rtc converted to UTC,
  *                          /proc/stb/fp/rtc_offset automatically set when
  *                          /proc/stb/fp/rtc is written to.
+ * 20181203 Audioniek       /proc/stb/lcd/symbol_circle support added,
+ *                          E2 start code on write progress removed.
+ * 20181204 Audioniek       Spinner slowed down by a factor of 10; when
+ *                          switched on with a value of 1, default speed is
+ *                          1 rpm; otherwise argument times 50 ms is the time
+ *                          for one revolution.
  * 
  ****************************************************************************/
 
@@ -484,7 +490,7 @@ static int spinner_thread(void *arg)
 				}
 				i++;
 				i %= 5;
-				msleep(led_state[led].period);
+				msleep(led_state[led].period * 10);
 			}
 			aotomSetIcon(ICON_DISK_S3, LOG_OFF);
 			aotomSetIcon(ICON_DISK_S2, LOG_OFF);
@@ -630,6 +636,10 @@ void flashLED(int led, int ms)
 	if (!led_state[led].led_task || ms < 1)
 	{
 		return;
+	}
+	if (ms == 1)	// if default for on
+	{
+		ms = 20;	// get default speed (1 rotation takes 5 x 10 x 20 ms = 1 second)
 	}
 	led_state[led].period = ms;
 	up(&led_state[led].led_sem);

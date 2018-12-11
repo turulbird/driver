@@ -1155,7 +1155,7 @@ static struct dvb_frontend *frontend_init(struct core_config *cfg, int i)
  						{
  							printk("%s: IX7306 attached\n", __FUNCTION__);
  							//stv090x_config.xtal = CLK_EXT_IX7306;
-							stv090x_config.agc_rf1_inv = 1;
+//							stv090x_config.agc_rf1_inv = 1;
  							stv090x_config.tuner_set_frequency = ix7306_set_frequency;
  							stv090x_config.tuner_get_frequency = ix7306_get_frequency;
  							stv090x_config.tuner_set_bandwidth = ix7306_set_bandwidth;
