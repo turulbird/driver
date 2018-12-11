@@ -199,10 +199,7 @@ static int progress_write(struct file *file, const char __user *buf, unsigned lo
 //			ret = DISP_SIZE;
 //		}
 #endif		
-//		if (ret >= 0)
-//		{
 		ret = count;
-//		}
 	}
 out:
 	free_page((unsigned long)page);
