@@ -39,6 +39,7 @@
  *                          front panel clock display when in deep standby.
  * 20181211 Audioniek       E2 startup display removed in anticipation of
  *                          adding it to E2 itself.
+ * 20190102 Audioniek       /proc/stb/lcd/symbol_circle support added.
  * 
  ****************************************************************************/
 
@@ -67,6 +68,10 @@
  *             +--- led_patternspeed (rw)   Blink speed for pattern (not implemented)
  *             +--- oled_brightness (w)     Direct control of display brightness
  *             +--- text (w)                Direct writing of display text
+ *
+ *  /proc/stb/lcd/
+ *             |
+ *             +--- symbol_circle (rw)       Control of spinner (FORTIS_HDBOX & ATEVIO7500 only)
  */
 
 /* from e2procfs */
@@ -89,7 +94,11 @@ extern int nuvotonSetWakeUpTime(char *time);
 
 /* Globals */
 static int progress = 0;
-static int progress_done = 0;
+#if defined(FORTIS_HDBOX) \
+ || defined(ATEVIO7500)
+static int symbol_circle = 0;
+static int old_icon_state;
+#endif
 static u32 led0_pattern = 0;
 static u32 led1_pattern = 0;
 static int led_pattern_speed = 20;
@@ -105,12 +114,10 @@ static int progress_write(struct file *file, const char __user *buf, unsigned lo
 	if (page)
 	{
 		ret = -EFAULT;
-
 		if (copy_from_user(page, buf, count))
 		{
 			goto out;
 		}
-
 		myString = (char*) kmalloc(count + 1, GFP_KERNEL);
 		strncpy(myString, page, count);
 		myString[count - 1] = '\0';
@@ -118,87 +125,7 @@ static int progress_write(struct file *file, const char __user *buf, unsigned lo
 		sscanf(myString, "%d", &progress);
 		kfree(myString);
 
-#if 0
-		if (progress > 98 && progress_done == 0)
-		{
-			progress_done = 1;
-			clear_display();
-#if defined(FORTIS_HDBOX) \
- || defined(ATEVIO7500)
-			spinner_state.state = 0;
-			lastdata.icon_state[ICON_SPINNER] = 0;
-#if defined(ATEVIO7500)
-			spinner_state.state = 0;
-			do
-			{
-				msleep(250);
-			}
-			while (spinner_state.status != ICON_THREAD_STATUS_HALTED);
-			icon_state.state = 1;
-			up(&icon_state.sem);
-#endif
-#endif
-			ret = count;
-			goto out;
-		}
-#if defined(FORTIS_HDBOX) \
- || defined(ATEVIO7500)
-		if (progress_done == 0 && spinner_state.state == 0)
-		{
-			spinner_state.state = 1;
-			lastdata.icon_state[ICON_SPINNER] = 1;
-#if defined(FORTIS_HDBOX)
-			spinner_state.period = 1000;
-#elif defined(ATEVIO7500)
-			if (icon_state.state == 1)
-			{
-//				dprintk(50, "%s Stop icon thread\n", __func__);
-				icon_state.state = 0;
-				do
-				{
-					msleep(250);
-				}
-				while (icon_state.status != ICON_THREAD_STATUS_HALTED);
-//				dprintk(50, "%s Icon thread stopped\n", __func__);
-			}
-			spinner_state.period = 250;
-#endif
-			up(&spinner_state.sem);
-		}
-#endif
-		if (progress > 19 && progress < 99 && progress_done == 0)
-		{
-			myString = (char*)kmalloc(count + DISP_SIZE, GFP_KERNEL);
-			if (myString)
-			{
-#if defined(OCTAGON1008) \
- || defined(HS7420) \
- || defined(HS7429)
-				strcpy(myString, "Start ");
-				strncat(myString, page, count);
-				ret = nuvotonWriteString(myString, (count + 6) < 8 ? (count + 6) : 8);
-#elif defined(FORTIS_HDBOX) \
- || defined(ATEVIO7500)
-				strcpy(myString, "E2 start:");
-				strncat(myString, page, count - 2);
-				strcat(myString, "%");
-				ret = nuvotonWriteString(myString, (count + 8) < 12 ? (count + 8) : 12);
-#elif defined(HS7810A) \
- || defined(HS7119) \
- || defined(HS7819)
-				strcpy(myString, "St");
-				strncat(myString, page, count - 2);
-				ret = nuvotonWriteString(myString, (count + 2) < 4 ? (count + 2) : 4);
-#endif
-				kfree(myString);
-			}
-		}
-//		else
-//		{
-//			clear_display();
-//			ret = DISP_SIZE;
-//		}
-#endif		
+		/* always return count to avoid endless loop */
 		ret = count;
 	}
 out:
@@ -216,6 +143,123 @@ static int progress_read(char *page, char **start, off_t off, int count, int *eo
 	}
 	return len;
 }	
+
+#if defined(FORTIS_HDBOX) \
+ || defined(ATEVIO7500)
+static int symbol_circle_write(struct file *file, const char __user *buf, unsigned long count, void *data)
+{
+	char* page;
+	ssize_t ret = -ENOMEM;
+	char* myString;
+	int i = 0;
+
+	page = (char*)__get_free_page(GFP_KERNEL);
+
+	if (page)
+	{
+		ret = -EFAULT;
+		if (copy_from_user(page, buf, count))
+		{
+			goto out;
+		}
+		myString = (char*) kmalloc(count + 1, GFP_KERNEL);
+		strncpy(myString, page, count);
+		myString[count - 1] = '\0';
+
+		sscanf(myString, "%d", &symbol_circle);
+		kfree(myString);
+
+		if (symbol_circle != 0)
+		{ // spinner on
+			if (symbol_circle > 255)
+			{
+				symbol_circle = 255; //set maximum value
+			}
+			if (spinner_state.state == 0) //if spinner not active
+			{
+#if defined(ATEVIO7500)
+				if (icon_state.state != 0)
+				{ //stop icon thread if active
+					old_icon_state = icon_state.state;
+//					dprintk(50, "%s Stop icon thread\n", __func__);
+					i = 0;
+					icon_state.state = 0;
+					do
+					{
+						msleep(250);
+						i++;
+					}
+					while (icon_state.status != ICON_THREAD_STATUS_HALTED && i < 4); //time out of 1 second
+//					dprintk(50, "%s Icon thread stopped\n", __func__);
+				}
+				if (symbol_circle == 1) //handle special value 1
+				{
+					spinner_state.period = 250; //set standard speed
+				}
+				else
+				{
+					spinner_state.period = symbol_circle * 10; //set user specified speed
+				}
+#elif defined(FORTIS_HDBOX)
+				if (symbol_circle == 1) //handle special value 1
+				{
+					spinner_state.period = 1000;
+				}
+				else
+				{
+					spinner_state.period = symbol_circle * 40; //set user specified speed
+				}
+#endif
+				spinner_state.state = 1;
+				lastdata.icon_state[ICON_SPINNER] = 1;
+				up(&spinner_state.sem);
+			}
+			
+		}
+		else
+		{ // spinner off
+			if (spinner_state.state != 0)
+			{
+				spinner_state.state = 0;
+				lastdata.icon_state[ICON_SPINNER] = 0;
+#if defined(ATEVIO7500)
+//				dprintk(50, "%s Stop spinner thread\n", __func__);
+				i = 0;
+				do
+				{
+					msleep(250);
+					i++;
+				}
+				while (spinner_state.status != ICON_THREAD_STATUS_HALTED && i < 4);//time out of 1 second
+//				dprintk(50, "%s Spinner thread stopped\n", __func__);
+			}
+			if (old_icon_state != 0) // restart icon thread when it was active
+			{
+				icon_state.state = old_icon_state;
+				up(&icon_state.sem);
+			}
+#endif
+		}
+		/* always return count to avoid endless loop */
+		ret = count;
+		goto out;
+	}
+out:
+	free_page((unsigned long)page);
+	return ret;
+}
+
+static int symbol_circle_read(char *page, char **start, off_t off, int count, int *eof, void *data)
+{
+	int len = 0;
+
+	if (NULL != page)
+	{
+		len = sprintf(page,"%d", symbol_circle);
+	}
+	return len;
+}
+#endif
 
 static int text_write(struct file *file, const char __user *buf, unsigned long count, void *data)
 {
@@ -276,7 +320,7 @@ static const int _ytab[2][12] =
 	{ 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 }
 };
 
-static struct tm * gmtime(register const time_t time)
+static struct tm *gmtime(register const time_t time)
 { //seconds since epoch -> struct tm
 	static struct tm fptime;
 	register unsigned long dayclock, dayno;
@@ -731,6 +775,10 @@ struct fp_procs
 	{ "stb/fp/was_timer_wakeup", was_timer_wakeup_read, NULL },
 	{ "stb/fp/version", fp_version_read, NULL },
 	{ "stb/fp/resellerID", fp_reseller_read, NULL },
+#if defined(FORTIS_HDBOX) \
+ || defined(ATEVIO7500)
+	{ "stb/lcd/symbol_circle", symbol_circle_read, symbol_circle_write }
+#endif
 };
 
 void create_proc_fp(void)
