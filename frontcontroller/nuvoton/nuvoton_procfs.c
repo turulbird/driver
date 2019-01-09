@@ -200,7 +200,7 @@ static int symbol_circle_write(struct file *file, const char __user *buf, unsign
 				{
 					spinner_state.period = symbol_circle * 10; //set user specified speed
 				}
-#elif defined(FORTIS_HDBOX)
+#else //(FORTIS_HDBOX)
 				if (symbol_circle == 1) //handle special value 1
 				{
 					spinner_state.period = 1000;
@@ -214,7 +214,6 @@ static int symbol_circle_write(struct file *file, const char __user *buf, unsign
 				lastdata.icon_state[ICON_SPINNER] = 1;
 				up(&spinner_state.sem);
 			}
-			
 		}
 		else
 		{ // spinner off
@@ -232,7 +231,9 @@ static int symbol_circle_write(struct file *file, const char __user *buf, unsign
 				}
 				while (spinner_state.status != ICON_THREAD_STATUS_HALTED && i < 4);//time out of 1 second
 //				dprintk(50, "%s Spinner thread stopped\n", __func__);
+#endif
 			}
+#if defined(ATEVIO7500)
 			if (old_icon_state != 0) // restart icon thread when it was active
 			{
 				icon_state.state = old_icon_state;
