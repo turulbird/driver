@@ -227,6 +227,83 @@ typedef struct
 	byte ScrollDelay;
 } frontpanel_ioctl_scrollmode;
 
+typedef enum
+{
+	/* Common legacy icons (not all of them present): */
+	VFD_ICON_HD = 0x01,
+	VFD_ICON_HDD,
+	VFD_ICON_LOCK,
+	VFD_ICON_BT,
+	VFD_ICON_MP3,
+	VFD_ICON_MUSIC,
+	VFD_ICON_DD,
+	VFD_ICON_MAIL,
+	VFD_ICON_MUTE,
+	VFD_ICON_PLAY,
+	VFD_ICON_PAUSE,
+	VFD_ICON_FF,
+	VFD_ICON_FR,
+	VFD_ICON_REC,
+	VFD_ICON_CLOCK,
+	/* Additional unique TF77X0 icons
+       The CD icons: */
+	VFD_ICON_CD1 = 0x20,
+	VFD_ICON_CD2,
+	VFD_ICON_CD3,
+	VFD_ICON_CD4,
+	VFD_ICON_CD5,
+	VFD_ICON_CD6,
+	VFD_ICON_CD7,
+	VFD_ICON_CD8,
+	VFD_ICON_CD9,
+	VFD_ICON_CD10,
+	VFD_ICON_CDCENTER = 0x2f,
+	/* The HDD level display icons: */
+	VFD_ICON_HDD1 = 0x30,
+	VFD_ICON_HDD_1,
+	VFD_ICON_HDD_2,
+	VFD_ICON_HDD_3,
+	VFD_ICON_HDD_4,
+	VFD_ICON_HDD_5,
+	VFD_ICON_HDD_6,
+	VFD_ICON_HDD_7,
+	VFD_ICON_HDD_8,
+	VFD_ICON_HDD_FRAME,
+	VFD_ICON_HDD_FULL = 0x3a,
+	/* The remaining TF77X0 icons,
+	   approximately in display order: */
+	VFD_ICON_MP3_2 = 0x40,
+	VFD_ICON_AC3,
+	VFD_ICON_TIMESHIFT,
+	VFD_ICON_TV,
+	VFD_ICON_RADIO,
+	VFD_ICON_SAT,
+	VFD_ICON_REC2,
+	VFD_ICON_RECONE,
+	VFD_ICON_RECTWO,
+	VFD_ICON_REWIND,
+	VFD_ICON_STEPBACK,
+	VFD_ICON_PLAY2,
+	VFD_ICON_STEPFWD,
+	VFD_ICON_FASTFWD,
+	VFD_ICON_PAUSE2,
+	VFD_ICON_MUTE2,
+	VFD_ICON_REPEATL,
+	VFD_ICON_REPEATR,
+	VFD_ICON_DOLLAR,
+	VFD_ICON_ATTN,
+	VFD_ICON_DOLBY,
+	VFD_ICON_NETWORK, 
+	VFD_ICON_AM,
+	VFD_ICON_TIMER,
+	VFD_ICON_PM,
+	VFD_ICON_DOT,
+	VFD_ICON_POWER,
+	VFD_ICON_COLON,
+	VFD_ICON_SPINNER, //(0x5c)
+	VFD_ICON_ALL = 0x7f
+} VFD_ICON;
+
 
 /* These are used by the generic ioctl routines */
 struct set_brightness_s
@@ -286,6 +363,11 @@ struct vfd_ioctl_data
 	unsigned char data[64];
 	unsigned char length;
 };
+
+//Global spinner variables
+static int Spinner_on;
+static int Spinner_state;
+static int Segment_flag[11];
 
 extern void vfdSetGmtWakeupTime(time_t time);
 extern void vfdSetGmtTime(time_t time);

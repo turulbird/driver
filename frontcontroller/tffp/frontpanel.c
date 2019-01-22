@@ -1,62 +1,64 @@
-/**************************************************************************/
-/* Name :   Topfield TF7700 Front Panel Driver Module                     */
-/*          ./drivers/topfield/frontpanel.c                               */
-/*                                                                        */
-/* Author:  Gustav Gans                                                   */
-/*                                                                        */
-/* Descr.:  Controls the front panel clock, timers, keys and display      */
-/*                                                                        */
-/* Licence: This file is subject to the terms and conditions of the GNU   */
-/* General Public License version 2.                                      */
-/*                                                                        */
-/* 2008-06-10 V1.0  First release                                         */
-/* 2008-07-19 V2.0  Added the key buffer and the /dev/rc device           */
-/*                  Added the TypematicDelay and TypematicRate            */
-/*                  Added the KeyEmulationMode (0=TF7700, 1=UFS910)       */
-/* 2008-07-28 V2.1  Adapted to Enigma2                                    */
-/* 2008-08-21 V2.2  Added poll() operation                                */
-/* 2008-12-31       introduced a thread for interrupt processing          */
-/*                  added handling for the new VFD interface              */
-/*                  added issuing a standby key to the application        */
-/* 2009-01-05 V3.0  added suppression of multiple shutdown commands       */
-/*                  replaced the module author                            */
-/* 2009-01-06 V3.1  Added reboot control code                             */
-/* 2009-02-08 V3.2  Added GMT offset handling                             */
-/* 2009-03-19 V3.3  Added mapping of VFD codes 0-9 to CD segments         */
-/* 2009-03-19 V3.4  Changed the standby button logic                      */
-/*                  Added a 3 sec emergency shutdown                      */
-/* 2009-03-19 V3.5  Changed mapping of VFD codes 0x20-0x29 to CD segments */
-/*                  Fixed a break statement                               */
-/* 2009-03-22 V3.6  Fixed a buffer overflow which garbled the VFD         */
-/* 2009-03-28 V3.7  Added the --resend command                            */
-/* 2009-03-30 V3.8  Fixed the issue with late acknowledge of shutdown     */
-/*                  requests                                              */
-/*                  Increased the forced shutdown delay to 5 seconds      */
-/* 2009-04-10 V3.9  Added mapping of the keys |< and >| to VolumeDown     */
-/*                  and VolumeUp                                          */
-/* 2009-06-25 V4.0  Added support for UTF-8 strings                       */
-/*                  Added the option to show all characters of the large  */
-/*                    display in capital letters                          */
-/* 2009-06-29 V4.1  Added the ability to scroll longer strings            */
-/* 2009-07-01 V4.1a Trims trailing space to prevent the scrolling of text */
-/*                    with less than 8 chars                              */
-/* 2009-07-27 V4.2  Removed filtering of the power-off key.               */
-/* 2009-08-08 V4.3  Added support for configuration in EEPROM             */
-/* 2009-10-13 V4.4  Added typematic rate control for the power-off key    */
-/* 2009-10-13 V4.5  Fixed error in function TranslateUTFString.           */
-/*                   In special casses the ending '\0' has been skipped   */
-/* 2011-07-18 V4.6  Add quick hack for long key press                     */
-/* 2011-07-23 V4.7  Add LKP emulation mode                                */
-/* 2015-09-19 V4.8  All icons controllable and driver made compatible     */
-/*                   with VFD-Icons plugin. Tab/space cleanup. Indenting  */
-/*                   made consistent, including use of braces. Fixed all  */
-/*                   compiler warnings.                                   */
-/* 2015-09-25 V4.9  IOCTL brightness control and display on/off added.    */
-/* 2015-10-13 V4.10 RTC driver added.                                     */
-/* 2015-11-06 V4.11 Spinner added.                                        */
-/**************************************************************************/
+/***************************************************************************/
+/* Name :   Topfield TF7700 Front Panel Driver Module                      */
+/*          ./drivers/topfield/frontpanel.c                                */
+/*                                                                         */
+/* Author:  Gustav Gans                                                    */
+/*                                                                         */
+/* Descr.:  Controls the front panel clock, timers, keys and display       */
+/*                                                                         */
+/* Licence: This file is subject to the terms and conditions of the GNU    */
+/* General Public License version 2.                                       */
+/*                                                                         */
+/* 2008-06-10 V1.0   First release                                         */
+/* 2008-07-19 V2.0   Added the key buffer and the /dev/rc device           */
+/*                   Added the TypematicDelay and TypematicRate            */
+/*                   Added the KeyEmulationMode (0=TF7700, 1=UFS910)       */
+/* 2008-07-28 V2.1   Adapted to Enigma2                                    */
+/* 2008-08-21 V2.2   Added poll() operation                                */
+/* 2008-12-31        introduced a thread for interrupt processing          */
+/*                   added handling for the new VFD interface              */
+/*                   added issuing a standby key to the application        */
+/* 2009-01-05 V3.0   added suppression of multiple shutdown commands       */
+/*                   replaced the module author                            */
+/* 2009-01-06 V3.1   Added reboot control code                             */
+/* 2009-02-08 V3.2   Added GMT offset handling                             */
+/* 2009-03-19 V3.3   Added mapping of VFD codes 0-9 to CD segments         */
+/* 2009-03-19 V3.4   Changed the standby button logic                      */
+/*                   Added a 3 sec emergency shutdown                      */
+/* 2009-03-19 V3.5   Changed mapping of VFD codes 0x20-0x29 to CD segments */
+/*                   Fixed a break statement                               */
+/* 2009-03-22 V3.6   Fixed a buffer overflow which garbled the VFD         */
+/* 2009-03-28 V3.7   Added the --resend command                            */
+/* 2009-03-30 V3.8   Fixed the issue with late acknowledge of shutdown     */
+/*                   requests                                              */
+/*                   Increased the forced shutdown delay to 5 seconds      */
+/* 2009-04-10 V3.9   Added mapping of the keys |< and >| to VolumeDown     */
+/*                   and VolumeUp                                          */
+/* 2009-06-25 V4.0   Added support for UTF-8 strings                       */
+/*                   Added the option to show all characters of the large  */
+/*                   display in capital letters                            */
+/* 2009-06-29 V4.1   Added the ability to scroll longer strings            */
+/* 2009-07-01 V4.1a  Trims trailing space to prevent the scrolling of text */
+/*                   with less than 8 chars                                */
+/* 2009-07-27 V4.2   Removed filtering of the power-off key.               */
+/* 2009-08-08 V4.3   Added support for configuration in EEPROM             */
+/* 2009-10-13 V4.4   Added typematic rate control for the power-off key    */
+/* 2009-10-13 V4.5   Fixed error in function TranslateUTFString.           */
+/*                   In special casses the ending '\0' has been skipped    */
+/* 2011-07-18 V4.6   Add quick hack for long key press                     */
+/* 2011-07-23 V4.7   Add LKP emulation mode                                */
+/* 2015-09-19 V4.8   All icons controllable and driver made compatible     */
+/*                   with VFD-Icons plugin. Tab/space cleanup. Indenting   */
+/*                   made consistent, including use of braces. Fixed all   */
+/*                   compiler warnings.                                    */
+/* 2015-09-25 V4.9   IOCTL brightness control and display on/off added.    */
+/* 2015-10-13 V4.10  RTC driver added.                                     */
+/* 2015-11-06 V4.11  Spinner added.                                        */
+/* 2018-12-28 V4.11a /proc/stb/lcd/sybol_circle added; icon definitions    */
+/*                    moved to frontpanel.h.                               */
+/***************************************************************************/
 
-#define VERSION         "V4.11"
+#define VERSION         "V4.11a"
 //#define DEBUG
 
 #include <asm/io.h>
@@ -110,83 +112,6 @@ extern void remove_proc_fp(void);
 static struct platform_device *rtc_pdev;
 
 
-typedef enum
-{
-	/* Common legacy icons (not all of them present): */
-	VFD_ICON_HD = 0x01,
-	VFD_ICON_HDD,
-	VFD_ICON_LOCK,
-	VFD_ICON_BT,
-	VFD_ICON_MP3,
-	VFD_ICON_MUSIC,
-	VFD_ICON_DD,
-	VFD_ICON_MAIL,
-	VFD_ICON_MUTE,
-	VFD_ICON_PLAY,
-	VFD_ICON_PAUSE,
-	VFD_ICON_FF,
-	VFD_ICON_FR,
-	VFD_ICON_REC,
-	VFD_ICON_CLOCK,
-	/* Additional unique TF77X0 icons
-       The CD icons: */
-	VFD_ICON_CD1 = 0x20,
-	VFD_ICON_CD2,
-	VFD_ICON_CD3,
-	VFD_ICON_CD4,
-	VFD_ICON_CD5,
-	VFD_ICON_CD6,
-	VFD_ICON_CD7,
-	VFD_ICON_CD8,
-	VFD_ICON_CD9,
-	VFD_ICON_CD10,
-	VFD_ICON_CDCENTER = 0x2f,
-	/* The HDD level display icons: */
-	VFD_ICON_HDD1 = 0x30,
-	VFD_ICON_HDD_1,
-	VFD_ICON_HDD_2,
-	VFD_ICON_HDD_3,
-	VFD_ICON_HDD_4,
-	VFD_ICON_HDD_5,
-	VFD_ICON_HDD_6,
-	VFD_ICON_HDD_7,
-	VFD_ICON_HDD_8,
-	VFD_ICON_HDD_FRAME,
-	VFD_ICON_HDD_FULL = 0x3a,
-	/* The remaining TF77X0 icons,
-	   approximately in display order: */
-	VFD_ICON_MP3_2 = 0x40,
-	VFD_ICON_AC3,
-	VFD_ICON_TIMESHIFT,
-	VFD_ICON_TV,
-	VFD_ICON_RADIO,
-	VFD_ICON_SAT,
-	VFD_ICON_REC2,
-	VFD_ICON_RECONE,
-	VFD_ICON_RECTWO,
-	VFD_ICON_REWIND,
-	VFD_ICON_STEPBACK,
-	VFD_ICON_PLAY2,
-	VFD_ICON_STEPFWD,
-	VFD_ICON_FASTFWD,
-	VFD_ICON_PAUSE2,
-	VFD_ICON_MUTE2,
-	VFD_ICON_REPEATL,
-	VFD_ICON_REPEATR,
-	VFD_ICON_DOLLAR,
-	VFD_ICON_ATTN,
-	VFD_ICON_DOLBY,
-	VFD_ICON_NETWORK, 
-	VFD_ICON_AM,
-	VFD_ICON_TIMER,
-	VFD_ICON_PM,
-	VFD_ICON_DOT,
-	VFD_ICON_POWER,
-	VFD_ICON_COLON,
-	VFD_ICON_SPINNER, //(0x5c)
-	VFD_ICON_ALL = 0x7f
-} VFD_ICON;
-
 typedef struct
 {
 	struct file*     fp;
@@ -202,7 +127,6 @@ static time_t gmtWakeupTime = 0;
 static tFrontPanelOpen FrontPanelOpen [LASTMINOR + 1];     //remembers the file handle for all minor numbers
 
 byte save_bright; //remembers brightness level for VFDDISPLAYWRITEONOFF
-byte spinner_on; //flag: display spinner
 
 typedef enum
 {
@@ -1310,10 +1234,6 @@ static void VFDSetIcons(dword Icons1, dword Icons2, byte BlinkMode)
 /**********************************************************************************************/
 /* Spinner task                                                                               */
 /**********************************************************************************************/
-static int Spinner_on;
-static int Spinner_state;
-static int Segment_flag[11];
-
 static void CD_icons_onoff(byte onoff)
 {
 	int i;
