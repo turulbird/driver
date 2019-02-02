@@ -61,7 +61,7 @@ int direct_asc_read_version(void)
 
 	dprintk(100, "%s >\n", __func__);
 
-//fixme: clarify if this works for all cubes
+//FIXME: clarify if this works for all cubes
 
 	//write the getmicom request
 	memset(buffer, 0, 5);
@@ -101,7 +101,6 @@ int direct_asc_read_version(void)
 				}
 			}
 		}
-
 		udelay(10);
 		i--;
 	}
@@ -140,18 +139,18 @@ void serial_init(void)
 
 int serial_putc(char Data)
 {
-	char                  *ASCn_TX_BUFF = (char *)(ASCXBaseAddress + ASC_TX_BUFF);
-	unsigned int          *ASCn_INT_STA = (unsigned int *)(ASCXBaseAddress + ASC_INT_STA);
-	unsigned long         Counter = 200000;
+	char          *ASCn_TX_BUFF = (char *)(ASCXBaseAddress + ASC_TX_BUFF);
+	unsigned int  *ASCn_INT_STA = (unsigned int *)(ASCXBaseAddress + ASC_INT_STA);
+	unsigned long Counter = 200000;
 
 	while (((*ASCn_INT_STA & ASC_INT_STA_THE) == 0) && --Counter)
+	{
 		udelay(0);
-
+	}
 	if (Counter == 0)
 	{
 		dprintk(1, "Error writing char\n");
 	}
-
 	*ASCn_TX_BUFF = Data;
 	return 1;
 }
@@ -165,8 +164,6 @@ u8 serial_getc(void)
 	{
 		return *ASC_X_RX_BUFF;
 	}
-
 	return -1;
 }
-
-
+// vim:ts=4

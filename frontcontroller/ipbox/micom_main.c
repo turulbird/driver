@@ -21,7 +21,7 @@
  */
 
 /*
- * Cuberevo 900/9000 HD Frontcontroller
+ * IPbox/Cuberevo 900HD/910HD/9000HD Frontcontroller
  *
  * Devices:
  *  - /dev/vfd (vfd ioctls and read/write function)
@@ -52,10 +52,10 @@
 
 //----------------------------------------------
 
-#define EVENT_BTN_HI                  0xe1
-#define EVENT_BTN_LO                  0xe2
+#define EVENT_BTN_HI                     0xe1
+#define EVENT_BTN_LO                     0xe2
 
-#define EVENT_RC                      0xe0
+#define EVENT_RC                         0xe0
 
 #define EVENT_ANSWER_GETWAKEUP_SEC       0xe3
 #define EVENT_ANSWER_GETWAKEUP_MIN       0xe4
@@ -99,12 +99,12 @@ static int           KeyBufferStart = 0, KeyBufferEnd = 0;
 static unsigned char OutBuffer [BUFFERSIZE];
 static int           OutBufferStart = 0, OutBufferEnd = 0;
 
-static wait_queue_head_t   wq;
-static wait_queue_head_t   rx_wq;
-static wait_queue_head_t   ack_wq;
+static wait_queue_head_t wq;
+static wait_queue_head_t rx_wq;
+static wait_queue_head_t ack_wq;
 static int dataReady = 0;
 
-const char *driver_version = "1.07";
+const char *driver_version = "1.07Audioniek";
 
 //----------------------------------------------
 
@@ -118,7 +118,9 @@ void micom_putc(unsigned char data)
 
 	/* if irq is not enabled, enable it */
 	if (!(*ASC_X_INT_EN & ASC_INT_STA_THE))
+	{
 		*ASC_X_INT_EN = *ASC_X_INT_EN | ASC_INT_STA_THE;
+	}
 }
 
 //----------------------------------------------
@@ -146,8 +148,9 @@ int ack_sem_down(void)
 		printk("timeout waiting on ack\n");
 	}
 	else
+	{
 		dprintk(20, "command processed - remaining jiffies %d\n", err);
-
+	}
 	return 0;
 }
 
@@ -191,14 +194,14 @@ void getRCData(unsigned char *data, int *len)
 		i++;
 
 		if (j >= BUFFERSIZE)
+		{
 			j = 0;
-
+		}
 		if (j == KeyBufferStart)
 		{
 			break;
 		}
 	}
-
 	KeyBufferEnd = (KeyBufferEnd + *len) % BUFFERSIZE;
 
 	dprintk(150, " <len %d, data[0] 0x%x, data[1] 0x%x, End %d\n", *len, data[0], data[1], KeyBufferEnd);
@@ -242,7 +245,6 @@ int getLen(void)
 	{
 		len += BUFFERSIZE;
 	}
-
 	return len;
 }
 
@@ -251,13 +253,15 @@ void dumpData(void)
 	int i, j, len;
 
 	if (paramDebug < 150)
+	{
 		return;
-
+	}
 	len = getLen();
 
 	if (len == 0)
+	{
 		return;
-
+	}
 	i = RCVBufferEnd;
 	for (j = 0; j < len; j++)
 	{
@@ -269,7 +273,6 @@ void dumpData(void)
 		{
 			i = 0;
 		}
-
 		if (i == RCVBufferStart)
 		{
 			i = -1;
@@ -284,8 +287,12 @@ void dumpValues(void)
 	dprintk(150, "BuffersStart %d, BufferEnd %d, len %d\n", RCVBufferStart, RCVBufferEnd, getLen());
 
 	if (RCVBufferStart != RCVBufferEnd)
+	{
 		if (paramDebug >= 50)
+		{
 			dumpData();
+		}
+	}
 }
 
 static void processResponse(void)
@@ -299,7 +306,6 @@ static void processResponse(void)
 		expectEventData = RCVBuffer[RCVBufferEnd];
 		expectEventId = 0;
 	}
-
 	len = getLen();
 
 	dprintk(100, "event 0x%02x %d %d %d\n", expectEventData, RCVBufferStart, RCVBufferEnd, len);
@@ -312,16 +318,19 @@ static void processResponse(void)
 			case EVENT_BTN_LO:
 			{
 				if (len == 0)
+				{
 					goto out_switch;
-
+				}
 				if (len < cPackageSize)
+				{
 					goto out_switch;
-
+				}
 				dprintk(1, "EVENT_BTN complete\n");
 
 				if (paramDebug >= 50)
+				{
 					dumpData();
-
+				}
 				/* copy data */
 				for (i = 0; i < cPackageSize; i++)
 				{
@@ -334,25 +343,26 @@ static void processResponse(void)
 
 					KeyBufferStart = (KeyBufferStart + 1) % BUFFERSIZE;
 				}
-
 				wake_up_interruptible(&wq);
-
 				RCVBufferEnd = (RCVBufferEnd + cPackageSize) % BUFFERSIZE;
+				break;
 			}
-			break;
 			case EVENT_RC:
 			{
 				if (len == 0)
+				{
 					goto out_switch;
-
+				}
 				if (len < cPackageSize)
+				{
 					goto out_switch;
-
+				}
 				dprintk(1, "EVENT_RC complete %d %d\n", RCVBufferStart, RCVBufferEnd);
 
 				if (paramDebug >= 50)
+				{
 					dumpData();
-
+				}
 				/* copy data */
 				for (i = 0; i < cPackageSize; i++)
 				{
@@ -365,86 +375,89 @@ static void processResponse(void)
 
 					KeyBufferStart = (KeyBufferStart + 1) % BUFFERSIZE;
 				}
-
 				wake_up_interruptible(&wq);
-
 				RCVBufferEnd = (RCVBufferEnd + cPackageSize) % BUFFERSIZE;
+				break;
 			}
-			break;
 			case EVENT_ANSWER_GETMICOM_DAY:
 			case EVENT_ANSWER_GETMICOM_MONTH:
 			case EVENT_ANSWER_GETMICOM_YEAR:
+			{
 				if (len == 0)
+				{
 					goto out_switch;
-
+				}
 				if (len < cPackageSizeMicom)
+				{
 					goto out_switch;
-
+				}
 				handleCopyData(len);
-
 				dprintk(1, "Pos. response received (0x%0x)\n", expectEventData);
 				errorOccured = 0;
 				ack_sem_up();
-
 				RCVBufferEnd = (RCVBufferEnd + cPackageSizeMicom) % BUFFERSIZE;
-
 				break;
+			}
 			case EVENT_ANSWER_GETWAKEUP_SEC:
 			case EVENT_ANSWER_GETWAKEUP_MIN:
 			case EVENT_ANSWER_GETWAKEUP_HOUR:
 			case EVENT_ANSWER_GETWAKEUP_DAY:
 			case EVENT_ANSWER_GETWAKEUP_MONTH:
 			case EVENT_ANSWER_GETWAKEUP_YEAR:
+			{
 				if (len == 0)
+				{
 					goto out_switch;
-
+				}
 				if (len < cPackageSizeDateTime)
+				{
 					goto out_switch;
-
+				}
 				handleCopyData(len);
-
 				dprintk(1, "Pos. response received (0x%0x)\n", expectEventData);
 				errorOccured = 0;
 				ack_sem_up();
-
 				RCVBufferEnd = (RCVBufferEnd + cPackageSizeDateTime) % BUFFERSIZE;
-
 				break;
+			}
 			case EVENT_ANSWER_RAM:
 			case EVENT_ANSWER_UNKNOWN1:
 			case EVENT_ANSWER_UNKNOWN2:
+			{
 				if (len == 0)
+				{
 					goto out_switch;
-
+				}
 				if (len < cPackageSize)
+				{
 					goto out_switch;
-
+				}
 				handleCopyData(len);
-
 				dprintk(1, "Pos. response received (0x%0x)\n", expectEventData);
 				errorOccured = 0;
 				ack_sem_up();
-
 				RCVBufferEnd = (RCVBufferEnd + cPackageSize) % BUFFERSIZE;
-
 				break;
+			}
 			case EVENT_ANSWER_WAKEUP_STATUS:
+			{
 				if (len == 0)
+				{
 					goto out_switch;
-
+				}
 				if (len < cPackageSizeWakeupReason)
+				{
 					goto out_switch;
-
+				}
 				handleCopyData(len);
-
 				dprintk(1, "Pos. response received (0x%0x)\n", expectEventData);
 				errorOccured = 0;
 				ack_sem_up();
-
 				RCVBufferEnd = (RCVBufferEnd + cPackageSizeWakeupReason) % BUFFERSIZE;
-
 				break;
+			}
 			default: // Ignore Response
+			{
 				dprintk(1, "Invalid Response %02x\n", expectEventData);
 				dprintk(1, "start %d end %d\n",  RCVBufferStart,  RCVBufferEnd);
 				dumpData();
@@ -454,6 +467,7 @@ static void processResponse(void)
 				 */
 				RCVBufferEnd = RCVBufferStart;
 				break;
+			}
 		}
 	}
 out_switch:
@@ -470,8 +484,9 @@ static irqreturn_t FP_interrupt(int irq, void *dev_id)
 	int          dataArrived = 0;
 
 	if (paramDebug > 100)
+	{
 		printk("i - ");
-
+	}
 	while (*ASC_X_INT_STA & ASC_INT_STA_RBF)
 	{
 		RCVBuffer [RCVBufferStart] = *ASC_X_RX_BUFF;
@@ -481,41 +496,39 @@ static irqreturn_t FP_interrupt(int irq, void *dev_id)
 		// We are to fast, lets make a break
 		udelay(0);
 #endif
-
 		dataArrived = 1;
 
 		if (RCVBufferStart == RCVBufferEnd)
 		{
 			printk("FP: RCV buffer overflow!!! (%d - %d)\n", RCVBufferStart, RCVBufferEnd);
 		}
-
 	}
-
 	if (dataArrived)
 	{
 		wake_up_interruptible(&rx_wq);
 	}
 
-	while ((*ASC_X_INT_STA & ASC_INT_STA_THE) &&
-			(*ASC_X_INT_EN & ASC_INT_STA_THE) &&
-			(OutBufferStart != OutBufferEnd))
+	while ((*ASC_X_INT_STA & ASC_INT_STA_THE)
+	    && (*ASC_X_INT_EN & ASC_INT_STA_THE)
+	    && (OutBufferStart != OutBufferEnd))
 	{
 		*ASC_X_TX_BUFF = OutBuffer[OutBufferEnd];
 		OutBufferEnd = (OutBufferEnd + 1) % BUFFERSIZE;
-
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,32)
-		// We are to fast, lets make a break
+		// We are too fast, lets make a break
 		udelay(0);
 #endif
 	}
-
 	/* if all the data is transmitted disable irq, otherwise
 	 * system is overflowed with irq's
 	 */
 	if (OutBufferStart == OutBufferEnd)
+	{
 		if (*ASC_X_INT_EN & ASC_INT_STA_THE)
+		{
 			*ASC_X_INT_EN &= ~ASC_INT_STA_THE;
-
+		}
+	}
 	return IRQ_HANDLED;
 }
 
@@ -534,24 +547,22 @@ int micomTask(void *dummy)
 			printk("wait_event_interruptible failed\n");
 			continue;
 		}
-
 		if (RCVBufferStart != RCVBufferEnd)
+		{
 			dataAvailable = 1;
-
+		}
 		while (dataAvailable)
 		{
 			processResponse();
 
 			if (RCVBufferStart == RCVBufferEnd)
+			{
 				dataAvailable = 0;
-
+			}
 			dprintk(150, "start %d end %d\n",  RCVBufferStart,  RCVBufferEnd);
-
 		}
 	}
-
 	printk("micomTask died!\n");
-
 	return 0;
 }
 
@@ -562,13 +573,13 @@ static int __init micom_init_module(void)
 	int i = 0;
 
 	// Address for Interrupt enable/disable
-	unsigned int         *ASC_X_INT_EN     = (unsigned int *)(ASCXBaseAddress + ASC_INT_EN);
+	unsigned int *ASC_X_INT_EN = (unsigned int *)(ASCXBaseAddress + ASC_INT_EN);
 	// Address for FiFo enable/disable
-	unsigned int         *ASC_X_CTRL       = (unsigned int *)(ASCXBaseAddress + ASC_CTRL);
+	unsigned int *ASC_X_CTRL   = (unsigned int *)(ASCXBaseAddress + ASC_CTRL);
 
 	dprintk(5, "%s >\n", __func__);
 
-	//Disable all ASC 2 interrupts
+	// Disable all ASC 2 interrupts
 	*ASC_X_INT_EN = *ASC_X_INT_EN & ~0x000001ff;
 
 	serial_init();
@@ -578,11 +589,12 @@ static int __init micom_init_module(void)
 	init_waitqueue_head(&ack_wq);
 
 	for (i = 0; i < LASTMINOR; i++)
+	{
 		sema_init(&FrontPanelOpen[i].sem, 1);
-
+	}
 	kernel_thread(micomTask, NULL, 0);
 
-	//Enable the FIFO
+	// Enable the FIFO
 	*ASC_X_CTRL = *ASC_X_CTRL | ASC_CTRL_FIFO_EN;
 
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,17)
@@ -590,22 +602,24 @@ static int __init micom_init_module(void)
 #else
 	i = request_irq(InterruptLine, (void *)FP_interrupt, SA_INTERRUPT, "FP_serial", NULL);
 #endif
-
 	if (!i)
+	{
 		*ASC_X_INT_EN = *ASC_X_INT_EN | ASC_INT_STA_RBF;
-	else printk("FP: Can't get irq\n");
-
+	}
+	else
+	{
+		printk("FP: Canont get irq\n");
+	}
 	msleep(1000);
 	micom_init_func();
 
 	if (register_chrdev(VFD_MAJOR, "VFD", &vfd_fops))
+	{
 		printk("unable to get major %d for VFD/MICOM\n", VFD_MAJOR);
-
+	}
 	dprintk(10, "%s <\n", __func__);
-
 	return 0;
 }
-
 
 static void __exit micom_cleanup_module(void)
 {
@@ -643,3 +657,4 @@ MODULE_LICENSE("GPL");
 
 module_param(paramDebug, short, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
 MODULE_PARM_DESC(paramDebug, "Debug Output 0=disabled >0=enabled(debuglevel)");
+// vim: ts=4
