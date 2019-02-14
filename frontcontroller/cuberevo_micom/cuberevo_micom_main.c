@@ -1,5 +1,5 @@
 /*
- * micom_main.c
+ * cuberevo_micom_main.c
  *
  * (c) 2011 konfetti
  * partly copied from user space implementation from M.Majoor
@@ -47,8 +47,8 @@
 #include <linux/time.h>
 #include <linux/poll.h>
 
-#include "micom.h"
-#include "micom_asc.h"
+#include "cuberevo_micom.h"
+#include "cuberevo_micom_asc.h"
 
 //----------------------------------------------
 
@@ -500,7 +500,7 @@ static irqreturn_t FP_interrupt(int irq, void *dev_id)
 
 		if (RCVBufferStart == RCVBufferEnd)
 		{
-			printk("FP: RCV buffer overflow!!! (%d - %d)\n", RCVBufferStart, RCVBufferEnd);
+			printk("[VFD/Micom] FP: RCV buffer overflow!!! (%d - %d)\n", RCVBufferStart, RCVBufferEnd);
 		}
 	}
 	if (dataArrived)
@@ -544,7 +544,7 @@ int micomTask(void *dummy)
 
 		if (wait_event_interruptible(rx_wq, (RCVBufferStart != RCVBufferEnd)))
 		{
-			printk("wait_event_interruptible failed\n");
+			printk("[VFD/Micom] wait_event_interruptible failed\n");
 			continue;
 		}
 		if (RCVBufferStart != RCVBufferEnd)
@@ -562,7 +562,7 @@ int micomTask(void *dummy)
 			dprintk(150, "start %d end %d\n",  RCVBufferStart,  RCVBufferEnd);
 		}
 	}
-	printk("micomTask died!\n");
+	printk("[VFD/Micom] micomTask died!\n");
 	return 0;
 }
 
@@ -615,7 +615,7 @@ static int __init micom_init_module(void)
 
 	if (register_chrdev(VFD_MAJOR, "VFD", &vfd_fops))
 	{
-		printk("unable to get major %d for VFD/MICOM\n", VFD_MAJOR);
+		printk("[VFD/Micom] unable to get major %d for VFD/MICOM\n", VFD_MAJOR);
 	}
 	dprintk(10, "%s <\n", __func__);
 	return 0;
@@ -629,7 +629,6 @@ static void __exit micom_cleanup_module(void)
 
 	free_irq(InterruptLine, NULL);
 }
-
 
 //----------------------------------------------
 

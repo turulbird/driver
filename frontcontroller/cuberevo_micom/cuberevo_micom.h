@@ -1,5 +1,5 @@
-#ifndef _123_micom
-#define _123_micom
+#ifndef _cuberevo__micom_h
+#define _cuberevo__micom_h
 /*
  */
 
@@ -18,7 +18,7 @@ extern void copyData(unsigned char *data, int len);
 extern void getRCData(unsigned char *data, int *len);
 void dumpValues(void);
 
-extern int                  errorOccured;
+extern int errorOccured;
 
 extern struct file_operations vfd_fops;
 
@@ -30,8 +30,8 @@ typedef struct
 
 } tFrontPanelOpen;
 
-#define FRONTPANEL_MINOR_RC   1
-#define LASTMINOR             2
+#define FRONTPANEL_MINOR_RC 1
+#define LASTMINOR           2
 
 extern tFrontPanelOpen FrontPanelOpen[LASTMINOR];
 

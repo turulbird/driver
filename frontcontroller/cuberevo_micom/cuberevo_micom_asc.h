@@ -1,5 +1,5 @@
-#ifndef _asc_123
-#define _asc_123
+#ifndef _cuberevo_asc_123
+#define _cuberevo_asc_123
 
 /* ************************************************** */
 /* Access ASC3; from u-boot; copied from TF7700 ;-)   */

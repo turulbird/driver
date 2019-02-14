@@ -1,5 +1,5 @@
 /*
- * micom_asc.c
+ * cuberevo_micom_asc.c
  *
  * (c) 2011 konfetti
  * partly copied from user space implementation from M.Majoor
@@ -38,8 +38,8 @@
 #include <linux/time.h>
 #include <linux/poll.h>
 
-#include "micom.h"
-#include "micom_asc.h"
+#include "cuberevo_micom.h"
+#include "cuberevo_micom_asc.h"
 
 //-------------------------------------
 
@@ -64,7 +64,7 @@ int direct_asc_read_version(void)
 //FIXME: clarify if this works for all cubes
 
 	//write the getmicom request
-	memset(buffer, 0, 5);
+	memset(buffer, 0, sizeof(buffer));
 
 	buffer[0] = 0xA5;
 
@@ -93,7 +93,9 @@ int direct_asc_read_version(void)
 					while (i)
 					{
 						if (serial_getc() != 0xff)
+						{
 							break;
+						}
 						udelay(10);
 						i--;
 					}

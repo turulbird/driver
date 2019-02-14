@@ -1,5 +1,5 @@
 ﻿/*
- * micom_file.c
+ * cuberevo_micom_file.c
  *
  * (c) 2011 konfetti
  * partly copied from user space implementation from M.Majoor
@@ -18,6 +18,13 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
+******************************************************************************
+ *
+ * Changes
+ *
+ * Date     By              Description
+ * ----------------------------------------------------------------------------
+ * 20190204 Audioniek       Added code for all icons on/off.
  */
 
 #include <asm/io.h>
@@ -38,9 +45,9 @@
 #include <linux/time.h>
 #include <linux/poll.h>
 
-#include "micom.h"
-#include "micom_asc.h"
-#include "micom_utf.h"
+#include "cuberevo_micom.h"
+#include "cuberevo_micom_asc.h"
+#include "cuberevo_micom_utf.h"
 
 extern const char *driver_version;
 extern void ack_sem_up(void);
@@ -71,7 +78,7 @@ static struct timer_list playTimer;
 /* version date of fp */
 int micom_day, micom_month, micom_year;
 
-/* to the fp */
+/* commands to the fp */
 #define VFD_GETA0                0xA0
 #define VFD_GETWAKEUPSTATUS      0xA1
 #define VFD_GETA2                0xA2
@@ -124,6 +131,12 @@ unsigned short *LowerChar2seg;
 static special_char_t  *special2seg;
 static int special2seg_size = 4;
 
+/***************************************************************************
+ *
+ * Character definitions.
+ *
+ ***************************************************************************/
+// 12 character dot matrix
 unsigned short num2seg_12dotmatrix[] =
 {
 	0x20,	// 0
@@ -168,6 +181,7 @@ unsigned short Char2seg_12dotmatrix[] =
 	0x4a,	// Z
 };
 
+// 14 character dot matrix
 unsigned short num2seg_14dotmatrix[] =
 {
 	0x20,	// 0
@@ -242,6 +256,7 @@ unsigned short LowerChar2seg_14dotmatrix[] =
 	0x6a,	// z
 };
 
+// 13 grid
 unsigned short num2seg_13grid[] =
 {
 	0x3123,	// 0
@@ -286,6 +301,7 @@ unsigned short Char2seg_13grid[] =
 	0x2805,	// Z
 };
 
+// non-alfanumeric
 special_char_t special2seg_14dotmatrix[] =
 {
 	{':',	15},
@@ -337,6 +353,7 @@ special_char_t special2seg_12dotmatrix[] =
 	{' ',   0x10},
 };
 
+// 7 segment display
 static unsigned short Char2seg_7seg[] =
 {
 	~0x01 & ~0x02 & ~0x04 & ~0x10 & ~0x20 & ~0x40,
@@ -389,6 +406,11 @@ special_char_t  special2seg_7seg[] =
 	{' ',	0xff},
 };
 
+/***************************************************************************
+ *
+ * Icon definitions.
+ *
+ ***************************************************************************/
 enum
 {
 	ICON_MIN,       // 0x00
@@ -432,7 +454,7 @@ struct iconToInternal
 	u8 segment;
 } micomIcons[] =
 {
-	/*--------------------- SetIcon -------  msb   lsb   segment -----*/
+	/*----------------- SetIcon -------  msb   lsb   segment -----*/
 	{ "ICON_STANDBY"  , ICON_STANDBY   , 0x03, 0x00, 1},
 	{ "ICON_SAT"      , ICON_SAT       , 0x02, 0x00, 1},
 	{ "ICON_REC"      , ICON_REC       , 0x00, 0x00, 0},
@@ -467,9 +489,10 @@ struct iconToInternal
 	{ "ICON_TV"       , ICON_TV        , 0x02, 0x03, 1}
 };
 
+// 14 segment icons
 struct iconToInternal micom_14seg_Icons[] =
 {
-	/*--------------------- SetIcon -------  msb   lsb   segment -----*/
+	/*------------------ SetIcon -------  msb   lsb   segment -----*/
 	{ "ICON_TIMER"     , ICON_TIMER     , 0x03, 0x00, 1},
 	{ "ICON_REC"       , ICON_REC       , 0x02, 0x00, 1},
 	{ "ICON_HD"        , ICON_HD        , 0x02, 0x04, 1},
@@ -478,7 +501,13 @@ struct iconToInternal micom_14seg_Icons[] =
 	{ "ICON_DOLBY"     , ICON_DOLBY     , 0x02, 0x03, 1},
 	{ "ICON_TIMESHIFT" , ICON_TIMESHIFT , 0x03, 0x01, 1},
 };
+/* End of character and icon definitions */
 
+/***************************************************************************************
+ *
+ * Code for play display on 9000HD.
+ *
+ */
 #ifdef CUBEREVO
 int micomWriteCommand(char *buffer, int len, int needAck);
 
@@ -509,7 +538,7 @@ static void animated_play(unsigned long data)
 
 	for (i = 0; i < cNumberSymbols; i++)
 	{
-		memset(buffer, 0, 5);
+		memset(buffer, 0, sizeof(buffer));
 		if ((i == current_symbol) && (animationDie == 0))
 		{
 			buffer[0] = VFD_SETSEGMENTI + playIcons[i].segment;
@@ -536,6 +565,11 @@ static void animated_play(unsigned long data)
 }
 #endif
 
+/*******************************************************
+ *
+ * Code to communicate with the front processor.
+ *
+ */
 void write_sem_up(void)
 {
 	up(&write_sem);
@@ -577,6 +611,11 @@ int micomWriteCommand(char *buffer, int len, int needAck)
 	return 0;
 }
 
+/*******************************************************************
+ *
+ * micomSetLED: sets brightness of an LED on front panel display.
+ *
+ */
 int micomSetLED(int on)
 {
 	char buffer[5];
@@ -584,7 +623,7 @@ int micomSetLED(int on)
 
 	dprintk(100, "%s > %d\n", __func__, on);
 
-	memset(buffer, 0, 5);
+	memset(buffer, 0, sizeof(buffer));
 
 	/*
 	xxxxxxx0 ->off
@@ -650,14 +689,18 @@ int micomSetLED(int on)
 /* export for later use in e2_proc */
 EXPORT_SYMBOL(micomSetLED);
 
-int micomSetFan(int on)
+/*******************************************************************
+ *
+ * micomSetFan: switches fan on or off.
+ *
+ */int micomSetFan(int on)
 {
 	char buffer[5];
 	int res = 0;
 
 	dprintk(100, "%s > %d\n", __func__, on);
 
-	memset(buffer, 0, 5);
+	memset(buffer, 0, sizeof(buffer));
 
 	/* on:
 	 * 0 = off
@@ -677,6 +720,12 @@ int micomSetFan(int on)
 	return res;
 }
 
+/*******************************************************************
+ *
+ * micomSetTimeMode: sets time mode (constant display of time) on
+ *                   or off.
+ *
+ */
 int micomSetTimeMode(int twentyFour)
 {
 	char buffer[5];
@@ -685,13 +734,13 @@ int micomSetTimeMode(int twentyFour)
 	dprintk(100, "%s > %d\n", __func__, twentyFour);
 
 	/* clear display */
-	memset(buffer, 0, 5);
+	memset(buffer, 0, sizeof(buffer));
 	buffer[0] = VFD_SETCLEARTEXT;
 	res = micomWriteCommand(buffer, 5, 0);
 	buffer[0] = VFD_SETDISPLAYTEXT;
 	res = micomWriteCommand(buffer, 5, 0);
 
-	memset(buffer, 0, 5);
+	memset(buffer, 0, sizeof(buffer));
 	buffer[0] = VFD_SETMODETIME;
 	buffer[1] = twentyFour & 0x1;
 
@@ -700,6 +749,12 @@ int micomSetTimeMode(int twentyFour)
 	return res;
 }
 
+/*******************************************************************
+ *
+ * micomSetDisplayTime: sets time mode (constant display of time) on
+ *                      or off.
+ *
+ */
 int micomSetDisplayTime(int on)
 {
 	char buffer[5];
@@ -708,14 +763,14 @@ int micomSetDisplayTime(int on)
 	dprintk(100, "%s > %d\n", __func__, on);
 
 	/* clear display */
-	memset(buffer, 0, 5);
+	memset(buffer, 0, sizeof(buffer));
 	buffer[0] = VFD_SETCLEARTEXT;
 	res = micomWriteCommand(buffer, 5, 0);
 	buffer[0] = VFD_SETDISPLAYTEXT;
 	res = micomWriteCommand(buffer, 5, 0);
 
 	/* show time */
-	memset(buffer, 0, 5);
+	memset(buffer, 0, sizeof(buffer));
 	buffer[0] = VFD_SETVFDTIME;
 	buffer[1] = on;
 
@@ -726,6 +781,11 @@ int micomSetDisplayTime(int on)
 	return res;
 }
 
+/*******************************************************************
+ *
+ * micomSetRF: switches RF modulator on or off.
+ *
+ */
 int micomSetRF(int on)
 {
 	char buffer[5];
@@ -733,7 +793,7 @@ int micomSetRF(int on)
 
 	dprintk(100, "%s > %d\n", __func__, on);
 
-	memset(buffer, 0, 5);
+	memset(buffer, 0, sizeof(buffer));
 
 	/* on:
 	 * 0 = off
@@ -752,6 +812,11 @@ int micomSetRF(int on)
 	return res;
 }
 
+/****************************************************************
+ *
+ * micomSetBrightness: sets brightness of front panel display.
+ *
+ */
 int micomSetBrightness(int level)
 {
 	char buffer[5];
@@ -764,7 +829,7 @@ int micomSetBrightness(int level)
 		printk("VFD/Micom brightness out of range %d\n", level);
 		return -EINVAL;
 	}
-	memset(buffer, 0, 5);
+	memset(buffer, 0, sizeof(buffer));
 	buffer[0] = VFD_SETBRIGHTNESS;
 	buffer[1] = level & 0x07;
 
@@ -775,6 +840,12 @@ int micomSetBrightness(int level)
 /* export for later use in e2_proc */
 EXPORT_SYMBOL(micomSetBrightness);
 
+/*******************************************************
+ *
+ * micomSetIcon: (re)sets an icon on the front panel
+ *               display.
+ *
+ */
 int micomSetIcon(int which, int on)
 {
 	char buffer[5];
@@ -792,7 +863,7 @@ int micomSetIcon(int which, int on)
 	{
 		return res;
 	}
-	memset(buffer, 0, 5);
+	memset(buffer, 0, sizeof(buffer));
 
 	if (front_seg_num == 14) //only six icons
 	{
@@ -811,7 +882,7 @@ int micomSetIcon(int which, int on)
 	}
 	else
 	{
-#ifdef CUBEREVO
+#ifdef CUBEREVO //9000HD
 		if ((which == ICON_Play) && (front_seg_num == 12) && (on))
 		{
 			/* display circle */
@@ -852,7 +923,7 @@ int micomSetIcon(int which, int on)
 			animationDie = 1;
 		}
 		else
-#endif
+#endif //9000HD
 		{
 			for (vLoop = 0; vLoop < ARRAY_SIZE(micomIcons); vLoop++)
 			{
@@ -870,23 +941,28 @@ int micomSetIcon(int which, int on)
 		}
 	}
 	dprintk(100, "%s <\n", __func__);
-#endif
-
+#endif // !250HD
 	return res;
 }
 
-/* expected format: YYMMDDhhmm */
-int micomSetStandby(char *time)
+/****************************************************************
+ *
+ * nuvotonSetStandby: sets wake up time and then switches
+ *                    receiver to deep standby.
+ *
+ */
+int micomSetStandby(char *time) //expected format: YYMMDDhhmm
+
 {
 	char     buffer[5];
 	int      res = 0;
 
 	dprintk(100, "%s >\n", __func__);
 
-	res = micomWriteString("Bye bye ...", strlen("Bye bye ..."));
+//	res = micomWriteString("Bye bye ...", strlen("Bye bye ..."));
 
 	/* set wakeup time */
-	memset(buffer, 0, 5);
+	memset(buffer, 0, sizeof(buffer));
 
 	if (time[0] == '\0')
 	{
@@ -898,7 +974,7 @@ int micomSetStandby(char *time)
 
 		res = micomWriteCommand(buffer, 5, 0);
 
-		memset(buffer, 0, 5);
+		memset(buffer, 0, sizeof(buffer));
 
 		buffer[0] = VFD_SETWAKEUPTIME;
 		buffer[1] = 0x00; //hour
@@ -916,7 +992,7 @@ int micomSetStandby(char *time)
 
 		res = micomWriteCommand(buffer, 5, 0);
 
-		memset(buffer, 0, 5);
+		memset(buffer, 0, sizeof(buffer));
 
 		buffer[0] = VFD_SETWAKEUPTIME;
 		buffer[1] = ((time[6] - '0') << 4) | (time[7] - '0'); //hour
@@ -925,7 +1001,7 @@ int micomSetStandby(char *time)
 		res = micomWriteCommand(buffer, 5, 0);
 	}
 	/* now power off */
-	memset(buffer, 0, 5);
+	memset(buffer, 0, sizeof(buffer));
 
 	buffer[0] = VFD_SETSHUTDOWN;
 	/* 0 = shutdown
@@ -947,9 +1023,9 @@ int micomReboot(void)
 
 	dprintk(100, "%s >\n", __func__);
 
-	res = micomWriteString("Bye bye ...", strlen("Bye bye ..."));
+//	res = micomWriteString("Bye bye ...", strlen("Bye bye ..."));
 
-	memset(buffer, 0, 5);
+	memset(buffer, 0, sizeof(buffer));
 
 	buffer[0] = VFD_SETSHUTDOWN;
 	/* 0 = shutdown
@@ -964,8 +1040,12 @@ int micomReboot(void)
 	return res;
 }
 
-/* expected format: YYMMDDhhmmss */
-int micomSetTime(char *time)
+/**************************************************
+ *
+ * micomSetTime: sets front panel clock time.
+ *
+ */
+int micomSetTime(char *time) // expected format: YYMMDDhhmmss
 {
 	char       buffer[5];
 	int        res = 0;
@@ -973,7 +1053,7 @@ int micomSetTime(char *time)
 	dprintk(100, "%s >\n", __func__);
 
 	/* set wakeup time */
-	memset(buffer, 0, 5);
+	memset(buffer, 0, sizeof(buffer));
 
 	dprintk(1, "date: %c %c %c %c %c %c\n", time[0], time[1], time[2], time[3], time[4], time[5]);
 	dprintk(1, "time: %c %c %c %c %c %c\n", time[6], time[7], time[8], time[9], time[10], time[11]);
@@ -985,7 +1065,7 @@ int micomSetTime(char *time)
 
 	res = micomWriteCommand(buffer, 5, 0);
 
-	memset(buffer, 0, 5);
+	memset(buffer, 0, sizeof(buffer));
 
 	buffer[0] = VFD_SETTIME;
 	buffer[1] = ((time[6] - '0') << 4) | (time[7] - '0'); //hour
@@ -997,6 +1077,11 @@ int micomSetTime(char *time)
 	return res;
 }
 
+/*****************************************************
+ *
+ * micomClearIcons: clears all icons in the display.
+ *
+ */
 int micomClearIcons(void)
 {
 	char     buffer[5];
@@ -1004,7 +1089,7 @@ int micomClearIcons(void)
 
 	dprintk(100, "%s >\n", __func__);
 
-	memset(buffer, 0, 5);
+	memset(buffer, 0, sizeof(buffer));
 
 	buffer[0] = VFD_SETCLEARSEGMENTS;
 	res = micomWriteCommand(buffer, 5, 0);
@@ -1012,6 +1097,11 @@ int micomClearIcons(void)
 	return res;
 }
 
+/*****************************************************
+ *
+ * micomGetTime: read front panel clock time.
+ *
+ */
 int micomGetTime(char *time)
 {
 	char     buffer[5];
@@ -1019,7 +1109,7 @@ int micomGetTime(char *time)
 
 	dprintk(100, "%s >\n", __func__);
 
-	memset(buffer, 0, 5);
+	memset(buffer, 0, sizeof(buffer));
 
 	buffer[0] = VFD_GETDATETIME;
 	errorOccured = 0;
@@ -1042,6 +1132,11 @@ int micomGetTime(char *time)
 	return res;
 }
 
+/****************************************************************
+ *
+ * micomGetWakeUpTime: gets front panel clock wake up time.
+ *
+ */
 int micomGetWakeupTime(char *time)
 {
 	char     buffer[5];
@@ -1049,7 +1144,7 @@ int micomGetWakeupTime(char *time)
 
 	dprintk(100, "%s >\n", __func__);
 
-	memset(buffer, 0, 5);
+	memset(buffer, 0, sizeof(buffer));
 
 	buffer[0] = VFD_GETWAKEUP;
 
@@ -1073,7 +1168,11 @@ int micomGetWakeupTime(char *time)
 	return res;
 }
 
-/* get date (version) of micom controller */
+/****************************************************************
+ *
+ * micomGetMicom: get version/release date of front processor.
+ *
+ */
 int micomGetMicom(void)
 {
 	char     buffer[5];
@@ -1089,7 +1188,7 @@ int micomGetMicom(void)
 	micom_year  = 2008;
 	micom_month = 4;
 #else
-	memset(buffer, 0, 5);
+	memset(buffer, 0, sizeof(buffer));
 
 	buffer[0] = VFD_GETMICOM;
 
@@ -1170,14 +1269,18 @@ int micomGetMicom(void)
 	return res;
 }
 
-int micomGetWakeUpMode(char *mode)
+/*************************************************************
+ *
+ * micomGetWakeUpMode: read wake up reason from front panel.
+ *
+ */int micomGetWakeUpMode(char *mode)
 {
 	char     buffer[5];
 	int      res = 0;
 
 	dprintk(100, "%s >\n", __func__);
 
-	memset(buffer, 0, 5);
+	memset(buffer, 0, sizeof(buffer));
 
 	buffer[0] = VFD_GETWAKEUPSTATUS;
 
@@ -1201,7 +1304,16 @@ int micomGetWakeUpMode(char *mode)
 	return res;
 }
 
-inline char toupper(const char c)
+/*****************************************************************
+ *
+ * micomWriteString: Display a text on the front panel display.
+ *
+ * Note: does not scroll; displays the first DISPLAY_WIDTH
+ *       characters. Scrolling is available by writing to
+ *       /dev/vfd: this scrolls a maximum of 64 characters once
+ *       if the text length exceeds DISPLAY_WIDTH.
+ *
+ */inline char toupper(const char c)
 {
 	if ((c >= 'a') && (c <= 'z'))
 	{
@@ -1210,7 +1322,7 @@ inline char toupper(const char c)
 	return c;
 }
 
-inline int trimTrainlingBlanks(char* txt, int len)
+inline int trimTrailingBlanks(char* txt, int len)
 {
 	int i;
 
@@ -1237,13 +1349,13 @@ int micomWriteString(unsigned char *aBuf, int len)
 		return 0;
 	}
 
-	memset(bBuf, 0, 100);
+	memset(bBuf, 0, sizeof(bBuf));
 
-	memset(buffer, 0, 5);
+	memset(buffer, 0, sizeof(buffer));
 	buffer[0] = VFD_SETCLEARTEXT;
 	res = micomWriteCommand(buffer, 5, 0);
 
-	len = trimTrainlingBlanks(aBuf, len);
+	len = trimTrailingBlanks(aBuf, len);
 	pos = front_seg_num - len;
 
 	if (pos < 0)
@@ -1266,7 +1378,7 @@ int micomWriteString(unsigned char *aBuf, int len)
 	}
 	len = front_seg_num;
 
-	/* nonprintable chars will be replaced by space */
+	/* nonprintable chars will be replaced by spaces */
 	for (j = 0; j < special2seg_size; j++)
 	{
 		if (special2seg[j].ch == ' ')
@@ -1282,7 +1394,7 @@ int micomWriteString(unsigned char *aBuf, int len)
 		unsigned short data;
 		unsigned char ch;
 
-		memset(buffer, 0, 5);
+		memset(buffer, 0, sizeof(buffer));
 
 		buffer[0] = VFD_SETCHAR;
 		buffer[1] = i & 0xff; /* position */
@@ -1329,7 +1441,7 @@ int micomWriteString(unsigned char *aBuf, int len)
 				}
 				else
 				{
-					printk("%s ignore unprintable char \'%c\'\n", __func__, ch);
+					printk("%s ignore unprintable character \'%c\'\n", __func__, ch);
 					data = space;
 				}
 				break;
@@ -1341,7 +1453,7 @@ int micomWriteString(unsigned char *aBuf, int len)
 		buffer[3] = (data >> 8) & 0xff;
 		res = micomWriteCommand(buffer, 5, 0);
 	}
-	memset(buffer, 0, 5);
+	memset(buffer, 0, sizeof(buffer));
 	buffer[0] = VFD_SETDISPLAYTEXT;
 
 	res = micomWriteCommand(buffer, 5, 0);
@@ -1349,6 +1461,11 @@ int micomWriteString(unsigned char *aBuf, int len)
 	return res;
 }
 
+/****************************************************************
+ *
+ * micom_init_func: Initialize the driver.
+ *
+ */
 int micom_init_func(void)
 {
 	int  res = 0;
@@ -1376,11 +1493,11 @@ int micom_init_func(void)
 
 	micomGetMicom();
 	res |= micomSetFan(0);
-	res |= micomSetLED(3 /* on and slow blink mode */);
+	res |= micomSetLED(3); // on and slow blink mode
 	res |= micomSetBrightness(7);
 	res |= micomSetTimeMode(1); //24h mode
-	res |= micomSetDisplayTime(0);   //mode = display text
-	res |= micomWriteString("T.Ducktales", strlen("T.Ducktales"));
+	res |= micomSetDisplayTime(0); //mode = display text
+//	res |= micomWriteString("T.Ducktales", strlen("T.Ducktales"));
 
 	/* disable all icons at startup */
 #if !defined(CUBEREVO_250HD)
@@ -1393,7 +1510,7 @@ int micom_init_func(void)
 	}
 #endif
 
-#ifdef CUBEREVO
+#if defined CUBEREVO
 	if (front_seg_num == 12)
 	{
 		init_timer(&playTimer);
@@ -1405,6 +1522,11 @@ int micom_init_func(void)
 	return 0;
 }
 
+/******************************************
+ *
+ * Code for writing to /dev/vfd (not-test)
+ *
+ */
 //#define TEST_COMMANDS
 //#define TEST_CHARSET
 #if !defined(TEST_CHARSET) \
@@ -1480,7 +1602,11 @@ static ssize_t MICOMdev_write(struct file *filp, const char *buff, size_t len, l
 }
 
 #elif defined(TEST_CHARSET)
-static ssize_t MICOMdev_write(struct file *filp, const char *buff, size_t len, loff_t *off)
+/**************************************************
+ *
+ * Code for writing to /dev/vfd (test characterset)
+ *
+ */static ssize_t MICOMdev_write(struct file *filp, const char *buff, size_t len, loff_t *off)
 {
 	char *kernel_buf;
 	int minor, vLoop, res = 0;
@@ -1534,11 +1660,11 @@ static ssize_t MICOMdev_write(struct file *filp, const char *buff, size_t len, l
 	sscanf(myString, "%d", &value);
 	printk("0x%x\n", value);
 
-	memset(buffer, 0, 5);
+	memset(buffer, 0, sizeof(buffer));
 	buffer[0] = VFD_SETCLEARTEXT;
 	res = micomWriteCommand(buffer, 5, 0);
 
-	memset(buffer, 0, 5);
+	memset(buffer, 0, sizeof(buffer));
 	buffer[0] = VFD_SETCHAR;
 	buffer[1] = 1;
 	buffer[2] = value & 0xff;
@@ -1547,7 +1673,7 @@ static ssize_t MICOMdev_write(struct file *filp, const char *buff, size_t len, l
 
 	kfree(kernel_buf);
 
-	memset(buffer, 0, 5);
+	memset(buffer, 0, sizeof(buffer));
 	buffer[0] = VFD_SETDISPLAYTEXT;
 	res = micomWriteCommand(buffer, 5, 0);
 
@@ -1564,15 +1690,19 @@ static ssize_t MICOMdev_write(struct file *filp, const char *buff, size_t len, l
 		return len;
 	}
 }
-
 #else
+/**********************************************
+ *
+ * Code for writing to /dev/vfd (test command)
+ *
+ */
 static ssize_t MICOMdev_write(struct file *filp, const char *buff, size_t len, loff_t *off)
 {
 	char *kernel_buf;
 	int minor, vLoop, res = 0;
 	char *myString = kmalloc(len + 1, GFP_KERNEL);
 	int value, arg1, arg2, arg3;
-	char                buffer[5];
+	char buffer[5];
 	int i;
 
 	dprintk(100, "%s > (len %d, offs %d)\n", __func__, len, (int) *off);
@@ -1634,12 +1764,12 @@ static ssize_t MICOMdev_write(struct file *filp, const char *buff, size_t len, l
 	}
 	
 //#define bimmel
-#ifdef bimmel
+#if defined bimmel
 	for (i = 0; i <= 255; i++)
 	{
 		printk("0x%x ->0x%x\n", value, i);
 
-		memset(buffer, 0, 5);
+		memset(buffer, 0, sizeof(buffer));
 		buffer[0] = value;
 		buffer[1] = 1;
 		buffer[2] = i;
@@ -1649,7 +1779,7 @@ static ssize_t MICOMdev_write(struct file *filp, const char *buff, size_t len, l
 	}
 #else
 	{
-		memset(buffer, 0, 5);
+		memset(buffer, 0, sizeof(buffer));
 		buffer[0] = value;
 		buffer[1] = arg1;
 		buffer[2] = arg2;
@@ -1674,6 +1804,11 @@ static ssize_t MICOMdev_write(struct file *filp, const char *buff, size_t len, l
 }
 #endif
 
+/**********************************
+ *
+ * Code for reading from /dev/vfd
+ *
+ */
 static ssize_t MICOMdev_read(struct file *filp, char __user *buff, size_t len, loff_t *off)
 {
 	int minor, vLoop;
@@ -1704,7 +1839,7 @@ static ssize_t MICOMdev_read(struct file *filp, char __user *buff, size_t len, l
 		int           size = 0;
 		unsigned char data[20];
 
-		memset(data, 0, 20);
+		memset(data, 0, sizeof(data));
 
 		getRCData(data, &size);
 
@@ -1739,7 +1874,6 @@ static ssize_t MICOMdev_read(struct file *filp, char __user *buff, size_t len, l
 		printk("%s return 0<\n", __func__);
 		return 0;
 	}
-
 	if (len > lastdata.length)
 	{
 		len = lastdata.length;
@@ -1808,6 +1942,11 @@ int MICOMdev_close(struct inode *inode, struct file *filp)
 	return 0;
 }
 
+/****************************************
+ *
+ * IOCTL handling.
+ *
+ */
 static int MICOMdev_ioctl(struct inode *Inode, struct file *File, unsigned int cmd, unsigned long arg)
 {
 	static int mode = 0;
@@ -1820,7 +1959,7 @@ static int MICOMdev_ioctl(struct inode *Inode, struct file *File, unsigned int c
 	{
 		return -ERESTARTSYS;
 	}
-	switch(cmd)
+	switch (cmd)
 	{
 		case VFDSETMODE:
 		{
@@ -1946,7 +2085,7 @@ static int MICOMdev_ioctl(struct inode *Inode, struct file *File, unsigned int c
 			}
 			else
 			{
-				//not suppoerted
+				//not supported
 			}
 			mode = 0;
 			break;
@@ -1961,13 +2100,12 @@ static int MICOMdev_ioctl(struct inode *Inode, struct file *File, unsigned int c
 			{
 				break;
 			}
-
 			/* clear text */
-			memset(buffer, 0, 5);
+			memset(buffer, 0, sizeof(buffer));
 			buffer[0] = VFD_SETCLEARTEXT;
 			res = micomWriteCommand(buffer, 5, 0);
 
-			memset(buffer, 0, 5);
+			memset(buffer, 0, sizeof(buffer));
 			buffer[0] = VFD_SETDISPLAYTEXT;
 			res = micomWriteCommand(buffer, 5, 0);
 			/* and fall through to clear icons */
@@ -1983,7 +2121,7 @@ static int MICOMdev_ioctl(struct inode *Inode, struct file *File, unsigned int c
 		}
 		case VFDGETVERSION:
 		{
-			printk("VFDGETVERSION: front_seg_num %d\n", front_seg_num);
+			printk("[VFD/Micom] VFDGETVERSION: front_seg_num %d\n", front_seg_num);
 			if (front_seg_num == 12)
 			{
 				micom->u.version.version = 0;
@@ -2000,7 +2138,7 @@ static int MICOMdev_ioctl(struct inode *Inode, struct file *File, unsigned int c
 			{
 				micom->u.version.version = 3;
 			}
-			printk("VFDGETVERSION: version %d\n", micom->u.version.version);
+			printk("[VFD/Micom] VFDGETVERSION: version %d\n", micom->u.version.version);
 			break;
 		}
 		case 0x5305:
@@ -2009,7 +2147,7 @@ static int MICOMdev_ioctl(struct inode *Inode, struct file *File, unsigned int c
 		}
 		default:
 		{
-			printk("VFD/Micom: unknown IOCTL 0x%x\n", cmd);
+			printk("[VFD/Micom] unknown IOCTL 0x%x\n", cmd);
 			mode = 0;
 			break;
 		}
