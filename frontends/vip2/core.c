@@ -3,9 +3,9 @@
 #include "stv090x.h"
 #include "ix7306.h"
 #include "zl10353.h"
-#include "../base/sharp6465.h"
-#include "../base/tda1002x.h"
-#include "../base/lg031.h"
+#include "../spark7162/base/sharp6465.h"
+#include "../spark7162/base/tda1002x.h"
+#include "../spark7162/base/lg031.h"
 
 #include <linux/platform_device.h>
 #include <asm/system.h>
