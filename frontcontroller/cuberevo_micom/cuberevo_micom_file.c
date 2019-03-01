@@ -284,7 +284,7 @@ unsigned short LowerChar2seg_14dotmatrix[] =
 	0x69,	// y
 	0x6a,	// z
 };
-#if defined(CUBEREVO_9500HD)
+
 // 13 grid
 unsigned short num2seg_13grid[] =
 {
@@ -329,7 +329,6 @@ unsigned short Char2seg_13grid[] =
 	0x04e2,	// Y
 	0x2805,	// Z
 };
-#endif
 
 #if defined(CUBEREVO_MINI) \
  || defined(CUBEREVO_MINI2) \
@@ -532,7 +531,7 @@ special_char_t special2seg_12dotmatrix[] =
 	{'.',   0x1e},
 	{' ',   0x10},
 };
-#elif defined(CUBEREVO_9500HD)
+#endif
 special_char_t special2seg_13grid[] =
 {
 	{'-',   0x00c0},
@@ -540,7 +539,6 @@ special_char_t special2seg_13grid[] =
 	{'.',   0x4000},
 	{' ',   0x0000},
 };
-#endif
 
 #if defined(CUBEREVO_250HD) \
  || defined(CUBEREVO_MINI_FTA)
@@ -1500,20 +1498,22 @@ int micomGetVersion(void)
 	LowerChar2seg    = NULL;
 	special2seg      = special2seg_7seg;
 	special2seg_size = ARRAY_SIZE(special2seg_7seg);
-#elif defined(CUBEREVO_MINI) \
+#else
+#if defined(CUBEREVO_MINI) \
  ||   defined(CUBEREVO_MINI2) \
  ||   defined(CUBEREVO_3000HD) \
  ||   defined(CUBEREVO_2000HD)
-	front_seg_num    = 14;
-	num2seg          = num2seg_14dotmatrix;
-	Char2seg         = Char2seg_14dotmatrix;
-	LowerChar2seg    = LowerChar2seg_14dotmatrix;
-	special2seg      = special2seg_14dotmatrix;
-	special2seg_size = ARRAY_SIZE(special2seg_14dotmatrix);
-#endif
-
-#if defined(CUBEREVO) \
- || defined(CUBEREVO_9500HD)
+	if ((micom_year == 2008) && (micom_minor == 4))
+	{
+		front_seg_num    = 14;
+		num2seg          = num2seg_14dotmatrix;
+		Char2seg         = Char2seg_14dotmatrix;
+		LowerChar2seg    = LowerChar2seg_14dotmatrix;
+		special2seg      = special2seg_14dotmatrix;
+		special2seg_size = ARRAY_SIZE(special2seg_14dotmatrix);
+	}
+	else
+#elif defined(CUBEREVO)
 	if ((micom_year == 2008) && (micom_minor == 3))
 	{	
 		front_seg_num    = 12;
@@ -1523,7 +1523,8 @@ int micomGetVersion(void)
 		special2seg      = special2seg_14dotmatrix;
 		special2seg_size = ARRAY_SIZE(special2seg_14dotmatrix);
 	}
-	else // CUBEREVO_9500HD
+	else
+#endif
 	{
 		front_seg_num    = 13;
 		num2seg          = num2seg_13grid;
@@ -1532,7 +1533,7 @@ int micomGetVersion(void)
 		special2seg      = special2seg_13grid;
 		special2seg_size = ARRAY_SIZE(special2seg_13grid);
 	}
-#endif
+#endif // 250HD
 	dprintk(100, "%s < %d\n", __func__, res);
 	return res;
 }
@@ -1948,21 +1949,26 @@ int micom_init_func(void)
 //	res |= micomWriteString("T.Ducktales", strlen("T.Ducktales"));
 
 	/* disable all icons at startup */
-	if (front_seg_num != 4 && front_seg_num != 13)
-	{
+#if defined(CUBEREVO_MINI) \
+ || defined(CUBEREVO_MINI2) \
+ || defined(CUBEREVO_2000HD) \
+ || defined(CUBEREVO_3000HD) \
+ || defined(CUBEREVO)
+//	if (front_seg_num != 4 && front_seg_num != 13)
+//	{
 		for (vLoop = ICON_MIN + 1; vLoop < ICON_MAX; vLoop++)
 		{
 			micomSetIcon(vLoop, 0);
 		}
-	}
-
+//	}
+#endif
 #if defined(CUBEREVO)
-	if (front_seg_num == 12)
-	{
+//	if (front_seg_num == 12)
+//	{
 		init_timer(&playTimer);
 		playTimer.function = animated_play;
 		playTimer.data = 0;
-	}
+//	}
 #endif
 	// Handle initial GMT offset (may be changed by writing to /proc/stb/fp/rtc_offset)
 	res = strict_strtol(gmt_offset, 10, (long *)&rtc_offset);
