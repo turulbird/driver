@@ -275,6 +275,8 @@ static int info_model_read(char *page, char **start, off_t off, int count, int *
 	int len = sprintf(page, "vip1-v2\n");
 #elif defined(VIP2_V1)
 	int len = sprintf(page, "vip2-v1\n");
+#elif defined(UFS910)
+	int len = sprintf(page, "ufs910\n");
 #elif defined(UFS922)
 	int len = sprintf(page, "ufs922\n");
 #elif defined(UFC960)
@@ -323,10 +325,10 @@ static int info_model_read(char *page, char **start, off_t off, int count, int *
 	int len = sprintf(page, "vitamin_hd5000\n");
 #elif defined(SAGEMCOM88)
 	int len = sprintf(page, "sagemcom88\n");
-#elif defined(UFS910)
-	int len = sprintf(page, "ufs910\n");
 #elif defined(ARIVALINK200)
 	int len = sprintf(page, "arivalink200\n");
+#elif defined(PACE7241)
+	int len = sprintf(page, "pace7241\n");
 #else
 	int len = sprintf(page, "unknown\n");
 #endif
