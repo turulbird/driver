@@ -5,22 +5,22 @@
  *
  * @brief Availink avl2108 - DVBS/S2 Satellite demod driver with Sharp BS2S7HZ6360 tuner
  *
- * 	Copyright (C) 2009-2010 Duolabs Spa
- *                2011 adapted by konfetti for use with ufs922, octagon1008 and atevio7500
+ * Copyright (C) 2009-2010 Duolabs Spa
+ * 2011 adapted by konfetti for use with ufs922, octagon1008 and atevio7500
  *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
  *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
 #define STV6306_DEMOD_FW "dvb-fe-stv6306.fw" /*< Tuner fw used for working in internal mode */
@@ -49,9 +49,9 @@ extern short useOriginTimings;
 
 struct stv6306_state
 {
-	struct equipment_s         equipment;
-	u8                         internal;
-	struct i2c_adapter        *i2c;
+	struct equipment_s equipment;
+	u8                 internal;
+	struct i2c_adapter *i2c;
 };
 
 /* *********** external tuner ************** */
@@ -79,63 +79,63 @@ static u16 stv6306_tuner_lock_ext(struct dvb_frontend *fe, u32 freq, u32 srate, 
 	}
 	else if (freq < 9860)
 	{
-//		data[3] &= ~(0x7 << 5);
+		data[3] &= ~(0x7 << 5);
 		data[3] |= (0x5 << 5);
 		wsize = 16;
 		shift = 1;
 	}
 	else if (freq < 10730)
 	{
-//		data[3] &= ~(0x7 << 5);
+		data[3] &= ~(0x7 << 5);
 		data[3] |= (0x6 << 5);
 		wsize = 16;
 		shift = 1;
 	}
 	else if (freq < 11540)
 	{
-//		data[3] &= ~(0x7 << 5);
+		data[3] &= ~(0x7 << 5);
 		data[3] |= (0x7 << 5);
 		wsize = 32;
 		shift = 1;
 	}
 	else if (freq < 12910)
 	{
-//		data[3] &= ~(0x7 << 5);
+		data[3] &= ~(0x7 << 5);
 		data[3] |= (0x1 << 5);
 		wsize = 32;
 		shift = 0;
 	}
 	else if (freq < 14470)
 	{
-//		data[3] &= ~(0x7 << 5);
+		data[3] &= ~(0x7 << 5);
 		data[3] |= (0x2 << 5);
 		wsize = 32;
 		shift = 0;
 	}
 	else if (freq < 16150)
 	{
-//		data[3] &= ~(0x7 << 5);
+		data[3] &= ~(0x7 << 5);
 		data[3] |= (0x3 << 5);
 		wsize = 32;
 		shift = 0;
 	}
 	else if (freq < 17910)
 	{
-//		data[3] &= ~(0x7 << 5);
+		data[3] &= ~(0x7 << 5);
 		data[3] |= (0x4 << 5);
 		wsize = 32;
 		shift = 0;
 	}
 	else if (freq < 19720)
 	{
-//		data[3] &= ~(0x7 << 5);
+		data[3] &= ~(0x7 << 5);
 		data[3] |= (0x5 << 5);
 		wsize = 32;
 		shift = 0;
 	}
 	else if (freq <= 21500)
 	{
-//		data[3] &= ~(0x7 << 5);
+		data[3] &= ~(0x7 << 5);
 		data[3] |= (0x6 << 5);
 		wsize = 32;
 		shift = 0;
@@ -146,7 +146,6 @@ static u16 stv6306_tuner_lock_ext(struct dvb_frontend *fe, u32 freq, u32 srate, 
 	}
 	mod = (freq / 10) % wsize;
 	div = (freq / 10) / wsize;
-
 	data[3] &= ~(0x1 << 4);
 
 	if (wsize == 16)
@@ -156,16 +155,15 @@ static u16 stv6306_tuner_lock_ext(struct dvb_frontend *fe, u32 freq, u32 srate, 
 	data[3] &= ~(0x1 << 1);
 	data[3] |= (u8)(shift << 1);
 
-//	data[1] &= ~(0x1f << 0);
+	data[1] &= ~(0x1f << 0);
 	data[1] |= (u8)(mod << 0);
-
 	data[1] &= ~(0x7 << 5);
 	data[1] |= (u8)(div << 5);
-//	data[0] &= ~(0x1f << 0);
+	data[0] &= ~(0x1f << 0);
 	data[0] |= (u8)((div >> 3) << 0);
 
 	/* Charge pump */
-//	data[2] &= ~(0x3 << 5);
+	data[2] &= ~(0x3 << 5);
 	data[2] |= (0x2 << 5);
 
 	/* BB Gain */
@@ -232,7 +230,6 @@ static u16 stv6306_tuner_lock_status_ext(struct dvb_frontend *fe)
 
 /* *********** internal tuner ************** */
 
-
 static u16 stv6306_load_firmware(struct dvb_frontend *fe)
 {
 	struct stv6306_state *state = fe->tuner_priv;
@@ -252,21 +249,17 @@ static u16 stv6306_load_firmware(struct dvb_frontend *fe)
 		printk("%s(): Firmware upload failed. Timeout or file not found \n", __func__);
 		return AVL2108_ERROR_GENERIC;
 	}
-
-	printk("firmware download done successfull\n");
-
+	printk("firmware download done successful\n");
 	data_size = extract_32(fw->data);
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,32)
-	buffer = kmalloc(fw->size , GFP_KERNEL);
+	buffer = kmalloc(fw->size, GFP_KERNEL);
 	memcpy(buffer, fw->data, fw->size);
 #endif
-
 	printk("data_size %d\n", data_size);
 	while (i < data_size)
 	{
 		buf_size = extract_32(fw->data + i);
-
 		i += 4;
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,32)
@@ -276,10 +269,8 @@ static u16 stv6306_load_firmware(struct dvb_frontend *fe)
 		ret |= state->equipment.demod_i2c_write(fe->demodulator_priv, fw->data + i + 1, (u16)(buf_size + 3));
 #endif
 		i += 4 + buf_size;
-
 		printk("i %d\n", i);
 	}
-
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,32)
 	kfree(buffer);
 #endif
@@ -292,7 +283,7 @@ static u16 stv6306_tuner_lock_int(struct dvb_frontend *fe, u32 freq, u32 lpf)
 	struct stv6306_state *state = fe->tuner_priv;
 	u16 ret;
 	u16 timeout = 0;
-	u16 max_tries = 10;		/* 10 times */
+	u16 max_tries = 10;  /* 10 times */
 
 	if (useOriginTimings == 0)
 	{
@@ -412,7 +403,6 @@ static u16 stv6306_tuner_init(struct dvb_frontend *fe)
 	u16 ret = 0;
 
 	dprintk(50, "%s(): >\n", __func__);
-
 	/* nothing to do here ? */
 
 	dprintk(50, "Leaving %s() with status %u\n", __func__, ret);
@@ -434,13 +424,12 @@ int stv6306_attach(struct dvb_frontend *fe, void *demod_priv, struct equipment_s
 	}
 	else
 	{
-		equipment->tuner_load_fw     = NULL;
+		equipment->tuner_load_fw = NULL;
 	}
-
 	equipment->tuner_init        = stv6306_tuner_init;
 	equipment->tuner_lock        = stv6306_tuner_lock;
 	equipment->tuner_lock_status = stv6306_tuner_lock_status;
 
 	return 0;
 }
-
+// vim:ts=4

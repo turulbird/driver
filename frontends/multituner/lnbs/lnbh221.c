@@ -3,21 +3,21 @@
  *
  * @author konfetti
  *
- * 	Copyright (C) 2011 duckbox
+ * Copyright (C) 2011 duckbox
  *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
  *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
 #include "dvb_frontend.h"
@@ -140,13 +140,9 @@ void *lnbh221_attach(u32 *lnb, struct equipment_s *equipment)
 	struct lnb_state *state = kmalloc(sizeof(struct lnb_state), GFP_KERNEL);
 
 	memcpy(state->lnb, lnb, sizeof(state->lnb));
-
 	equipment->lnb_set_voltage = lnbh221_set_voltage;
-
 	state->i2c = i2c_get_adapter(lnb[0]);
-
 	printk("i2c adapter = %p\n", state->i2c);
-
 	return state;
 }
 EXPORT_SYMBOL(lnbh221_attach);
@@ -176,3 +172,4 @@ MODULE_LICENSE("GPL");
 
 module_init(lnbh221_init);
 module_exit(lnbh221_cleanup);
+// vim:ts=4

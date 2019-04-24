@@ -7,27 +7,26 @@
  *
  * @brief Availink avl2108 - DVBS/S2 Satellite demod driver with Sharp BS2S7HZ6360 tuner
  *
- * 	Copyright (C) 2009-2010 Duolabs Spa
- *                2011 adapted by konfetti for use with ufs922, octagon1008 and atevio7500
+ * Copyright (C) 2009-2010 Duolabs Spa
+ *               2011 adapted by konfetti for use with ufs922, octagon1008 and atevio7500
  *
  * based on avl6222 code from:
  * @author Ramon-Tomislav Rebersak <ramon.rebersak@gmail.com>
  *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
  *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
-
 
 #include <linux/slab.h>
 #include <linux/kernel.h>
@@ -82,17 +81,16 @@ static struct platform_frontend_config_s *frontend_cfg = NULL;
 static u8 numSockets = 0;
 static struct socket_s socketList[cMaxSockets];
 
-
 /*---------------------------------------------------------------------
  * I2C functions
  *---------------------------------------------------------------------*/
 static u16 avl6222_i2c_writereg(struct avl6222_state *state, u8 *data, u16 *size)
 {
-	struct i2c_msg msg = {	.addr = state->config->demod_address,
-			.flags = 0, .buf = data, .len = *size
+	struct i2c_msg msg =
+	{ .addr = state->config->demod_address,
+	  .flags = 0, .buf = data, .len = *size
 	};
 	int err;
-
 #if 1
 //for debug, if we only want to see tuner values
 //if ((data[*size - 1] == 0x02) && (data[*size - 2] == 0xc0))
@@ -101,8 +99,9 @@ static u16 avl6222_i2c_writereg(struct avl6222_state *state, u8 *data, u16 *size
 		u8 dstr[512];
 		dstr[0] = '\0';
 		for (i = 0; i < *size; i++)
+		{
 			sprintf(dstr, "%s 0x%02x", dstr, data[i]);
-
+		}
 		dprintk(200, "%s(): %u b: %s\n", __func__, *size, dstr);
 	}
 #endif
@@ -113,21 +112,21 @@ static u16 avl6222_i2c_writereg(struct avl6222_state *state, u8 *data, u16 *size
 		int try;
 		printk("[I2C]\t");
 		for (try = 0; try < *size; try++)
-					{
-						printk("%02X ", data[try]);
-						if (((try + 1) % 16) == 0)
-								printk("\n[I2C]\t");
-					}
+		{
+			printk("%02X ", data[try]);
+			if (((try + 1) % 16) == 0)
+			{
+				printk("\n[I2C]\t");
+			}
+		}
 		printk("\n");
 	}
 #endif
-
 	if ((err = i2c_transfer(state->i2c, &msg, 1)) != 1)
 	{
 		eprintk("%s(): error: %i, size %d\n", __func__, err, *size);
 		return AVL6222_ERROR_I2C; //return -EREMOTEIO;
 	}
-
 	return AVL6222_OK;
 }
 
@@ -165,26 +164,25 @@ static u16 avl6222_i2c_readreg(struct avl6222_state *state, u8 *data, u16 *size)
 		int try;
 		printk("[I2C]\t");
 		for (try = 0; try < *size; try++)
-					{
-						printk("%02X ", data[try]);
-						if (((try + 1) % 16) == 0)
-								printk("\n[I2C]\t");
-					}
+		{
+			printk("%02X ", data[try]);
+			if (((try + 1) % 16) == 0)
+			{
+				printk("\n[I2C]\t");
+			}
+		}
 		printk("\n");
 	}
 #endif
-
 	if ((ret = i2c_transfer(state->i2c, &msg, 1)) != 1)
 	{
 		eprintk("%s(): error: %i\n", __func__, ret);
 		return AVL6222_ERROR_I2C; //return -EREMOTEIO;
 	}
-
 	if (*size == 2)
 	{
 		data[0] = res2[0];
 		data[1] = res2[1];
-
 		dprintk(200, "%s(): 0x%02x 0x%02x\n", __func__, res2[0], res2[1]);
 	}
 	else
@@ -193,25 +191,24 @@ static u16 avl6222_i2c_readreg(struct avl6222_state *state, u8 *data, u16 *size)
 		data[1] = res4[1];
 		data[2] = res4[2];
 		data[3] = res4[3];
-
 		dprintk(200, "%s(): 0x%02x 0x%02x 0x%02x 0x%02x\n", __func__, res4[0], res4[1], res4[2], res4[3]);
 	}
-
 #if defined(optimized_debug)
 	if (state->config->demod_address == 0x0d)
 	{
 		int try;
 		printk("[I2C]\t");
 		for (try = 0; try < *size; try++)
-					{
-						printk("%02X ", data[try]);
-						if (((try + 1) % 16) == 0)
-								printk("\n[I2C]\t");
-					}
+		{
+			printk("%02X ", data[try]);
+			if (((try + 1) % 16) == 0)
+			{
+				printk("\n[I2C]\t");
+			}
+		}
 		printk("\n");
 	}
 #endif
-
 	return AVL6222_OK;
 }
 
@@ -230,10 +227,13 @@ static u16 avl6222_i2c_read(struct avl6222_state *state, u32 offset, u8 *buf, u1
 	if (ret == AVL6222_OK)
 	{
 		if (buf_size & 1)
+		{
 			size = buf_size - 1;
+		}
 		else
+		{
 			size = buf_size;
-
+		}
 		while (size > I2C_MAX_READ)
 		{
 			x1 = I2C_MAX_READ;
@@ -243,8 +243,9 @@ static u16 avl6222_i2c_read(struct avl6222_state *state, u32 offset, u8 *buf, u1
 		}
 
 		if (size != 0)
+		{
 			ret |= avl6222_i2c_readreg(state, buf + x2, &size);
-
+		}
 		if (buf_size & 1)
 		{
 			x1 = 2;
@@ -252,7 +253,6 @@ static u16 avl6222_i2c_read(struct avl6222_state *state, u32 offset, u8 *buf, u1
 			buf[buf_size - 1] = buf_tmp[0];
 		}
 	}
-
 	return ret;
 }
 
@@ -267,8 +267,9 @@ static u16 avl6222_i2c_write(void *_state, u8 *buf, u16 buf_size)
 	u32 addr;
 
 	if (buf_size < 3)
+	{
 		return (AVL6222_ERROR_GENERIC);
-
+	}
 	/* Actual data size */
 	buf_size -= 3;
 	/* Dump address */
@@ -279,10 +280,13 @@ static u16 avl6222_i2c_write(void *_state, u8 *buf, u16 buf_size)
 	addr += buf[2];
 
 	if (buf_size & 1)
+	{
 		size = buf_size - 1;
+	}
 	else
+	{
 		size = buf_size;
-
+	}
 	tmp = (I2C_MAX_WRITE - 3) & 0xfffe;/* How many bytes data we can transfer every time */
 
 	x2 = 0;
@@ -304,7 +308,6 @@ static u16 avl6222_i2c_write(void *_state, u8 *buf, u16 buf_size)
 		x2 += tmp;
 		size -= tmp;
 	}
-
 	x1 = size + 3;
 	/* Save the data */
 	buf_tmp[0] = buf[x2];
@@ -331,7 +334,6 @@ static u16 avl6222_i2c_write(void *_state, u8 *buf, u16 buf_size)
 		x1 = 5;
 		ret |= avl6222_i2c_writereg(state, buf_tmp, &x1);
 	}
-
 	return ret;
 }
 
@@ -345,8 +347,9 @@ static u16 avl6222_i2c_read16(void *_state, u32 addr, u16 *data)
 
 	ret = avl6222_i2c_read(state, addr, buf, 2);
 	if (ret == AVL6222_OK)
+	{
 		*data = extract_16(buf);
-
+	}
 	return ret;
 }
 
@@ -359,8 +362,9 @@ static u16 avl6222_i2c_read32(struct avl6222_state *state, u32 addr, u32 *data)
 
 	ret = avl6222_i2c_read(state, addr, buf, 4);
 	if (ret == AVL6222_OK)
+	{
 		*data = extract_32(buf);
-
+	}
 	return ret;
 }
 
@@ -375,7 +379,6 @@ static u16 avl6222_i2c_write16(void *_state, u32 addr, u16 data)
 	format_addr(addr, buf);
 	p = buf + 3;
 	format_16(data, p);
-
 	ret = avl6222_i2c_write(state, buf, 5);
 	return ret;
 }
@@ -407,7 +410,9 @@ static u16 avl6222_i2c_repeater_get_status(struct avl6222_state *state)
 	if (ret == AVL6222_OK)
 	{
 		if (buf[1] != 0)
+		{
 			ret = AVL6222_ERROR_PREV;
+		}
 	}
 	return ret;
 }
@@ -423,8 +428,9 @@ static u16 avl6222_i2c_repeater_exec(struct avl6222_state *state, u8 *buf, u8 si
 	dprintk(50, "%s()\n", __func__);
 
 	if (useOriginTimings == 0)
+	{
 		cnt = 60;
-
+	}
 	while (avl6222_i2c_repeater_get_status(state) != AVL6222_OK)
 	{
 		if (cnt < i++)
@@ -433,14 +439,18 @@ static u16 avl6222_i2c_repeater_exec(struct avl6222_state *state, u8 *buf, u8 si
 			break;
 		}
 		if (useOriginTimings == 1)
+		{
 			msleep(10);
+		}
 		else
+		{
 			msleep(/* 10*/ /* 5 */ 3);
+		}
 	}
-
 	if (ret == AVL6222_OK)
+	{
 		ret = avl6222_i2c_write(state, buf, size);
-
+	}
 	dprintk(50, "Leaving %s() with status %u useOriginTimings=%d\n", __func__, ret, useOriginTimings);
 	return ret;
 }
@@ -457,20 +467,21 @@ static u16 avl6222_i2c_repeater_send(void *_state, u8 *buf, u16 size)
 	memset(tmp_buf, 0, I2C_CMD_LEN + 3);
 
 	if (size > I2C_CMD_LEN - 3)
+	{
 		return AVL6222_ERROR_GENERIC;
-
+	}
 	cmd_size = ((size + 3) % 2) + 3 + size;
 	format_addr(REG_I2C_CMD + I2C_CMD_LEN - cmd_size, tmp_buf);
 
 	i = 3 + ((3 + size) % 2);	  /* skip one byte if the size +3 is odd */
 
 	for (j = 0; j < size; j++)
+	{
 		tmp_buf[i++] = buf[j];
-
+	}
 	tmp_buf[i++] = (u8)size;
 	tmp_buf[i++] = state->config->tuner_address;
 	tmp_buf[i++] = I2C_WRITE;
-
 	return avl6222_i2c_repeater_exec(state, tmp_buf, (u8)(cmd_size + 3));
 }
 
@@ -485,8 +496,9 @@ static u16 avl6222_i2c_repeater_recv(void *_state, u8 *buf, u16 size)
 	u8 tmp_buf[I2C_RSP_LEN];
 
 	if (size > I2C_RSP_LEN)
+	{
 		return AVL6222_ERROR_GENERIC;
-
+	}
 	format_addr(REG_I2C_CMD + I2C_CMD_LEN - 4, tmp_buf);
 	tmp_buf[3] = 0x0;
 	tmp_buf[4] = (u8)size;
@@ -507,9 +519,7 @@ static u16 avl6222_i2c_repeater_recv(void *_state, u8 *buf, u16 size)
 		}
 		ret = avl6222_i2c_read(state, REG_I2C_RSP, buf, size);
 	}
-
 	dprintk(50, "Leaving %s() with status %u\n", __func__, ret);
-
 	return ret;
 }
 
@@ -525,7 +535,6 @@ static u16 avl6222_i2c_repeater_init(u16 bus_clk, struct avl6222_state *state)
 	buf[3] = 0x01;
 	buf[4] = I2C_INIT;
 	ret |= avl6222_i2c_repeater_exec(state, buf, 5);
-
 	dprintk(50, "Leaving %s() with status %u\n", __func__, ret);
 	return ret;
 }
@@ -544,7 +553,9 @@ static u16 avl6222_get_op_status(void *_state)
 	if (ret == AVL6222_OK)
 	{
 		if (buf[1] != 0)
+		{
 			ret = AVL6222_ERROR_PREV;
+		}
 	}
 	dprintk(50, "Leaving %s() with status buf[0]: 0x%02x, buf[1]: 0x%02x\n", __func__, buf[0], buf[1]);
 	return ret;
@@ -603,7 +614,6 @@ static u16 avl6222_setup_pll(struct avl6222_state *state, const struct avl6222_p
 
 	/* Reset */
 	ret |= avl6222_i2c_write32(state, REG_RESET, 1);
-
 	return ret;
 }
 //---------------------------------------------------------------------
@@ -613,7 +623,6 @@ static u16 avl6222_setup_pll_2(struct avl6222_state *state, const struct avl6222
 	u16 ret = 0;
 
 	dprintk(5, "%s()\n", __func__);
-
 	ret = avl6222_i2c_write32(state, PLL_R1, pll_ptr->m_r1);
 	ret |= avl6222_i2c_write32(state, PLL_R6, pll_ptr->m_r1);
 	ret |= avl6222_i2c_write32(state, PLL_R2, pll_ptr->m_r2);
@@ -622,10 +631,8 @@ static u16 avl6222_setup_pll_2(struct avl6222_state *state, const struct avl6222
 	ret |= avl6222_i2c_write32(state, PLL_R5, pll_ptr->m_r5);
 	ret |= avl6222_i2c_write32(state, PLL_SOFTVALUE_EN,   1);
 	ret |= avl6222_i2c_write32(state, REG_RESET, 0);
-
 	/* Reset */
 	ret |= avl6222_i2c_write32(state, REG_RESET, 1);
-
 	return ret;
 }
 //---------------------------------------------------------------------
@@ -641,26 +648,18 @@ static int avl6222_load_firmware(struct dvb_frontend *fe)
 	int fw_ret;
 
 	dprintk(5, "%s() >\n", __func__);
-
 	ret = avl6222_i2c_write32(state, REG_CORE_RESET_B, 0);
-
 	dprintk(10, "%s(): Uploading demod firmware (%s)...\n", __func__, AVL6222_DEMOD_FW);
-
 	fw_ret = request_firmware(&fw, AVL6222_DEMOD_FW, &state->i2c->dev);
-
 	if (fw_ret)
 	{
 		printk("%s(): Firmware request failed. Timeout or file not found \n", __func__);
 		return AVL6222_ERROR_GENERIC;
 	}
-
 	printk("%s(): firmware request done successfull\n", __func__);
-
 	data_size = extract_32(fw->data);
-
-	buffer = kmalloc(fw->size , GFP_KERNEL);
+	buffer = kmalloc(fw->size, GFP_KERNEL);
 	memcpy(buffer, fw->data, fw->size);
-
 	printk("%s(): writing firmware... (data_size %d)\n", __func__, data_size);
 
 	while (i < data_size)
@@ -670,21 +669,15 @@ static int avl6222_load_firmware(struct dvb_frontend *fe)
 
 		/* need write access here, which is permitted under stm24 */
 		ret |= avl6222_i2c_write(state, &buffer[i + 1], (u16)(buf_size + 3));
-
 		i += 4 + buf_size;
 	}
-
 	ret |= avl6222_i2c_write32(state, 0x00000000, 0x00003ffc);
 	ret |= avl6222_i2c_write16(state, core_ready_word_addr, 0x0000);
 	ret |= avl6222_i2c_write32(state, error_msg_addr, 0x00000000);
 	ret |= avl6222_i2c_write32(state, error_msg_addr + 4, 0x00000000);
-
 	ret |= avl6222_i2c_write32(state, REG_CORE_RESET_B, 1);
-
 	kfree(buffer);
-
 	dprintk(10, "%s() < status %u\n", __func__, ret);
-
 	return ret;
 }
 
@@ -694,7 +687,7 @@ static int avl6222_get_demod_status(struct dvb_frontend *fe)
 {
 	struct avl6222_state *state = fe->demodulator_priv;
 	u16 r;
-	u8	buf[2];
+	u8  buf[2];
 	u32 x1 = 0;
 
 	r = avl6222_i2c_read32(state, REG_CORE_RESET_B, &x1);
@@ -705,11 +698,12 @@ static int avl6222_get_demod_status(struct dvb_frontend *fe)
 	if ((AVL6222_OK == r))
 	{
 		if ((x1 == 0) || (buf[0] != 0x5a) || (buf[1] != 0xa5))
+		{
 			r = AVL6222_ERROR_GENERIC;
+		}
 	}
 	return r;
 }
-
 
 //---------------------------------------------------------------------
 
@@ -719,7 +713,7 @@ u16 avl6222_get_version(struct avl6222_state *state, struct avl6222_ver_info *ve
 	u8 buf[4];
 	u16 ret;
 
-	ret =  avl6222_i2c_read32(state, REG_ROM_VER, &tmp);
+	ret = avl6222_i2c_read32(state, REG_ROM_VER, &tmp);
 	if (ret == AVL6222_OK)
 	{
 		format_32(tmp, buf);
@@ -728,7 +722,7 @@ u16 avl6222_get_version(struct avl6222_state *state, struct avl6222_ver_info *ve
 		version->build = buf[2];
 		version->build = ((u16)((version->build) << 8)) + buf[3];
 
-		ret =  avl6222_i2c_read32(state, REG_PATCH_VER, &tmp);
+		ret = avl6222_i2c_read32(state, REG_PATCH_VER, &tmp);
 		if (ret == AVL6222_OK)
 		{
 			format_32(tmp, buf);
@@ -738,7 +732,6 @@ u16 avl6222_get_version(struct avl6222_state *state, struct avl6222_ver_info *ve
 			version->patch_build = ((u16)((version->patch_build) << 8)) + buf[3];
 		}
 	}
-
 	dprintk(10, "Leaving %s() with status %u\n", __func__, ret);
 	return ret;
 }
@@ -778,33 +771,41 @@ static u16 avl6222_channel_lock(struct dvb_frontend *fe, struct avl6222_tuning *
 				ret |= avl6222_i2c_write16(state, REG_LOCK_MODE, 1);
 
 				if (tuning->symbol_rate < 3000000)
+				{
 					ret |= avl6222_i2c_write16(state, REG_CARRIER_FREQ_HALF_RANGE_MHZ, 300);
+				}
 				else
+				{
 					ret |= avl6222_i2c_write16(state, REG_CARRIER_FREQ_HALF_RANGE_MHZ, 500);
+				}
 			}
 			else
+			{
 				ret |= avl6222_i2c_write16(state, REG_LOCK_MODE, 0);
-
+			}
 			ret |= avl6222_i2c_write32(state, REG_SPEC_INV, tuning->iq_swap);
 			Standard = (u16)(tuning->delsys);
 			autoIQ_Detect = tuning->auto_iq_swap;
 
 			if ((Standard == CI_FLAG_DVBS2_UNDEF) || (autoIQ_Detect == 1))
+			{
 				Standard = 0x14;
-
+			}
 			ret |= avl6222_i2c_write16(state, REG_DECODE_MODE, Standard);
 			ret |= avl6222_i2c_write16(state, REG_IQ_SWAP_MODE, (u16)autoIQ_Detect);
 			ret |= avl6222_i2c_write32(state, REG_SRATE_HZ, tuning->symbol_rate);
 			ret |= avl6222_send_op(DEMOD_OP_INIT_GO, state);
 		}
 		else
+		{
 			ret = AVL6222_ERROR_GENERIC;
+		}
 	}
 	else
+	{
 		ret = AVL6222_ERROR_GENERIC;
-
+	}
 	dprintk(10, "Leaving %s() with status %u\n", __func__, ret);
-
 	return ret;
 }
 
@@ -816,7 +817,7 @@ static int avl6222_demod_init(struct dvb_frontend *fe)
 	u16 ret = 0;
 
 	/* Set clk to match the PLL */
-	ret = avl6222_i2c_write16(state, REG_DMD_CLK_MHZ,  state->config->demod_freq);
+	ret = avl6222_i2c_write16(state, REG_DMD_CLK_MHZ, state->config->demod_freq);
 	ret |= avl6222_i2c_write16(state, REG_FEC_CLK_MHZ, state->config->fec_freq);
 	ret |= avl6222_i2c_write16(state, REG_MPEG_CLK_MHZ, state->config->mpeg_freq);
 	ret |= avl6222_i2c_write32(state, REG_FORMAT, 1);
@@ -828,16 +829,12 @@ static int avl6222_demod_init(struct dvb_frontend *fe)
 
 	/* Set AGC polarization */
 	ret |= avl6222_i2c_write32(state, REG_RF_AGC_POL, state->config->agc_polarization);
-
 	ret |= avl6222_i2c_write32(state, REG_RGAGC_TRI_ENB, state->config->agc_tri);
-
 	dprintk(10, "%s: agc_pol %d\n", __func__, state->config->agc_polarization);
-
 	/* Set MPEG data */
 	ret |= avl6222_i2c_write32(state, REG_MPEG_MODE, state->config->mpeg_mode);
 	ret |= avl6222_i2c_write16(state, REG_MPEG_SERIAL, state->config->mpeg_serial);
 	ret |= avl6222_i2c_write16(state, REG_MPEG_POS_EDGE, state->config->mpeg_clk_mode);
-
 	dprintk(10, "%s: mpeg_mode %d, mpeg_serial %d, mpeg_clk_mode %d, mpeg_tri 0x%x\n", __func__,
 		state->config->mpeg_mode,
 		state->config->mpeg_serial,
@@ -846,7 +843,6 @@ static int avl6222_demod_init(struct dvb_frontend *fe)
 
 	/* Enable MPEG output */
 	ret = avl6222_i2c_write32(state, rc_mpeg_bus_tri_enb, state->config->mpeg_tri);
-
 	dprintk(10, "Leaving %s() with status %u\n", __func__, ret);
 	return ret;
 }
@@ -877,7 +873,6 @@ u16 avl6222_save_config(struct dvb_frontend *fe, u32 *buf32, u16 *buf16)
 	ret |= avl6222_i2c_read16(state, REG_CARRIER_FREQ_HALF_RANGE_MHZ, buf16++);
 	ret |= avl6222_i2c_read16(state, 1536, buf16++);
 	ret |= avl6222_i2c_read16(state, REG_MPEG_PERSISTENT_CLK_MODE, buf16++);
-
 	dprintk(10, "Leaving %s() with status %u\n", __func__, ret);
 	return ret;
 }
@@ -910,7 +905,6 @@ u16 avl6222_restore_config(struct dvb_frontend *fe, u32 *buf32, u16 *buf16)
 	ret |= avl6222_i2c_write16(state, REG_CARRIER_FREQ_HALF_RANGE_MHZ, *buf16++);
 	ret |= avl6222_i2c_write16(state, 1536, *buf16++);
 	ret |= avl6222_i2c_write16(state, REG_MPEG_PERSISTENT_CLK_MODE, *buf16++);
-
 	dprintk(10, "Leaving %s() with status %u\n", __func__, ret);
 	return ret;
 }
@@ -926,7 +920,6 @@ u16 avl6222_set_functional_mode(struct avl6222_state *state, u8 mode)
 		ret = avl6222_i2c_write16(state, 0x2642, 400);
 	}
 	ret |= avl6222_i2c_write16(state, rc_iq_mode_addr, 0);
-
 	return ret;
 }
 
@@ -938,11 +931,9 @@ int avl6222_set_voltage(struct dvb_frontend *fe, fe_sec_voltage_t voltage)
 	int ret = 0;
 
 	dprintk(10, "%s(%p, %d)\n", __FUNCTION__, fe, voltage);
-
 	mutex_lock(&state->lock);
 	ret = state->equipment.lnb_set_voltage(state->lnb_priv, fe, voltage);
 	mutex_unlock(&state->lock);
-
 	return ret;
 }
 
@@ -974,21 +965,17 @@ static int avl6222_diseqc_init(struct dvb_frontend *fe)
 	dprintk(10, "%s: diseqc_info=%d\n", __FUNCTION__, diseqc_info);
 
 	ret |= avl6222_i2c_write32(state, REG_DISEQC_SRST, 1);
-
-	ret |= avl6222_i2c_write32(state, REG_DISEQC_SAMP_FRAC_N, 200); 	/* 2M = 200 * 10kHz */
+	ret |= avl6222_i2c_write32(state, REG_DISEQC_SAMP_FRAC_N, 200);  /* 2M = 200 * 10kHz */
 	ret |= avl6222_i2c_write32(state, REG_DISEQC_SAMP_FRAC_D, state->config->demod_freq);
-
 	ret |= avl6222_i2c_write32(state, REG_DISEQC_TONE_FRAC_N, ((DISEQC_TONE_FREQ) << 1));
 	ret |= avl6222_i2c_write32(state, REG_DISEQC_TONE_FRAC_D, state->config->demod_freq * 10);
-
 	/* Initialize the tx_control */
 	ret |= avl6222_i2c_read32(state, REG_DISEQC_TX_CTRL, &x1);
-
 	x1 &= 0x00000300;
-	x1 |= 0x20;		/* Reset tx_fifo */
+	x1 |= 0x20;  /* Reset tx_fifo */
 	x1 |= ((u32)(diseqc_info & 0x000F) << 6);
 	x1 |= ((u32)((diseqc_info & 0x0F00) >> 8) << 4);
-	x1 |= (1 << 3);			/* Enable tx gap */
+	x1 |= (1 << 3);  /* Enable tx gap */
 
 	dprintk(10, "%s: x1=0x%x\n", __FUNCTION__, x1);
 
@@ -1000,8 +987,8 @@ static int avl6222_diseqc_init(struct dvb_frontend *fe)
 
 	/* Initialize the rx_control */
 	x1 = ((u32)((diseqc_info & 0x0F00) >> 8) << 2);
-	x1 |= (1 << 1);	/* Activate the receiver */
-	x1 |= (1 << 3);	/* Envelop high when tone present */
+	x1 |= (1 << 1); 	/* Activate the receiver */
+	x1 |= (1 << 3);	 /* Envelop high when tone present */
 
 	dprintk(10, "%s: x1=0x%x\n", __FUNCTION__, x1);
 	ret |= avl6222_i2c_write32(state, REG_DISEQC_RX_CTRL, x1);  //ufs913 diff
@@ -1009,14 +996,12 @@ static int avl6222_diseqc_init(struct dvb_frontend *fe)
 	x1 = (u32)((diseqc_info & 0xF000) >> 12);
 	dprintk(10, "%s: x1=0x%x\n", __FUNCTION__, x1);
 	ret |= avl6222_i2c_write32(state, REG_DISEQC_RX_MSG_TMR, x1);
-
 	ret |= avl6222_i2c_write32(state, REG_DISEQC_SRST, 0);
-
 	if (ret == AVL6222_OK)
+	{
 		state->diseqc_status = DISEQC_STATUS_INIT;
-
+	}
 	dprintk(10, "Leaving %s() with status %u\n", __func__, ret);
-
 	return 0;
 }
 
@@ -1037,20 +1022,26 @@ u16 avl6222_diseqc_switch_mode(struct dvb_frontend *fe)
 	{
 		case DISEQC_STATUS_MOD:
 		case DISEQC_STATUS_TONE:
+		{
 			ret |= avl6222_i2c_read32(state, REG_DISEQC_TX_ST, &x1);
 			if (((x1 & 0x00000040) >> 6) != 1)
+			{
 				ret |= AVL6222_ERROR_PREV;
+			}
 			break;
+		}
 		case DISEQC_STATUS_CONTINUOUS:
 		case DISEQC_STATUS_INIT:
+		{
 			break;
+		}
 		default:
+		{
 			ret |= AVL6222_ERROR_GENERIC;
 			break;
+		}
 	}
-
 	dprintk(10, "Leaving %s() with status %u\n", __func__, ret);
-
 	return ret;
 }
 
@@ -1069,7 +1060,9 @@ u16 avl6222_diseqc_send_mod_data(struct dvb_frontend *fe, const u8 *buf, u8 size
 	u8 buf_tmp[8];
 
 	if (size > 8)
+	{
 		ret = AVL6222_ERROR_MEM;
+	}
 	else
 	{
 		ret = avl6222_diseqc_switch_mode(fe);
@@ -1081,7 +1074,7 @@ u16 avl6222_diseqc_send_mod_data(struct dvb_frontend *fe, const u8 *buf, u8 size
 			ret |= avl6222_i2c_write32(state, REG_DISEQC_RX_CTRL, (x2 & 0xfffffffe));
 
 			ret |= avl6222_i2c_read32(state, REG_DISEQC_TX_CTRL, &x1);
-			x1 &= 0xfffffff8;	//set to modulation mode and put it to FIFO load mode
+			x1 &= 0xfffffff8;  //set to modulation mode and put it to FIFO load mode
 			ret |= avl6222_i2c_write32(state, REG_DISEQC_TX_CTRL, x1);
 			/* Trunk address */
 			format_addr(REG_DISEQC_TX_FIFO_MAP, buf_tmp);
@@ -1093,12 +1086,12 @@ u16 avl6222_diseqc_send_mod_data(struct dvb_frontend *fe, const u8 *buf, u8 size
 				buf_tmp[6] = buf[x2];
 				ret |= avl6222_i2c_write(state, buf_tmp, 7);
 			}
-
 			x1 |= (1 << 2);  //start fifo transmit.
 			ret |= avl6222_i2c_write32(state, REG_DISEQC_TX_CTRL, x1);
-
 			if (ret == AVL6222_OK)
+			{
 				state->diseqc_status = DISEQC_STATUS_MOD;
+			}
 		}
 	}
 	dprintk(10, "%s(): ret: %u\n", __func__, ret);
@@ -1118,18 +1111,18 @@ u16 avl6222_diseqc_get_tx_status(struct dvb_frontend *fe, struct avl6222_diseqc_
 	u16 ret = AVL6222_OK;
 	u32 x1;
 
-	if ((state->diseqc_status == DISEQC_STATUS_MOD) ||
-			(state->diseqc_status == DISEQC_STATUS_TONE))
+	if ((state->diseqc_status == DISEQC_STATUS_MOD)
+	||  (state->diseqc_status == DISEQC_STATUS_TONE))
 	{
 		ret = avl6222_i2c_read32(state, REG_DISEQC_TX_ST, &x1);
 		pTxStatus->tx_done = (u8)((x1 & 0x00000040) >> 6);
 		pTxStatus->tx_fifo_cnt = (u8)((x1 & 0x0000003c) >> 2);
 	}
 	else
+	{
 		ret = AVL6222_ERROR_GENERIC;
-
+	}
 	dprintk(10, "Leaving %s() with status %u\n", __func__, ret);
-
 	return ret;
 }
 
@@ -1146,36 +1139,44 @@ static int avl6222_send_diseqc_msg(struct dvb_frontend *fe, struct dvb_diseqc_ma
 	int cnt = 100;
 
 	if (useOriginTimings == 0)
+	{
 		cnt = 200;
-
+	}
 	if ((d->msg_len < 3) || (d->msg_len > 6))
+	{
 		return -EINVAL;
-
+	}
 	ret = avl6222_diseqc_send_mod_data(fe, d->msg, d->msg_len);
 	if (ret != AVL6222_OK)
+	{
 		eprintk("%s(): Output %u modulation bytes: fail!\n", __func__, d->msg_len);
+	}
 	else
 	{
 		msleep(55);
 		do
 		{
 			ret = avl6222_diseqc_get_tx_status(fe, &tx_status);
-
 			if (tx_status.tx_done == 1)
+			{
 				break;
-
+			}
 			if (useOriginTimings == 1)
+			{
 				msleep(10);
+			}
 			else
+			{
 				msleep(/* 10 */ /* 3 */ 4);
-
+			}
 			if (--cnt == 0)
+			{
 				break;
+			}
 		}
 		while (tx_status.tx_done != 1); /* Wait until operation finishes */
 
 		/* msleep(100); */
-
 		if (cnt == 0)
 		{
 			lockError |= cError7;
@@ -1183,9 +1184,13 @@ static int avl6222_send_diseqc_msg(struct dvb_frontend *fe, struct dvb_diseqc_ma
 			       __func__, cnt, ret, tx_status.tx_done);
 		}
 		if (ret != AVL6222_OK)
+		{
 			printk("%s(): Output %u modulation bytes fail!\n", __func__, d->msg_len);
+		}
 		else
+		{
 			dprintk(20, "%s(): Output %u modulation bytes: success!\n", __func__, d->msg_len);
+		}
 	}
 	return 0;
 }
@@ -1194,7 +1199,7 @@ static int avl6222_send_diseqc_msg(struct dvb_frontend *fe, struct dvb_diseqc_ma
 
 /**
  * @brief Send Mini-DiSEqC burst also called Tone-burst.
- * 		  It's used for switching between satellite A and satellite B
+ * It is used for switching between satellite A and satellite B
  * @param burst The satellite to which we want to switch: SEC_MINI_A or SEC_MINI_B
  * @return 0 = success
  */
@@ -1217,9 +1222,13 @@ static int avl6222_diseqc_send_burst(struct dvb_frontend *fe, fe_sec_mini_cmd_t 
 	ret = avl6222_i2c_read32(state, REG_DISEQC_TX_CTRL, &x1);
 	x1 &= 0xfffffff8;   /* Put it into the FIFO load mode */
 	if (burst == SEC_MINI_A)
+	{
 		x1 |= 0x01;
+	}
 	else
+	{
 		x1 |= 0x02;
+	}
 	ret |= avl6222_i2c_write32(state, REG_DISEQC_TX_CTRL, x1);
 	/* Trunk address */
 	format_addr(REG_DISEQC_TX_FIFO_MAP, buf);
@@ -1238,14 +1247,18 @@ static int avl6222_diseqc_send_burst(struct dvb_frontend *fe, fe_sec_mini_cmd_t 
 		return 0;
 	}
 	else
+	{
 		state->diseqc_status = DISEQC_STATUS_TONE;
-
+	}
 	ret = avl6222_diseqc_get_tx_status(fe, &tx_status);
 	if (ret != AVL6222_OK)
+	{
 		eprintk("%s(): Tune-burst sent failed: %d\n", __func__, tx_status.tx_done);
+	}
 	else
+	{
 		dprintk(10, "%s(): Tune-burst sent successfully: %d\n", __func__, tx_status.tx_done);
-
+	}
 	return 0;
 }
 
@@ -1253,7 +1266,7 @@ static int avl6222_diseqc_send_burst(struct dvb_frontend *fe, fe_sec_mini_cmd_t 
 
 /**
  * @brief Set/Unset the tone. This is used for selecting a High (22 KHz) or a Low (0 KHz) freq
- * @param tone The  to which we want to use: SEC_TONE_ON or SEC_TONE_OFF
+ * @param tone to which we want to use: SEC_TONE_ON or SEC_TONE_OFF
  * @return 0 = success
  */
 int avl6222_set_tone(struct dvb_frontend *fe, fe_sec_tone_mode_t tone)
@@ -1269,8 +1282,9 @@ int avl6222_set_tone(struct dvb_frontend *fe, fe_sec_tone_mode_t tone)
 		/*avl6222_diseqc_start_cont(fe);*/
 		ret = avl6222_diseqc_switch_mode(fe);
 		if (ret != AVL6222_OK)
+		{
 			return 0;
-
+		}
 		avl6222_i2c_read32(state, REG_DISEQC_TX_CTRL, &x1);
 		x1 &= 0xfffffff8;
 		x1 |= 0x03;
@@ -1278,7 +1292,9 @@ int avl6222_set_tone(struct dvb_frontend *fe, fe_sec_tone_mode_t tone)
 		x1 |= (1 << 10);
 		ret = avl6222_i2c_write32(state, REG_DISEQC_TX_CTRL, x1);
 		if (ret == AVL6222_OK)
+		{
 			state->diseqc_status = DISEQC_STATUS_CONTINUOUS;
+		}
 	}
 	else
 	{
@@ -1311,10 +1327,13 @@ u16 avl6222_reset_stats(struct dvb_frontend *fe)
 	ret = avl6222_get_mode(state, &func_mode);
 
 	if (func_mode == FUNC_MODE_DEMOD)
+	{
 		ret |= avl6222_send_op(DEMOD_OP_RESET_BERPER, state);
+	}
 	else
+	{
 		ret = AVL6222_ERROR_GENERIC;
-
+	}
 	return ret;
 }
 
@@ -1346,7 +1365,6 @@ static int avl6222_read_status(struct dvb_frontend *fe, fe_status_t *status)
 		*status |= FE_HAS_SIGNAL | FE_HAS_CARRIER | FE_HAS_VITERBI | FE_HAS_SYNC | FE_HAS_LOCK;
 		dprintk(50, "%s(): Service locked!!!\n", __func__);
 	}
-
 	return 0;
 }
 
@@ -1370,8 +1388,9 @@ static int avl6222_read_ber(struct dvb_frontend *fe, u32 *ber)
 		*ber = 0;
 	}
 	else
+	{
 		*ber /= 1000000000;
-
+	}
 	return 0;
 }
 
@@ -1403,7 +1422,6 @@ static int avl6222_read_signal_strength(struct dvb_frontend *fe, u16 *signal_str
 		*signal_strength = 0;
 		dprintk(30, "Could not get signal strength");
 	}
-
 	return -1;
 }
 
@@ -1433,9 +1451,13 @@ static int avl6222_read_snr(struct dvb_frontend *fe, u16 *snr)
 		 * I convert it to the range [0 - 65535] = [0% - 100%],
 		 * but this is not the way for doing it :( */
 		if (((r_snr) >= 0) && ((r_snr) <= 2236))
+		{
 			*snr = r_snr * 65535 / 2236;
+		}
 		else
+		{
 			*snr = 0;
+		}
 	}
 	return 0;
 }
@@ -1476,7 +1498,7 @@ static struct dvb_frontend_ops avl6222_ops;
 
 /**
  * @brief Initialise or wake up device
- * 		  Power config will reset and load initial firmware if required
+ * Power config will reset and load initial firmware if required
  * @param fe A ptr to a DVB API struct dvb_frontend
  * @return Returns 0 if successful, -1 otherwise
  */
@@ -1490,7 +1512,6 @@ static int avl6222_initfe(struct dvb_frontend *fe)
 		dprintk(10, "Boot procedure already done. Skipping it.\n");
 		return 0;
 	}
-
 	ret = avl6222_setup_pll_2(state, (const struct avl6222_pllconf *)(pll_conf + state->config->pll_config));
 
 	if (ret != AVL6222_OK)
@@ -1510,14 +1531,12 @@ static int avl6222_initfe(struct dvb_frontend *fe)
 
 	/* Wait for the demod to boot */
 	mdelay(100);
-
 	ret = avl6222_get_demod_status(fe);
 	if (ret != AVL6222_OK)
 	{
 		eprintk("Boot failed!\n");
 		return -1;
 	}
-
 	ret = avl6222_demod_init(fe);
 	if (ret != AVL6222_OK)
 	{
@@ -1528,7 +1547,6 @@ static int avl6222_initfe(struct dvb_frontend *fe)
 	/* tuner init start */
 	ret = avl6222_i2c_write16(state, REG_TUNER_SLAVE_ADDR, state->config->tuner_address);
 
-
 	/* Sharp QM1D1C0042 specific settings
 	 * ->no it isn't the settings are also needed for stv6110a !!! so
 	 * they are needed for external tuner.
@@ -1536,36 +1554,27 @@ static int avl6222_initfe(struct dvb_frontend *fe)
 	ret |= avl6222_i2c_write16(state, REG_TUNER_USE_INTERNAL_CTRL, 0); /* Use external control */
 	ret |= avl6222_i2c_write16(state, REG_TUNER_LPF_MARGIN_100KHZ, 0);
 	ret |= avl6222_i2c_write16(state, REG_TUNER_MAX_LPF_100KHZ, state->config->max_lpf);
-
 	ret |= avl6222_i2c_repeater_init(state->config->i2c_speed_khz, state);
-
 	ret |= avl6222_i2c_write32(state, 0x640160, 0xF3);
 	mdelay(5);
 	ret |= avl6222_i2c_write32(state, 0x640160, 0xD3);
 	mdelay(5);
-
 	ret |= state->equipment.tuner_init(fe);
-
 	if (ret != AVL6222_OK)
 	{
 		eprintk("Tuner initialization failed!\n");
 		return -1;
 	}
-
 	/* tuner init end */
-
 	ret = avl6222_diseqc_init(fe);
 	if (ret != AVL6222_OK)
 	{
 		eprintk("Diseqc initialization failed!\n");
 		return -1;
 	}
-
 	dprintk(10, "AVL6222: Demod and tuner successfully initialized!\n");
-
 	state->boot_done = 1;
 	initDone = 1;
-
 	return 0;
 }
 
@@ -1582,9 +1591,7 @@ static int avl6222_sleep(struct dvb_frontend *fe)
 	u16 ret;
 
 	dprintk(10, "%s()\n", __func__);
-
 	//ret = avl6222_send_op(DEMOD_OP_SLEEP, state);
-
 	return 0;
 }
 
@@ -1595,9 +1602,7 @@ static int avl6222_wake(struct dvb_frontend *fe)
 	u16 ret;
 
 	dprintk(10, "%s()\n", __func__);
-
 	ret = avl6222_send_op(DEMOD_OP_WAKE, state);
-
 	return 0;
 }
 
@@ -1620,19 +1625,26 @@ static int avl6222_get_property(struct dvb_frontend *fe, struct dtv_property *tv
 		switch (tvp->u.data)
 		{
 			case SYS_DVBS2:
+			{
 				dprintk(10, "%s: DVB-S2 delivery system selected\n", __func__);
 				break;
+			}
 			case SYS_DVBS:
+			{
 				dprintk(10, "%s: DVB-S delivery system selected\n", __func__);
 				break;
+			}
 			case SYS_DSS:
+			{
 				dprintk(10, "%s: DSS delivery system selected\n", __func__);
 				break;
+			}
 			default:
+			{
 				return -EINVAL;
+			}
 		}
 	}
-
 	dprintk(20, "%s()\n", __func__);
 	return 0;
 }
@@ -1665,14 +1677,13 @@ static int avl6222_set_frontend(struct dvb_frontend *fe, struct dvb_frontend_par
 	demodLock = 0;
 	tunerLock = 0;
 
-	dprintk(1, "%s:   delivery system	= %d\n", __func__, c->delivery_system);
-	dprintk(1, "%s:   modulation  		= %d\n", __func__, c->modulation);
-	dprintk(1, "%s:   frequency   		= %d\n", __func__, c->frequency);
-	dprintk(1, "%s:   symbol_rate 		= %d\n", __func__, c->symbol_rate);
-	dprintk(1, "%s:   inversion 		= %d\n", __func__, c->inversion);
-	dprintk(1, "%s:   rolloff  		= %d\n", __func__, c->rolloff);
-	dprintk(1, "%s:   pilot  		= %d\n", __func__, c->pilot);
-
+	dprintk(1, "%s: delivery system	= %d\n", __func__, c->delivery_system);
+	dprintk(1, "%s: modulation      = %d\n", __func__, c->modulation);
+	dprintk(1, "%s: frequency       = %d\n", __func__, c->frequency);
+	dprintk(1, "%s: symbol_rate     = %d\n", __func__, c->symbol_rate);
+	dprintk(1, "%s: inversion       = %d\n", __func__, c->inversion);
+	dprintk(1, "%s: rolloff         = %d\n", __func__, c->rolloff);
+	dprintk(1, "%s: pilot           = %d\n", __func__, c->pilot);
 	cnt = 10;
 
 	do
@@ -1687,7 +1698,9 @@ static int avl6222_set_frontend(struct dvb_frontend *fe, struct dvb_frontend_par
 			continue;
 		}
 		else
+		{
 			break;
+		}
 	}
 	while (--cnt);
 
@@ -1702,15 +1715,17 @@ static int avl6222_set_frontend(struct dvb_frontend *fe, struct dvb_frontend_par
 		mutex_unlock(&state->lock);
 		return -1;
 	}
-
 	/* Wait for tuner locking */
 	max_time = 150; /* Max waiting time: 150ms */
 
 	if (useOriginTimings == 1)
+	{
 		cnt = max_time / 10;
+	}
 	else
+	{
 		cnt = max_time / 5;
-
+	}
 	do
 	{
 		/* Check lock status */
@@ -1719,10 +1734,13 @@ static int avl6222_set_frontend(struct dvb_frontend *fe, struct dvb_frontend_par
 		if (ret == AVL6222_ERROR_PREV)
 		{
 			if (useOriginTimings == 1)
-				msleep(10);    /* Wait 10ms for tuner to lock the channel */
+			{
+				msleep(10);  /* Wait 10ms for tuner to lock the channel */
+			}
 			else
-				msleep(5);    /* Wait 10ms for tuner to lock the channel */
-
+			{
+				msleep(5);  /* Wait 10ms for tuner to lock the channel */
+			}
 			dprintk(10, "%s(): Waiting for tuner lock: %d\n", __func__, cnt);
 			continue;
 		}
@@ -1736,10 +1754,12 @@ static int avl6222_set_frontend(struct dvb_frontend *fe, struct dvb_frontend_par
 				return -1;
 			}
 			else
+			{
 				break;
+			}
 		}
 	}
-	while	(--cnt);
+	while (--cnt);
 
 	dprintk(1, "%s(): Tuner successfully set!\n", __func__);
 
@@ -1759,10 +1779,13 @@ static int avl6222_set_frontend(struct dvb_frontend *fe, struct dvb_frontend_par
 	tuning.iq_swap = state->config->iq_swap;
 	tuning.auto_iq_swap = state->config->auto_iq_swap;
 	if (c->delivery_system == SYS_DVBS)
+	{
 		tuning.delsys = 0x00; /* Set DVB-S */
+	}
 	else
+	{
 		tuning.delsys = 0x01; /* Set DVB-S2 */
-
+	}
 	tuning.lock_mode = state->config->lock_mode;
 
 	ret = avl6222_channel_lock(fe, &tuning);
@@ -1773,7 +1796,6 @@ static int avl6222_set_frontend(struct dvb_frontend *fe, struct dvb_frontend_par
 		mutex_unlock(&state->lock);
 		return -1;
 	}
-
 	cnt = 20;
 	do
 	{
@@ -1788,39 +1810,51 @@ static int avl6222_set_frontend(struct dvb_frontend *fe, struct dvb_frontend_par
 	}
 	while (--cnt);
 
-
 	tunerLock = 1;
 
-	/* Wait a bit more when we have slow symbol rates */
+	/* Wait a bit more when we have low symbol rates */
 	if (c->symbol_rate < 5000000)
+	{
 		max_time = 5000 * 2; /* Max waiting time: 5000ms */
+	}
 	else if (c->symbol_rate < 10000000)
+	{
 		max_time = 600 * 2; /* Max waiting time: 600ms */
+	}
 	else
+	{
 		max_time = 250 * 2; /* Max waiting time: 250ms */
-
+	}
 	if (useOriginTimings == 1)
+	{
 		cnt = max_time / 10;
+	}
 	else
+	{
 		cnt = max_time / /* 10 */ 5;
-
+	}
 	do
 	{
 		if (avl6222_i2c_read16(state, REG_FEC_LOCK, &lock_status) != AVL6222_OK)
+		{
 			dprintk(20, "%s(): Could not get lock status. Retrying %d more times\n", __func__, cnt);
-
+		}
 		if (lock_status == 1)
+		{
 			break;
-
+		}
 		if (useOriginTimings == 1)
-			msleep(10);            /* Wait 10ms for demod to lock the channel */
+		{
+			msleep(10);  /* Wait 10ms for demod to lock the channel */
+		}
 		else
-			msleep(/* 10 */ 4);    /* Wait 4ms for demod to lock the channel */ //changed from 20 to 4 by Andreas Kircher
+		{
+			msleep(/* 10 */ 4);  /* Wait 4ms for demod to lock the channel */ //changed from 20 to 4 by Andreas Kircher
+		}
 
 		dprintk(20, "%s(): Waiting for lock (tuner %d) c: %d\n", __func__, state->config->tuner_no, cnt);
 	}
-	while	(--cnt);
-
+	while (--cnt);
 
 	if (cnt == 0)
 	{
@@ -1838,8 +1872,9 @@ static int avl6222_set_frontend(struct dvb_frontend *fe, struct dvb_frontend_par
 		eprintk("Could not reset stats!\n");
 	}
 	else
+	{
 		demodLock = 1;
-
+	}
 	mutex_unlock(&state->lock);
 	return ret;
 }
@@ -1851,8 +1886,7 @@ static int avl6222_set_frontend(struct dvb_frontend *fe, struct dvb_frontend_par
  *		  including our slot number.
  * @return A ptr to a DVB API struct dvb_frontend
  */
-struct dvb_frontend *avl6222_attach(struct avl6222_config *config,
-				    struct i2c_adapter *i2c)
+struct dvb_frontend *avl6222_attach(struct avl6222_config *config, struct i2c_adapter *i2c)
 {
 	struct avl6222_state *state = NULL;
 	struct avl6222_ver_info version;
@@ -1888,45 +1922,48 @@ struct dvb_frontend *avl6222_attach(struct avl6222_config *config,
 		dprintk(10, "Patch version: %u.%u.%u\n", version.patch_major, version.patch_minor, version.patch_build);
 	}
 
-	state->equipment.demod_i2c_repeater_send    = avl6222_i2c_repeater_send;
-	state->equipment.demod_i2c_repeater_recv    = avl6222_i2c_repeater_recv;
-	state->equipment.demod_i2c_write            = avl6222_i2c_write;
-	state->equipment.demod_i2c_write16          = avl6222_i2c_write16;
-	state->equipment.demod_i2c_read16           = avl6222_i2c_read16;
-	state->equipment.demod_send_op              = avl6222_send_op;
-	state->equipment.demod_get_op_status        = avl6222_get_op_status;
+	state->equipment.demod_i2c_repeater_send = avl6222_i2c_repeater_send;
+	state->equipment.demod_i2c_repeater_recv = avl6222_i2c_repeater_recv;
+	state->equipment.demod_i2c_write         = avl6222_i2c_write;
+	state->equipment.demod_i2c_write16       = avl6222_i2c_write16;
+	state->equipment.demod_i2c_read16        = avl6222_i2c_read16;
+	state->equipment.demod_send_op           = avl6222_send_op;
+	state->equipment.demod_get_op_status     = avl6222_get_op_status;
 
 	stv6110a_attach(&state->frontend, state, &state->equipment, 16, state->config->max_lpf);
 
 	if (config->usedLNB == cLNB_LNBH221)
+	{
 		state->lnb_priv = lnbh221_attach(state->config->lnb, &state->equipment);
+	}
 	else if (config->usedLNB == cLNB_PIO)
+	{
 		state->lnb_priv = lnb_pio_attach(state->config->lnb, &state->equipment);
+	}
 	else if (config->usedLNB == cLNB_A8293)
+	{
 		state->lnb_priv = lnb_a8293_attach(state->config->lnb, &state->equipment);
-
+	}
 	mutex_init(&state->lock);
 	mutex_init(&state->protect);
-
 	memcpy(&state->frontend.ops, &avl6222_ops, sizeof(struct dvb_frontend_ops));
 	state->frontend.demodulator_priv = state;
-
 	printk("%s: < \n", __FUNCTION__);
-
 	return &state->frontend;
 }
 
 static struct dvb_frontend_ops avl6222_ops =
 {
-	.info =	{
+	.info =
+	{
 		.name = "Availink AVL6222 DVB-S2",
 		.type = FE_QPSK,
-		.frequency_min			=   950000, /* 950 MHz */
-		.frequency_max			=  2150000, /* 2150 MHz */
-		.frequency_stepsize		=     1011, /* 1011 kHz for QPSK frontends */
-		.frequency_tolerance	=     5000, /* 5000 kHz */
-		.symbol_rate_min		=   800000,	/* 800 kSym/s */
-		.symbol_rate_max		= 60000000,	/* 50 MSym/s */
+		.frequency_min       =  950000, /* 950 MHz */
+		.frequency_max       = 2150000, /* 2150 MHz */
+		.frequency_stepsize  = 1011, /* 1011 kHz for QPSK frontends */
+		.frequency_tolerance = 5000, /* 5000 kHz */
+		.symbol_rate_min     = 800000,  /* 800 kSym/s */
+		.symbol_rate_max     = 60000000,  /* 50 MSym/s */
 		.caps = FE_CAN_INVERSION_AUTO |
 		FE_CAN_FEC_1_2 | FE_CAN_FEC_2_3 | FE_CAN_FEC_3_4 |
 		FE_CAN_FEC_4_5 | FE_CAN_FEC_5_6 | FE_CAN_FEC_6_7 |
@@ -1936,21 +1973,21 @@ static struct dvb_frontend_ops avl6222_ops =
 		FE_CAN_QAM_AUTO | FE_CAN_TRANSMISSION_MODE_AUTO | FE_CAN_GUARD_INTERVAL_AUTO |
 		FE_CAN_HIERARCHY_AUTO
 	},
-	.init						= avl6222_initfe,
-	.release					= avl6222_release,
-	.sleep						= avl6222_sleep,
-	.read_status					= avl6222_read_status,
-	.read_ber					= avl6222_read_ber,
-	.read_signal_strength				= avl6222_read_signal_strength,
-	.read_snr					= avl6222_read_snr,
-	.read_ucblocks					= avl6222_read_ucblocks,
-	.set_tone					= avl6222_set_tone,
-	.set_voltage					= avl6222_set_voltage,
-	.diseqc_send_master_cmd				= avl6222_send_diseqc_msg,
-	.diseqc_send_burst				= avl6222_diseqc_send_burst,
-	.set_property					= avl6222_set_property,
-	.get_property					= avl6222_get_property,
-	.set_frontend					= avl6222_set_frontend,
+	.init                   = avl6222_initfe,
+	.release                = avl6222_release,
+	.sleep                  = avl6222_sleep,
+	.read_status            = avl6222_read_status,
+	.read_ber               = avl6222_read_ber,
+	.read_signal_strength   = avl6222_read_signal_strength,
+	.read_snr               = avl6222_read_snr,
+	.read_ucblocks          = avl6222_read_ucblocks,
+	.set_tone               = avl6222_set_tone,
+	.set_voltage            = avl6222_set_voltage,
+	.diseqc_send_master_cmd = avl6222_send_diseqc_msg,
+	.diseqc_send_burst      = avl6222_diseqc_send_burst,
+	.set_property           = avl6222_set_property,
+	.get_property           = avl6222_get_property,
+	.set_frontend           = avl6222_set_frontend,
 };
 
 //---------------------------------------------------------------------
@@ -1981,13 +2018,8 @@ static void avl6222_register_frontend(struct dvb_adapter *dvb_adap, struct socke
 		printk("avl6222: error malloc\n");
 		return;
 	}
-
 	cfg->tuner_no = numSockets;
-
-	cfg->tuner_enable_pin = stpio_request_pin(socket->tuner_enable[0],
-						  socket->tuner_enable[1],
-						  "FE_ENABLE", STPIO_OUT);
-
+	cfg->tuner_enable_pin = stpio_request_pin(socket->tuner_enable[0], socket->tuner_enable[1], "FE_ENABLE", STPIO_OUT);
 	cfg->tuner_active_lh = socket->tuner_enable[2];
 	cfg->demod_address = frontend_cfg[numSockets - 1].demod_i2c;
 	cfg->tuner_address = frontend_cfg[numSockets - 1].tuner_i2c;
@@ -2022,20 +2054,21 @@ static void avl6222_register_frontend(struct dvb_adapter *dvb_adap, struct socke
 		printk("avl6222: avl6222_attach failed\n");
 
 		if (cfg->tuner_enable_pin)
+		{
 			stpio_free_pin(cfg->tuner_enable_pin);
-
+		}
 		kfree(cfg);
 		return;
 	}
-
 	if (dvb_register_frontend(dvb_adap, frontend))
 	{
 		printk("%s: Frontend registration failed !\n", __FUNCTION__);
 		if (frontend->ops.release)
+		{
 			frontend->ops.release(frontend);
+		}
 		return;
 	}
-
 	return;
 }
 
@@ -2053,8 +2086,7 @@ static int avl6222_demod_detect(struct socket_s *socket, struct frontend_s *fron
 		{.addr = frontend_cfg[numSockets].demod_i2c, .flags = I2C_M_RD, .buf = b1, .len = 1}
 	};
 
-	pin = stpio_request_pin(socket->tuner_enable[0], socket->tuner_enable[1],
-				(numSockets == 0) ? "FE1_ENABLE" : "FE2_ENABLE", STPIO_OUT);
+	pin = stpio_request_pin(socket->tuner_enable[0], socket->tuner_enable[1], (numSockets == 0) ? "FE1_ENABLE" : "FE2_ENABLE", STPIO_OUT);
 
 	printk("%s > %s: i2c-%d addr 0x%x\n", __func__, socket->name, socket->i2c_bus, frontend_cfg[numSockets].demod_i2c);
 
@@ -2071,9 +2103,7 @@ static int avl6222_demod_detect(struct socket_s *socket, struct frontend_s *fron
 		msleep(250);
 
 		state.i2c = i2c_get_adapter(socket->i2c_bus);
-
 		printk("%s > state.i2c name = %s, i2c_bus = 0x%x\n", __func__, state.i2c->name, socket->i2c_bus);
-
 		ret = i2c_transfer(state.i2c, msg, 2);
 
 		if (ret != 2)
@@ -2082,28 +2112,20 @@ static int avl6222_demod_detect(struct socket_s *socket, struct frontend_s *fron
 			stpio_free_pin(pin);
 			return -EREMOTEIO;
 		}
-
 		printk("%s: i2c detect reply = 0x%02X\n", __func__, b1[0]);
-
 		struct avl_private_data_s *priv = (struct avl_private_data_s *) frontend_cfg[numSockets].private;
-
 		/* so now lets try to init the demod ... */
 		state.config = kmalloc(sizeof(struct avl6222_config), GFP_KERNEL);
 		state.config->demod_address = frontend_cfg[numSockets].demod_i2c;
 		state.config->pll_config = priv->pll_config;
 		state.frontend.demodulator_priv = &state;
-
 		//--------------------------
-
 		ret = avl6222_setup_pll(&state, (const struct avl6222_pllconf *)(pll_conf + state.config->pll_config));
-
 		mdelay(1);
 		ret |= avl6222_load_firmware(&state.frontend);
 		mdelay(100);
 		ret |= avl6222_get_demod_status(&state.frontend);
-
 		kfree(state.config);
-
 		if (ret != AVL6222_OK)
 		{
 			eprintk("%s: failed to detect avl6222 0x%x\n", __func__, b1[0]);
@@ -2117,11 +2139,8 @@ static int avl6222_demod_detect(struct socket_s *socket, struct frontend_s *fron
 		eprintk("failed to allocate pio pin\n");
 		return 1;
 	}
-
 	stpio_free_pin(pin);
-
 	printk("%s <\n", __func__);
-
 	return 0;
 }
 
@@ -2134,7 +2153,6 @@ static int avl6222_demod_attach(struct dvb_adapter *adapter, struct socket_s *so
 	avl6222_register_frontend(adapter, socket);
 
 	printk("%s <\n", __func__);
-
 	return 0;
 }
 
@@ -2151,14 +2169,12 @@ static int avl6222_probe(struct platform_device *pdev)
 	int i;
 
 	printk("%s >\n", __func__);
-
 	frontend_cfg = kmalloc(plat_data->numConfigs * sizeof(struct platform_frontend_config_s), GFP_KERNEL);
-
 	memcpy(frontend_cfg, plat_data->config, plat_data->numConfigs * sizeof(struct platform_frontend_config_s));
-
 	for (i = 0; i < plat_data->numConfigs; i++)
+	{
 		printk("found frontend \"%s\" in platform config\n", frontend_cfg[i].name);
-
+	}
 	numConfigs = plat_data->numConfigs;
 
 	frontend.demod_detect = avl6222_demod_detect;
@@ -2169,9 +2185,7 @@ static int avl6222_probe(struct platform_device *pdev)
 	{
 		printk("failed to register frontend\n");
 	}
-
 	printk("%s <\n", __func__);
-
 	return 0;
 }
 
@@ -2186,11 +2200,12 @@ static int avl6222_remove(struct platform_device *pdev)
 
 static struct platform_driver avl6222_driver =
 {
-	.probe = avl6222_probe,
+	.probe  = avl6222_probe,
 	.remove = avl6222_remove,
-	.driver	= {
-		.name	= "avl6222",
-		.owner  = THIS_MODULE,
+	.driver	=
+	{
+		.name  = "avl6222",
+		.owner = THIS_MODULE,
 	},
 };
 
@@ -2203,11 +2218,8 @@ int __init avl6222_init(void)
 	int ret;
 
 	printk("%s >\n", __func__);
-
 	ret = platform_driver_register(&avl6222_driver);
-
 	printk("%s < %d\n", __func__, ret);
-
 	return ret;
 }
 
@@ -2241,3 +2253,4 @@ module_init(avl6222_init);
 module_exit(avl6222_cleanup);
 
 //---------------------------------------------------------------------
+// vim:ts=4

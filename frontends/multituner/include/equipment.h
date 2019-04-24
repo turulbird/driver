@@ -25,5 +25,5 @@ struct equipment_s
 	/* must be set by lnb */
 	u16(*lnb_set_voltage)(void *lnb_priv, struct dvb_frontend *fe, fe_sec_voltage_t voltage);
 };
-
 #endif
+// vim:ts=4

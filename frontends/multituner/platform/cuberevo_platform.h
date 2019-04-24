@@ -26,6 +26,9 @@
 
 #include "cx24116_platform.h"
 #include "stv090x_platform.h"
+#include "tda10023_platform.h"
+#include "zl10353_platform.h"
+#include "stv0288_platform.h"
 
 #include "socket.h"
 #include "tuner.h"
@@ -66,20 +69,96 @@ struct stv090x_private_data_s stv090x_tuner_priv =
 	.tuner_refclk         = 16000000,
 };
 
+struct tda10023_private_data_s tda10023_tuner_priv =
+{
+	.xtal             = 28920000,
+	.pll_m            = 0xc,
+	.pll_p            = 2,
+	.pll_n            = 3,
+	.output_mode      = TDA10023_OUTPUT_MODE_PARALLEL_B,
+	.deltaf           = 0xffe3,
+};
+
+struct zl10353_private_data_s zl10353_tuner_priv =
+{
+	.adc_clock             = 450560,
+	.if2                   = 361667, //45710,
+	.no_tuner              = 0,
+	.parallel_ts           = 1,
+	.disable_i2c_gate_ctrl = 0,
+	.clock_ctl_1           = 0,
+	.pll_0                 = 0,
+};
+
+struct stv0288_private_data_s stv0288_tuner_priv =
+{
+	.usedLNB          = cLNB_PIO,
+	.inittab          = NULL,
+	.min_delay_ms     = 100,
+};
+
 struct platform_frontend_config_s cx24116_frontend =
 {
-	.name               = "cx24116",
-	.demod_i2c          = 0x05,
-	.tuner_i2c          = 0xff,
-	.private            = &cx24116_tuner_priv,
+	.name             = "cx24116",
+	.demod_i2c        = 0x05,
+	.tuner_i2c        = 0xff,
+	.private          = &cx24116_tuner_priv,
 };
 
 struct platform_frontend_config_s stv090x_frontend =
 {
-	.name               = "stv090x",
-	.demod_i2c          = 0x68,
-	.tuner_i2c          = 0x60,
-	.private            = &stv090x_tuner_priv,
+	.name             = "stv090x",
+	.demod_i2c        = 0x68,
+	.tuner_i2c        = 0x60,
+	.private          = &stv090x_tuner_priv,
+};
+
+struct platform_device cx24116_frontend_device =
+{
+	.name          = "cx24116",
+	.id            = -1,
+	.dev           =
+	{
+		.platform_data = &cx24116_frontend,
+	},
+	.num_resources = 0,
+	.resource      = NULL,
+};
+
+struct platform_device stv090x_frontend_device =
+{
+	.name          = "stv090x",
+	.id            = -1,
+	.dev           =
+	{
+		.platform_data = &stv090x_frontend,
+	},
+	.num_resources = 0,
+	.resource      = NULL,
+};
+
+struct platform_frontend_config_s tda10023_frontend =
+{
+	.name          = "tda10023",
+	.demod_i2c     = 0x0C,
+	.tuner_i2c     = 0x61,
+	.private       = &tda10023_tuner_priv,
+};
+
+struct platform_frontend_config_s zl10353_frontend =
+{
+	.name          = "zl10353",
+	.demod_i2c     = 0x0e,
+	.tuner_i2c     = 0x63,
+	.private       = &zl10353_tuner_priv,
+};
+
+struct platform_frontend_config_s stv0288_frontend =
+{
+	.name          = "stv0288",
+	.demod_i2c     = 0x68,
+	.tuner_i2c     = 0x60,
+	.private       = &stv0288_tuner_priv,
 };
 
 struct tunersocket_s cuberevo_socket =
@@ -106,42 +185,84 @@ struct tunersocket_s cuberevo_socket =
 
 struct platform_device cx24116_frontend_device =
 {
-	.name    = "cx24116",
-	.id      = -1,
-	.dev     = {
+	.name          = "cx24116",
+	.id            = -1,
+	.dev           =
+	{
 		.platform_data = &cx24116_frontend,
 	},
-	.num_resources        = 0,
-	.resource             = NULL,
+	.num_resources = 0,
+	.resource      = NULL,
 };
 
 struct platform_device stv090x_frontend_device =
 {
-	.name    = "stv090x",
-	.id      = -1,
-	.dev     = {
+	.name          = "stv090x",
+	.id            = -1,
+	.dev           =
+	{
 		.platform_data = &stv090x_frontend,
 	},
-	.num_resources        = 0,
-	.resource             = NULL,
+	.num_resources = 0,
+	.resource      = NULL,
+};
+
+struct platform_device tda10023_frontend_device =
+{
+	.name          = "tda10023",
+	.id            = -1,
+	.dev           =
+	{
+		.platform_data = &tda10023_frontend,
+	},
+	.num_resources = 0,
+	.resource      = NULL,
+};
+
+struct platform_device zl10353_frontend_device =
+{
+	.name          = "zl10353",
+	.id            = -1,
+	.dev           =
+	{
+		.platform_data = &zl10353_frontend,
+	},
+	.num_resources = 0,
+	.resource      = NULL,
+};
+
+struct platform_device stv0288_frontend_device =
+{
+	.name          = "stv0288",
+	.id            = -1,
+	.dev           =
+	{
+		.platform_data = &stv0288_frontend,
+	},
+	.num_resources = 0,
+	.resource      = NULL,
 };
 
 struct platform_device cuberevo_socket_device =
 {
-	.name    = "socket",
-	.id      = -1,
-	.dev     = {
+	.name          = "socket",
+	.id            = -1,
+	.dev           =
+	{
 		.platform_data = &cuberevo_socket,
 	},
-	.num_resources        = 0,
-	.resource             = NULL,
+	.num_resources = 0,
+	.resource      = NULL,
 };
 
 struct platform_device *platform[] __initdata =
 {
 	&cx24116_frontend_device,
 	&stv090x_frontend_device,
+	&tda10023_frontend_device,
+	&zl10353_frontend_device,
+	&stv0288_frontend_device,
 	&cuberevo_socket_device,
 };
-
 #endif
+// vim:ts=4

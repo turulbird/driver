@@ -8,28 +8,28 @@
  *
  * @brief handling of mixed tuner's in one box.
  *
- * 	Copyright (C) 2011 duckbox project
+ * Copyright (C) 2011 duckbox project
  *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
  *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
 #include "dvb_frontend.h"
 
 struct socket_s
 {
-	char  *name;
+	char *name;
 
 	/*
 	 * tuner enable pin
@@ -37,7 +37,7 @@ struct socket_s
 	 *  - pio pin
 	 *  - active low/high
 	 */
-	int    tuner_enable[3];
+	int tuner_enable[3];
 
 	/* the following arrays define
 	 *  - i2c-bus
@@ -58,7 +58,7 @@ struct socket_s
 	u32 lnb[6];
 
 	/* tuners i2c bus */
-	int    i2c_bus;
+	int i2c_bus;
 };
 
 struct tunersocket_s
@@ -80,3 +80,4 @@ extern int socket_register_frontend(struct frontend_s *frontend);
 extern int socket_register_adapter(struct dvb_adapter *_adapter);
 
 #endif
+// vim:ts-4

@@ -76,9 +76,9 @@ struct stv090x_private_data_s
 	u32                      alternativePath; /* for e.g. fortis hdbox */
 	u32                      shouldSleep;     /* some tuner frozes when they sleep */
 
-	enum stv090x_device		 device;
+	enum stv090x_device      device;
 	enum stv090x_demodulator demod;
-	enum stv090x_mode		 demod_mode;
+	enum stv090x_mode        demod_mode;
 	enum stv090x_clkmode	 clk_mode;
 
 	u32                      xtal; /* default: 8000000 */
@@ -90,17 +90,17 @@ struct stv090x_private_data_s
 	u32                      ts1_clk;
 	u32                      ts2_clk;
 
-	enum stv090x_i2crpt		 repeater_level;
+	enum stv090x_i2crpt      repeater_level;
 
-	u8						 tuner_bbgain; /* default: 10db */
+	u8                       tuner_bbgain; /* default: 10db */
 	enum stv090x_adc_range	 adc1_range; /* default: 2Vpp */
 	enum stv090x_adc_range	 adc2_range; /* default: 2Vpp */
-	bool 					 diseqc_envelope_mode;
+	bool                     diseqc_envelope_mode;
 
-	/* fixme: later move this to a separated tuner config
+	/* FIXME: later move this to a separated tuner config
 	 * if we have separated demod's and tuner
 	 */
 	u32                      tuner_refclk;
 };
-
 #endif
+// vim:ts=4

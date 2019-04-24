@@ -72,10 +72,10 @@ struct cx24116_private_data_s cx24116_tuner_priv =
 
 struct platform_frontend_config_s cx24116_frontend =
 {
-	.name               = "cx24116",
-	.demod_i2c          = 0x05,
-	.tuner_i2c          = 0xff,
-	.private            = &cx24116_tuner_priv,
+	.name             = "cx24116",
+	.demod_i2c        = 0x05,
+	.tuner_i2c        = 0xff,
+	.private          = &cx24116_tuner_priv,
 };
 
 struct platform_frontend_config_s avl2108_frontend =
@@ -94,54 +94,57 @@ struct tunersocket_s ufs922_socket =
 	{
 		[0] =
 		{
-			.name             = "socket-1",
+			.name         = "socket-1",
 
-			.tuner_enable       = {2, 4, 1},
-			.lnb                = {0, 0x0a, 0x08, 0xd0, 0xd4, 0xdc},
-			.i2c_bus            = 0,
+			.tuner_enable = {2, 4, 1},
+			.lnb          = {0, 0x0a, 0x08, 0xd0, 0xd4, 0xdc},
+			.i2c_bus      = 0,
 		},
 		[1] =
 		{
-			.name               = "socket-2",
+			.name         = "socket-2",
 
-			.tuner_enable       = {2, 5, 1},
-			.lnb                = {1, 0x0a, 0x08, 0xd0, 0xd4, 0xdc},
-			.i2c_bus            = 1,
+			.tuner_enable = {2, 5, 1},
+			.lnb          = {1, 0x0a, 0x08, 0xd0, 0xd4, 0xdc},
+			.i2c_bus      = 1,
 		},
 	},
 };
 
 struct platform_device avl2108_frontend_device =
 {
-	.name    = "avl2108",
-	.id      = -1,
-	.dev     = {
+	.name          = "avl2108",
+	.id            = -1,
+	.dev           =
+	{
 		.platform_data = &avl2108_frontend,
 	},
-	.num_resources        = 0,
-	.resource             = NULL,
+	.num_resources = 0,
+	.resource      = NULL,
 };
 
 struct platform_device cx24116_frontend_device =
 {
-	.name    = "cx24116",
-	.id      = -1,
-	.dev     = {
+	.name          = "cx24116",
+	.id            = -1,
+	.dev           =
+	{
 		.platform_data = &cx24116_frontend,
 	},
-	.num_resources        = 0,
-	.resource             = NULL,
+	.num_resources = 0,
+	.resource      = NULL,
 };
 
 struct platform_device ufs922_socket_device =
 {
-	.name    = "socket",
-	.id      = -1,
-	.dev     = {
+	.name          = "socket",
+	.id            = -1,
+	.dev           =
+	{
 		.platform_data = &ufs922_socket,
 	},
-	.num_resources        = 0,
-	.resource             = NULL,
+	.num_resources = 0,
+	.resource      = NULL,
 };
 
 struct platform_device *platform[] __initdata =
@@ -150,5 +153,5 @@ struct platform_device *platform[] __initdata =
 	&avl2108_frontend_device,
 	&ufs922_socket_device,
 };
-
 #endif
+// vim:ts=4

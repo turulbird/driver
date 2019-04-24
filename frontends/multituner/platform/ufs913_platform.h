@@ -3,21 +3,21 @@
  *
  * @author konfetti
  *
- * 	Copyright (C) 2012 duckbox
+ * Copyright (C) 2012 duckbox
  *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
  *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
 #ifndef _ufs913_123
@@ -68,17 +68,17 @@ struct platform_frontend_s avl6222_frontend =
 	{
 		[0] =
 		{
-			.name               = "avl6222-1",
-			.demod_i2c          = 0x0D,
-			.tuner_i2c          = 0xC0,
-			.private            = &avl_tuner_priv,
+			.name      = "avl6222-1",
+			.demod_i2c = 0x0D,
+			.tuner_i2c = 0xC0,
+			.private   = &avl_tuner_priv,
 		},
 		[1] =
 		{
-			.name               = "avl6222-2",
-			.demod_i2c          = 0x0C,
-			.tuner_i2c          = 0xC0,
-			.private            = &avl_tuner_priv,
+			.name      = "avl6222-2",
+			.demod_i2c = 0x0C,
+			.tuner_i2c = 0xC0,
+			.private   = &avl_tuner_priv,
 		},
 	},
 };
@@ -90,43 +90,45 @@ struct tunersocket_s ufs913_socket =
 	{
 		[0] =
 		{
-			.name               = "socket-1",
+			.name         = "socket-1",
 
-			.tuner_enable       = {3, 3, 1},
-			.lnb                = {2, 0x08, 0x00, 0x04, 0x0B, 0x10},
-			.i2c_bus            = 2,
+			.tuner_enable = {3, 3, 1},
+			.lnb          = {2, 0x08, 0x00, 0x04, 0x0B, 0x10},
+			.i2c_bus      = 2,
 		},
 		[1] =
 		{
-			.name               = "socket-2",
+			.name         = "socket-2",
 
-			.tuner_enable       = {3, 2, 1},
-			.lnb                = {3, 0x08, 0x00, 0x04, 0x0B, 0x10},
-			.i2c_bus            = 2,
+			.tuner_enable = {3, 2, 1},
+			.lnb          = {3, 0x08, 0x00, 0x04, 0x0B, 0x10},
+			.i2c_bus      = 2,
 		},
 	},
 };
 
 struct platform_device avl6222_frontend_device =
 {
-	.name    = "avl6222",
-	.id      = -1,
-	.dev     = {
+	.name          = "avl6222",
+	.id            = -1,
+	.dev           =
+	{
 		.platform_data = &avl6222_frontend,
 	},
-	.num_resources        = 0,
-	.resource             = NULL,
+	.num_resources = 0,
+	.resource      = NULL,
 };
 
 struct platform_device ufs913_socket_device =
 {
-	.name    = "socket",
-	.id      = -1,
-	.dev     = {
+	.name          = "socket",
+	.id            = -1,
+	.dev           =
+	{
 		.platform_data = &ufs913_socket,
 	},
-	.num_resources        = 0,
-	.resource             = NULL,
+	.num_resources = 0,
+	.resource      = NULL,
 };
 
 struct platform_device *platform[] __initdata =
@@ -134,5 +136,5 @@ struct platform_device *platform[] __initdata =
 	&avl6222_frontend_device,
 	&ufs913_socket_device,
 };
-
 #endif
+// vim:ts=4
