@@ -145,7 +145,7 @@ struct tunersocket_s cuberevo_socket =
 		[0] =
 		{
 			.name               = "socket-1",
-			.tuner_enable       = { -1, -1, -1},
+			.tuner_enable       = {-1, -1, -1},
 			.lnb                = {2, 6, 1, 2, 5, 0},
 			.i2c_bus            = 0,
 		},
@@ -154,13 +154,14 @@ struct tunersocket_s cuberevo_socket =
 
 struct platform_device cx24116_frontend_device =
 {
-	.name    = "cx24116",
-	.id      = -1,
-	.dev     = {
+	.name         = "cx24116",
+	.id           = -1,
+	.dev          =
+	{
 		.platform_data = &cx24116_frontend,
 	},
-	.num_resources        = 0,
-	.resource             = NULL,
+	.num_resources = 0,
+	.resource      = NULL,
 };
 
 struct platform_device stv090x_frontend_device =
@@ -213,13 +214,14 @@ struct platform_device stv0288_frontend_device =
 
 struct platform_device cuberevo_socket_device =
 {
-	.name    = "socket",
-	.id      = -1,
-	.dev     = {
+	.name          = "socket",
+	.id            = -1,
+	.dev           =
+	{
 		.platform_data = &cuberevo_socket,
 	},
-	.num_resources        = 0,
-	.resource             = NULL,
+	.num_resources = 0,
+	.resource      = NULL,
 };
 
 struct platform_device *platform[] __initdata =
