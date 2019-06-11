@@ -21,8 +21,8 @@
  * Driver for the frontcontroller of the following receivers:
  *
  * Cuberevo: 250HD / Mini / Mini II / (no model name) / 2000HD / 3000HD / 9500HD
- * AB      : IPbox91HD / IPbox900HD/IPbox910HD / IPbox9000HD
- * Vizyon  : revolution 810HD /820HD PVR / 8000HD PVR  
+ * AB      : IPbox91HD / IPbox900HD/ IPbox910HD / IPbox9000HD
+ * Vizyon  : revolution 810HD / 820HD PVR / 8000HD PVR  
  *
  * Devices:
  *  - /dev/vfd  (vfd ioctls and read/write function)
