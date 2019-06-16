@@ -1,5 +1,5 @@
 /*
- * micom_asc.c
+ * vitamin_micom_asc.c
  *
  * (c) 2009 Dagobert@teamducktales
  * (c) 2010 Schischu & konfetti: Add irq handling
@@ -11,7 +11,7 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
@@ -34,12 +34,12 @@
 #include <linux/time.h>
 #include <linux/poll.h>
 
-#include "micom.h"
-#include "micom_asc.h"
+#include "vitamin_micom.h"
+#include "vitamin_micom_asc.h"
 
 //-------------------------------------
 
-unsigned int InterruptLine = 121;
+unsigned int InterruptLine   = 121;
 unsigned int ASCXBaseAddress = ASC2BaseAddress;
 
 //-------------------------------------
@@ -61,9 +61,9 @@ void serial_init(void)
 
 int serial_putc(char Data)
 {
-	char                  *ASC_X_TX_BUFF = (char *)(ASCXBaseAddress + ASC_TX_BUFF);
-	unsigned int          *ASC_X_INT_STA = (unsigned int *)(ASCXBaseAddress + ASC_INT_STA);
-	unsigned long         Counter = 200000;
+	char          *ASC_X_TX_BUFF = (char *)(ASCXBaseAddress + ASC_TX_BUFF);
+	unsigned int  *ASC_X_INT_STA = (unsigned int *)(ASCXBaseAddress + ASC_INT_STA);
+	unsigned long Counter        = 200000;
 
 	while (((*ASC_X_INT_STA & ASC_INT_STA_THE) == 0) && --Counter)
 	{
@@ -75,8 +75,7 @@ int serial_putc(char Data)
 	{
 		dprintk(1, "Error writing char (%c) \n", Data);
 	}
-
 	*ASC_X_TX_BUFF = Data;
 	return 1;
 }
-
+// vim:ts=4
