@@ -85,8 +85,8 @@ struct saved_data_s
 	int  length;
 	char data[128];
 	int  ledBlue;
-//	int  ledGreen;
-//	int  ledRed;
+	int  ledGreen;
+	int  ledRed;
 };
 
 static struct saved_data_s lastdata;
@@ -166,7 +166,7 @@ int micomWriteCommand(char command, char *buffer, int len, int needLen)
 		serial_putc(buffer[i]);
 	}
 	udelay(1000);
-#if 0
+#if 0  // There are no commands that require an ACK at the moment
 	if (needAck)
 	{
 		if (ack_sem_down())
@@ -195,13 +195,13 @@ struct iconToInternal
 { //
 	// #      Code     Name   
 	/*00 */ { NO_ICON, "none"          },
-	/*01 */ { 0x2001,  "ICON_TV"       },  //CLASS_FIGURE2
-	/*02 */ { 0x1001,  "ICON_RADIO"    },  //CLASS_FIGURE2
-	/*03 */ { 0x0801,  "ICON_REPEAT"   },  //CLASS_FIGURE2
+	/*01 */ { 0x2001,  "ICON_TV"       },  // CLASS_FIGURE2
+	/*02 */ { 0x1001,  "ICON_RADIO"    },  // CLASS_FIGURE2
+	/*03 */ { 0x0801,  "ICON_REPEAT"   },  // CLASS_FIGURE2
 	/*04 */ { 0x0502,  "ICON_CIRCLE"   },  // spinner
 	/*05 */ { 0x8000,  "ICON_RECORD"   },
-	/*06 */ { 0x4001,  "ICON_POWER"    },  //CLASS_FIGURE2
-	/*07 */ { 0x8001,  "ICON_PWR_CIRC" },  //CLASS_FIGURE2
+	/*06 */ { 0x4001,  "ICON_POWER"    },  // CLASS_FIGURE2
+	/*07 */ { 0x8001,  "ICON_PWR_CIRC" },  // CLASS_FIGURE2
 	/*08 */ { 0x4000,  "ICON_DOLBY"    },
 	/*09 */ { 0x2000,  "ICON_MUTE"     },
 	/*0a */ { 0x1000,  "ICON_DOLLAR"   },
@@ -217,7 +217,7 @@ struct iconToInternal
 
 int gVfdIconState  = 0;  // CLASS_FIGURE
 int gVfdIconState2 = 0;  // CLASS_FIGURE2
-int gVfdIconCircle = 0;  // circle
+int gVfdIconCircle = 0;  // spinner
 
 /*******************************************************************
  *
@@ -258,11 +258,11 @@ int micomSetIcon(int which, int on)
 	{
 		if (!icon_sel)  // if group 0
 		{
-			gVfdIconState &= ~which;  //remove bitmask
+			gVfdIconState &= ~which;  // remove bitmask
 		}
 		else if (icon_sel == 1)  // if group 1
 		{
-			gVfdIconState2 &= ~which;  //remove bitmask
+			gVfdIconState2 &= ~which;  // remove bitmask
 		}
 		else if (icon_sel == 2)  // if group 2 (icon circle only)
 		{
@@ -338,7 +338,6 @@ int micomSetBLUELED(int on)
 /* export for later use in e2_proc */
 EXPORT_SYMBOL(micomSetBLUELED);
 
-#if 0
 /*******************************************************************
  *
  * micomSetGREENLED: sets the state of the green LED on front panel display.
@@ -356,17 +355,15 @@ int micomSetGREENLED(int on)
 	memset(buffer, 0, sizeof(buffer));
 	buffer[0] = 0xA0 + (on == 0 ? 1 : 0);
 
-//	res = micomWriteCommand(CLASS_LED, buffer, 7, 0);
 	res = micomWriteCommand(CLASS_BLUELED, buffer, 1, 0);
 	lastdata.ledGreen = on;
 	dprintk(100, "%s <\n", __func__);
 	return res;
 }
 /* export for later use in e2_proc */
-EXPORT_SYMBOL(micomSetGREENLED);
-#endif
+//EXPORT_SYMBOL(micomSetGREENLED);
 
-#if 0
+
 /*******************************************************************
  *
  * micomSetREDLED: sets the state of the red LED on front panel display.
@@ -383,15 +380,14 @@ int micomSetREDLED(int on)
 	dprintk(100, "%s > %d\n", __func__,  on);
 	memset(buffer, 0, sizeof(buffer));
 	buffer[0] = 0xB0 + (on == 0 ? 1 : 0);
-//	res = micomWriteCommand(CLASS_LED, buffer, 7, 0);
 	res = micomWriteCommand(CLASS_BLUELED, buffer, 1, 0);
 	lastdata.ledRed = on;
 	dprintk(100, "%s <\n", __func__);
 	return res;
 }
 /* export for later use in e2_proc */
-EXPORT_SYMBOL(micomSetREDLED);
-#endif
+//EXPORT_SYMBOL(micomSetREDLED);
+
 
 /****************************************************************
  *
@@ -427,10 +423,10 @@ EXPORT_SYMBOL(micomSetBrightness);
 int micomSetLedBrightness(int level)
 {
 	// uses CLASS_LED cmd?
-	// does nothing; hardware is not capable of LED dimming
+	// does nothing; hardware seems to be not capable of LED dimming
 	return 0;
 }
-EXPORT_SYMBOL(micomSetLedBrightness);
+//EXPORT_SYMBOL(micomSetLedBrightness);
 #endif
 
 /**************************************************
@@ -455,29 +451,6 @@ int micomSetStandby(void)
 #if 0
 /**************************************************
  *
- * micomSetDeepstandby: shuts all power off except
- *                      front processor.
- *
- */
-// 60 00 00
-int micomSetDeepStandby(void)
-{
-	char buffer[2];
-	int  res = 0;
-
-	memset(buffer, 0, sizeof(buffer));
-	buffer[0] = POWER_DOWN;  // 0x00
-	buffer[1] = 0x00;  // 0x00
-//	buffer[2] = 0xff;  // 0xff
-//	buffer[3] = 0xff;  // 0xff
-	res = micomWriteCommand(CLASS_POWER, buffer, 2, 0);
-	return res;
-}
-#endif
-
-#if 0
-/**************************************************
- *
  * micomSetTime: sets front panel clock time.
  *
  */
@@ -485,7 +458,7 @@ int micomSetTime(char *time)
 {
 	char buffer[4];
 	int  res = 0;
-#if 1
+
 	dprintk(100, "%s > \n", __func__);
 	dprintk(10, "Time to set: %02d:%02d:%02d\n", time[2], time[1], time[0]);
 
@@ -506,7 +479,6 @@ int micomSetTime(char *time)
 //	res = micomWriteCommand(CLASS_CLOCKHI, buffer, 4, 0);
 
 	dprintk(100, "%s <\n", __func__);
-#endif
 	return res;
 }
 #endif
@@ -554,6 +526,7 @@ int micomGetVersion(void)
 #endif
 
 
+#if 0
 /*************************************************************
  *
  * micomGetWakeUpMode: read wake up reason from front panel.
@@ -562,7 +535,6 @@ int micomGetVersion(void)
 int micomGetWakeUpMode(void)
 {
 	int  res = 0;
-#if 0
 	char buffer[8];
 
 	dprintk(100, "%s >\n", __func__);
@@ -587,15 +559,14 @@ int micomGetWakeUpMode(void)
 		dprintk(0, "time received\n");
 	}
 	dprintk(100, "%s <\n", __func__);
-#endif
 	return res;
 }
+#endif
 
-#if 0
 /****************************************************************
  *
  * micomReboot: reboot receiver.
- * FIXME: null in original
+ *
  */
 int micomReboot(void)
 {
@@ -606,11 +577,10 @@ int micomReboot(void)
 	memset(buffer, 0, sizeof(buffer));
 	buffer[0] = 0;
 	buffer[1] = POWER_RESET;
-	res = micomWriteCommand(CLASS_POWER, buffer, 2, 0);
+	res = micomWriteCommand(CLASS_RESET, buffer, 2, 0);
 	dprintk(100, "%s <\n", __func__);
 	return res;
 }
-#endif
 
 #if defined(VFDTEST)
 /*************************************************************
@@ -628,14 +598,6 @@ int micomVfdTest(unsigned char *data)
 
 	dprintk(100, "%s > len = %d, command = 0x%02x\n", __func__, data[0], data[1]);
 
-#if 0
-	dprintk(1, "Received data:\n");
-	for (i = 0; i <= data[0]; i++)
-	{
-		dprintk(1, "data[%02d] = 0x%02x\n", i, data[i]);
-	}
-#endif
-
 	sendlen = data[0] - 1;
 
 	if (data[1] == CLASS_DISPLAY2)  // requires sending length
@@ -647,7 +609,7 @@ int micomVfdTest(unsigned char *data)
 	{
 		memset(buffer, 0, sizeof(buffer));  // fill buffer with zeroes
 	}	
-	memcpy(buffer, data + 2, data[0] - 1); // copy the remaining bytes to send ((len - 1) bytes)
+	memcpy(buffer, data + 2, sendlen); // copy the remaining bytes to send
 	memset(ioctl_data, 0, sizeof(ioctl_data));
 
 #if 0
@@ -679,7 +641,7 @@ int micomVfdTest(unsigned char *data)
 	else
 	{
 		data[0] = 0;  // command went OK
-		for (i = 0; i < 6; i++) // we can receive up 6 bytes back
+		for (i = 0; i < 6; i++) // we can receive up 6 bytes back TODO: test this
 		{
 			data[i + 1] = ioctl_data[i];  // copy return data
 		}
@@ -856,16 +818,16 @@ int micomInitialize(void)
 	/* MICOM Tx Data Blocking Off */
 	memset(buffer, 0, sizeof(buffer));
 	buffer[0] = 0;
-	res = micomWriteCommand(CLASS_BLOCK, buffer, 7, 0);
+	res |= micomWriteCommand(CLASS_BLOCK, buffer, 7, 0);
 
 	/* Mute request On */
 	memset(buffer, 0, sizeof(buffer));
 	buffer[0] = 1;
-	res = micomWriteCommand(CLASS_MUTE, buffer, 7, 0);
+	res |= micomWriteCommand(CLASS_MUTE, buffer, 7, 0);
 	/* Watchdog On */
 	memset(buffer, 0, sizeof(buffer));
 	buffer[0] = 1;
-	res = micomWriteCommand(CLASS_WDT, buffer, 7, 0);
+	res |= micomWriteCommand(CLASS_WDT, buffer, 7, 0);
 
 	/* Send custom IR data */
 	memset(buffer, 0, sizeof(buffer));
@@ -874,7 +836,7 @@ int micomInitialize(void)
 	buffer[2] = IR_POWER;  // 0x5f
 	buffer[3] = FRONT_POWER; // 0x00
 	buffer[4] = 0x01; // last power  (on?)
-	res = micomWriteCommand(CLASS_FIX_IR, buffer, 5, 0);
+	res |= micomWriteCommand(CLASS_FIX_IR, buffer, 5, 0);
 
 	dprintk(100, "%s <\n", __func__);
 	return res;
@@ -882,7 +844,7 @@ int micomInitialize(void)
 
 /****************************************************************
  *
- * micomInitialize: initialize the driver.
+ * micom_init_func: initialize the driver.
  *
  */
 int micom_init_func(void)
@@ -899,19 +861,19 @@ int micom_init_func(void)
 	micomInitialize();  // initialize the front processor
 
 	res = micomSetBrightness(5);
-	msleep(1);
+	msleep(10);
 	res |= micomClearIcons();
-	msleep(1);
+	msleep(10);
 	res |= micomSetBLUELED(0);  // Blue LED off
-	msleep(1);
-//	res |= micomSetGREENLED(0);  // Green LED off
-//	msleep(1);
-//	res |= micomSetREDLED(0);  // Red LED off
-//	msleep(1);
+	msleep(10);
+	res |= micomSetGREENLED(0);  // Green LED off
+	msleep(10);
+	res |= micomSetREDLED(0);  // Red LED off
+	msleep(10);
 #if 0
 	res |= micomWriteString(" Vitamin HD", strlen(" Vitamin HD"));
 #else
-	res = clear_display();
+	res |= clear_display();
 #endif
 	dprintk(100, "%s <\n", __func__);
 	return res;
@@ -1189,20 +1151,16 @@ static int MICOMdev_ioctl(struct inode *Inode, struct file *File, unsigned int c
 			res = micomSetBLUELED(micom->u.led.on);
 			break;
 		}
-#if 0
 		case VFDSETREDLED:
 		{
 			res = micomSetREDLED(micom->u.led.on);
 			break;
 		}
-#endif
-#if 0
 		case VFDSETGREENLED:
 		{
 			res = micomSetGREENLED(micom->u.led.on);
 			break;
 		}
-#endif
 		case VFDBRIGHTNESS:
 		{
 			if (mode == 0)
@@ -1288,30 +1246,20 @@ static int MICOMdev_ioctl(struct inode *Inode, struct file *File, unsigned int c
 			mode = 0;  // fall back to vfd mode
 			break;
 		}
-#if 1
-		case VFDSTANDBY:  // standby is handled by E2
-//		case VFDDEEPSTANDBY:
+		case VFDSTANDBY:
 		{
 			clear_display();
-#if 0
-			dprintk(10, "Set standby mode, wake up time: (MJD= %d) - %02d:%02d:%02d (local)\n", (micom->u.standby.time[0] & 0xff) * 256 + (micom->u.standby.time[1] & 0xff),
-				micom->u.standby.time[2], micom->u.standby.time[3], micom->u.standby.time[4]);
-	
-			res = micomSetStandby(micom->u.standby.time);
-#else
+			dprintk(10, "Set deep standby mode\n");
+//			res = micomSetStandby(micom->u.standby.time);
 			res = micomSetStandby();
-#endif
 			break;
 		}
-#endif
-#if 0
 		case VFDREBOOT:
 		{
 			res = micomReboot();
 			mode = 0;
 			break;
 		}
-#endif
 #if 0
 		case VFDSETTIME:
 		{
@@ -1359,6 +1307,15 @@ static int MICOMdev_ioctl(struct inode *Inode, struct file *File, unsigned int c
 #endif
 		case 0x5305:
 		{
+			break;
+		}
+		case VFDLEDBRIGHTNESS:
+		case VFDGETWAKEUPMODE:
+		case VFDGETTIME:
+		case VFDSETTIME:
+		{
+			dprintk(0, "Unsupported IOCTL 0x%x\n", cmd);
+			mode = 0;  // go back to vfd mode
 			break;
 		}
 		default:

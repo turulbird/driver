@@ -53,7 +53,7 @@ extern tFrontPanelOpen FrontPanelOpen[LASTMINOR];
 #define VFDDRIVERINIT        0xc0425a08
 #define VFDICONDISPLAYONOFF  0xc0425a0a
 // comment next line to leave VFDTEST capabilities out
-#define VFDTEST              0xc0425af0 // added by audioniek
+#define VFDTEST              0xc0425af0  // added by audioniek
 #define VFDGETVERSION        0xc0425af7
 #define VFDLEDBRIGHTNESS     0xc0425af8
 #define VFDGETWAKEUPMODE     0xc0425af9
@@ -67,7 +67,6 @@ extern tFrontPanelOpen FrontPanelOpen[LASTMINOR];
 #define VFDSETREDLED         0xc0425af6  // !! unique for vitamin, does not work
 #define VFDSETGREENLED       0xc0425af5  // !! unique for vitamin, does not work
 #define VFDDISPLAYCLR        0xc0425b00
-#define VFDDEEPSTANDBY       0xc0425a81  // !! unique for vitamin, same as VFDSTANDBY
 
 #define	NO_ICON	             0x0000
 
@@ -155,10 +154,11 @@ struct vfd_ioctl_data
  *
  * List of possible commands to the front processor
  *
- * Length is opcode plus parameters (without SOP and EOP)
+ * Length is opcode plus parameters
  *
- *      Command name  Opcode  Parameters                               Returns
- */enum MICOM_CLA_E
+ *      Command name  Opcode
+ */
+enum MICOM_CLA_E
 {
 	CLASS_BOOTCHECK = 0x01,  /* loader only */
 	CLASS_MCTX      = 0x02,  // TX on/off (cmd)
@@ -238,7 +238,6 @@ enum
 	ICON_MAX = ICON_ALL
 };
 
-//extern tIconState spinner_state;
 extern int rtc_offset;
 #endif
 // vim:ts=4
