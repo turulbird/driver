@@ -353,3 +353,29 @@ obj-y += dvbt/siano/
 endif
 
 endif
+
+clean:
+	rm player2/linux/drivers/media/dvb/stm/allocator/modules.order
+	rm player2/linux/drivers/media/dvb/stm/backend/modules.order
+	rm player2/linux/drivers/media/dvb/stm/dvb/modules.order
+	rm player2/linux/drivers/media/dvb/stm/h264_preprocessor/modules.order
+	rm player2/linux/drivers/media/dvb/stm/mpeg2_hard_host_transformer/modules.order
+	rm player2/linux/drivers/media/sysfs/stm/modules.order
+	rm player2/linux/drivers/sound/kreplay/modules.order
+	rm player2/linux/drivers/sound/ksound/modules.order
+	rm player2/linux/drivers/sound/pcm_transcoder/modules.order
+	rm player2/linux/drivers/sound/pseudocard/modules.order
+	rm player2/linux/drivers/sound/silencegen/modules.order
+	rm player2/linux/drivers/stm/mmelog/modules.order
+	rm player2/linux/drivers/stm/monitor/modules.order
+	rm player2/linux/drivers/stm/platform/modules.order
+	rm player2/linux/modules.order
+	rm player2/modules.order
+
+
+
+
+
+
+
+
