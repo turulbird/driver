@@ -174,7 +174,7 @@ static const struct stv090x_tab stv090x_s2cn_tab[] =
 	{ 320,   593 }, /* 32.0dB */
 	{ 330,   571 }, /* 33.0dB */
 	{ 400,   498 }, /* 40.0dB */
-	{ 450, 	 484 }, /* 45.0dB */
+	{ 450,   484 }, /* 45.0dB */
 	{ 500,	 481 }	/* 50.0dB */
 };
 
@@ -1537,7 +1537,8 @@ static struct stv090x_reg stv0903_initval[] =
 	{ STV090x_P1_TNRSTEPS,		0x87 },
 	{ STV090x_P1_TNRGAIN,		0x09 },
 
-	/* TDT	{ STV090x_P1_DMDCFGMD,		0xF9 },*/
+	/* TDT
+	{ STV090x_P1_DMDCFGMD,		0xF9 }, */
 	{ STV090x_P1_DMDCFGMD,		0xc9 },
 	{ STV090x_P1_DEMOD,		0x08 },
 	{ STV090x_P1_DMDCFG3,		0xc4 },
@@ -1628,8 +1629,8 @@ static struct stv090x_reg stv0903_initval[] =
 	{ STV090x_GAINLLR_NF16,		0x1F },
 	{ STV090x_GAINLLR_NF17,		0x21 },
 	{ STV090x_RCCFGH,		0x20 },
-	{ STV090x_P1_FECM,		0x01 }, /*disable the DSS mode */
-	{ STV090x_P1_PRVIT,		0x2f }  /*disable puncture rate 6/7*/
+	{ STV090x_P1_FECM,		0x01 },  /*disable the DSS mode */
+	{ STV090x_P1_PRVIT,		0x2f }   /*disable puncture rate 6/7*/
 };
 
 static struct stv090x_reg stv0900_cut20_val[] =
@@ -1829,9 +1830,13 @@ static struct stv090x_short_frame_crloop stv090x_s2_short_crl_cut30[] =
 static inline s32 comp2(s32 __x, s32 __width)
 {
 	if (__width == 32)
+	{
 		return __x;
+	}
 	else
+	{
 		return (__x >= (1 << (__width - 1))) ? (__x - (1 << __width)) : __x;
+	}
 }
 
 static int stv090x_read_reg(struct stv090x_state *state, unsigned int reg)
@@ -1853,8 +1858,9 @@ static int stv090x_read_reg(struct stv090x_state *state, unsigned int reg)
 	if (ret != 2)
 	{
 		if (ret != -ERESTARTSYS)
+		{
 			printk("Read error, Reg=[0x%02x], Status=%d\n", reg, ret);
-
+		}
 		return ret < 0 ? ret : -EREMOTEIO;
 	}
 
@@ -1890,7 +1896,9 @@ static int stv090x_write_regs(struct stv090x_state *state, unsigned int reg, u8 
 	if (ret != 1)
 	{
 		if (ret != -ERESTARTSYS)
+		{
 			printk("Reg=[0x%04x], Data=[0x%02x ...], Count=%u, Status=%d\n", reg, data[0], count, ret);
+		}
 		return ret < 0 ? ret : -EREMOTEIO;
 	}
 
@@ -1915,7 +1923,9 @@ static int stv090x_i2c_gate_ctrl(struct dvb_frontend *fe, int enable)
 		dprintk(250, "Enable Gate\n");
 		STV090x_SETFIELD_Px(reg, I2CT_ON_FIELD, 1);
 		if (STV090x_WRITE_DEMOD(state, I2CRPT, reg) < 0)
+		{
 			goto err;
+		}
 	}
 	else
 	{
@@ -1927,7 +1937,6 @@ static int stv090x_i2c_gate_ctrl(struct dvb_frontend *fe, int enable)
 				goto err;
 		}
 	}
-
 	return 0;
 err:
 	printk("stv090x_i2c_gate_ctrl: I/O error\n");
@@ -2008,7 +2017,9 @@ static void stv090x_get_lock_tmg(struct stv090x_state *state)
 		}
 	}
 	if (state->algo == STV090x_WARM_SEARCH)
+	{
 		state->DemodTimeout /= 2;
+	}
 	dprintk(100, "%s <\n", __func__);
 }
 
@@ -2037,10 +2048,13 @@ static int stv090x_set_srate(struct stv090x_state *state, u32 srate)
 	dprintk(100, "0x%x\n", (sym & 0xff));
 
 	if (STV090x_WRITE_DEMOD(state, SFRINIT1, (sym >> 8) & 0x7f) < 0) /* MSB */
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, SFRINIT0, (sym & 0xff)) < 0) /* LSB */
+	{
 		goto err;
-
+	}
 	dprintk(10, "%s <\n", __func__);
 	return 0;
 err:
