@@ -1,3 +1,41 @@
+/*
+ * front_bska.c
+ *
+ * (c) 20?? ??
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+ *
+ * Front panel driver for nBOX ITI-5800S(X), BSKA and BZXB models;
+ * Button driver.
+ *
+ * Devices:
+ *  - /dev/vfd (vfd ioctls and read/write function)
+ *  - /dev/rc  (reading of key events)
+ *
+ *
+ ****************************************************************************************
+ *
+ * Changes
+ *
+ * Date     By              Description
+ * --------------------------------------------------------------------------------------
+ * 20130929 Audioniek       
+ * 20160523 Audioniek       procfs added.
+ *
+ ****************************************************************************************/
 #include <asm/io.h>
 #include <asm/uaccess.h>
 #include <linux/module.h>
@@ -17,7 +55,7 @@
 
 #include "front_bska.h"
 
-static int buttoninterval = 350/*ms*/;
+static int buttoninterval = 350 /*ms*/;
 static struct timer_list button_timer;
 
 static char *button_driver_name = "NBOX frontpanel buttons";
@@ -25,8 +63,8 @@ static struct input_dev *button_dev;
 
 struct vfd_driver
 {
-	struct semaphore      sem;
-	int                   opencount;
+	struct semaphore sem;
+	int              opencount;
 };
 
 spinlock_t mr_lock = SPIN_LOCK_UNLOCKED;
@@ -34,39 +72,43 @@ spinlock_t mr_lock = SPIN_LOCK_UNLOCKED;
 static Global_Status_t status;
 
 static struct vfd_driver vfd;
-static int bad_polling = 1;
+static int bad_polling  = 1;
 
-static int debug  = 0;
+static int debug        = 0;
 
-static char ICON1	=	0;
-static char ICON2	=	0;
-static char ICON3	=	0;
-static char ICON4	=	0;
+static char ICON1       = 0;
+static char ICON2       = 0;
+static char ICON3       = 0;
+static char ICON4       = 0;
 
 static char button_reset = 0;
 
 static struct workqueue_struct *wq;
 
+#define DBG(fmt, args...) \
+	if (debug) \
+	{ \
+		printk(KERN_INFO "[vfd] :: " fmt "\n", ## args); \
+	}
+#define ERR(fmt, args...) \
+	printk(KERN_ERR "[vfd] :: " fmt "\n", ## args )
 
-#define DBG(fmt, args...) if ( debug ) printk(KERN_INFO "[vfd] :: " fmt "\n", ## args )
-#define ERR(fmt, args...) printk(KERN_ERR "[vfd] :: " fmt "\n", ## args )
+#define	PORT_STB      1
+#define PIN_STB       6
 
-#define	PORT_STB	1
-#define PIN_STB		6
+#define PORT_CLK      4
+#define PIN_CLK       0
 
-#define PORT_CLK	4
-#define PIN_CLK		0
+#define PORT_DIN      4
+#define PIN_DIN       1
 
-#define PORT_DIN	4
-#define PIN_DIN		1
+#define PORT_DOUT     4
+#define PIN_DOUT      1
 
-#define PORT_DOUT	4
-#define PIN_DOUT	1
+#define PORT_KEY_INT  2
+#define PIN_KEY_INT   2
 
-#define PORT_KEY_INT	2
-#define PIN_KEY_INT	2
-
-#define VFD_Delay 	5
+#define VFD_Delay     5
 
 static unsigned char key_group1, key_group2;
 static unsigned int  key_front = 0;
@@ -80,49 +122,56 @@ struct stpio_pin *stb;
 
 static void pt6958_free(void)
 {
-	if (stb) stpio_set_pin(stb, 1);
-	if (din) stpio_free_pin(din);
-	if (clk) stpio_free_pin(clk);
-	if (stb) stpio_free_pin(stb);
-	DBG("free PT6958\n");
+	if (stb)
+	{
+		stpio_set_pin(stb, 1);
+	}
+	if (din)
+	{
+		stpio_free_pin(din);
+	}
+	if (clk)
+	{
+		stpio_free_pin(clk);
+	}
+	if (stb)
+	{
+		stpio_free_pin(stb);
+	}
+	DBG("PT6958 freed\n");
 };
 
 static unsigned char pt6958_init(void)
 {
 	DBG("init pt6958\n");
 
+// Strobe (stb)
 	DBG("request stpio %d,%d", PORT_STB, PIN_STB);
 	stb = stpio_request_pin(PORT_STB, PIN_STB, "PT6958_STB", STPIO_OUT);
-
 	if (stb == NULL)
 	{
-		ERR("Request stpio scs failed. abort.");
+		ERR("Request stpio scs failed; abort");
 		goto pt_init_fail;
 	}
-
+// Clock (clk)
 	DBG("request stpio %d,%d", PORT_CLK, PIN_CLK);
 	clk = stpio_request_pin(PORT_CLK, PIN_CLK, "PT6958_CLK", STPIO_OUT);
-
-
 	if (clk == NULL)
 	{
-		ERR("Request stpio clk failed. abort.");
+		ERR("Request stpio clk failed; abort");
 		goto pt_init_fail;
 	}
-
+// Data (din)
 	DBG("request stpio %d,%d", PORT_DIN, PIN_DIN);
 	din = stpio_request_pin(PORT_DIN, PIN_DIN, "PT6958_DIN", STPIO_BIDIR);
-
 	if (din == NULL)
 	{
-		ERR("Request stpio din failed. abort.");
+		ERR("Request stpio din failed; abort");
 		goto pt_init_fail;
 	}
-
 	stpio_set_pin(stb, 1);
 	stpio_set_pin(clk, 1);
 	stpio_set_pin(din, 1);
-
 	return 1;
 
 pt_init_fail:
@@ -135,42 +184,43 @@ static unsigned char PT6958_ReadChar(void)
 	unsigned char i;
 	unsigned char dinn = 0;
 
-	for (i = 0; i < 8; i++)
+	for (i = 0; i < 8; i++)  // 8 bits in a byte, LSB first
 	{
-		stpio_set_pin(din, 1);
-		stpio_set_pin(clk, 0);
+		stpio_set_pin(din, 1);  // data = 1 (key will pull down the pin if pressed)
+		stpio_set_pin(clk, 0);  // toggle
 		udelay(VFD_Delay);
-		stpio_set_pin(clk, 1);
+		stpio_set_pin(clk, 1);  // clock pin
 		udelay(VFD_Delay);
 		dinn = (dinn >> 1) | (stpio_get_pin(din) > 0 ? 0x80 : 0);
 	}
 	return dinn;
 }
 
-
 static void PT6958_SendChar(unsigned char Value)
 {
 	unsigned char i;
 
-	for (i = 0; i < 8; i++)
+	for (i = 0; i < 8; i++)  // 8 bits in a byte, LSB first
 	{
-		if (Value & 0x01)
-			stpio_set_pin(din, 1);
-		else
-			stpio_set_pin(din, 0);
-
-		stpio_set_pin(clk, 0);
+//		if (Value & 0x01)
+//		{
+		stpio_set_pin(din, Value & 0x01);  // write bit
+//		}
+//		else
+//		{
+//			stpio_set_pin(din, 0);
+//		}
+		stpio_set_pin(clk, 0);  // toggle
 		udelay(VFD_Delay);
-		stpio_set_pin(clk, 1);
+		stpio_set_pin(clk, 1);  // clock pin
 		udelay(VFD_Delay);
 		Value >>= 1;
-
 	}
 }
 
 static void PT6958_WriteChar(unsigned char Value)
 {
-	stpio_set_pin(stb, 0);
+	stpio_set_pin(stb, 0);  // set strobe
 	PT6958_SendChar(Value);
 	stpio_set_pin(stb, 1);
 	udelay(VFD_Delay);
@@ -179,18 +229,21 @@ static void PT6958_WriteChar(unsigned char Value)
 static void PT6958_WriteData(unsigned char *data, unsigned int len)
 {
 	unsigned char i;
-	stpio_set_pin(stb, 0);
-	for (i = 0; i < len; i++) PT6958_SendChar(data[i]);
+
+	stpio_set_pin(stb, 0);  // set strobe
+	for (i = 0; i < len; i++)
+	{
+		PT6958_SendChar(data[i]);
+	}
 	stpio_set_pin(stb, 1);
 	udelay(VFD_Delay);
 }
-
 
 static void ReadKey(void)
 {
 	spin_lock(&mr_lock);
 
-	stpio_set_pin(stb, 0);
+	stpio_set_pin(stb, 0);  // set strobe
 	PT6958_SendChar(0x42);
 	key_group1 = PT6958_ReadChar();
 	key_group2 = PT6958_ReadChar();
@@ -200,36 +253,48 @@ static void ReadKey(void)
 	spin_unlock(&mr_lock);
 }
 
+/******************************************************
+ *
+ * Set text and dots on LED display, also set LEDs
+ *
+ */
 static void PT6958_Show(unsigned char DIG1, unsigned char DIG2, unsigned char DIG3, unsigned char DIG4, unsigned char DOT1, unsigned char DOT2, unsigned char DOT3, unsigned char DOT4)
 {
 	spin_lock(&mr_lock);
 
-	PT6958_WriteChar(0x40); //Command 1 mode set,( Fixed address)  01xx????B
+	PT6958_WriteChar(0x40); // Command 1 mode set, (Fixed address)  01xx0000b
 	udelay(VFD_Delay);
 
 	stpio_set_pin(stb, 0);
 
-	PT6958_SendChar(0xc0); //Command 2 address set,(start from 0 ľăÁÁcom1)   11xx????B
+	PT6958_SendChar(0xc0); // Command 2 address set, (start from 0 ľăÁÁcom1)   11xx0000b
 	if (DOT1 == 1)
-		DIG1 = DIG1 + 0x80;
+	{
+		DIG1 += 0x80;
+	}
 	PT6958_SendChar(DIG1);
+	PT6958_SendChar(ICON1); //power led 01-red 02-green
 
-	PT6958_SendChar(ICON1); //led power 01-czerwony 02-zielony
 	if (DOT2 == 1)
-		DIG2 = DIG2 + 0x80;
+	{
+		DIG2 += 0x80;
+	}
 	PT6958_SendChar(DIG2);
+	PT6958_SendChar(ICON2); //timer led
 
-	PT6958_SendChar(ICON2); //led zegar
 	if (DOT3 == 1)
-		DIG3 = DIG3 + 0x80;
+	{
+		DIG3 += 0x80;
+	}
 	PT6958_SendChar(DIG3);
+	PT6958_SendChar(ICON3); //mail led (@)
 
-	PT6958_SendChar(ICON3); //led @
 	if (DOT4 == 1)
-		DIG4 = DIG4 + 0x80;
+	{
+		DIG4 += 0x80;
+	}
 	PT6958_SendChar(DIG4);
-
-	PT6958_SendChar(ICON4); //led !
+	PT6958_SendChar(ICON4); // alert led
 
 	stpio_set_pin(stb, 1);
 	udelay(VFD_Delay);
@@ -237,10 +302,20 @@ static void PT6958_Show(unsigned char DIG1, unsigned char DIG2, unsigned char DI
 	spin_unlock(&mr_lock);
 }
 
+/******************************************************
+ *
+ * Set string on LED display
+ *
+ * Accepts any string length; string may hold UTF8
+ * coded characters
+ * Periods, single quotes and semicolons are enhanced
+ * by setting the periods in the display.
+ */
 static int PT6958_ShowBuf(unsigned char *data, unsigned char len)
 {
+	unsigned char z1, z2, z3, z4, k1, k2, k3, k4;
 	/* eliminating UTF-8 chars first */
-	unsigned char  kbuf[8] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+	unsigned char kbuf[8] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 	int i = 0;
 	int wlen = 0;
 
@@ -268,30 +343,44 @@ static int PT6958_ShowBuf(unsigned char *data, unsigned char len)
 			switch (data[i])
 			{
 				case 0xc2:
+				{
 					UTF_Char_Table = UTF_C2;
 					break;
+				}
 				case 0xc3:
+				{
 					UTF_Char_Table = UTF_C3;
 					break;
+				}
 				case 0xc4:
+				{
 					UTF_Char_Table = UTF_C4;
 					break;
+				}
 				case 0xc5:
+				{
 					UTF_Char_Table = UTF_C5;
 					break;
+				}
 				case 0xd0:
+				{
 					UTF_Char_Table = UTF_D0;
 					break;
+				}
 				case 0xd1:
+				{
 					UTF_Char_Table = UTF_D1;
 					break;
+				}
 				default:
+				{
 					UTF_Char_Table = NULL;
+				}
 			}
 			i++;
 			if (UTF_Char_Table)
 			{
-				DBG("[%s] UTF_Char= 0x%X, index=%i", __func__, UTF_Char_Table[data[i] & 0x3f], i);
+				DBG("[%s] UTF_Char = 0x%X, index = %i", __func__, UTF_Char_Table[data[i] & 0x3f], i);
 				kbuf[wlen] = UTF_Char_Table[data[i] & 0x3f];
 				wlen++;
 			}
@@ -299,18 +388,25 @@ static int PT6958_ShowBuf(unsigned char *data, unsigned char len)
 		else
 		{
 			if (data[i] < 0xF0)
+			{
 				i += 2;
+			}
 			else if (data[i] < 0xF8)
+			{
 				i += 3;
+			}
 			else if (data[i] < 0xFC)
+			{
 				i += 4;
+			}
 			else
+			{
 				i += 5;
+			}
 		}
 		i++;
 	}
 	/* end */
-	unsigned char  z1, z2, z3, z4, k1, k2, k3, k4;
 	k1 = 0;
 	k2 = 0;
 	k3 = 0;
@@ -320,26 +416,48 @@ static int PT6958_ShowBuf(unsigned char *data, unsigned char len)
 	z3 = 0x20;
 	z4 = 0x20;
 
-	if ((wlen >= 2) && (kbuf[1] == '.' || kbuf[1] == "'" || kbuf[1] == ':'))
+	if ((wlen >= 2) && (kbuf[1] == '.' || kbuf[1] == 0x27 || kbuf[1] == ':'))
+	{
 		k1 = 1;
-	if ((wlen >= 3) && (kbuf[2] == '.' || kbuf[2] == "'" || kbuf[2] == ':'))
+	}
+	if ((wlen >= 3) && (kbuf[2] == '.' || kbuf[2] == 0x27 || kbuf[2] == ':'))
+	{
 		k2 = 1;
-	if ((wlen >= 4) && (kbuf[3] == '.' || kbuf[3] == "'" || kbuf[3] == ':'))
+	}
+	if ((wlen >= 4) && (kbuf[3] == '.' || kbuf[3] == 0x27 || kbuf[3] == ':'))
+	{
 		k3 = 1;
-	if ((wlen >= 5) && (kbuf[4] == '.' || kbuf[4] == "'" || kbuf[4] == ':'))
+	}
+	if ((wlen >= 5) && (kbuf[4] == '.' || kbuf[4] == 0x27 || kbuf[4] == ':'))
+	{
 		k4 = 1;
-
+	}
 	//assigning correct chars
-	if (wlen >= 1) z1 = ROM[kbuf[0]];
-	if (wlen >= 2) z2 = ROM[kbuf[1 + k1]];
-	if (wlen >= 3) z3 = ROM[kbuf[2 + k1 + k2]];
-	if (wlen >= 4) z4 = ROM[kbuf[3 + k1 + k2 + k3]];
-
+	if (wlen >= 1)
+	{
+		z1 = ROM[kbuf[0]];
+	}
+	if (wlen >= 2)
+	{
+		z2 = ROM[kbuf[1 + k1]];
+	}
+	if (wlen >= 3)
+	{
+		z3 = ROM[kbuf[2 + k1 + k2]];
+	}
+	if (wlen >= 4)
+	{
+		z4 = ROM[kbuf[3 + k1 + k2 + k3]];
+	}
 	PT6958_Show(z1, z2, z3, z4, k1, k2, k3, k4);
-
 	return 0;
 }
 
+/******************************************************
+ *
+ * Set LEDs through a string of lenghth 5
+ *
+ */
 static void pt6958_set_icon(unsigned char *kbuf, unsigned char len)
 {
 	unsigned char poz = 0, ico = 0;
@@ -353,7 +471,7 @@ static void pt6958_set_icon(unsigned char *kbuf, unsigned char len)
 
 		if (poz == 1)
 		{
-			ICON1 = ico;        //led power 01-czerwony 02-zielony
+			ICON1 = ico;  // led power, 01-red 02-green
 			poz = 0xc1;
 		}
 		if (poz == 2)
@@ -369,8 +487,7 @@ static void pt6958_set_icon(unsigned char *kbuf, unsigned char len)
 				ico = 0;
 			}
 			poz = 0xc1;
-		} //led power 01-czerwony 02-zielony
-
+		}  // led power 01-red 02-green
 		if (poz == 3)
 		{
 			ICON2 = ico;
@@ -386,12 +503,11 @@ static void pt6958_set_icon(unsigned char *kbuf, unsigned char len)
 			ICON4 = ico;
 			poz = 0xc7;
 		}
-
-		PT6958_WriteChar(0x44);     	//Command 1 mode set,( Fixed address)  01xx????B
+		PT6958_WriteChar(0x44);  // Command 1 mode set, (Fixed address)  01xx0100b
 		udelay(VFD_Delay);
 
 		stpio_set_pin(stb, 0);
-		PT6958_SendChar(poz);  			//Command 2 address set,(start from 0 ľăÁÁcom1)   11xx????B
+		PT6958_SendChar(poz);  //Command 2 address set,(start from 0 ľăÁÁcom1)  11xx????b
 		PT6958_SendChar(ico);
 		stpio_set_pin(stb, 1);
 		udelay(VFD_Delay);
@@ -403,20 +519,21 @@ static void PT6958_setup(void)
 {
 	unsigned char i;
 
-	PT6958_WriteChar(0x40);		//Command 1, increment address write
+	PT6958_WriteChar(0x40);  // Command 1, increment address write
 	udelay(VFD_Delay);
 
-	stpio_set_pin(stb, 0);
-	PT6958_SendChar(0xc0);          	//Command 2, RAM address = 0
-	for (i = 0; i < 10; i++)            	//10 bytes
+	stpio_set_pin(stb, 0);  // set strobe
+	PT6958_SendChar(0xc0);  // Command 2, RAM address = 0
+	for (i = 0; i < 10; i++)  //10 bytes
+	{
 		PT6958_SendChar(0);
+	}
 	stpio_set_pin(stb, 1);
 	udelay(VFD_Delay);
-
-	PT6958_WriteChar(0x8c);         //Command 3 display control, (Display ON) 10xx????B
+	PT6958_WriteChar(0x8c);  // Command 3, display control, (Display ON) 10xx1100b
 
 	ICON1 = 0;
-	ICON1 = 2;	//dioda zasilania zielona
+	ICON1 = 2;  //power LED green
 	ICON2 = 0;
 	ICON3 = 0;
 	PT6958_Show(0x40, 0x40, 0x40, 0x40, 0, 0, 0, 0);
@@ -426,10 +543,15 @@ static void pt6958_set_brightness(int level)
 {
 	spin_lock(&mr_lock);
 
-	if (level < 0) level = 0;
-	if (level > 7) level = 7;
-	PT6958_WriteChar(0x88 + level);       //Command 3 display control, (Display ON) 10xx????B
-
+	if (level < 0)
+	{
+		level = 0;
+	}
+	if (level > 7)
+	{
+		level = 7;
+	}
+	PT6958_WriteChar(0x88 + level);  // Command 3, display control, (Display ON) 10xx1???b
 	spin_unlock(&mr_lock);
 }
 
@@ -438,24 +560,22 @@ static void pt6958_set_lights(int onoff)
 	spin_lock(&mr_lock);
 
 	if (onoff == 1)
-		PT6958_WriteChar(0x8c);         //Command 3 display control, (Display ON) 10xx????B
+	{
+		PT6958_WriteChar(0x8c);  // Command 3, display control, (Display ON) 10xx1100b
+	}
 	else
-		PT6958_WriteChar(0x80);         //Command 3 display control, (Display ON) 10xx????B
-
+	{
+		PT6958_WriteChar(0x80);  // Command 3, display control, (Display OFF) 10xx0000b
+	}
 	spin_unlock(&mr_lock);
 }
 
-
-
-
-
-//#define	button_polling
-//#define	button_interrupt
+//#define button_polling
+//#define button_interrupt
 #define	button_interrupt2
 
-
-#ifdef button_interrupt2
-#warning !!!!!!!!! button_interrupt2 !!!!!!!!
+#if defined(button_interrupt2)
+//#warning !!!!!!!!! button_interrupt2 !!!!!!!!
 //----------------------------------------------------------------------------------
 static void button_delay(unsigned long dummy)
 {
@@ -477,7 +597,6 @@ static void button_delay(unsigned long dummy)
 	}
 }
 
-
 //void fpanel_irq_handler(void *dev1,void *dev2)
 irqreturn_t fpanel_irq_handler(void *dev1, void *dev2)
 {
@@ -487,19 +606,45 @@ irqreturn_t fpanel_irq_handler(void *dev1, void *dev2)
 	{
 		ReadKey();
 		key_front = 0;
-		if ((key_group1 == 32) && (key_group2 == 0)) key_front = KEY_MENU; //menu
-		if ((key_group1 == 00) && (key_group2 == 4)) key_front = KEY_EPG; //epg
-		if ((key_group1 == 04) && (key_group2 == 0)) key_front = KEY_HOME; //res
-		if ((key_group1 == 16) && (key_group2 == 0)) key_front = KEY_UP; //up
-		if ((key_group1 == 00) && (key_group2 == 1)) key_front = KEY_DOWN; //down
-		if ((key_group1 == 64) && (key_group2 == 0)) key_front = KEY_RIGHT; //right
-		if ((key_group1 == 00) && (key_group2 == 2)) key_front = KEY_LEFT; //left
-		if ((key_group1 == 02) && (key_group2 == 0)) key_front = KEY_OK; //ok
-		if ((key_group1 == 01) && (key_group2 == 0)) key_front = KEY_POWER; //pwr
+		if ((key_group1 == 32) && (key_group2 == 0))
+		{
+			key_front = KEY_MENU;  // menu
+		}
+		if ((key_group1 == 00) && (key_group2 == 4))
+		{
+			key_front = KEY_EPG;  // epg
+		}
+		if ((key_group1 == 04) && (key_group2 == 0))
+		{
+			key_front = KEY_HOME;  // res
+		}
+		if ((key_group1 == 16) && (key_group2 == 0))
+		{
+			key_front = KEY_UP;  // up
+		}
+		if ((key_group1 == 00) && (key_group2 == 1))
+		{
+			key_front = KEY_DOWN;  // down
+		}
+		if ((key_group1 == 64) && (key_group2 == 0))
+		{
+			key_front = KEY_RIGHT;  // right
+		}
+		if ((key_group1 == 00) && (key_group2 == 2))
+		{
+			key_front = KEY_LEFT;  // left
+		}
+		if ((key_group1 == 02) && (key_group2 == 0))
+		{
+			key_front = KEY_OK;  // ok
+		}
+		if ((key_group1 == 01) && (key_group2 == 0))
+		{
+			key_front = KEY_POWER;  // pwr
+		}
 		if (key_front > 0)
 		{
-
-			if (key_front == KEY_HOME)
+			if (key_front == KEY_HOME)  // emergency reboot: press res 5 times
 			{
 				button_reset++;
 				if (button_reset > 4)
@@ -509,39 +654,39 @@ irqreturn_t fpanel_irq_handler(void *dev1, void *dev2)
 				}
 			}
 			else
+			{
 				button_reset = 0;
-
+			}
 			input_report_key(button_dev, key_front, 1);
 			input_sync(button_dev);
-			DBG("Key:%d\n", key_front);
+			DBG("Key: %d\n", key_front);
 			init_timer(&button_timer);
 			button_timer.function = button_delay;
 			mod_timer(&button_timer, jiffies + buttoninterval);
 		}
 		else
+		{
 			enable_irq(FPANEL_PORT2_IRQ);
+		}
 	}
 	else
+	{
 		enable_irq(FPANEL_PORT2_IRQ);
-
+	}
 	return IRQ_HANDLED;
 }
-
-
-//----------------------------------------------------------------------------------
 #endif
 
-//----------------------------------------------------------------------------------
+#if defined(button_interrupt)
+//#warning !!!!!!!!! button_interrupt !!!!!!!!
 
-#ifdef button_interrupt
-#warning !!!!!!!!! button_interrupt !!!!!!!!
-
-// version interrupt
 static void button_delay(unsigned long dummy)
 {
 	if (button_reset == 100)
+	{
 		kernel_restart(NULL);
-	//pinreset = stpio_request_pin( 3,2, "pinreset", STPIO_OUT );
+	}
+	// pinreset = stpio_request_pin( 3,2, "pinreset", STPIO_OUT );
 	else
 	{
 		if (key_front > 0)
@@ -554,7 +699,6 @@ static void button_delay(unsigned long dummy)
 	}
 }
 
-
 irqreturn_t fpanel_irq_handler(int irq, void *dev_id)
 {
 	disable_irq(FPANEL_PORT2_IRQ);
@@ -563,51 +707,83 @@ irqreturn_t fpanel_irq_handler(int irq, void *dev_id)
 	{
 		ReadKey();
 		key_front = 0;
-		if ((key_group1 == 32) && (key_group2 == 0)) key_front = KEY_MENU; //menu
-		if ((key_group1 == 00) && (key_group2 == 4)) key_front = KEY_EPG; //epg
-		if ((key_group1 == 04) && (key_group2 == 0)) key_front = KEY_HOME; //res
-		if ((key_group1 == 16) && (key_group2 == 0)) key_front = KEY_UP; //up
-		if ((key_group1 == 00) && (key_group2 == 1)) key_front = KEY_DOWN; //down
-		if ((key_group1 == 64) && (key_group2 == 0)) key_front = KEY_RIGHT; //right
-		if ((key_group1 == 00) && (key_group2 == 2)) key_front = KEY_LEFT; //left
-		if ((key_group1 == 02) && (key_group2 == 0)) key_front = KEY_OK; //ok
-		if ((key_group1 == 01) && (key_group2 == 0)) key_front = KEY_POWER; //pwr
+		if ((key_group1 == 32) && (key_group2 == 0))
+		{
+			key_front = KEY_MENU;  // menu
+		}
+		if ((key_group1 == 00) && (key_group2 == 4))
+		{
+			key_front = KEY_EPG;  // epg
+		}
+		if ((key_group1 == 04) && (key_group2 == 0))
+		{
+			key_front = KEY_HOME;  // res
+		}
+		if ((key_group1 == 16) && (key_group2 == 0))
+		{
+			key_front = KEY_UP;  // up
+		}
+		if ((key_group1 == 00) && (key_group2 == 1))
+		{
+			key_front = KEY_DOWN;  // down
+		}
+		if ((key_group1 == 64) && (key_group2 == 0))
+		{
+			key_front = KEY_RIGHT;  // right
+		}
+		if ((key_group1 == 00) && (key_group2 == 2))
+		{
+			key_front = KEY_LEFT;  // left
+		}
+		if ((key_group1 == 02) && (key_group2 == 0))
+		{
+			key_front = KEY_OK;  // ok
+		}
+		if ((key_group1 == 01) && (key_group2 == 0))
+		{
+			key_front = KEY_POWER;  // pwr
+		}
 		if (key_front > 0)
 		{
 			if (key_front == KEY_HOME)
 			{
 				button_reset++;
-				if (button_reset > 4)
+				if (button_reset > 4)  // emergency reboot: press res 5 times
 				{
 					DBG("!!! Restart system !!!\n");
 					button_reset = 100;
 				}
 			}
 			else
+			{
 				button_reset = 0;
+			}
 			input_report_key(button_dev, key_front, 1);
 			input_sync(button_dev);
-			DBG("Key:%d\n", key_front);
+			DBG("Key: %d\n", key_front);
 			init_timer(&button_timer);
 			button_timer.function = button_delay;
 			mod_timer(&button_timer, jiffies + buttoninterval);
 		}
 		else
+		{
 			enable_irq(FPANEL_PORT2_IRQ);
+		}
 	}
 	else
+	{
 		enable_irq(FPANEL_PORT2_IRQ);
-
+	}
 	return IRQ_HANDLED;
 }
 #endif
 
-
-#ifdef button_polling
-#warning !!!!!!!!! button_queue !!!!!!!!
+#if defined(button_polling)
+//#warning !!!!!!!!! button_queue !!!!!!!!
 #endif
 //----------------------------------------------------------------------------------
-// verion queue
+// version queue
+
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,20)
 void button_bad_polling(void)
 #else
@@ -621,21 +797,48 @@ void button_bad_polling(struct work_struct *ignored)
 		{
 			ReadKey();
 			key_front = 0;
-			if ((key_group1 == 32) && (key_group2 == 0)) key_front = KEY_MENU; //menu
-			if ((key_group1 == 00) && (key_group2 == 4)) key_front = KEY_EPG; //epg
-			if ((key_group1 == 04) && (key_group2 == 0)) key_front = KEY_HOME; //res
-			if ((key_group1 == 16) && (key_group2 == 0)) key_front = KEY_UP; //up
-			if ((key_group1 == 00) && (key_group2 == 1)) key_front = KEY_DOWN; //down
-			if ((key_group1 == 64) && (key_group2 == 0)) key_front = KEY_RIGHT; //right
-			if ((key_group1 == 00) && (key_group2 == 2)) key_front = KEY_LEFT; //left
-			if ((key_group1 == 02) && (key_group2 == 0)) key_front = KEY_OK; //ok
-			if ((key_group1 == 01) && (key_group2 == 0)) key_front = KEY_POWER; //pwr
+			if ((key_group1 == 32) && (key_group2 == 0))
+			{
+				key_front = KEY_MENU;  // menu
+			}
+			if ((key_group1 == 00) && (key_group2 == 4))
+			{
+				key_front = KEY_EPG;  // epg
+			}
+			if ((key_group1 == 04) && (key_group2 == 0))
+			{
+				key_front = KEY_HOME;  // res
+			}
+			if ((key_group1 == 16) && (key_group2 == 0))
+			{
+				key_front = KEY_UP;  // up
+			}
+			if ((key_group1 == 00) && (key_group2 == 1))
+			{
+				key_front = KEY_DOWN;  // down
+			}
+			if ((key_group1 == 64) && (key_group2 == 0))
+			{
+				key_front = KEY_RIGHT;  // right
+			}
+			if ((key_group1 == 00) && (key_group2 == 2))
+			{
+				key_front = KEY_LEFT;  // left
+			}
+			if ((key_group1 == 02) && (key_group2 == 0))
+			{
+				key_front = KEY_OK;  // ok
+			}
+			if ((key_group1 == 01) && (key_group2 == 0))
+			{
+				key_front = KEY_POWER;  // pwr
+			}
 			if (key_front > 0)
 			{
 				if (key_front == KEY_HOME)
 				{
 					button_reset++;
-					if (button_reset > 4)
+					if (button_reset > 4)  // emergency reboot: press res 5 times
 					{
 						DBG("!!! Restart system !!!\n");
 						button_reset = 0;
@@ -643,18 +846,19 @@ void button_bad_polling(struct work_struct *ignored)
 					}
 				}
 				else
+				{
 					button_reset = 0;
+				}
 				input_report_key(button_dev, key_front, 1);
 				input_sync(button_dev);
-				DBG("Key:%d\n", key_front);
+				DBG("Key: %d\n", key_front);
 				msleep(250);
 				input_report_key(button_dev, key_front, 0);
 				input_sync(button_dev);
 			}
 		}
-	}//while
+	} //while
 }
-
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,20)
 static DECLARE_WORK(button_obj, button_bad_polling, NULL);
@@ -664,25 +868,24 @@ static DECLARE_WORK(button_obj, button_bad_polling);
 
 static int button_input_open(struct input_dev *dev)
 {
-#ifdef button_polling
+#if defined(button_polling)
 	wq = create_workqueue("button");
 	if (queue_work(wq, &button_obj))
 	{
-		DBG("[BTN] queue_work successful ...\n");
+		DBG("[BTN] queue_work successful...\n");
 	}
 	else
 	{
-		DBG("[BTN] queue_work not successful, exiting ...\n");
+		DBG("[BTN] queue_work not successful; exiting...\n");
 		return 1;
 	}
 #endif
-
 	return 0;
 }
 
 static void button_input_close(struct input_dev *dev)
 {
-#ifdef button_polling
+#if defined(button_polling)
 	bad_polling = 0;
 	msleep(55);
 	bad_polling = 1;
@@ -693,17 +896,16 @@ static void button_input_close(struct input_dev *dev)
 		DBG("[BTN] workqueue destroyed\n");
 	}
 #endif
-
 }
+
 //-------------------------------------------------------------------------------------------
 // VFD
 //-------------------------------------------------------------------------------------------
-
-#define VFDIOC_DCRAMWRITE			0xc0425a00
-#define VFDIOC_BRIGHTNESS			0xc0425a03
-#define VFDIOC_DISPLAYWRITEONOFF	0xc0425a05
-#define VFDIOC_DRIVERINIT			0xc0425a08
-#define VFDIOC_ICONDISPLAYONOFF		0xc0425a0a
+#define VFDIOC_DCRAMWRITE        0xc0425a00
+#define VFDIOC_BRIGHTNESS        0xc0425a03
+#define VFDIOC_DISPLAYWRITEONOFF 0xc0425a05
+#define VFDIOC_DRIVERINIT        0xc0425a08
+#define VFDIOC_ICONDISPLAYONOFF  0xc0425a0a
 
 static int vfd_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsigned long arg)
 {
@@ -712,44 +914,81 @@ static int vfd_ioctl(struct inode *inode, struct file *file, unsigned int cmd, u
 	switch (cmd)
 	{
 		case VFDIOC_DCRAMWRITE:
-			copy_from_user(&vfddata, (void *)arg, sizeof(struct vfd_ioctl_data));
-			return PT6958_ShowBuf(vfddata.data, vfddata.length);
-			break;
 		case VFDIOC_BRIGHTNESS:
+		case VFDIOC_DISPLAYWRITEONOFF:
+		case VFDIOC_ICONDISPLAYONOFF:
+		{
 			copy_from_user(&vfddata, (void *)arg, sizeof(struct vfd_ioctl_data));
+		}
+	}
+	switch (cmd)
+	{
+		case VFDIOC_DCRAMWRITE:
+		{
+//			copy_from_user(&vfddata, (void *)arg, sizeof(struct vfd_ioctl_data));
+			return PT6958_ShowBuf(vfddata.data, vfddata.length);
+//			break;
+		}
+		case VFDIOC_BRIGHTNESS:
+		{
+//			copy_from_user(&vfddata, (void *)arg, sizeof(struct vfd_ioctl_data));
 			pt6958_set_brightness(vfddata.address);
 			break;
+		}
 		case VFDIOC_DISPLAYWRITEONOFF:
-			copy_from_user(&vfddata, (void *)arg, sizeof(struct vfd_ioctl_data));
+		{
+//			copy_from_user(&vfddata, (void *)arg, sizeof(struct vfd_ioctl_data));
 			pt6958_set_lights(vfddata.address);
 			break;
+		}
 		case VFDIOC_ICONDISPLAYONOFF:
-			copy_from_user(&vfddata, (void *)arg, sizeof(struct vfd_ioctl_data));
+		{
+//			copy_from_user(&vfddata, (void *)arg, sizeof(struct vfd_ioctl_data));
 			pt6958_set_icon(vfddata.data, vfddata.length);
 			break;
+		}
 		case VFDIOC_DRIVERINIT:
+		{
 			PT6958_setup();
 			break;
+		}
 		default:
+		{
 			ERR("[vfd] unknown ioctl %08x", cmd);
 			break;
+		}
 	}
 	return 0;
-
 }
 
-static ssize_t vfd_write(struct file *filp, const char *buf, size_t len, loff_t *off)
+/******************************************************
+ *
+ * Write string on LED display (/dev/vfd)
+ *
+ */
+static ssize_t vfd_write_bska(struct file *filp, const char *buf, size_t len, loff_t *off)
 {
 	DBG("[%s] text = '%s', len= %d\n", __func__, buf, len);
 	if (len == 0)
+	{
 		PT6958_ShowBuf("    ", 4);
+	}
 	else
-		PT6958_ShowBuf(buf, len);
+	{
+		// TODO: implement scrolling 
+		PT6958_ShowBuf((char *)buf, len);
+	}
 	return len;
 }
 
-static ssize_t vfd_read(struct file *filp, char *buf, size_t len, loff_t *off)
+/******************************************************
+ *
+ * Read string from LED display (/dev/vfd)
+ *
+ */
+static ssize_t vfd_read_bska(struct file *filp, char *buf, size_t len, loff_t *off)
 {
+	// TODO: return current display string
 	return len;
 }
 
@@ -760,20 +999,17 @@ static int vfd_open(struct inode *inode, struct file *file)
 
 	if (down_interruptible(&(vfd.sem)))
 	{
-		DBG("interrupted while waiting for sema.");
+		DBG("interrupted while waiting for semaphore");
 		return -ERESTARTSYS;
 	}
-
 	if (vfd.opencount > 0)
 	{
-		DBG("device already opened.");
+		DBG("device already opened");
 		up(&(vfd.sem));
 		return -EUSERS;
 	}
-
 	vfd.opencount++;
 	up(&(vfd.sem));
-
 	return 0;
 }
 
@@ -788,8 +1024,8 @@ static struct file_operations vfd_fops =
 {
 	.owner   = THIS_MODULE,
 	.ioctl   = vfd_ioctl,
-	.write   = vfd_write,
-	.read    = vfd_read,
+	.write   = vfd_write_bska,
+	.read    = vfd_read_bska,
 	.open    = vfd_open,
 	.release = vfd_close
 };
@@ -797,7 +1033,7 @@ static struct file_operations vfd_fops =
 static void __exit vfd_module_exit(void)
 {
 	unregister_chrdev(VFD_MAJOR, "vfd");
-#ifdef button_interrupt2
+#if defined(button_interrupt2)
 	stpio_free_irq(key_int);
 #endif
 	pt6958_free();
@@ -806,55 +1042,54 @@ static void __exit vfd_module_exit(void)
 
 static int __init vfd_module_init(void)
 {
-
 	int error;
 	int res;
 
-	DBG("Front Nbox BSKA init.");
+	DBG("Front Nbox BSKA init");
 
-	DBG("probe PT6958.");
+	DBG("probe PT6958");
 	if (pt6958_init() == 0)
 	{
-		ERR("unable to init driver. abort.");
+		ERR("unable to init driver; abort");
 		goto vfd_init_fail;
 	}
 
-	DBG("register character device %d.", VFD_MAJOR);
+	DBG("register character device %d", VFD_MAJOR);
 	if (register_chrdev(VFD_MAJOR, "vfd", &vfd_fops))
 	{
 		ERR("register major %d failed", VFD_MAJOR);
 		goto vfd_init_fail;
 	}
-
 	sema_init(&(vfd.sem), 1);
 	vfd.opencount = 0;
 
 	PT6958_setup();
-
 
 	DBG("request stpio %d,%d", PORT_KEY_INT, PIN_KEY_INT);
 	key_int = stpio_request_pin(PORT_KEY_INT, PIN_KEY_INT, "Key_int_front", STPIO_IN);
 
 	if (key_int == NULL)
 	{
-		ERR("Request stpio key_int failed. abort.");
+		ERR("Request stpio key_int failed; abort");
 		goto vfd_init_fail;
 	}
-
 	stpio_set_pin(key_int, 1);
 
 //stpio_flagged_request_irq(struct stpio_pin *pin, int comp,
 //<------><------>       void (*handler)(struct stpio_pin *pin, void *dev),
 //<------><------>       void *dev, unsigned long flags)
 
-#ifdef button_interrupt2
+#if defined(button_interrupt2)
 	DBG(">stpio_flagged_request_irq IRQ_TYPE_LEVEL_LOW\n");
-	stpio_flagged_request_irq(key_int, 0, fpanel_irq_handler, NULL, NULL);
+	stpio_flagged_request_irq(key_int, 0, (void *)fpanel_irq_handler, NULL, (long unsigned int)NULL);
 	DBG("<stpio_flagged_request_irq IRQ_TYPE_LEVEL_LOW\n");
 #endif
 
 	button_dev = input_allocate_device();
-	if (!button_dev)goto vfd_init_fail;
+	if (!button_dev)
+	{
+		goto vfd_init_fail;
+	}
 	button_dev->name = button_driver_name;
 	button_dev->open = button_input_open;
 	button_dev->close = button_input_close;
@@ -874,12 +1109,11 @@ static int __init vfd_module_init(void)
 	if (error)
 	{
 		input_free_device(button_dev);
-		ERR("Request input_register_device. abort.");
+		ERR("Request input_register_device; abort");
 		goto vfd_init_fail;
 	}
 
-
-#ifdef button_interrupt
+#if defined(button_interrupt)
 	status.pio_addr = 0;
 	status.pio_addr = (unsigned long)ioremap(PIO2_BASE_ADDRESS, (unsigned long)PIO2_IO_SIZE);
 	if (!status.pio_addr)
@@ -887,7 +1121,6 @@ static int __init vfd_module_init(void)
 		printk("button pio map: FATAL: Memory allocation error\n");
 		goto vfd_init_fail;
 	}
-
 	status.button = BUTTON_RELEASED;
 
 	ctrl_outl(BUTTON_PIN, status.pio_addr + PIO_CLR_PnC0);
@@ -904,7 +1137,6 @@ static int __init vfd_module_init(void)
 		goto vfd_init_fail;
 	}
 #endif
-
 	return 0;
 
 vfd_init_fail:
@@ -918,3 +1150,4 @@ module_exit(vfd_module_exit);
 MODULE_DESCRIPTION("PT6958 frontpanel driver");
 MODULE_AUTHOR("freebox");
 MODULE_LICENSE("GPL");
+// vim:ts=4
