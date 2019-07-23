@@ -666,6 +666,10 @@ static int default_write_proc(struct file *file, const char __user *buf, unsigne
 
 struct ProcStructure_s e2Proc[] =
 {
+//#if defined(UFS910) \
+// || defined(ADB_BOX)
+//	{cProcEntry, "boxtype"                                                          , NULL, NULL, NULL, NULL, ""},
+//#endif
 	{cProcEntry, "progress"                                                         , NULL, NULL, NULL, NULL, ""},
 
 	{cProcEntry, "bus/nim_sockets"                                                  , NULL, NULL, NULL, NULL, ""},
@@ -889,7 +893,7 @@ struct ProcStructure_s e2Proc[] =
 	{cProcEntry, "stb/video/switch"                                                 , NULL, NULL, NULL, NULL, ""},
 	{cProcEntry, "stb/video/switch_choices"                                         , NULL, NULL, NULL, NULL, ""},
 #elif defined(ARIVALINK200)
-        {cProcEntry, "stb/hdmi/cec"                                                     , NULL, NULL, NULL, NULL, ""},
+	{cProcEntry, "stb/hdmi/cec"                                                     , NULL, NULL, NULL, NULL, ""},
 #endif
 
 	{cProcDir  , "stb/player"                                                       , NULL, NULL, NULL, NULL, ""},
