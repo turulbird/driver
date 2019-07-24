@@ -1,7 +1,8 @@
 /*
  * adb_box_pt6958.c
  *
- * (c) 20?? ??
+ * (c) 20?? B4team?
+ * (c) 2019 Audioniek
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,13 +19,12 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
  *
- * Front panel driver for nBOX ITI-5800S(X), BSKA, BSLA, BXZB and BZZB models;
+ * Front panel driver for nBOX ITI-5800S, BSKA & BXZB variants,
  * LED display driver for PT6958.
  *
  * Devices:
  *  - /dev/vfd (vfd ioctls and read/write function)
  *  - /dev/rc  (reading of key events)
- *
  *
  ****************************************************************************************
  *
@@ -33,7 +33,8 @@
  * Date     By              Description
  * --------------------------------------------------------------------------------------
  * 20130929 B4team?         Initial version
- * 20190523 Audioniek       procfs added.
+ * 20190723 Audioniek       start of major rewrite.
+ * 20190??? Audioniek       procfs added.
  *
  ****************************************************************************************/
 
@@ -111,7 +112,7 @@ int pt6958_write(unsigned char cmd, unsigned char *data, int data_len)
 		{
 			FP_DATA_BIT(HIGH);  // It was important to be in high !!!
 		}
-		if (cmd != PT6958_CMD_READ_KEY)
+		else
 		{
 			pt6958_finish_write();
 		}
@@ -204,17 +205,14 @@ unsigned char pt6958_read_key(void)
 		FP_CLK_BIT(HIGH);
 		udelay(FP_TIMING_PWCLK); // wait tCPW
 	}
-
-#if defined(DEBUG_PT6958)
-	printk("[pt6958.read_key] -> KEY = %02X\n",keycode);
-#endif
+	dprintk(1, "%s -> KEY = %02X\n", __func__, keycode);
 	return keycode;
 }
 //------------------------------------------------------------------------------
 /*
- *  SG9 + GR4 - exclamation mark
+ *  SG9 + GR4 - alert
  *  SG9 + GR3 - at-sign
- *  SG9 + GR2 - timer
+ *  SG9 + GR2 - timer / rec
  *  SG9 + GR1 - power 1
  * SG10 + GR1 - power 2
  * power = 00 (off), 01(red), 02(green), 03(orange)
@@ -226,20 +224,12 @@ unsigned char pt6958_read_key(void)
  * 3 = power ORANGE
  */
 
-/*
-#define PT6958_CMD_ADDR_LED1	0xC1  // power LED
-#define PT6958_CMD_ADDR_LED2	0xC3  // timer LED
-#define PT6958_CMD_ADDR_LED3	0xC5  // at-sign LED
-#define PT6958_CMD_ADDR_LED4	0xC7  // alert LED
-*/
-
 int pt6958_led_control(unsigned char led, unsigned char set)
 {
 	unsigned char data[1] = {0};
 
-#if defined(DEBUG_PT6958)
-	dprintk(1, "led:[0x%x], set:[0x%x]\n", led, set); // display what is on the VFD screen
-#endif
+	dprintk(1, "led: [0x%x], set:[0x%x]\n", led, set); // display what is going to done
+
 	if (set != LED_LEAVE)
 	{
 		data[0] = set;
@@ -251,121 +241,13 @@ int pt6958_led_control(unsigned char led, unsigned char set)
 
 static int pt_6958_set_icon(unsigned char addr, unsigned char *data, unsigned char len)
 {
-#if defined(DEBUG_PT6958)
-	printk("[VFD-LED]adres:[%x], data:[%x], len:[%x]\n", addr, data, len); // display what is on the VFD screen
-#endif
+
+	dprintk(1, "address:[%x], data:[%x], len:[%x]\n", addr, data, len); // display what is going to be done
 	return 0;
 }
-//------------------------------------------------------------------------------
-
-
 
 /*
- * conversion table CHAR -> CODE
- */
-static const pt6958_char_table_t pt6958_char_table_data[] =
-{
-	// special characters
-	{ ' ',  PT6958_LED_EMPTY, },
-	{ '-',  PT6958_LED_DASH, },
-	{ '_',  PT6958_LED_UNDERSCORE, },
-	{ '~',  PT6958_LED_UPPERSCORE, },
-	{ '*',  PT6958_LED_ASTERISK, },
-	// digits
-	{ '0',  PT6958_LED_0, },
-	{ '1',  PT6958_LED_1, },
-	{ '2',  PT6958_LED_2, },
-	{ '3',  PT6958_LED_3, },
-	{ '4',  PT6958_LED_4, },
-	{ '5',  PT6958_LED_5, },
-	{ '6',  PT6958_LED_6, },
-	{ '7',  PT6958_LED_7, },
-	{ '8',  PT6958_LED_8, },
-	{ '9',  PT6958_LED_9, },
-	// lower case letters
-	{ 'a',  PT6958_LED_A, },
-	{ 'b',  PT6958_LED_B, },
-	{ 'c',  PT6958_LED_C, },
-	{ 'd',  PT6958_LED_D, },
-	{ 'e',  PT6958_LED_E, },
-	{ 'f',  PT6958_LED_F, },
-	{ 'g',  PT6958_LED_G, },
-	{ 'h',  PT6958_LED_H, },
-	{ 'i',  PT6958_LED_I, },
-	{ 'j',  PT6958_LED_J, },
-	{ 'k',  PT6958_LED_K, },
-	{ 'l',  PT6958_LED_L, },
-	{ 'm',  PT6958_LED_M, },
-	{ 'n',  PT6958_LED_N, },
-	{ 'o',  PT6958_LED_O, },
-	{ 'p',  PT6958_LED_P, },
-	{ 'q',  PT6958_LED_Q, },
-	{ 'r',  PT6958_LED_R, },
-	{ 's',  PT6958_LED_S, },
-	{ 't',  PT6958_LED_T, },
-	{ 'u',  PT6958_LED_U, },
-	{ 'v',  PT6958_LED_V, },
-	{ 'w',  PT6958_LED_W, },
-	{ 'x',  PT6958_LED_X, },
-	{ 'y',  PT6958_LED_Y, },
-	{ 'z',  PT6958_LED_Z, },
-	// upper case letters (same as lower case)
-	{ 'A',  PT6958_LED_A, },
-	{ 'B',  PT6958_LED_B, },
-	{ 'C',  PT6958_LED_C, },
-	{ 'D',  PT6958_LED_D, },
-	{ 'E',  PT6958_LED_E, },
-	{ 'F',  PT6958_LED_F, },
-	{ 'G',  PT6958_LED_G, },
-	{ 'H',  PT6958_LED_H, },
-	{ 'I',  PT6958_LED_I, },
-	{ 'J',  PT6958_LED_J, },
-	{ 'K',  PT6958_LED_K, },
-	{ 'L',  PT6958_LED_L, },
-	{ 'M',  PT6958_LED_M, },
-	{ 'N',  PT6958_LED_N, },
-	{ 'O',  PT6958_LED_O, },
-	{ 'P',  PT6958_LED_P, },
-	{ 'Q',  PT6958_LED_Q, },
-	{ 'R',  PT6958_LED_R, },
-	{ 'S',  PT6958_LED_S, },
-	{ 'T',  PT6958_LED_T, },
-	{ 'U',  PT6958_LED_U, },
-	{ 'V',  PT6958_LED_V, },
-	{ 'W',  PT6958_LED_W, },
-	{ 'X',  PT6958_LED_X, },
-	{ 'Y',  PT6958_LED_Y, },
-	{ 'Z',  PT6958_LED_Z, },
-	// other characters
-	{ '!',  PT6958_LED_EMPTY, },
-	{ '"',  PT6958_LED_EMPTY, },
-	{ '$',  PT6958_LED_EMPTY, },
-	{ '%',  PT6958_LED_EMPTY, },
-	{ '&',  PT6958_LED_EMPTY, },
-	{ 0x27, PT6958_LED_EMPTY, },
-	{ '(',  PT6958_LED_EMPTY, },
-	{ ')',  PT6958_LED_EMPTY, },
-	{ '+',  PT6958_LED_EMPTY, },
-	{ ',',  PT6958_LED_DOT, },
-	{ '.',  PT6958_LED_DOT, },
-	{ '/',  PT6958_LED_EMPTY, },
-	{ ':',  PT6958_LED_DOT, },
-	{ ';',  PT6958_LED_EMPTY, },
-	{ '<',  PT6958_LED_EMPTY, },
-	{ '=',  PT6958_LED_EMPTY, },
-	{ '>',  PT6958_LED_EMPTY, },
-	{ '?',  PT6958_LED_EMPTY, },
-	{ '[',  PT6958_LED_EMPTY, },
-	{ ']',  PT6958_LED_EMPTY, },
-	{ '^',  PT6958_LED_EMPTY, },
-	{ '{',  PT6958_LED_EMPTY, },
-	{ '|',  PT6958_LED_EMPTY, },
-	{ '}',  PT6958_LED_EMPTY, },
-
-};
-//------------------------------------------------------------------------------
-/*
- * he looks for a CHAR character in the table and converts it to a CODE
+ * look for a CHAR character in the table and convert it to a CODE
  */
 static unsigned char pt6958_translate_lookup(char in)
 {
@@ -384,11 +266,11 @@ static unsigned char pt6958_translate_lookup(char in)
 	}
 	if (i == PT6958_TABLE_LEN)
 	{
-		out = PT6958_LED_UNDERSCORE; //nieznany znak wyswietl jako _
+		out = PT6958_LED_UNDERSCORE; //disaply unknown characters as underline
 	}
 	return out;
 }
-//------------------------------------------------------------------------------
+
 /*
  * function that translates CHAR characters to CODES of characters
  */

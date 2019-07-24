@@ -29,6 +29,48 @@
 #define PT6302_COMMAND_SET_LIGHTS  7
 #define PT6302_COMMAND_TESTMODE    8
 
+// brightness control
+#define PT6302_DUTY_MIN  2
+#define PT6302_DUTY_NORMAL  7
+#define PT6302_DUTY_MAX  7
+
+// setting display width values
+#define PT6302_DIGITS_MIN    9
+#define PT6302_DIGITS_MAX    16
+#define PT6302_DIGITS_OFFSET 8
+
+typedef union
+{
+	struct
+	{
+		uint8_t addr: 4, cmd: 4;
+	} dcram;
+	struct
+	{
+		uint8_t addr: 3, reserved: 1, cmd: 4;
+	} cgram;
+	struct
+	{
+		uint8_t addr: 4, cmd: 4;
+	} adram;
+	struct
+	{
+		uint8_t port1: 1, port2: 1, reserved: 2, cmd: 4;
+	} port;
+	struct
+	{
+		uint8_t duty: 3, reserved: 1, cmd: 4;
+	} duty;
+	struct
+	{
+		uint8_t digits: 3, reserved: 1, cmd: 4;
+	} digits;
+	struct
+	{
+		uint8_t onoff: 2, reserved: 2, cmd: 4;
+	} lights;
+	uint8_t all;
+} pt6302_command_t;
 
 static int len_vfd = 16;
 // vim:ts=4

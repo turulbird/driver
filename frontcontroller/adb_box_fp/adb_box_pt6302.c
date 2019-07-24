@@ -1,7 +1,8 @@
 /*
  * adb_box_pt6302.c
  *
- * (c) 20?? ??
+ * (c) 20?? B4team??
+ * (c) 2019 Audioniek
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,12 +19,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
  *
- * Front panel driver for nBOX ITI-5800S(X), BSLA and BZZB models;
- * VFD driver for PT6302.
- *
- * Devices:
- *  - /dev/vfd (vfd ioctls and read/write function)
- *  - /dev/rc  (reading of key events)
+ * Front panel driver for nBOX ITI-5800SX (BSLA and BZZB variants),
+ * VFD display driver for PT6302.
  *
  *
  ****************************************************************************************
@@ -33,7 +30,8 @@
  * Date     By              Description
  * --------------------------------------------------------------------------------------
  * 20130929 B4team?         Initial version
- * 20160523 Audioniek       procfs added.
+ * 20190723 Audioniek       start of major rewrite.
+ * 20190??? Audioniek       procfs added.
  *
  ****************************************************************************************/
 
@@ -52,12 +50,25 @@
 #include <linux/stpio.h>
 #endif
 
-#include "adb_box_fp.h"  // Global stuff
-#include "adb_box_pt6302.h"  // local stuff
+#include "adb_box_fp.h"
+#include "adb_box_pt6302.h"
 #include "adb_box_table.h"  // character table
 
 
-static char adb_box_scp_access_char(struct scp_driver *scp, int dout)
+/*****************************************************
+ *
+ * Code for front panel button driver 
+ *
+ */
+
+/*****************************************************
+ *
+ * pt6302_access_char
+ *
+ * 
+ *
+ */
+static char pt6302_access_char(struct vfd_pin_driver *vfd_pin, int dout)
 {
 	uint8_t din   = 0;
 	int     outen = (dout < 0) ? 0 : 1, i;
@@ -66,117 +77,109 @@ static char adb_box_scp_access_char(struct scp_driver *scp, int dout)
 	{
 		if (outen)
 		{
-			stpio_set_pin(scp->sda, (dout & 1) == 1);
+			stpio_set_pin(vfd_pin->pt6302_din, (dout & 1) == 1);
 		}
-		stpio_set_pin(scp->scl, 0);
+		stpio_set_pin(vfd_pin->pt6302_clk, 0);
 		udelay(delay);
-		stpio_set_pin(scp->scl, 1);
+		stpio_set_pin(vfd_pin->pt6302_clk, 1);
 		udelay(delay);
-		din  = (din >> 1) | (stpio_get_pin(scp->sda) > 0 ? 0x80 : 0);
+		din  = (din >> 1) | (stpio_get_pin(vfd_pin->pt6302_din) > 0 ? 0x80 : 0);
 		dout = dout >> 1;
 	}
 	return din;
 };
 
-static inline void adb_box_scp_write_char(struct scp_driver *scp, char data)  // used
+/*****************************************************
+ *
+ * pt6302_write_char
+ *
+ * 
+ *
+ */
+static inline void pt6302_write_char(struct vfd_pin_driver *vfd_pin, char data)  // used
 {
-	stpio_set_pin(scp->scs, 0);
-	adb_box_scp_access_char(scp, data);
-	stpio_set_pin(scp->scs, 1);
+	stpio_set_pin(vfd_pin->pt6302_cs, 0);
+	pt6302_access_char(vfd_pin, data);
+	stpio_set_pin(vfd_pin->pt6302_cs, 1);
 };
-
-static inline char adb_box_scp_read_char(struct scp_driver *scp)
-{
-	stpio_set_pin(scp->scs, 0);
-	return adb_box_scp_access_char(scp, -1);
-	stpio_set_pin(scp->scs, 1);
-};
-
-static void adb_box_scp_write_data(struct scp_driver *scp, char *data, int len)  // used
-{
-	int i;
-
-	stpio_set_pin(scp->scs, 0);
-
-	for (i = 0; i < len; i++)
-	{
-		adb_box_scp_access_char(scp, data[i]);
-	}
-	stpio_set_pin(scp->scs, 1);
-};
-
-static int adb_box_scp_read_data(struct scp_driver *scp, char *data, int len)
-{
-	int i;
-
-	stpio_set_pin(scp->scs, 0);
-
-	for (i = 0; i < len; i++)
-	{
-		data[i] = adb_box_scp_access_char(scp, -1);
-	}
-	stpio_set_pin(scp->scs, 1);
-	return len;
-};
-
-//
-// pt6302
-//
-
-typedef union
-{
-	struct
-	{
-		uint8_t addr: 4, cmd: 4;
-	} dcram;
-	struct
-	{
-		uint8_t addr: 3, reserved: 1, cmd: 4;
-	} cgram;
-	struct
-	{
-		uint8_t addr: 4, cmd: 4;
-	} adram;
-	struct
-	{
-		uint8_t port1: 1, port2: 1, reserved: 2, cmd: 4;
-	} port;
-	struct
-	{
-		uint8_t duty: 3, reserved: 1, cmd: 4;
-	} duty;
-	struct
-	{
-		uint8_t digits: 3, reserved: 1, cmd: 4;
-	} digits;
-	struct
-	{
-		uint8_t onoff: 2, reserved: 2, cmd: 4;
-	} lights;
-	uint8_t all;
-} pt6302_command_t;
 
 #if 0
-struct pt6302_driver
+/*****************************************************
+ *
+ * pt6302_read_char
+ *
+ * 
+ *
+ */
+static inline char pt6302_read_char(struct vfd_pin_driver *vfd_pin)
 {
-	struct scp_driver *scp;
+	stpio_set_pin(vfd_pin->pt6302_cs, 0);
+	return pt6302_access_char(vfd_pin, -1);
+	stpio_set_pin(vfd_pin->pt6302_cs, 1);
 };
 #endif
 
-#define pt6302_write_data(scp, data, len) adb_box_scp_write_data(scp, data, len)
-#define pt6302_write_char(scp, data)      adb_box_scp_write_char(scp, data)
+/*****************************************************
+ *
+ * pt6302_write_data
+ *
+ * write len bytes to PT6302
+ *
+ */
+static void pt6302_write_data(struct vfd_pin_driver *vfd_pin, char *data, int len)
+{
+	int i;
+
+	stpio_set_pin(vfd_pin->pt6302_cs, 0);  // enable PT6302
+
+	for (i = 0; i < len; i++)
+	{
+		pt6302_access_char(vfd_pin, data[i]);
+	}
+	stpio_set_pin(vfd_pin->pt6302_cs, 1);
+};
+
+#if 0
+/*****************************************************
+ *
+ * pt6302_read_data
+ *
+ * read len bytes from PT6302
+ *
+ */
+static int pt6302_read_data(struct vfd_pin_driver *vfd_pin, char *data, int len)
+{
+	int i;
+
+	stpio_set_pin(vfd_pin->pt6302_cs, 0);
+
+	for (i = 0; i < len; i++)
+	{
+		data[i] = pt6302_access_char(vfd_pin, -1);
+	}
+	stpio_set_pin(vfd_pin->pt6302_cs, 1);
+	return len;
+};
+#endif
 
 void pt6302_free(struct pt6302_driver *ptd);
 
-struct pt6302_driver *pt6302_init(struct scp_driver *scp)
+/*****************************************************
+ *
+ * pt6302_init
+ *
+ * Initialize PT6302 display driver
+ *
+ */
+struct pt6302_driver *pt6302_init(struct vfd_pin_driver *vfd_pin_driv)
 {
 	struct pt6302_driver *ptd = NULL;
 
-	dprintk(10, "%s (scp = %p)", __func__, scp);
+	dprintk(10, "%s (vfd_pin_drv = %p)", __func__, vfd_pin_driv);
 
-	if (scp == NULL)
+	if (vfd_pin_driv == NULL)
 	{
-		dprintk(1, "Failed to access scp driver; abort.");
+		dprintk(1, "vfd_pin driver not initialized; abort.");
 		return NULL;
 	}
 	ptd = (struct pt6302_driver *)kzalloc(sizeof(struct pt6302_driver), GFP_KERNEL);
@@ -185,7 +188,7 @@ struct pt6302_driver *pt6302_init(struct scp_driver *scp)
 		dprintk(1, "Unable to allocate pt6302 driver struct; abort.");
 		goto pt6302_init_fail;
 	}
-	ptd->scp = scp;
+	ptd->vfd_pin = vfd_pin_driv;
 	return ptd;
 
 pt6302_init_fail:
@@ -193,7 +196,27 @@ pt6302_init_fail:
 	return NULL;
 }
 
-// display on VFD
+/*****************************************************
+ *
+ * pt6302_free
+ *
+ * Stop PT6302 display driver
+ *
+ */
+void pt6302_free(struct pt6302_driver *ptd)
+{
+	if (ptd == NULL)
+	{
+		return;
+	}
+//	pt6302_set_light(ptd, PT6302_LIGHTS_OFF);
+//	pt6302_set_brightness(ptd, PT6302_DUTY_MAX);
+//	pt6302_set_digits(ptd, PT6302_DIGITS_MIN);
+//	pt6302_set_ports(ptd, 0, 0);
+
+	ptd->vfd_pin = NULL;
+}
+
 /******************************************************
  *
  * pt6302_write_dcram
@@ -205,7 +228,6 @@ int pt6302_write_dcram(struct pt6302_driver *ptd, unsigned char addr, unsigned c
 {
 	pt6302_command_t cmd;
 	uint8_t          *wdata;
-
 	int              i = 0;
 	int              j = 0;
 	int              char_index = 0x00;
@@ -213,10 +235,13 @@ int pt6302_write_dcram(struct pt6302_driver *ptd, unsigned char addr, unsigned c
 
 	dprintk(1, "Text [%s] (len =%d)\n", data, len); // display what comes on screen
 
+//define L3D 1
+#if defined(L3D)
 	if ((data[0] == 'l') && (data[1] == '3') && (data[2] == 'd')) // if string starts with l3d
 	{
 		goto led_control;  // set LEDs
 	}
+#endif
 	wdata = kmalloc(1 + len_vfd, GFP_KERNEL);
 
 	if (wdata == NULL)
@@ -295,9 +320,9 @@ int pt6302_write_dcram(struct pt6302_driver *ptd, unsigned char addr, unsigned c
 			}
 		}
 	}
-	pt6302_write_data(ptd->scp, wdata, len_vfd + 1);
+	pt6302_write_data(ptd->vfd_pin, wdata, len_vfd + 1);
 
-// support LED
+// show text of PT6958 LED display as well
 	for (i = 0; i < 16; i++)
 	{
 		led_txt[i] = wdata[len_vfd - i];
@@ -305,6 +330,7 @@ int pt6302_write_dcram(struct pt6302_driver *ptd, unsigned char addr, unsigned c
 	pt6958_display(led_txt);
 	return 0;
 
+#if defined(L3D)
 led_control:  // Set the LEDs
 	dprintk(1, "led: 0x%x stan: 0x%x", data[4], data[6]);
 
@@ -351,13 +377,10 @@ led_control:  // Set the LEDs
 	{
 		pt6958_led_control(PT6958_CMD_ADDR_LED4, 1);  // set LED4 on
 	}
+#endif
 	return 0;
 
 }
-
-// brightness control
-#define PT6302_DUTY_MIN  2
-#define PT6302_DUTY_MAX  7
 
 /******************************************************
  *
@@ -381,13 +404,8 @@ void pt6302_set_brightness(struct pt6302_driver *ptd, int level)
 	cmd.duty.cmd  = PT6302_COMMAND_SET_DUTY;
 	cmd.duty.duty = level;
 
-	pt6302_write_char(ptd->scp, cmd.all);
+	pt6302_write_char(ptd->vfd_pin, cmd.all);
 }
-
-// setting the size of char_index
-#define PT6302_DIGITS_MIN    9
-#define PT6302_DIGITS_MAX    16
-#define PT6302_DIGITS_OFFSET 8
 
 /******************************************************
  *
@@ -413,31 +431,31 @@ static void pt6302_set_digits(struct pt6302_driver *ptd, int num)
 	cmd.digits.cmd    = PT6302_COMMAND_SET_DIGITS;
 	cmd.digits.digits = num;
 
-	pt6302_write_char(ptd->scp, cmd.all);
+	pt6302_write_char(ptd->vfd_pin, cmd.all);
 }
 
 /******************************************************
  *
- * pt6302_set_lights
+ * pt6302_set_light
  *
- * Sets VFD display to normal, all segments off or all
- * segments on.
+ * Sets VFD display to normal display, all segments off
+ * or all segments on.
  *
  */
-void pt6302_set_lights(struct pt6302_driver *ptd, int onoff)
+void pt6302_set_light(struct pt6302_driver *ptd, int onoff)
 {
 	pt6302_command_t cmd;
 
-	if (onoff < PT6302_LIGHTS_NORMAL || onoff > PT6302_LIGHTS_ON)
+	if (onoff < PT6302_LIGHT_NORMAL || onoff > PT6302_LIGHT_ON)
 	{
-		onoff = PT6302_LIGHTS_ON; // if illegal input, set all segments on?
+		onoff = PT6302_LIGHT_ON; // if illegal input, set all segments on?
 	}
 	cmd.lights.cmd   = PT6302_COMMAND_SET_LIGHTS;
 	cmd.lights.onoff = onoff;
 
-	pt6302_write_char(ptd->scp, cmd.all);
+	pt6302_write_char(ptd->vfd_pin, cmd.all);
 
-	// jasnosc didek i lfd
+	// brightness of display and LEDs
 //	pt6958_write(PT6958_CMD_DISPLAY_ON, NULL, 0);
 }
 
@@ -449,7 +467,7 @@ void pt6302_set_lights(struct pt6302_driver *ptd, int onoff)
  * states specified.
  *
  */
-void pt6302_set_ports(struct pt6302_driver *ptd, int port1, int port2)  // used
+void pt6302_set_ports(struct pt6302_driver *ptd, int port1, int port2)
 {
 	pt6302_command_t cmd;
 
@@ -457,18 +475,8 @@ void pt6302_set_ports(struct pt6302_driver *ptd, int port1, int port2)  // used
 	cmd.port.port1 = (port1) ? 1 : 0;
 	cmd.port.port2 = (port2) ? 1 : 0;
 
-	pt6302_write_char(ptd->scp, cmd.all);
+	pt6302_write_char(ptd->vfd_pin, cmd.all);
 }
-
-#if 0  // not used anywhere
-static uint8_t PT6302_CLEAR_DATA[] =
-{
-	0x20, 0x20, 0x20, 0x20,
-	0x20, 0x20, 0x20, 0x20,
-	0x20, 0x20, 0x20, 0x20,
-	0x20, 0x20, 0x20, 0x20
-};
-#endif
 
 /******************************************************
  *
@@ -485,14 +493,13 @@ void pt6302_setup(struct pt6302_driver *pfd)
 
 	pt6302_set_ports(pfd, 1, 0);
 
-	//pt6302_set_digits( pfd, PT6302_DIGITS_MAX );
-	pt6302_set_digits(pfd, len_vfd);
-	pt6302_set_brightness(pfd, PT6302_DUTY_MIN);
-	pt6302_set_lights(pfd, PT6302_LIGHTS_NORMAL);
+	pt6302_set_digits(pfd, PT6302_DIGITS_MAX);  // display width = 16
+	pt6302_set_brightness(pfd, PT6302_DUTY_NORMAL);
+	pt6302_set_light(pfd, PT6302_LIGHT_NORMAL);
 
 	dprintk(1, "Setup of PT6302 completed.");
 
-#if 0
+#if 0 // skip driver sign on
 	if (rec)
 	{
 		pt6302_write_dcram(pfd, 0x0, "       []       ", 16);  // welcome
@@ -547,28 +554,16 @@ void pt6302_setup(struct pt6302_driver *pfd)
 	{
 		pt6958_display(led_txt);
 	}
-#endif
 	for (i = 0; i < 150; i++)
 	{
 		udelay(5000);
 	}
-	pt6302_write_dcram(pfd, 0x0, "[              ]", 16);  // welcome
-	pt6958_display("    ");  // blank LED display
-//	pt6958_led_control(PT6958_CMD_ADDR_LED1, 2 );
+	pt6302_write_dcram(pfd, 0, "[              ]", 16);  // welcome
+#else
+	pt6302_write_dcram(pfd, 0, "                ", 16);
+#endif
+	pt6958_display("    ");  // blank LED display  // blank VFD display
+//	pt6958_led_control(PT6958_CMD_ADDR_LED1, 2); power green (alaready done in driver init)
 }
 
-
-void pt6302_free(struct pt6302_driver *ptd)  // used
-{
-	if (ptd == NULL)
-	{
-		return;
-	}
-	pt6302_set_lights(ptd, PT6302_LIGHTS_OFF);
-	pt6302_set_brightness(ptd, PT6302_DUTY_MAX);
-	pt6302_set_digits(ptd, PT6302_DIGITS_MIN);
-	pt6302_set_ports(ptd, 0, 0);
-
-	ptd->scp = NULL;
-}
 // vim:ts=4

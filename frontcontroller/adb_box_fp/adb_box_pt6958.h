@@ -9,40 +9,9 @@
 #define ADB_BOX_BUTTON_MENU  0x20
 #define ADB_BOX_BUTTON_EXIT  0x40
 
-#if 0
-#define BUTTON_DO_PORT       2
-#define BUTTON_DO_PIN        2
-
-#define BUTTON_DS_PORT       1
-#define BUTTON_DS_PIN        6
-#endif
-
-//#define BUTTON_RESET_PORT    3
-//#define BUTTON_RESET_PIN     2
-
-#if 0  // moved to adb_box_fp.h
-static char                    *button_driver_name = "PT6958 frontpanel buttons";
-static struct workqueue_struct *button_wq;
-static struct input_dev        *button_dev;
-static struct stpio_pin        *button_do = NULL;
-static struct stpio_pin        *button_ds = NULL;
-
-static struct stpio_pin        *button_reset = NULL;
-
-static int                      button_polling = 1;
-unsigned char                   key_group1 = 0, key_group2 = 0;
-static unsigned int             key_button = 0;
-#endif
-
-/*
-void ReadKey(void);
-void WriteData(unsigned char Value);
-unsigned char ReadData(void);
-*/
-
 /*
  * variables and definitions taken from uboot
-*/
+ */
 
 //------------------------------------------------------------------------------
 #define LOW                     0
@@ -59,13 +28,10 @@ unsigned char ReadData(void);
 #define FP_STB_BIT(x)           STPIO_SET_PIN(PIO_PORT(1),6, x)
 #define FP_CSB_BIT(x)           STPIO_SET_PIN(PIO_PORT(1),2, x)
 //------------------------------------------------------------------------------
-#if 0  // move to adb_box_fp.h
-#define FP_GETKEY               STPIO_GET_PIN(PIO_PORT(2),2) //4 ?
-#endif
 #define FP_DATA                 STPIO_GET_PIN(PIO_PORT(4),1)
 //------------------------------------------------------------------------------
 
-#define FP_TIMING_PWCLK         1  // clock pulse with is 1us 
+#define FP_TIMING_PWCLK         1  // clock pulse width is 1us 
 #define FP_TIMING_STBCLK        1  // clock strobe time 2us
 #define FP_TIMING_CSBCLK        FP_TIMING_STBCLK  // same as STBCLK
 #define FP_TIMING_CLKSTB        1  // strobe clock time 2us
@@ -73,8 +39,6 @@ unsigned char ReadData(void);
 #define FP_TIMING_TWAIT         1  // waiting time 2us between ReadCMD & ReadDATA (KEY)
 #define FP_TIMING_TDOFF         1  // 300ns delay between data bytes
 //------------------------------------------------------------------------------
-
-//extern void adb_box_fp_init(void);
 
 //------------------------------------------------------------------------------
 typedef struct
@@ -86,62 +50,7 @@ typedef struct
 //------------------------------------------------------------------------------
 #define PT6958_TABLE_LEN 		(sizeof(pt6958_char_table_data) / sizeof(pt6958_char_table_t))
 #define PT6958_MAX_CHARS		4
-#if 0  // moved to adb_box_fp.h
-/**********************************************************************
- * Internal RAM Size : 14 bytes
- *
- *  1 - Data Setting Command
- *  1 - Address Setting Command
- * 10 - Display Data
- *  1 - Display Control Command
- **********************************************************************/
-#define PT6958_RAM_SIZE 		(1 + 1 + 10 + 1)
-/**********************************************************************
- * CMD 40: Data Setting Command
- * bits:   0100 dcba
- *
- * ba - Data Write & Read Mode Settings:
- * 00: Write Data to Display Mode
- * 10: Read Key Data
- *
- *  c - Address Incremental Mode Settings (Display Mode):
- *  0: Increment Address after Data has been Written
- *  1: Fixed Address
- *
- *  d - Mode Settings
- *  0: Normal Operation Mode
- *  1: Test Mode
- **********************************************************************/
-#define PT6958_CMD_WRITE_INC   0x40
-#define PT6958_CMD_READ_KEY    0x42
-#define PT6958_CMD_WRITE_FIXED 0x44
-#define PT6958_CMD_MODE_NORMAL 0x40
-#define PT6958_CMD_MODE_TEST   0x48
-/**********************************************************************
- * CMD C0: Address Setting Command
- * bits:   1100 dcba
- *
- * 0,2,4,6 = segment 1,2,3,4
- * 1,3,5,7 = power, clock, mail, warning LED
- * 8,9     = not connected
- *
- * dcba - Address 0x00 to 0x09
- **********************************************************************/
-#define PT6958_CMD_ADDR_SET    0xC0 // 0xC0 to 0xC9
-//------------------------------------------------------------------------------
-#define PT6958_CMD_ADDR_DISP1  0xC0 // 8.:.. 
-#define PT6958_CMD_ADDR_DISP2  0xC2 // .8:..  
-#define PT6958_CMD_ADDR_DISP3  0xC4 // ..:8. 
-#define PT6958_CMD_ADDR_DISP4  0xC6 // ..:.8
-//------------------------------------------------------------------------------
-#define PT6958_CMD_ADDR_LED1   0xC1 //power LED
-#define PT6958_CMD_ADDR_LED2   0xC3 //timer LED
-//#define PT6958_LED_LARGE_A     (0x77|0x80)
 
-#define PT6958_CMD_ADDR_LED3   0xC5 //mail/encrypted LED
-#define PT6958_CMD_ADDR_LED4   0xC7 //alert LED
-#endif
-//------------------------------------------------------------------------------
 #define LED_LEAVE              0xFF
 #define LED_OFF                0
 #define LED_ON                 1
@@ -158,30 +67,6 @@ typedef struct
 #define FP_LED_CLOCK           PT6958_CMD_ADDR_LED2
 #define FP_LED_MAIL            PT6958_CMD_ADDR_LED3
 #define FP_LED_WARN            PT6958_CMD_ADDR_LED4
-#if 0  // moved to adb_box_fp.h
-/**********************************************************************
- * CMD 80: Display Control Command
- * bits:   1000 dcba
- *
- * cba - Dimming Quantity Settings:
- * 000: Pulse width = 1/16
- * 001: Pulse width = 2/16
- * 010: Pulse width = 4/16
- * 011: Pulse width = 10/16
- * 100: Pulse width = 11/16
- * 101: Pulse width = 12/16
- * 110: Pulse width = 13/16
- * 111: Pulse width = 14/16
- *
- *   d - Display Settings
- *   0: Display Off (Key Scan Continues)
- *   1: Display On
- **********************************************************************/
-#define PT6958_CMD_DISPLAY_OFF        0x80
-#define PT6958_CMD_DISPLAY_OFF_DIM(x) (0x80 + x) //0x80-0x87
-#define PT6958_CMD_DISPLAY_ON         0x8e //0x8E org adb_box
-#define PT6958_CMD_DISPLAY_ON_DIM(x)  (0x88 + x) //0x88-0x8F
-#endif
 
 /*********************************************************************
  * Definitions of LED segments
@@ -189,11 +74,15 @@ typedef struct
  *      MSB  LSB
  *  bit 76543210
  *
- *      -- 0
- *  5  |  |  1
- *    6 --
- *  4  |  |  2
- *      -- 3
+ *      ----- 0
+ *     |     |
+ *  5  |     |  1
+ *  5  |     |
+ *   6  -----
+ *     |     |
+ *  4  |     |  2
+ *     |     |
+ *      ----- 3
  *
  **********************************************************************/
 #define PT6958_LED_A          (0x77|0x00)  //A
@@ -252,7 +141,7 @@ typedef struct
  * A B C E F H L I O P S T U
  */
 #define PT6958_LED_LARGE_A    (0x77|0x80)
-#define PT6958_LED_LARGE_B    PT6958_LED_8
+#define PT6958_LED_LARGE_B    (0x7C|0x80)
 #define PT6958_LED_LARGE_C    (0x39|0x80)
 #define PT6958_LED_LARGE_E    (0x79|0x80)
 #define PT6958_LED_LARGE_F    (0x71|0x80)
@@ -291,21 +180,107 @@ typedef struct
 #define PT6958_LED_DOT        (0x00|0x80)
 
 /*
- * button map
- * PCB:
- * SW1 = POWER, SW2 = UP, SW3 = DOWN, SW4 = OK
- * SW5 = MENU, SW6 = LEFT, SW8 = RIGHT, SW9 = LIST
- *
- * K1 = POWER [SW 1], 	UP [SW 5]
- * K2 = MENU [SW 2], 	LEFT [SW 6]
- * K3 = RIGHT [SW 3], 	LIST [SW 7]
- * K4 = DOWN [SW 4], 	OK [SW 8]
+ * conversion table CHAR -> CODE
  */
-//void pt6958_pow_off(void);
-//static int pt6958_led_control(unsigned char led, unsigned char set);
-//unsigned char pt6958_read_key(void);
-//void pt6958_display(char *str);
-//static int pt6958_write(unsigned char cmd, unsigned char *data, int data_len);
-//static int pt6958_led_control(unsigned char led, unsigned char set);
+static const pt6958_char_table_t pt6958_char_table_data[] =
+{
+	// special characters
+	{ ' ',  PT6958_LED_EMPTY, },
+	{ '-',  PT6958_LED_DASH, },
+	{ '_',  PT6958_LED_UNDERSCORE, },
+	{ '~',  PT6958_LED_UPPERSCORE, },
+	{ '*',  PT6958_LED_ASTERISK, },
+	// digits
+	{ '0',  PT6958_LED_0, },
+	{ '1',  PT6958_LED_1, },
+	{ '2',  PT6958_LED_2, },
+	{ '3',  PT6958_LED_3, },
+	{ '4',  PT6958_LED_4, },
+	{ '5',  PT6958_LED_5, },
+	{ '6',  PT6958_LED_6, },
+	{ '7',  PT6958_LED_7, },
+	{ '8',  PT6958_LED_8, },
+	{ '9',  PT6958_LED_9, },
+	// lower case letters
+	{ 'a',  PT6958_LED_A, },
+	{ 'b',  PT6958_LED_B, },
+	{ 'c',  PT6958_LED_C, },
+	{ 'd',  PT6958_LED_D, },
+	{ 'e',  PT6958_LED_E, },
+	{ 'f',  PT6958_LED_F, },
+	{ 'g',  PT6958_LED_G, },
+	{ 'h',  PT6958_LED_H, },
+	{ 'i',  PT6958_LED_I, },
+	{ 'j',  PT6958_LED_J, },
+	{ 'k',  PT6958_LED_K, },
+	{ 'l',  PT6958_LED_L, },
+	{ 'm',  PT6958_LED_M, },
+	{ 'n',  PT6958_LED_N, },
+	{ 'o',  PT6958_LED_O, },
+	{ 'p',  PT6958_LED_P, },
+	{ 'q',  PT6958_LED_Q, },
+	{ 'r',  PT6958_LED_R, },
+	{ 's',  PT6958_LED_S, },
+	{ 't',  PT6958_LED_T, },
+	{ 'u',  PT6958_LED_U, },
+	{ 'v',  PT6958_LED_V, },
+	{ 'w',  PT6958_LED_W, },
+	{ 'x',  PT6958_LED_X, },
+	{ 'y',  PT6958_LED_Y, },
+	{ 'z',  PT6958_LED_Z, },
+	// upper case letters (same as lower case)
+	{ 'A',  PT6958_LED_A, },
+	{ 'B',  PT6958_LED_B, },
+	{ 'C',  PT6958_LED_C, },
+	{ 'D',  PT6958_LED_D, },
+	{ 'E',  PT6958_LED_E, },
+	{ 'F',  PT6958_LED_F, },
+	{ 'G',  PT6958_LED_G, },
+	{ 'H',  PT6958_LED_H, },
+	{ 'I',  PT6958_LED_I, },
+	{ 'J',  PT6958_LED_J, },
+	{ 'K',  PT6958_LED_K, },
+	{ 'L',  PT6958_LED_L, },
+	{ 'M',  PT6958_LED_M, },
+	{ 'N',  PT6958_LED_N, },
+	{ 'O',  PT6958_LED_O, },
+	{ 'P',  PT6958_LED_P, },
+	{ 'Q',  PT6958_LED_Q, },
+	{ 'R',  PT6958_LED_R, },
+	{ 'S',  PT6958_LED_S, },
+	{ 'T',  PT6958_LED_T, },
+	{ 'U',  PT6958_LED_U, },
+	{ 'V',  PT6958_LED_V, },
+	{ 'W',  PT6958_LED_W, },
+	{ 'X',  PT6958_LED_X, },
+	{ 'Y',  PT6958_LED_Y, },
+	{ 'Z',  PT6958_LED_Z, },
+	// other characters
+	{ '!',  PT6958_LED_EMPTY, },
+	{ '"',  PT6958_LED_EMPTY, },
+	{ '$',  PT6958_LED_EMPTY, },
+	{ '%',  PT6958_LED_EMPTY, },
+	{ '&',  PT6958_LED_EMPTY, },
+	{ 0x27, PT6958_LED_EMPTY, },
+	{ '(',  PT6958_LED_EMPTY, },
+	{ ')',  PT6958_LED_EMPTY, },
+	{ '+',  PT6958_LED_EMPTY, },
+	{ ',',  PT6958_LED_DOT, },
+	{ '.',  PT6958_LED_DOT, },
+	{ '/',  PT6958_LED_EMPTY, },
+	{ ':',  PT6958_LED_DOT, },
+	{ ';',  PT6958_LED_EMPTY, },
+	{ '<',  PT6958_LED_EMPTY, },
+	{ '=',  PT6958_LED_EMPTY, },
+	{ '>',  PT6958_LED_EMPTY, },
+	{ '?',  PT6958_LED_EMPTY, },
+	{ '[',  PT6958_LED_EMPTY, },
+	{ ']',  PT6958_LED_EMPTY, },
+	{ '^',  PT6958_LED_EMPTY, },
+	{ '{',  PT6958_LED_EMPTY, },
+	{ '|',  PT6958_LED_EMPTY, },
+	{ '}',  PT6958_LED_EMPTY, },
+
+};
 #endif
 // vim:ts=4

@@ -19,8 +19,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
  *
- * Front panel driver for nBOX ITI-5800S(X), BSKA, BSLA, BXXB and BZZB models;
- * generic part.
+ * Front panel driver for nBOX ITI-5800S(X), BSKA, BSLA, BXXB and BZZB variants;
+ * generic part: driver code for VFD & front panel buttons.
  *
  * Devices:
  *  - /dev/vfd (vfd ioctls and read/write function)
@@ -34,7 +34,8 @@
  * Date     By              Description
  * --------------------------------------------------------------------------------------
  * 20130929 B4team?         Initial version
- * 20160523 Audioniek       procfs added.
+ * 20190723 Audioniek       start of major rewrite.
+ * 20190??? Audioniek       procfs added.
  *
  ****************************************************************************************/
 
@@ -56,20 +57,25 @@
 #include "adb_box_fp.h"
 #include "pio.h"
 
-/* <-----led-----> */
-//#include "adb_box_pt6958.h"
-
-/* <-----vfd-----> */
-//#include "adb_box_pt6302.h"
-
 /* <-----buttons-----> */
 #include <linux/input.h>
 #include <linux/version.h>
 #include <linux/workqueue.h>
 
+// Global variables (module parameters)
+int paramDebug = 0;  // debug level
+int delay      = 5;
+static int rec = 1;  // distinguishes between recorder(1) / non-recorder(0) (bsla/bzzb vs. bska/bxzb)
 
-#define BUTTON_POLL_MSLEEP 1
-#define BUTTON_POLL_DELAY  10
+// Globals (button routines)
+static int           button_polling = 1;
+unsigned char        key_group1 = 0, key_group2 = 0;
+static unsigned int  key_button = 0;
+static unsigned char pt6958_ram[PT6958_RAM_SIZE];
+
+//int SCP_PORT = 0;
+
+struct __vfd_scp *vfd_scp_ctrl = NULL;
 
 /* <-----button assignment-----> */
 /*KEY  CODE1  CODE2
@@ -84,15 +90,19 @@
   RES    8      0
 */
 
-// Globals (button routines)
-static int                     button_polling = 1;
-unsigned char                  key_group1 = 0, key_group2 = 0;
-static unsigned int            key_button = 0;
+/*****************************************************
+ *
+ * Code for front panel button driver 
+ *
+ */
 
-int SCP_PORT = 0;
-
-struct __vfd_scp *vfd_scp_ctrl = NULL;
-
+/*****************************************************
+ *
+ * button_poll
+ *
+ * Scan for pressed front panel keys
+ *
+ */
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,20)
 void button_poll(void)
 #else
@@ -112,69 +122,67 @@ void button_poll(struct work_struct *ignored)
 			key_group1 = pt6958_read_key() & 0xfe;
 			key_group2 = pt6958_read_key() & 0xfe;
 
-			if (paramDebug)
-			{
-				dprintk(1, "Key group [%X:%X]\n", key_group1, key_group2);
-			}
+			dprintk(0, "Key group [%X:%X]\n", key_group1, key_group2);
+
 			if ((key_group1 == 0x02) && (key_group2 == 0x00))
 			{
-				key_button = KEY_POWER;  //POW
+				key_button = KEY_POWER;
 			}
 			if ((key_group1 == 0x04) && (key_group2 == 0x00))
 			{
-				key_button = KEY_OK;  //OK
+				key_button = KEY_OK;
 			}
 			if ((key_group1 == 0x20) && (key_group2 == 0x00))
 			{
-				key_button = KEY_UP;  //UP
+				key_button = KEY_UP;
 			}
 			if ((key_group1 == 0x00) && (key_group2 == 0x02))
 			{
-				key_button = KEY_DOWN;  //DOWN
+				key_button = KEY_DOWN;
 			}
 			if ((key_group1 == 0x00) && (key_group2 == 0x04))
 			{
-				key_button = KEY_LEFT;  //LEFT
+				key_button = KEY_LEFT;
 			}
 			if ((key_group1 == 0x80) && (key_group2 == 0x00))
 			{
-				key_button = KEY_RIGHT;  //RIGHT
+				key_button = KEY_RIGHT;
 			}
 			if ((key_group1 == 0x40) && (key_group2 == 0x00))
 			{
-				if (rec)  // if bsla version
+				if (rec)  // if bsla/bzzb variant
 				{
-					key_button = KEY_EPG;  //EPG
+					key_button = KEY_EPG;
 				}
-				else  // bska version
+				else  // bska/bxzb variant
 				{
-					key_button = KEY_MENU;  //MENU
+					key_button = KEY_MENU;
 				}
 			}
 			if ((key_group1 == 0x00) && (key_group2 == 0x08))
 			{
-				if (rec)  // if bsla version
+				if (rec)  // if bsla/bzzb variant
 				{
-					key_button = KEY_MENU;  //REC
+					key_button = KEY_RECORD;
 				}
-				else  // bska version
+				else  // bska/bxzb variant
 				{
-					key_button = KEY_EPG;  //EPG
+					key_button = KEY_EPG;
 				}
 			}
 			if ((key_group1 == 0x08) && (key_group2 == 0x00))
 			{
-				key_button = KEY_HOME;  //RES
+				key_button = KEY_HOME;  // RES
 			}
-			if ((key_group1 == 0x0A) && (key_group2 == 0x00))  //RES+OK
+			if ((key_group1 == 0x0A) && (key_group2 == 0x00))  // RES + OK
 			{
-				dprintk(1, "[fp_key] reboot...\n");
+				dprintk(0, " reboot...\n");
 				msleep(250);
 				button_reset = stpio_request_pin(3, 2, "btn_reset", STPIO_OUT);
 			}
 			if ((key_group1 == 0x08) && (key_group2 == 0x2))
 			{
-				key_button = KEY_COMPOSE;  //RES+DOWN
+				key_button = KEY_COMPOSE;  //RES + DOWN
 			}
 			if (key_button > 0)
 			{
@@ -197,8 +205,12 @@ void button_poll(struct work_struct *ignored)
 
 /*****************************************************
  *
- * Frontpanel button driver
+ * button_input_open
+ *
+ * create queue for panel keys
+ *
  */
+
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,20)
 static DECLARE_WORK(button_obj, button_poll, NULL);
 #else
@@ -220,6 +232,13 @@ static int button_input_open(struct input_dev *dev)
 	return 0;
 }
 
+/*****************************************************
+ *
+ * button_input_close
+ *
+ * destroy queue for panel keys
+ *
+ */
 static void button_input_close(struct input_dev *dev)
 {
 	button_polling = 0;
@@ -229,42 +248,47 @@ static void button_input_close(struct input_dev *dev)
 	if (button_wq)
 	{
 		destroy_workqueue(button_wq);
-		dprintk(10, "workqueue destroyed\n");
+		dprintk(10, "workqueue destroyed.\n");
 	}
 }
 
-static unsigned char pt6958_ram[PT6958_RAM_SIZE];
-
+/******************************************************
+ *
+ * button_dev_init
+ *
+ * Initialize the front panel button driver.
+ *
+ */
 int button_dev_init(void)
 {
 	int error;
 
-	dprintk(0, "Allocating and button PIO pins...\n");
+	dprintk(0, "Allocating PT6958 control PIO pins for button driver...\n");
 
 // PT6958 DOUT
-	dprintk(20, "PT6958 DOUT pin: request STPIO %d, %d (%s, STPIO_IN\n", BUTTON_DO_PORT, BUTTON_DO_PIN, "btn_do");
-	button_do = stpio_request_pin(BUTTON_DO_PORT, BUTTON_DO_PIN, "btn_do", STPIO_IN);  //[ IN  (Hi-Z) ]
-	if (button_do == NULL)
+	dprintk(100, "PT6958 DOUT pin: request STPIO %d, %d (%s, STPIO_IN\n", PT6958_BUTTON_PIO_PORT_DOUT, PT6958_BUTTON_PIO_PIN_DOUT, "btn_dout");
+	button_dout = stpio_request_pin(PT6958_BUTTON_PIO_PORT_DOUT, PT6958_BUTTON_PIO_PIN_DOUT, "btn_dout", STPIO_IN);  //[ IN  (Hi-Z) ]
+	if (button_dout == NULL)
 	{
-		dprintk(1, "Request STPIO btn_do failed; abort.\n");
+		dprintk(1, "Request STPIO btn_dout failed; abort.\n");
 		return -EIO;
 	}
 // PT6958 STB
-	dprintk(20, "PT6958 STB pin: request STPIO %d, %d (%s, STPIO_OUT)\n", BUTTON_DS_PORT, BUTTON_DS_PIN, "btn_stb");
-	button_ds = stpio_request_pin(BUTTON_DS_PORT, BUTTON_DS_PIN, "btn_stb", STPIO_OUT);  //[ OUT (push-pull) ]
-	if (button_ds == NULL)
+	dprintk(100, "PT6958 STB pin: request STPIO %d, %d (%s, STPIO_OUT)\n", PT6958_BUTTON_PIO_PORT_STB, PT6958_BUTTON_PIO_PIN_DOUT, "btn_stb");
+	button_stb = stpio_request_pin(PT6958_BUTTON_PIO_PORT_DOUT, PT6958_BUTTON_PIO_PIN_DOUT, "btn_stb", STPIO_OUT);  //[ OUT (push-pull) ]
+	if (button_stb == NULL)
 	{
 		dprintk(1, "Request STPIO btn_stb failed; abort.\n");
 		return -EIO;
 	}
 
-//reset ( does not exist on PT6958, but does on PT6302!)
-#if 0
-	dprintk(20, "PT6302 RST pin: request STPIO %d ,%d (%s, STPIO_OUT\n", BUTTON_RESET_PORT, BUTTON_RESET_PIN, "btn_reset");
-	button_reset = stpio_request_pin(BUTTON_RESET_PORT, BUTTON_RESET_PIN, "btn_reset", STPIO_OUT);
+//reset (invoked on RES + OK, resets CPU?)
+#if 1
+	dprintk(100, "PT6302 RST pin: request STPIO %d ,%d (%s, STPIO_OUT\n", PT6958_BUTTON_PIO_PORT_RESET, PT6958_BUTTON_PIO_PIN_RESET, "btn_reset");
+	button_reset = stpio_request_pin(PT6958_BUTTON_PIO_PORT_RESET, PT6958_BUTTON_PIO_PIN_RESET, "btn_reset", STPIO_OUT);
 	if (button_reset == NULL)
 	{
-		dprintk(1, "Request STPIO reset failed. abort.\n");
+		dprintk(1, "Request STPIO btn_reset failed; abort.\n");
 		return -EIO;
 	}
 #endif
@@ -286,14 +310,13 @@ int button_dev_init(void)
 	set_bit(KEY_DOWN,  	 button_dev->keybit);
 	set_bit(KEY_LEFT,  	 button_dev->keybit);
 	set_bit(KEY_RIGHT, 	 button_dev->keybit);
+	set_bit(KEY_OK,      button_dev->keybit);
 	set_bit(KEY_POWER, 	 button_dev->keybit);
 	set_bit(KEY_MENU,  	 button_dev->keybit);
-	set_bit(KEY_EXIT,  	 button_dev->keybit);
 	set_bit(KEY_EPG,   	 button_dev->keybit);
 	set_bit(KEY_HOME, 	 button_dev->keybit);
-	set_bit(KEY_OK,      button_dev->keybit);
-	set_bit(KEY_RESTART, button_dev->keybit);
-	set_bit(KEY_COMPOSE, button_dev->keybit);
+	set_bit(KEY_RESTART, button_dev->keybit);  // RES + OK
+	set_bit(KEY_COMPOSE, button_dev->keybit);  // RES + DOWN
 
 	error = input_register_device(button_dev);
 	if (error)
@@ -302,122 +325,138 @@ int button_dev_init(void)
 		dprintk(1, "Error registering button device!\n");
 		return error;
 	}
-
 	memset(pt6958_ram, 0, PT6958_RAM_SIZE);
 
 	pt6958_write(PT6958_CMD_WRITE_INC, NULL, 0);
 
 	pt6958_write(PT6958_CMD_ADDR_SET, pt6958_ram, PT6958_RAM_SIZE);
-	pt6958_write(PT6958_CMD_DISPLAY_ON, NULL, 0);
+	pt6958_write(PT6958_CMD_DISPLAY_ON, NULL, 0);  // LED display off?
 	printk(" done.\n");
 	return 0;
 }
 
+/******************************************************
+ *
+ * button_dev_exit
+ *
+ * Stop the front panel button driver.
+ *
+ */
 void button_dev_exit(void)
 {
 	dprintk(0, "Unregistering button device");
 	input_unregister_device(button_dev);
-	if (button_ds)
+	// free button driver pio pins
+	if (button_stb)
 	{
-		stpio_free_pin(button_ds);
+		stpio_free_pin(button_stb);
 	}
-	if (button_do)
+	if (button_dout)
 	{
-		stpio_free_pin(button_do);
+		stpio_free_pin(button_dout);
 	}
+#if 0  // reset pin does not exist on PT6958
 	if (button_reset)
 	{
 		stpio_free_pin(button_reset);
 	}
+#endif
 	printk(" done.\n");
 }
 
 /*****************************************************
  *
  * Frontpanel VFD driver
+ *
  */
-static void adb_box_scp_free(struct scp_driver *scp)
+
+/******************************************************
+ *
+ * vfd_pin_free
+ *
+ * Remove the PT6302 control pin driver.
+ *
+ */
+static void vfd_pin_free(struct vfd_pin_driver *vfd_pin)
 {
-	if (scp == NULL)
+	if (vfd_pin == NULL)
 	{
 		return;
 	}
-	if (scp->scs)
+	if (vfd_pin->pt6302_cs)
 	{
-		stpio_set_pin(scp->scs, 1);
+		stpio_set_pin(vfd_pin->pt6302_cs, 1);  // deselect PT6302
 	}
-	if (scp->sda)
+	if (vfd_pin->pt6302_din)
 	{
-		stpio_free_pin(scp->sda);
+		stpio_free_pin(vfd_pin->pt6302_din);
 	}
-	if (scp->scl)
+	if (vfd_pin->pt6302_clk)
 	{
-		stpio_free_pin(scp->scl);
+		stpio_free_pin(vfd_pin->pt6302_clk);
 	}
-	if (scp->scs)
+	if (vfd_pin->pt6302_cs)
 	{
-		stpio_free_pin(scp->scs);
+		stpio_free_pin(vfd_pin->pt6302_cs);
 	}
-	if (scp)
+	if (vfd_pin)
 	{
-		kfree(scp);
+		kfree(vfd_pin);
 	}
-	scp = NULL;
-	dprintk(10, "Removed front panel PT6302 & PT6958 driver.\n");
+	vfd_pin = NULL;
+	dprintk(10, "Removed front panel PT6302 control pin driver.\n");
 };
 
-static const char stpio_vfd_scs[] = "vfd_scs";
-static const char stpio_vfd_scl[] = "vfd_sck";
-static const char stpio_vfd_sda[] = "vfd_sda";
-
-static struct scp_driver *adb_box_scp_init(void)
+/******************************************************
+ *
+ * vfd_pin_init
+ *
+ * Initialize the PT6302 control pin driver.
+ *
+ */
+static struct vfd_pin_driver *vfd_pin_init(void)
 {
-	struct scp_driver *scp = NULL;
+	struct vfd_pin_driver *vfd_pin = NULL;
 
-	dprintk(0, "Initialize scp driver.\n");
+	dprintk(0, "Initialize PT6302 pin driver.\n");
 
-	scp = (struct scp_driver *)kzalloc(sizeof(struct scp_driver), GFP_KERNEL);
-	if (scp == NULL)
+	vfd_pin = (struct vfd_pin_driver *)kzalloc(sizeof(struct vfd_pin_driver), GFP_KERNEL);
+	if (vfd_pin == NULL)
 	{
-		dprintk(1, "Unable to allocate scp driver struct; abort.\n");
-		goto adb_box_scp_init_fail;
+		dprintk(1, "Unable to allocate vfd_pin_driver struct; abort.\n");
+		goto vfd_pin_init_fail;
 	}
+	/* Allocate pio pins for the PT6302 */
+	dprintk(10, "PT6302 CS pin: request STPIO %d, %d (%s, STPIO_OUT).\n", VFD_PIO_PORT_CS, VFD_PIO_PIN_CS, stpio_vfd_cs);
+	vfd_pin->pt6302_cs = stpio_request_pin(VFD_PIO_PORT_CS, VFD_PIO_PIN_CS, stpio_vfd_cs, STPIO_OUT);
 
-//PT6302
-// CS
-	dprintk(10, "PT6302 CS pin: request STPIO %d, %d (%s, STPIO_OUT).\n", ADB_BOX_VFD_PIO_PORT_SCS, ADB_BOX_VFD_PIO_PIN_SCS, stpio_vfd_scs);
-	scp->scs = stpio_request_pin(ADB_BOX_VFD_PIO_PORT_SCS, ADB_BOX_VFD_PIO_PIN_SCS, stpio_vfd_scs, STPIO_OUT);
-
-	if (scp->scs == NULL)
+	if (vfd_pin->pt6302_cs == NULL)
 	{
 		dprintk(1, "Request CS STPIO failed; abort\n");
-		goto adb_box_scp_init_fail;
+		goto vfd_pin_init_fail;
 	}
 
-//wspolne (??)
-// CLK
-	dprintk(10, "PT6302 CLK pin: request STPIO %d, %d (%s, STPIO_OUT).\n", ADB_BOX_VFD_PIO_PORT_SCL, ADB_BOX_VFD_PIO_PIN_SCL, stpio_vfd_scl);
-	scp->scl = stpio_request_pin(ADB_BOX_VFD_PIO_PORT_SCL, ADB_BOX_VFD_PIO_PIN_SCL, stpio_vfd_scl, STPIO_OUT);
+	dprintk(10, "PT6302 CLK pin: request STPIO %d, %d (%s, STPIO_OUT).\n", VFD_PIO_PORT_CLK, VFD_PIO_PIN_CLK, stpio_vfd_clk);
+	vfd_pin->pt6302_clk = stpio_request_pin(VFD_PIO_PORT_CLK, VFD_PIO_PIN_CLK, stpio_vfd_clk, STPIO_OUT);
 
-	if (scp->scl == NULL)
+	if (vfd_pin->pt6302_clk == NULL)
 	{
-		dprintk(1, "Request scl STPIO failed; abort.\n");
-		goto adb_box_scp_init_fail;
+		dprintk(1, "Request CLK STPIO failed; abort.\n");
+		goto vfd_pin_init_fail;
 	}
 
-// DIN/DOUT
-	dprintk(10, "PT6302 DIN pin: request STPIO %d, %d (%s, STPIO_BIDIR).\n", ADB_BOX_VFD_PIO_PORT_SDA, ADB_BOX_VFD_PIO_PIN_SDA, stpio_vfd_sda);
-	scp->sda = stpio_request_pin(ADB_BOX_VFD_PIO_PORT_SDA, ADB_BOX_VFD_PIO_PIN_SDA, stpio_vfd_sda, STPIO_BIDIR);
+	dprintk(10, "PT6302 DIN pin: request STPIO %d, %d (%s, STPIO_BIDIR).\n", VFD_PIO_PORT_DIN, VFD_PIO_PIN_DIN, stpio_vfd_din);
+	vfd_pin->pt6302_din = stpio_request_pin(VFD_PIO_PORT_DIN, VFD_PIO_PIN_DIN, stpio_vfd_din, STPIO_BIDIR);
 
-	if (scp->sda == NULL)
+	if (vfd_pin->pt6302_din == NULL)
 	{
 		dprintk(1, "Request sda STPIO failed; abort.\n");
-		goto adb_box_scp_init_fail;
+		goto vfd_pin_init_fail;
 	}
-	return scp;
+	return vfd_pin;
 
-adb_box_scp_init_fail:
-	adb_box_scp_free(scp);
+vfd_pin_init_fail:
+	vfd_pin_free(vfd_pin);
 	return 0;
 }
 
@@ -425,199 +464,28 @@ adb_box_scp_init_fail:
 // TODO: move to header file
 struct vfd_driver
 {
-	struct scp_driver    *scp;
-	struct pt6302_driver *ctrl;
+	struct vfd_pin_driver *vfd_pin;
+	struct pt6302_driver  *ctrl;
 	struct semaphore      sem;
 	int                   opencount;
 };
 
 static struct vfd_driver vfd;
 
-#define VFDIOC_DCRAMWRITE        0xc0425a00
-#define VFDIOC_BRIGHTNESS        0xc0425a03
-#define VFDIOC_DISPLAYWRITEONOFF 0xc0425a05
-#define VFDIOC_DRIVERINIT        0xc0425a08
-#define VFDIOC_ICONDISPLAYONOFF  0xc0425a0a
-
-#define VFDGETVERSION            0xc0425af7
-#define VFDLEDBRIGHTNESS         0xc0425af8
-#define VFDGETWAKEUPMODE         0xc0425af9
-#define VFDGETTIME               0xc0425afa
-#define VFDSETTIME               0xc0425afb
-#define VFDSTANDBY               0xc0425afc
-#define VFDREBOOT                0xc0425afd
-
-#define VFDSETLED                0xc0425afe
-#define VFDSETMODE               0xc0425aff
-
-#define VFD_LED_IR	             0x00000023
-#define VFD_LED_POW	             0x00000024
-#define VFD_LED_REC	             0x0000001e
-#define VFD_LED_HD	             0x00000011
-#define VFD_LED_LOCK	         0x00000013
-
-/*****************************************************
- *
- * Frontpanel VFD IOCTL
- */
-static int vfd_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsigned long arg)
-{
-	struct vfd_ioctl_data vfddata;
-
-	switch (cmd)
-	{
-		case VFDIOC_DCRAMWRITE:
-		case VFDIOC_BRIGHTNESS:
-		case VFDIOC_DISPLAYWRITEONOFF:
-		case VFDIOC_ICONDISPLAYONOFF:
-		{
-			copy_from_user(&vfddata, (void *)arg, sizeof(struct vfd_ioctl_data));
-			break;
-		}
-	}
-	switch (cmd)
-	{
-		case VFDIOC_DCRAMWRITE:
-		{
-//			copy_from_user(&vfddata, (void *)arg, sizeof(struct vfd_ioctl_data));
-			return pt6302_write_dcram(vfd.ctrl, vfddata.address, vfddata.data, vfddata.length);
-			break;
-		}
-		case VFDIOC_BRIGHTNESS:
-		{
-//			copy_from_user(&vfddata, (void *)arg, sizeof(struct vfd_ioctl_data));
-			pt6302_set_brightness(vfd.ctrl, vfddata.address);
-			break;
-		}
-		case VFDIOC_DISPLAYWRITEONOFF:
-		{
-//			copy_from_user(&vfddata, (void *)arg, sizeof(struct vfd_ioctl_data));
-			pt6302_set_lights(vfd.ctrl, vfddata.address);
-			break;
-		}
-		case VFDIOC_ICONDISPLAYONOFF:
-		{
-//			copy_from_user(&vfddata, (void *)arg, sizeof(struct vfd_ioctl_data));
-			//pt_6958_set_icon(vfddata.address, vfddata.data, vfddata.length); // ikonki i inne pierdoly
-			//pt_6958_set_icon(data ); // ikonki i inne pierdoly
-
-			//dprintk(10, "[fp_led] VFDICONDISPLAYONOFF %x:%x", vfddata.data[0], vfddata.data[4]);
-
-			if (vfddata.data[0] != 0x00000023)
-			{
-				dprintk(10,"VFDICONDISPLAYONOFF %x:%x\n", vfddata.data[0], vfddata.data[4]);
-			}
-			switch (vfddata.data[0])
-			{
-				// VFD driver of enigma2 issues codes during the start
-				// phase, map them to the CD segments to indicate progress
-				case VFD_LED_IR:
-				{
-					if (vfddata.data[4])
-					{
-						pt6958_led_control(PT6958_CMD_ADDR_LED1, led_POW | 0x01);
-					}
-					else
-					{
-						pt6958_led_control(PT6958_CMD_ADDR_LED1, led_POW);
-					}
-					break;
-				}
-				case VFD_LED_POW:
-				{
-					if (vfddata.data[4])
-					{
-						led_POW = 0x02;
-					}
-					else
-					{
-						led_POW = 0x00;
-					}
-					pt6958_led_control(PT6958_CMD_ADDR_LED1, led_POW);
-					break;
-				}
-				case VFD_LED_REC:
-				{
-					printk("\n[fp_led] HDLED:%x\n", vfddata.data[4]);
-					if (vfddata.data[4])
-					{
-						pt6958_led_control(PT6958_CMD_ADDR_LED2, 1); //nagrywanie
-					}
-					else
-					{
-						pt6958_led_control(PT6958_CMD_ADDR_LED2, 0);
-					}
-					break;
-				}
-#if 0
-				case VFD_ICON_PAUSE:
-				{
-					if (vfddata.data[4])
-					{
-						pt6958_led_control(PT6958_CMD_ADDR_LED1, 3); //pause
-					}
-					else
-					{
-						pt6958_led_control(PT6958_CMD_ADDR_LED1, 2);
-					}
-					break;
-				}
-#endif
-				case VFD_LED_LOCK:
-				{
-					if (vfddata.data[4])
-					{
-						pt6958_led_control(PT6958_CMD_ADDR_LED3, 1); //kanal kodowany
-					}
-					else
-					{
-						pt6958_led_control(PT6958_CMD_ADDR_LED3, 0);
-					}
-					break;
-				}
-				case VFD_LED_HD:
-				{
-					if (vfddata.data[4])
-					{
-						pt6958_led_control(PT6958_CMD_ADDR_LED4, 1); //kanal HD
-					}
-					else
-					{
-						pt6958_led_control(PT6958_CMD_ADDR_LED4, 0);
-					}
-					break;
-				}
-				default:
-				{
-					return 0;
-				}
-			}
-			break;
-		}
-		case VFDIOC_DRIVERINIT:
-		{
-			pt6302_setup(vfd.ctrl);
-			break;
-		}
-		default:
-		{
-			dprintk(1, "unknown IOCTL %08x\n", cmd);
-			break;
-		}
-	}
-	return 0;
-}
-
 /*****************************************************
  *
  * Write to /dev/vfd (display text)
+ *
+ * Writes a text on the VFD display
+ * TODO: add LED display, add scrolling
+ *
  */
 static ssize_t vfd_write(struct file *filp, const char *buf, size_t len, loff_t *off)
 {
 	unsigned char *kbuf;
 	size_t        wlen;
 
-	dprintk(10, "write: len = %d (%d), off = %d.\n", len, ADB_BOX_VFD_MAX_CHARS, (int)*off);
+	dprintk(10, "write: len = %d (max. %d), off = %d.\n", len, VFD_MAX_CHARS, (int)*off);
 
 	if (len == 0)
 	{
@@ -638,31 +506,20 @@ static ssize_t vfd_write(struct file *filp, const char *buf, size_t len, loff_t 
 		wlen--;
 	}
 // TODO: add scrolling?
-	if (wlen > ADB_BOX_VFD_MAX_CHARS)  //display ADB_BOX_VFD_MAX_CHARS maximum
+	if (wlen > VFD_MAX_CHARS)  //display VFD_MAX_CHARS maximum
 	{
-		wlen = ADB_BOX_VFD_MAX_CHARS;
+		wlen = VFD_MAX_CHARS;
 	}
 	dprintk(10, "write : len = %d, wlen = %d, kbuf = '%s'.\n", len, wlen, kbuf);
 
 	pt6302_write_dcram(vfd.ctrl, 0, kbuf, wlen);
-
-#if 0
-	if (wlen <= ADB_BOX_VFD_MAX_CHARS)
-	{
-		pt6302_write_dcram(vfd.ctrl, 0, kbuf, wlen);
-	}
-	else
-	{
-		pos = 0;
-		pt6302_write_dcram(vfd.ctrl, 0, kbuf + pos, ADB_BOX_VFD_MAX_CHARS);
-	}
-#endif
 	return len;
 }
 
 /*****************************************************
  *
  * Read from /dev/vfd
+ *
  */
 static ssize_t vfd_read(struct file *filp, char *buf, size_t len, loff_t *off)
 {
@@ -670,6 +527,13 @@ static ssize_t vfd_read(struct file *filp, char *buf, size_t len, loff_t *off)
 	return len;
 }
 
+/*****************************************************
+ *
+ * vfd_open
+ *
+ * Open /dev/vfd
+ *
+ */
 static int vfd_open(struct inode *inode, struct file *file)
 {
 	if (down_interruptible(&(vfd.sem)))
@@ -686,16 +550,223 @@ static int vfd_open(struct inode *inode, struct file *file)
 	vfd.opencount++;
 	up(&(vfd.sem));
 
-	//pt6302_set_lights( vfd.ctrl, PT6302_LIGHTS_ON );
-	//udelay(1000);
-	pt6302_set_lights(vfd.ctrl, PT6302_LIGHTS_NORMAL);
+	pt6302_set_light(vfd.ctrl, PT6302_LIGHT_NORMAL);
 	return 0;
 }
 
+/*****************************************************
+ *
+ * vfd_open
+ *
+ * Close /dev/vfd
+ *
+ */
 static int vfd_close(struct inode *inode, struct file *file)
 {
-	//  pt6302_set_lights( vfd.ctrl, PT6302_LIGHTS_OFF );
+	//pt6302_set_light(vfd.ctrl, PT6302_LIGHTS_OFF);
 	vfd.opencount = 0;
+	return 0;
+}
+
+/******************************************************
+ *
+ * fp_module_init
+ *
+ * Stop the front panel driver.
+ *
+ */
+static void fp_module_exit(void)
+{
+	dprintk(0, "Button driver unloading ...");
+	button_dev_exit();
+	printk(" done.\n");
+
+	dprintk(0, "PT6302 driver unloading.\n");
+	unregister_chrdev(VFD_MAJOR, "vfd");
+	if (vfd.ctrl)
+	{
+		pt6302_free(vfd.ctrl);  // stop PT6302 driver
+	}
+	if (vfd.vfd_pin)
+	{
+		vfd_pin_free(vfd.vfd_pin);  // stop PT6302 pin driver
+	}
+	vfd.ctrl = NULL;
+	vfd.vfd_pin  = NULL;
+	printk(" done.\n");
+}
+
+static struct file_operations vfd_fops;
+
+/******************************************************
+ *
+ * fp_module_init
+ *
+ * Initialize the front panel driver.
+ *
+ */
+static int __init fp_module_init(void)
+{
+	dprintk(0, "Front panel PT6302 & PT6958 driver modified by B4Team & Audioniek\n");
+	dprintk(0, "Driver initializing...");
+
+	if (rec != 0)  // limit rec values to 0 (bska/bxzb) or 1 (bxzb/bzzb)
+	{
+		rec = 1;
+	}
+
+	vfd.vfd_pin  = NULL;  // PT6302 pin driver
+	vfd.ctrl = NULL;  // PT6302 chip driver
+
+	dprintk(10, "Initialize PT6302 pin driver.\n");
+	vfd.vfd_pin = vfd_pin_init();
+	if (vfd.vfd_pin == NULL)
+	{
+		dprintk(1, "Unable to init PT6302 pin driver; abort.");
+		goto fp_init_fail;
+	}
+	dprintk(10, "Initializing PT6302 pin driver successful.\n");
+
+	dprintk(10, "Probe for PT6302 chip driver.\n");
+	vfd.ctrl = pt6302_init(vfd.vfd_pin);
+	if (vfd.ctrl == NULL)
+	{
+		dprintk(1, "Unable to init PT6302 chip driver; abort.");
+		goto fp_init_fail;
+	}
+	dprintk(10, "Probe for PT6302 chip driver successful.\n");
+	dprintk(10, "Register character device %d.\n", VFD_MAJOR);
+	if (register_chrdev(VFD_MAJOR, "vfd", &vfd_fops))
+	{
+		dprintk(1, "Registering major %d failed.\n", VFD_MAJOR);
+		goto fp_init_fail;
+	}
+	sema_init(&(vfd.sem), 1);
+	vfd.opencount = 0;
+	dprintk(10, "Registering character device %d successful.\n", VFD_MAJOR);
+
+	dprintk(0, "Initializing button driver...");
+	if (button_dev_init() != 0)
+	{
+		dprintk(1, "Initializing button driver failed.\n");
+		goto fp_init_fail;
+	}
+	printk(" done.\n");
+
+	pt6958_led_control(PT6958_CMD_ADDR_LED1, 2);  // power LED: green
+	pt6302_setup(vfd.ctrl);  // initialize VFD display
+	return 0;
+
+fp_init_fail:
+	fp_module_exit();
+	return -EIO;
+}
+
+/*****************************************************
+ *
+ * Frontpanel IOCTL
+ *
+ */
+static int vfd_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsigned long arg)
+{
+	struct vfd_ioctl_data vfddata;
+
+	switch (cmd)  // get data arguments
+	{
+		case VFDIOC_DCRAMWRITE:
+		case VFDIOC_BRIGHTNESS:
+		case VFDIOC_DISPLAYWRITEONOFF:
+		case VFDIOC_ICONDISPLAYONOFF:
+		{
+			copy_from_user(&vfddata, (void *)arg, sizeof(struct vfd_ioctl_data));
+			break;
+		}
+	}
+
+	switch (cmd)  // do actual IOCTL
+	{
+		case VFDIOC_DCRAMWRITE:
+		{
+			return pt6302_write_dcram(vfd.ctrl, vfddata.address, vfddata.data, vfddata.length);
+			break;
+		}
+		case VFDIOC_BRIGHTNESS:
+		{
+			pt6302_set_brightness(vfd.ctrl, vfddata.address);
+//			pt6958_set_brightness(vfd.ctrl, vfddata.address);
+			break;
+		}
+		case VFDIOC_DISPLAYWRITEONOFF:
+		{
+			pt6302_set_light(vfd.ctrl, vfddata.address);
+//			pt6958_set_light(vfd.ctrl, vfddata.address);
+			break;
+		}
+		case VFDIOC_ICONDISPLAYONOFF:
+		{
+			//pt_6958_set_icon(vfddata.address, vfddata.data, vfddata.length);  // icons and other farts
+			//pt_6958_set_icon(data );  // icons and other farts
+
+			//dprintk(10, "VFDICONDISPLAYONOFF %x:%x", vfddata.data[0], vfddata.data[4]);
+
+			if (vfddata.data[0] != 0x00000023)
+			{
+				dprintk(10,"VFDICONDISPLAYONOFF %x:%x\n", vfddata.data[0], vfddata.data[4]);
+			}
+			switch (vfddata.data[0])
+			{
+				// VFD driver of enigma2 issues codes during the start
+				// phase, map them to the CD segments to indicate progress
+				case VFD_LED_IR:
+				{
+					pt6958_led_control(PT6958_CMD_ADDR_LED1, vfddata.data[4] ? 2 : 1); // power LED: green or red 
+					break;
+				}
+				case VFD_LED_POW:
+				{
+					pt6958_led_control(PT6958_CMD_ADDR_LED1, vfddata.data[4] ? 2 : 0);  // power LED: green or off 
+					break;
+				}
+				case VFD_LED_REC:
+				{
+					dprintk(1, "REC LED:%x\n", vfddata.data[4]);
+					pt6958_led_control(PT6958_CMD_ADDR_LED2, vfddata.data[4] ? 1 : 0); // recording/timer LED
+					break;
+				}
+				case VFD_LED_PAUSE:  // controls power LED colour
+				{
+					pt6958_led_control(PT6958_CMD_ADDR_LED1, vfddata.data[4] ? 3 : 2);  // pause: power LED yellow, else green
+					break;
+				}
+				case VFD_LED_LOCK:
+				{
+					pt6958_led_control(PT6958_CMD_ADDR_LED3, vfddata.data[4] ? 1 : 0);  // at LED
+					break;
+				}
+				case VFD_LED_HD:
+				{
+					pt6958_led_control(PT6958_CMD_ADDR_LED4, vfddata.data[4] ? 1 : 0); // alert LED
+					break;
+				}
+				default:
+				{
+					return 0;
+				}
+			}
+			break;
+		}
+		case VFDIOC_DRIVERINIT:
+		{
+			pt6302_setup(vfd.ctrl);
+//			pt6958_setup(vfd.ctrl);
+			break;
+		}
+		default:
+		{
+			dprintk(1, "unknown IOCTL %08x\n", cmd);
+			break;
+		}
+	}
 	return 0;
 }
 
@@ -709,108 +780,17 @@ static struct file_operations vfd_fops =
 	.release = vfd_close
 };
 
-//static void __exit vfd_module_exit(void)
-static void vfd_module_exit(void)
-{
-	/* <-----buttons-----> */
-	dprintk(0, "Button driver unloading ...");
-	button_dev_exit();
-	printk(" done.\n");
-
-	/* <-----vfd-----> */
-	dprintk(0, "PT6302 driver unloading.\n");
-	unregister_chrdev(VFD_MAJOR, "vfd");
-	if (vfd.ctrl)
-	{
-		pt6302_free(vfd.ctrl);
-	}
-	if (vfd.scp)
-	{
-		adb_box_scp_free(vfd.scp);
-	}
-	vfd.ctrl = NULL;
-	vfd.scp  = NULL;
-	printk(" done.\n");
-}
-
-/******************************************************
- *
- * vfd_module_init
- *
- * Initialize the driver.
- *
- */
-static int __init vfd_module_init(void)
-{
-	/* <-----vfd-----> */
-	dprintk(0, "Front panel PT6302 & PT6958 driver modified by B4Team & Audioniek\n");
-	dprintk(0, "Driver init...");
-
-#if 0
-	if (rec != 1)  // give rec a default
-	{
-		rec = 0;
-	}
-#endif
-	vfd.scp  = NULL;
-	vfd.ctrl = NULL;
-
-	dprintk(10, "Probe for scp driver.\n");
-	vfd.scp = adb_box_scp_init();
-	if (vfd.scp == NULL)
-	{
-		dprintk(1, "Unable to init scp driver; abort.");
-		goto vfd_init_fail;
-	}
-	dprintk(10, "Probe for scp driver successful.\n");
-	dprintk(10, "Probe for ctrl driver.\n");
-	vfd.ctrl = pt6302_init(vfd.scp);
-	if (vfd.ctrl == NULL)
-	{
-		dprintk(1, "Unable to init ctrl driver; abort.");
-		goto vfd_init_fail;
-	}
-	dprintk(10, "Probe for ctrl driver successful.\n");
-	dprintk(10, "Register character device %d.\n", VFD_MAJOR);
-	if (register_chrdev(VFD_MAJOR, "vfd", &vfd_fops))
-	{
-		dprintk(1, "Registering major %d failed.\n", VFD_MAJOR);
-		goto vfd_init_fail;
-	}
-	sema_init(&(vfd.sem), 1);
-	vfd.opencount = 0;
-	dprintk(10, "Registering character device %d successful.\n", VFD_MAJOR);
-
-	pt6302_setup(vfd.ctrl);
-
-	/* <-----buttons-----> */
-	dprintk(0, "Initializing button driver...");
-	if (button_dev_init() != 0)
-	{
-		dprintk(1, "Initializing button driver failed.\n");
-		goto vfd_init_fail;
-	}
-	printk(" done.\n");
-
-	pt6958_led_control(PT6958_CMD_ADDR_LED1, 2);
-	return 0;
-
-vfd_init_fail:
-	vfd_module_exit();
-	return -EIO;
-}
-
-module_init(vfd_module_init);
-module_exit(vfd_module_exit);
+module_init(fp_module_init);
+module_exit(fp_module_exit);
 
 module_param(paramDebug, int, 0644);
-MODULE_PARM_DESC(debug, "paramDebug (default 0)");
+MODULE_PARM_DESC(paramDebug, "Debug Output 0=disabled >0=enabled(debuglevel)");
 
 module_param(delay, int, 0644);
 MODULE_PARM_DESC(delay, "scp delay (default 5");
 
 module_param(rec, int, 0644);
-MODULE_PARM_DESC(rec, "adb_box rec (default 0)");
+MODULE_PARM_DESC(rec, "Receiver model 1=recorder(default), other=no recorder");
 
 MODULE_DESCRIPTION("Front panel PT6302 & PT6958 driver");
 MODULE_AUTHOR("B4Team & Audioniek");
