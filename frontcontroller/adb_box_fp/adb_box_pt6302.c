@@ -68,7 +68,7 @@
  * 
  *
  */
-static char pt6302_access_char(struct vfd_pin_driver *vfd_pin, int dout)
+static char pt6302_access_char(struct pt6302_pin_driver *vfd_pin, int dout)
 {
 	uint8_t din   = 0;
 	int     outen = (dout < 0) ? 0 : 1, i;
@@ -96,7 +96,7 @@ static char pt6302_access_char(struct vfd_pin_driver *vfd_pin, int dout)
  * 
  *
  */
-static inline void pt6302_write_char(struct vfd_pin_driver *vfd_pin, char data)  // used
+static inline void pt6302_write_char(struct pt6302_pin_driver *vfd_pin, char data)  // used
 {
 	stpio_set_pin(vfd_pin->pt6302_cs, 0);
 	pt6302_access_char(vfd_pin, data);
@@ -111,7 +111,7 @@ static inline void pt6302_write_char(struct vfd_pin_driver *vfd_pin, char data) 
  * 
  *
  */
-static inline char pt6302_read_char(struct vfd_pin_driver *vfd_pin)
+static inline char pt6302_read_char(struct pt6302_pin_driver *vfd_pin)
 {
 	stpio_set_pin(vfd_pin->pt6302_cs, 0);
 	return pt6302_access_char(vfd_pin, -1);
@@ -126,7 +126,7 @@ static inline char pt6302_read_char(struct vfd_pin_driver *vfd_pin)
  * write len bytes to PT6302
  *
  */
-static void pt6302_write_data(struct vfd_pin_driver *vfd_pin, char *data, int len)
+static void pt6302_write_data(struct pt6302_pin_driver *vfd_pin, char *data, int len)
 {
 	int i;
 
@@ -147,7 +147,7 @@ static void pt6302_write_data(struct vfd_pin_driver *vfd_pin, char *data, int le
  * read len bytes from PT6302
  *
  */
-static int pt6302_read_data(struct vfd_pin_driver *vfd_pin, char *data, int len)
+static int pt6302_read_data(struct pt6302_pin_driver *vfd_pin, char *data, int len)
 {
 	int i;
 
@@ -171,11 +171,11 @@ void pt6302_free(struct pt6302_driver *ptd);
  * Initialize PT6302 display driver
  *
  */
-struct pt6302_driver *pt6302_init(struct vfd_pin_driver *vfd_pin_driv)
+struct pt6302_driver *pt6302_init(struct pt6302_pin_driver *vfd_pin_driv)
 {
 	struct pt6302_driver *ptd = NULL;
 
-	dprintk(10, "%s (vfd_pin_drv = %p)", __func__, vfd_pin_driv);
+	dprintk(10, "%s (pt6302_pin_drv = %p)\n", __func__, vfd_pin_driv);
 
 	if (vfd_pin_driv == NULL)
 	{
@@ -188,7 +188,7 @@ struct pt6302_driver *pt6302_init(struct vfd_pin_driver *vfd_pin_driv)
 		dprintk(1, "Unable to allocate pt6302 driver struct; abort.");
 		goto pt6302_init_fail;
 	}
-	ptd->vfd_pin = vfd_pin_driv;
+	ptd->pt6302_pin_drv = vfd_pin_driv;
 	return ptd;
 
 pt6302_init_fail:
@@ -214,7 +214,7 @@ void pt6302_free(struct pt6302_driver *ptd)
 //	pt6302_set_digits(ptd, PT6302_DIGITS_MIN);
 //	pt6302_set_ports(ptd, 0, 0);
 
-	ptd->vfd_pin = NULL;
+	ptd->pt6302_pin_drv = NULL;
 }
 
 /******************************************************
@@ -320,7 +320,7 @@ int pt6302_write_dcram(struct pt6302_driver *ptd, unsigned char addr, unsigned c
 			}
 		}
 	}
-	pt6302_write_data(ptd->vfd_pin, wdata, len_vfd + 1);
+	pt6302_write_data(ptd->pt6302_pin_drv, wdata, len_vfd + 1);
 
 // show text of PT6958 LED display as well
 	for (i = 0; i < 16; i++)
@@ -404,7 +404,7 @@ void pt6302_set_brightness(struct pt6302_driver *ptd, int level)
 	cmd.duty.cmd  = PT6302_COMMAND_SET_DUTY;
 	cmd.duty.duty = level;
 
-	pt6302_write_char(ptd->vfd_pin, cmd.all);
+	pt6302_write_char(ptd->pt6302_pin_drv, cmd.all);
 }
 
 /******************************************************
@@ -431,7 +431,7 @@ static void pt6302_set_digits(struct pt6302_driver *ptd, int num)
 	cmd.digits.cmd    = PT6302_COMMAND_SET_DIGITS;
 	cmd.digits.digits = num;
 
-	pt6302_write_char(ptd->vfd_pin, cmd.all);
+	pt6302_write_char(ptd->pt6302_pin_drv, cmd.all);
 }
 
 /******************************************************
@@ -453,7 +453,7 @@ void pt6302_set_light(struct pt6302_driver *ptd, int onoff)
 	cmd.lights.cmd   = PT6302_COMMAND_SET_LIGHTS;
 	cmd.lights.onoff = onoff;
 
-	pt6302_write_char(ptd->vfd_pin, cmd.all);
+	pt6302_write_char(ptd->pt6302_pin_drv, cmd.all);
 
 	// brightness of display and LEDs
 //	pt6958_write(PT6958_CMD_DISPLAY_ON, NULL, 0);
@@ -475,7 +475,7 @@ void pt6302_set_ports(struct pt6302_driver *ptd, int port1, int port2)
 	cmd.port.port1 = (port1) ? 1 : 0;
 	cmd.port.port2 = (port2) ? 1 : 0;
 
-	pt6302_write_char(ptd->vfd_pin, cmd.all);
+	pt6302_write_char(ptd->pt6302_pin_drv, cmd.all);
 }
 
 /******************************************************

@@ -116,7 +116,7 @@ int pt6958_write(unsigned char cmd, unsigned char *data, int data_len)
 		{
 			pt6958_finish_write();
 		}
-		dprintk(1, "%s < DATA[%d]: ", __func__, data_len);
+		dprintk(1, "%s DATA[%d]: ", __func__, data_len);
 		return;
 	}
 	/*
@@ -133,7 +133,7 @@ int pt6958_write(unsigned char cmd, unsigned char *data, int data_len)
 
 	for (j = 0; j < data_len; j++)
 	{
-		dprintk(100, "%02X ", data[j]);
+		printk("%02x ", data[j]);
 		for (i = 0; i < 8; i++)
 		{
 			mask_data = data[j] & (1 << i);
@@ -160,7 +160,7 @@ int pt6958_write(unsigned char cmd, unsigned char *data, int data_len)
 	{
 		pt6958_finish_write();
 	}
-	dprintk(100, "\n");
+	printk("\n");
 	return;
 }
 

@@ -45,14 +45,14 @@
 #define VFD_PIO_PIN_CS   2
 
 // PT6958 (LED display driver & button device)
-#define PT6958_BUTTON_PIO_PORT_DOUT  2
-#define PT6958_BUTTON_PIO_PIN_DOUT   2
+#define BUTTON_PIO_PORT_DOUT  2
+#define BUTTON_PIO_PIN_DOUT   2
 
-#define PT6958_BUTTON_PIO_PORT_STB   1
-#define PT6958_BUTTON_PIO_PIN_STB    6
+#define BUTTON_PIO_PORT_STB   1
+#define BUTTON_PIO_PIN_STB    6
 
-#define PT6958_BUTTON_PIO_PORT_RESET 3
-#define PT6958_BUTTON_PIO_PIN_RESET  2
+#define BUTTON_PIO_PORT_RESET 3
+#define BUTTON_PIO_PIN_RESET  2
 
 //PT6958 definitions
 /**********************************************************************
@@ -170,7 +170,7 @@ static const char stpio_vfd_cs[] = "pt6302_cs";
 static const char stpio_vfd_clk[] = "pt6302_clk";
 static const char stpio_vfd_din[] = "pt6302_din";
 
-struct vfd_pin_driver
+struct pt6302_pin_driver
 {
 	struct stpio_pin *pt6302_cs;   // chip select (CS) pin
 	struct stpio_pin *pt6302_clk;  // clock (CLK) pin
@@ -179,7 +179,15 @@ struct vfd_pin_driver
 
 struct pt6302_driver
 {
-	struct vfd_pin_driver *vfd_pin;
+	struct pt6302_pin_driver *pt6302_pin_drv;
+};
+
+struct vfd_driver
+{
+	struct pt6302_pin_driver *pt6302_pin_drv;
+	struct pt6302_driver     *pt6302_drv;
+	struct semaphore         sem;
+	int                      opencount;
 };
 
 
@@ -191,6 +199,7 @@ struct pt6302_driver
 #define VFDIOC_DRIVERINIT        0xc0425a08
 #define VFDIOC_ICONDISPLAYONOFF  0xc0425a0a
 
+#define VFDSETFAN                0xc0425af6
 #define VFDGETVERSION            0xc0425af7
 #define VFDLEDBRIGHTNESS         0xc0425af8
 #define VFDGETWAKEUPMODE         0xc0425af9
@@ -216,6 +225,7 @@ struct vfd_ioctl_data
 	unsigned char length;
 };
 
+#if 0
 struct __vfd_vfd_pin
 {
 	__u8 tr_rp_ctrl;
@@ -231,13 +241,14 @@ struct __vfd_vfd_pin
 #define SCP_TXD_DATA  (vfd_scp_ctrl->tr_data)
 #define SCP_TXD_START (vfd_scp_ctrl->start_tr)
 #define SCP_STATUS    (vfd_scp_ctrl->status)
+#endif
 
 //Global variables
 extern int paramDebug;
 extern int delay;
 
 // from adb_box_pt6302.c
-extern struct pt6302_driver *pt6302_init(struct vfd_pin_driver *scp);
+extern struct pt6302_driver *pt6302_init(struct pt6302_pin_driver *scp);
 extern void pt6302_free(struct pt6302_driver *ptd);
 extern void pt6302_setup(struct pt6302_driver *pfd);
 extern int pt6302_write_dcram(struct pt6302_driver *ptd, unsigned char addr, unsigned char *data, unsigned char len);

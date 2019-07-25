@@ -75,7 +75,7 @@ static unsigned char pt6958_ram[PT6958_RAM_SIZE];
 
 //int SCP_PORT = 0;
 
-struct __vfd_scp *vfd_scp_ctrl = NULL;
+struct __vfd_scp *vfd_scp_pt6302_drv = NULL;
 
 /* <-----button assignment-----> */
 /*KEY  CODE1  CODE2
@@ -263,19 +263,19 @@ int button_dev_init(void)
 {
 	int error;
 
-	dprintk(0, "Allocating PT6958 control PIO pins for button driver...\n");
+	dprintk(100, "%s <\n", __func__);
 
 // PT6958 DOUT
-	dprintk(100, "PT6958 DOUT pin: request STPIO %d, %d (%s, STPIO_IN\n", PT6958_BUTTON_PIO_PORT_DOUT, PT6958_BUTTON_PIO_PIN_DOUT, "btn_dout");
-	button_dout = stpio_request_pin(PT6958_BUTTON_PIO_PORT_DOUT, PT6958_BUTTON_PIO_PIN_DOUT, "btn_dout", STPIO_IN);  //[ IN  (Hi-Z) ]
+	dprintk(150, "PT6958 DOUT pin: request STPIO %d, %d (%s, STPIO_IN)\n", BUTTON_PIO_PORT_DOUT, BUTTON_PIO_PIN_DOUT, "btn_dout");
+	button_dout = stpio_request_pin(BUTTON_PIO_PORT_DOUT, BUTTON_PIO_PIN_DOUT, "btn_dout", STPIO_IN);  // [ IN  (Hi-Z) ]
 	if (button_dout == NULL)
 	{
 		dprintk(1, "Request STPIO btn_dout failed; abort.\n");
 		return -EIO;
 	}
 // PT6958 STB
-	dprintk(100, "PT6958 STB pin: request STPIO %d, %d (%s, STPIO_OUT)\n", PT6958_BUTTON_PIO_PORT_STB, PT6958_BUTTON_PIO_PIN_DOUT, "btn_stb");
-	button_stb = stpio_request_pin(PT6958_BUTTON_PIO_PORT_DOUT, PT6958_BUTTON_PIO_PIN_DOUT, "btn_stb", STPIO_OUT);  //[ OUT (push-pull) ]
+	dprintk(150, "PT6958 STB pin: request STPIO %d, %d (%s, STPIO_OUT)\n", BUTTON_PIO_PORT_STB, BUTTON_PIO_PIN_STB, "btn_stb");
+	button_stb = stpio_request_pin(BUTTON_PIO_PORT_STB, BUTTON_PIO_PIN_STB, "btn_stb", STPIO_OUT);  // [ OUT (push-pull) ]
 	if (button_stb == NULL)
 	{
 		dprintk(1, "Request STPIO btn_stb failed; abort.\n");
@@ -283,18 +283,17 @@ int button_dev_init(void)
 	}
 
 //reset (invoked on RES + OK, resets CPU?)
-#if 1
-	dprintk(100, "PT6302 RST pin: request STPIO %d ,%d (%s, STPIO_OUT\n", PT6958_BUTTON_PIO_PORT_RESET, PT6958_BUTTON_PIO_PIN_RESET, "btn_reset");
-	button_reset = stpio_request_pin(PT6958_BUTTON_PIO_PORT_RESET, PT6958_BUTTON_PIO_PIN_RESET, "btn_reset", STPIO_OUT);
+#if 0
+	dprintk(150, "PT6302 RST pin: request STPIO %d ,%d (%s, STPIO_OUT\n", BUTTON_PIO_PORT_RESET, BUTTON_PIO_PIN_RESET, "btn_reset");
+	button_reset = stpio_request_pin(BUTTON_PIO_PORT_RESET, BUTTON_PIO_PIN_RESET, "btn_reset", STPIO_OUT);
 	if (button_reset == NULL)
 	{
 		dprintk(1, "Request STPIO btn_reset failed; abort.\n");
 		return -EIO;
 	}
 #endif
-	printk(" done.\n");
 
-	dprintk(0, "Allocating and registering button device...");
+	dprintk(10, "Allocating and registering button device...\n");
 
 	button_dev = input_allocate_device();
 	if (!button_dev)
@@ -331,7 +330,7 @@ int button_dev_init(void)
 
 	pt6958_write(PT6958_CMD_ADDR_SET, pt6958_ram, PT6958_RAM_SIZE);
 	pt6958_write(PT6958_CMD_DISPLAY_ON, NULL, 0);  // LED display off?
-	printk(" done.\n");
+//	printk(" done.\n");
 	return 0;
 }
 
@@ -377,7 +376,7 @@ void button_dev_exit(void)
  * Remove the PT6302 control pin driver.
  *
  */
-static void vfd_pin_free(struct vfd_pin_driver *vfd_pin)
+static void vfd_pin_free(struct pt6302_pin_driver *vfd_pin)
 {
 	if (vfd_pin == NULL)
 	{
@@ -414,61 +413,53 @@ static void vfd_pin_free(struct vfd_pin_driver *vfd_pin)
  * Initialize the PT6302 control pin driver.
  *
  */
-static struct vfd_pin_driver *vfd_pin_init(void)
+static struct pt6302_pin_driver *vfd_pin_init(void)
 {
-	struct vfd_pin_driver *vfd_pin = NULL;
+	struct pt6302_pin_driver *pt6302_pin_drv = NULL;
 
-	dprintk(0, "Initialize PT6302 pin driver.\n");
+	dprintk(100, "%s >\n", __func__);
 
-	vfd_pin = (struct vfd_pin_driver *)kzalloc(sizeof(struct vfd_pin_driver), GFP_KERNEL);
-	if (vfd_pin == NULL)
+	pt6302_pin_drv = (struct pt6302_pin_driver *)kzalloc(sizeof(struct pt6302_pin_driver), GFP_KERNEL);
+	if (pt6302_pin_drv == NULL)
 	{
-		dprintk(1, "Unable to allocate vfd_pin_driver struct; abort.\n");
+		dprintk(1, "Unable to allocate pt6302_pin_driver struct; abort.\n");
 		goto vfd_pin_init_fail;
 	}
 	/* Allocate pio pins for the PT6302 */
-	dprintk(10, "PT6302 CS pin: request STPIO %d, %d (%s, STPIO_OUT).\n", VFD_PIO_PORT_CS, VFD_PIO_PIN_CS, stpio_vfd_cs);
-	vfd_pin->pt6302_cs = stpio_request_pin(VFD_PIO_PORT_CS, VFD_PIO_PIN_CS, stpio_vfd_cs, STPIO_OUT);
+	dprintk(150, "PT6302 CS pin: request STPIO %d, %d (%s, STPIO_OUT).\n", VFD_PIO_PORT_CS, VFD_PIO_PIN_CS, stpio_vfd_cs);
+	pt6302_pin_drv->pt6302_cs = stpio_request_pin(VFD_PIO_PORT_CS, VFD_PIO_PIN_CS, stpio_vfd_cs, STPIO_OUT);
 
-	if (vfd_pin->pt6302_cs == NULL)
+	if (pt6302_pin_drv->pt6302_cs == NULL)
 	{
 		dprintk(1, "Request CS STPIO failed; abort\n");
 		goto vfd_pin_init_fail;
 	}
 
-	dprintk(10, "PT6302 CLK pin: request STPIO %d, %d (%s, STPIO_OUT).\n", VFD_PIO_PORT_CLK, VFD_PIO_PIN_CLK, stpio_vfd_clk);
-	vfd_pin->pt6302_clk = stpio_request_pin(VFD_PIO_PORT_CLK, VFD_PIO_PIN_CLK, stpio_vfd_clk, STPIO_OUT);
+	dprintk(150, "PT6302 CLK pin: request STPIO %d, %d (%s, STPIO_OUT).\n", VFD_PIO_PORT_CLK, VFD_PIO_PIN_CLK, stpio_vfd_clk);
+	pt6302_pin_drv->pt6302_clk = stpio_request_pin(VFD_PIO_PORT_CLK, VFD_PIO_PIN_CLK, stpio_vfd_clk, STPIO_OUT);
 
-	if (vfd_pin->pt6302_clk == NULL)
+	if (pt6302_pin_drv->pt6302_clk == NULL)
 	{
 		dprintk(1, "Request CLK STPIO failed; abort.\n");
 		goto vfd_pin_init_fail;
 	}
 
-	dprintk(10, "PT6302 DIN pin: request STPIO %d, %d (%s, STPIO_BIDIR).\n", VFD_PIO_PORT_DIN, VFD_PIO_PIN_DIN, stpio_vfd_din);
-	vfd_pin->pt6302_din = stpio_request_pin(VFD_PIO_PORT_DIN, VFD_PIO_PIN_DIN, stpio_vfd_din, STPIO_BIDIR);
+	dprintk(150, "PT6302 DIN pin: request STPIO %d, %d (%s, STPIO_BIDIR).\n", VFD_PIO_PORT_DIN, VFD_PIO_PIN_DIN, stpio_vfd_din);
+	pt6302_pin_drv->pt6302_din = stpio_request_pin(VFD_PIO_PORT_DIN, VFD_PIO_PIN_DIN, stpio_vfd_din, STPIO_BIDIR);
 
-	if (vfd_pin->pt6302_din == NULL)
+	if (pt6302_pin_drv->pt6302_din == NULL)
 	{
-		dprintk(1, "Request sda STPIO failed; abort.\n");
+		dprintk(1, "Request DIN STPIO failed; abort.\n");
 		goto vfd_pin_init_fail;
 	}
-	return vfd_pin;
+	dprintk(100, "%s <\n", __func__);
+	return pt6302_pin_drv;
 
 vfd_pin_init_fail:
-	vfd_pin_free(vfd_pin);
+	vfd_pin_free(pt6302_pin_drv);
+	dprintk(100, "%s < (fail)\n", __func__);
 	return 0;
 }
-
-//----------------------------------------------------------------------------
-// TODO: move to header file
-struct vfd_driver
-{
-	struct vfd_pin_driver *vfd_pin;
-	struct pt6302_driver  *ctrl;
-	struct semaphore      sem;
-	int                   opencount;
-};
 
 static struct vfd_driver vfd;
 
@@ -506,13 +497,13 @@ static ssize_t vfd_write(struct file *filp, const char *buf, size_t len, loff_t 
 		wlen--;
 	}
 // TODO: add scrolling?
-	if (wlen > VFD_MAX_CHARS)  //display VFD_MAX_CHARS maximum
+	if (wlen > VFD_MAX_CHARS)  // display VFD_MAX_CHARS maximum
 	{
 		wlen = VFD_MAX_CHARS;
 	}
 	dprintk(10, "write : len = %d, wlen = %d, kbuf = '%s'.\n", len, wlen, kbuf);
 
-	pt6302_write_dcram(vfd.ctrl, 0, kbuf, wlen);
+	pt6302_write_dcram(vfd.pt6302_drv, 0, kbuf, wlen);
 	return len;
 }
 
@@ -538,19 +529,19 @@ static int vfd_open(struct inode *inode, struct file *file)
 {
 	if (down_interruptible(&(vfd.sem)))
 	{
-		dprintk(10, "interrupted while waiting for semaphore\n");
+		dprintk(10, "interrupted while waiting for semaphore.\n");
 		return -ERESTARTSYS;
 	}
 	if (vfd.opencount > 0)
 	{
-		dprintk(10, "device already opened\n");
+		dprintk(10, "device already opened.\n");
 		up(&(vfd.sem));
 		return -EUSERS;
 	}
 	vfd.opencount++;
 	up(&(vfd.sem));
 
-	pt6302_set_light(vfd.ctrl, PT6302_LIGHT_NORMAL);
+	pt6302_set_light(vfd.pt6302_drv, PT6302_LIGHT_NORMAL);
 	return 0;
 }
 
@@ -563,7 +554,7 @@ static int vfd_open(struct inode *inode, struct file *file)
  */
 static int vfd_close(struct inode *inode, struct file *file)
 {
-	//pt6302_set_light(vfd.ctrl, PT6302_LIGHTS_OFF);
+	//pt6302_set_light(vfd.pt6302_drv, PT6302_LIGHTS_OFF);
 	vfd.opencount = 0;
 	return 0;
 }
@@ -577,22 +568,22 @@ static int vfd_close(struct inode *inode, struct file *file)
  */
 static void fp_module_exit(void)
 {
-	dprintk(0, "Button driver unloading ...");
+	dprintk(10, "Button driver unloading ...");
 	button_dev_exit();
 	printk(" done.\n");
 
-	dprintk(0, "PT6302 driver unloading.\n");
+	dprintk(10, "PT6302 driver unloading.\n");
 	unregister_chrdev(VFD_MAJOR, "vfd");
-	if (vfd.ctrl)
+	if (vfd.pt6302_drv)
 	{
-		pt6302_free(vfd.ctrl);  // stop PT6302 driver
+		pt6302_free(vfd.pt6302_drv);  // stop PT6302 driver
 	}
-	if (vfd.vfd_pin)
+	if (vfd.pt6302_pin_drv)
 	{
-		vfd_pin_free(vfd.vfd_pin);  // stop PT6302 pin driver
+		vfd_pin_free(vfd.pt6302_pin_drv);  // stop PT6302 pin driver
 	}
-	vfd.ctrl = NULL;
-	vfd.vfd_pin  = NULL;
+	vfd.pt6302_drv = NULL;
+	vfd.pt6302_pin_drv  = NULL;
 	printk(" done.\n");
 }
 
@@ -608,57 +599,60 @@ static struct file_operations vfd_fops;
 static int __init fp_module_init(void)
 {
 	dprintk(0, "Front panel PT6302 & PT6958 driver modified by B4Team & Audioniek\n");
-	dprintk(0, "Driver initializing...");
+	dprintk(1, "Driver initializing...\n");
 
 	if (rec != 0)  // limit rec values to 0 (bska/bxzb) or 1 (bxzb/bzzb)
 	{
 		rec = 1;
 	}
 
-	vfd.vfd_pin  = NULL;  // PT6302 pin driver
-	vfd.ctrl = NULL;  // PT6302 chip driver
+	vfd.pt6302_pin_drv = NULL;  // PT6302 pin driver
+	vfd.pt6302_drv = NULL;  // PT6302 chip driver
 
 	dprintk(10, "Initialize PT6302 pin driver.\n");
-	vfd.vfd_pin = vfd_pin_init();
-	if (vfd.vfd_pin == NULL)
+	vfd.pt6302_pin_drv = vfd_pin_init();
+	if (vfd.pt6302_pin_drv == NULL)
 	{
-		dprintk(1, "Unable to init PT6302 pin driver; abort.");
+		dprintk(1, "Unable to init PT6302 pin driver; abort.\n");
 		goto fp_init_fail;
 	}
-	dprintk(10, "Initializing PT6302 pin driver successful.\n");
+//	dprintk(10, " done.\n");
 
-	dprintk(10, "Probe for PT6302 chip driver.\n");
-	vfd.ctrl = pt6302_init(vfd.vfd_pin);
-	if (vfd.ctrl == NULL)
+	dprintk(10, "Initialize PT6302 chip driver.\n");
+	vfd.pt6302_drv = pt6302_init(vfd.pt6302_pin_drv);
+	if (vfd.pt6302_drv == NULL)
 	{
-		dprintk(1, "Unable to init PT6302 chip driver; abort.");
+		dprintk(1, "Unable to init PT6302 chip driver; abort.\n");
 		goto fp_init_fail;
 	}
-	dprintk(10, "Probe for PT6302 chip driver successful.\n");
+//	dprintk(10, " done\n");
+
 	dprintk(10, "Register character device %d.\n", VFD_MAJOR);
 	if (register_chrdev(VFD_MAJOR, "vfd", &vfd_fops))
 	{
-		dprintk(1, "Registering major %d failed.\n", VFD_MAJOR);
+		dprintk(1, "Registering major %d failed; abort.\n", VFD_MAJOR);
 		goto fp_init_fail;
 	}
 	sema_init(&(vfd.sem), 1);
 	vfd.opencount = 0;
-	dprintk(10, "Registering character device %d successful.\n", VFD_MAJOR);
+//	dprintk(10, " done.\n");
 
-	dprintk(0, "Initializing button driver...");
+	dprintk(10, "Initializing button driver.\n");
 	if (button_dev_init() != 0)
 	{
-		dprintk(1, "Initializing button driver failed.\n");
+		dprintk(1, "Initializing button driver failed; abort.\n");
 		goto fp_init_fail;
 	}
-	printk(" done.\n");
+//	printk(" done.\n");
 
 	pt6958_led_control(PT6958_CMD_ADDR_LED1, 2);  // power LED: green
-	pt6302_setup(vfd.ctrl);  // initialize VFD display
+	pt6302_setup(vfd.pt6302_drv);  // initialize VFD display
+	dprintk(1, "Driver initialized successfully.\n");
 	return 0;
 
 fp_init_fail:
 	fp_module_exit();
+	dprintk(1, "Driver initialization failed.\n");
 	return -EIO;
 }
 
@@ -687,19 +681,19 @@ static int vfd_ioctl(struct inode *inode, struct file *file, unsigned int cmd, u
 	{
 		case VFDIOC_DCRAMWRITE:
 		{
-			return pt6302_write_dcram(vfd.ctrl, vfddata.address, vfddata.data, vfddata.length);
+			return pt6302_write_dcram(vfd.pt6302_drv, vfddata.address, vfddata.data, vfddata.length);
 			break;
 		}
 		case VFDIOC_BRIGHTNESS:
 		{
-			pt6302_set_brightness(vfd.ctrl, vfddata.address);
-//			pt6958_set_brightness(vfd.ctrl, vfddata.address);
+			pt6302_set_brightness(vfd.pt6302_drv, vfddata.address);
+//			pt6958_set_brightness(vfd.pt6302_drv, vfddata.address);
 			break;
 		}
 		case VFDIOC_DISPLAYWRITEONOFF:
 		{
-			pt6302_set_light(vfd.ctrl, vfddata.address);
-//			pt6958_set_light(vfd.ctrl, vfddata.address);
+			pt6302_set_light(vfd.pt6302_drv, vfddata.address);
+//			pt6958_set_light(vfd.pt6302_drv, vfddata.address);
 			break;
 		}
 		case VFDIOC_ICONDISPLAYONOFF:
@@ -757,8 +751,8 @@ static int vfd_ioctl(struct inode *inode, struct file *file, unsigned int cmd, u
 		}
 		case VFDIOC_DRIVERINIT:
 		{
-			pt6302_setup(vfd.ctrl);
-//			pt6958_setup(vfd.ctrl);
+			pt6302_setup(vfd.pt6302_drv);
+//			pt6958_setup(vfd.pt6302_drv);
 			break;
 		}
 		default:
