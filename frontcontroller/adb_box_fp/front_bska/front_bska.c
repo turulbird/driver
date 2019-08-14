@@ -335,7 +335,7 @@ static int PT6958_ShowBuf(unsigned char *data, unsigned char len)
 		data[len - 1] = '\0';
 		len--;
 	}
-	dprintk(10, "%s > LED text: [%s] (len = %d)\n", __func__, text, len);
+	dprintk(10, "%s > LED text: [%s] (len = %d)\n", __func__, data, len);
 
 	/* handle UTF-8 characters */
 	while ((i < len) && (wlen < 8))
