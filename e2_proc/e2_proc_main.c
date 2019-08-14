@@ -666,10 +666,9 @@ static int default_write_proc(struct file *file, const char __user *buf, unsigne
 
 struct ProcStructure_s e2Proc[] =
 {
-//#if defined(UFS910) \
-// || defined(ADB_BOX)
-//	{cProcEntry, "boxtype"                                                          , NULL, NULL, NULL, NULL, ""},
-//#endif
+#if defined(UFS910)
+	{cProcEntry, "boxtype"                                                          , NULL, NULL, NULL, NULL, ""},
+#endif
 	{cProcEntry, "progress"                                                         , NULL, NULL, NULL, NULL, ""},
 
 	{cProcEntry, "bus/nim_sockets"                                                  , NULL, NULL, NULL, NULL, ""},
@@ -685,11 +684,15 @@ struct ProcStructure_s e2Proc[] =
 	{cProcEntry, "stb/info/model"                                                   , NULL, info_model_read, NULL, NULL, ""},
 	{cProcEntry, "stb/info/chipset"                                                 , NULL, info_chipset_read, NULL, NULL, ""},
 	{cProcEntry, "stb/info/boxtype"                                                 , NULL, info_model_read, NULL, NULL, ""},
+#if defined(ADB_BOX)
+	{cProcEntry, "stb/info/adb_variant"                                             , NULL, NULL, NULL, NULL, ""},
+#endif
 
 	{cProcDir  , "stb/ir"                                                           , NULL, NULL, NULL, NULL, ""},
 	{cProcDir  , "stb/ir/rc"                                                        , NULL, NULL, NULL, NULL, ""},
 	{cProcEntry, "stb/ir/rc/type"                                                   , NULL, info_rctype_read, info_rctype_write, NULL, ""},
-#if defined(FORTIS_HDBOX) \
+#if defined(ADB_BOX) \
+ || defined(FORTIS_HDBOX) \
  || defined(ATEVIO7500) \
  || defined(SPARK7162) \
  || defined(TF7700)
@@ -742,6 +745,10 @@ struct ProcStructure_s e2Proc[] =
 //	{cProcEntry, "stb/fp/lnb_sense2"                                                , NULL, NULL, NULL, NULL, ""},
 	{cProcEntry, "stb/fp/led0_pattern"                                              , NULL, NULL, default_write_proc, NULL, ""},
 	{cProcEntry, "stb/fp/led1_pattern"                                              , NULL, NULL, default_write_proc, NULL, ""},
+#if defined(ADB_BOX)
+	{cProcEntry, "stb/fp/led2_pattern"                                              , NULL, NULL, default_write_proc, NULL, ""},
+	{cProcEntry, "stb/fp/led3_pattern"                                              , NULL, NULL, default_write_proc, NULL, ""},
+#endif
 	{cProcEntry, "stb/fp/led_pattern_speed"                                         , NULL, NULL, default_write_proc, NULL, ""},
 	{cProcEntry, "stb/fp/oled_brightness"                                           , NULL, NULL, NULL, NULL, ""},
 	{cProcEntry, "stb/fp/rtc"                                                       , NULL, zero_read, default_write_proc, NULL, ""},
