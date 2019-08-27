@@ -1,23 +1,23 @@
 /*
-	STB0899 Multistandard Frontend driver
-	Copyright (C) Manu Abraham (abraham.manu@gmail.com)
-
-	Copyright (C) ST Microelectronics
-
-	This program is free software; you can redistribute it and/or modify
-	it under the terms of the GNU General Public License as published by
-	the Free Software Foundation; either version 2 of the License, or
-	(at your option) any later version.
-
-	This program is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY; without even the implied warranty of
-	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-	GNU General Public License for more details.
-
-	You should have received a copy of the GNU General Public License
-	along with this program; if not, write to the Free Software
-	Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-*/
+ * STB0899 Multistandard Frontend driver
+ * Copyright (C) Manu Abraham (abraham.manu@gmail.com)
+ *
+ * Copyright (C) ST Microelectronics
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ */
 
 #include "stb0899_drv.h"
 #include "stb0899_priv.h"
@@ -26,7 +26,6 @@
 inline u32 stb0899_do_div(u64 n, u32 d)
 {
 	/* wrap do_div() for ease of use */
-
 	do_div(n, d);
 	return n;
 }
@@ -62,7 +61,6 @@ static u32 stb0899_get_srate(struct stb0899_state *state)
 	u8 sfr[3];
 
 	stb0899_read_regs(state, STB0899_SFRH, sfr, 3);
-
 	return stb0899_calc_srate(internal->master_clk, sfr);
 }
 #endif
@@ -105,7 +103,6 @@ static u32 stb0899_set_srate(struct stb0899_state *state, u32 master_clk, u32 sr
 	sfr[2] = tmp;
 
 	stb0899_write_regs(state, STB0899_SFRH, sfr, 3);
-
 	return srate;
 }
 
@@ -118,9 +115,13 @@ static u32 stb0899_set_srate(struct stb0899_state *state, u32 master_clk, u32 sr
 static long stb0899_calc_derot_time(long srate)
 {
 	if (srate > 0)
+	{
 		return (100000 / (srate / 1000));
+	}
 	else
+	{
 		return 0;
+	}
 }
 
 /*
@@ -141,9 +142,9 @@ long stb0899_carr_width(struct stb0899_state *state)
  */
 static void stb0899_first_subrange(struct stb0899_state *state)
 {
-	struct stb0899_internal *internal	= &state->internal;
-	struct stb0899_params *params		= &state->params;
-	struct stb0899_config *config		=  state->config;
+	struct stb0899_internal *internal = &state->internal;
+	struct stb0899_params   *params   = &state->params;
+	struct stb0899_config   *config	  =  state->config;
 
 	int range = 0;
 	u32 bandwidth = 0;
@@ -155,12 +156,14 @@ static void stb0899_first_subrange(struct stb0899_state *state)
 		stb0899_i2c_gate_ctrl(&state->frontend, 0);
 		range = bandwidth - stb0899_carr_width(state) / 2;
 	}
-
 	if (range > 0)
+	{
 		internal->sub_range = min(internal->srch_range, range);
+	}
 	else
+	{
 		internal->sub_range = 0;
-
+	}
 	internal->freq = params->freq;
 	internal->tuner_offst = 0L;
 	internal->sub_dir = 1;
@@ -219,7 +222,7 @@ static enum stb0899_status stb0899_search_tmg(struct stb0899_state *state)
 
 	internal->status = NOTIMING;
 
-	/* timing loop computation & symbol rate optimisation	*/
+	/* timing loop computation & symbol rate optimisation */
 	derot_limit = (internal->sub_range / 2L) / internal->mclk;
 	derot_step = internal->derot_step * 4;
 
@@ -228,33 +231,31 @@ static enum stb0899_status stb0899_search_tmg(struct stb0899_state *state)
 
 	while ((stb0899_check_tmg(state) != TIMINGOK) && next_loop)
 	{
-
-		derot_freq += index * internal->direction * derot_step;	/* next derot zig zag position	*/
+		derot_freq += index * internal->direction * derot_step;	/* next derot zig zag position */
 
 		dprintk(state->verbose, FE_DEBUG, 1, "index = %d, derot_freq = %d, limit = %d, direction = %d, step = %d",
 			index, derot_freq, derot_limit, internal->direction, derot_step);
 
 		if (abs(derot_freq) > derot_limit)
+		{
 			next_loop--;
-
+		}
 		if (next_loop)
 		{
-			STB0899_SETFIELD_VAL(CFRM, cfr[0], MSB(state->config->inversion * derot_freq));
-			STB0899_SETFIELD_VAL(CFRL, cfr[1], LSB(state->config->inversion * derot_freq));
-			stb0899_write_regs(state, STB0899_CFRM, cfr, 2); /* derotator frequency		*/
+			STB0899_SETFIELD_VAL(CFRM, cfr[0], MSB(state->config->inversion *derot_freq));
+			STB0899_SETFIELD_VAL(CFRL, cfr[1], LSB(state->config->inversion *derot_freq));
+			stb0899_write_regs(state, STB0899_CFRM, cfr, 2);  /* derotator frequency */
 		}
-
 		index++;
-		internal->direction = -internal->direction;	/* Change zigzag direction		*/
+		internal->direction = -internal->direction;  /* Change zigzag direction */
 	}
 
 	if (internal->status == TIMINGOK)
 	{
-		stb0899_read_regs(state, STB0899_CFRM, cfr, 2); /* get derotator frequency		*/
+		stb0899_read_regs(state, STB0899_CFRM, cfr, 2);	 /* get derotator frequency */
 		internal->derot_freq = state->config->inversion * MAKEWORD16(cfr[0], cfr[1]);
 		dprintk(state->verbose, FE_DEBUG, 1, "------->TIMING OK ! Derot Freq = %d", internal->derot_freq);
 	}
-
 	return internal->status;
 }
 
@@ -267,7 +268,7 @@ static enum stb0899_status stb0899_check_carrier(struct stb0899_state *state)
 	struct stb0899_internal *internal = &state->internal;
 	u8 reg;
 
-	msleep(internal->t_derot); /* wait for derotator ok	*/
+	msleep(internal->t_derot);  /* wait for derotator ok */
 
 	reg = stb0899_read_reg(state, STB0899_CFD);
 	STB0899_SETFIELD_VAL(CFD_ON, reg, 1);
@@ -285,7 +286,6 @@ static enum stb0899_status stb0899_check_carrier(struct stb0899_state *state)
 		internal->status = NOCARRIER;
 		dprintk(state->verbose, FE_DEBUG, 1, "-------------> NOCARRIER !");
 	}
-
 	return internal->status;
 }
 
@@ -310,8 +310,7 @@ static enum stb0899_status stb0899_search_carrier(struct stb0899_state *state)
 	last_derot_freq = internal->derot_freq;
 	base_freq = internal->derot_freq;
 
-	dprintk(state->verbose, FE_DEBUG, 1, "freq = %d, limit = %d, step = %d, mclk = %d",
-		derot_freq, derot_limit, derot_step, internal->mclk);
+	dprintk(state->verbose, FE_DEBUG, 1, "freq = %d, limit = %d, step = %d, mclk = %d", derot_freq, derot_limit, derot_step, internal->mclk);
 
 	reg = stb0899_read_reg(state, STB0899_CFD);
 	STB0899_SETFIELD_VAL(CFD_ON, reg, 1);
@@ -322,38 +321,37 @@ static enum stb0899_status stb0899_search_carrier(struct stb0899_state *state)
 		dprintk(state->verbose, FE_DEBUG, 1, "Derot Freq=%d, mclk=%d", derot_freq, internal->mclk);
 		if (stb0899_check_carrier(state) == NOCARRIER)
 		{
-
 			last_derot_freq = derot_freq;
-			derot_freq += index * internal->direction * derot_step; /* next zig zag derotator position	*/
-
+			derot_freq += index * internal->direction * derot_step;	/* next zig zag derotator position */
 
 			dprintk(state->verbose, FE_DEBUG, 1, "index = %d, derot_freq = %d, limit = %d, step = %d",
 				index, derot_freq, derot_limit, derot_step);
 
 			// Alex: should limit based on initial base freq
-			if (derot_freq > base_freq + derot_limit || derot_freq < base_freq - derot_limit)
+			if (derot_freq > base_freq + derot_limit
+			||  derot_freq < base_freq - derot_limit)
+			{
 				next_loop--;
-
+			}
 			if (next_loop)
 			{
 				reg = stb0899_read_reg(state, STB0899_CFD);
 				STB0899_SETFIELD_VAL(CFD_ON, reg, 1);
 				stb0899_write_reg(state, STB0899_CFD, reg);
 
-				STB0899_SETFIELD_VAL(CFRM, cfr[0], MSB(state->config->inversion * derot_freq));
-				STB0899_SETFIELD_VAL(CFRL, cfr[1], LSB(state->config->inversion * derot_freq));
-				stb0899_write_regs(state, STB0899_CFRM, cfr, 2); /* derotator frequency	*/
+				STB0899_SETFIELD_VAL(CFRM, cfr[0], MSB(state->config->inversion *derot_freq));
+				STB0899_SETFIELD_VAL(CFRL, cfr[1], LSB(state->config->inversion *derot_freq));
+				stb0899_write_regs(state, STB0899_CFRM, cfr, 2);  /* derotator frequency */
 			}
-
 			index++;
-			internal->direction = -internal->direction; /* Change zigzag direction	*/
+			internal->direction = -internal->direction;  /* Change zigzag direction */
 		}
 	}
 	while ((internal->status != CARRIEROK) && next_loop);
 
 	if (internal->status == CARRIEROK)
 	{
-		stb0899_read_regs(state, STB0899_CFRM, cfr, 2); /* get derotator frequency	*/
+		stb0899_read_regs(state, STB0899_CFRM, cfr, 2);  /* get derotator frequency */
 		internal->derot_freq = state->config->inversion * MAKEWORD16(cfr[0], cfr[1]);
 		dprintk(state->verbose, FE_DEBUG, 1, "----> CARRIER OK !, Derot Freq=%d", internal->derot_freq);
 	}
@@ -361,7 +359,6 @@ static enum stb0899_status stb0899_search_carrier(struct stb0899_state *state)
 	{
 		internal->derot_freq = last_derot_freq;
 	}
-
 	return internal->status;
 }
 
@@ -382,7 +379,7 @@ static enum stb0899_status stb0899_check_data(struct stb0899_state *state)
 
 	internal->status = NODATA;
 
-	/* RESET FEC	*/
+	/* RESET FEC */
 	reg = stb0899_read_reg(state, STB0899_TSTRES);
 	STB0899_SETFIELD_VAL(FRESACS, reg, 1);
 	stb0899_write_reg(state, STB0899_TSTRES, reg);
@@ -395,36 +392,44 @@ static enum stb0899_status stb0899_check_data(struct stb0899_state *state)
 	msleep(5);
 
 	if (params->srate <= 2000000)
+	{
 		dataTime = 2000;
+	}
 	else if (params->srate <= 5000000)
+	{
 		dataTime = 1500;
+	}
 	else if (params->srate <= 15000000)
+	{
 		dataTime = 1000;
+	}
 	else
+	{
 		dataTime = 500;
-
-	stb0899_write_reg(state, STB0899_DSTATUS2, 0x00); /* force search loop	*/
+	}
+	stb0899_write_reg(state, STB0899_DSTATUS2, 0x00);  /* force search loop */
 	while (1)
 	{
 		// Alex: added 1 mSec
 		msleep(1);
 
-		/* WARNING! VIT LOCKED has to be tested before VIT_END_LOOOP	*/
+		/* WARNING! VIT LOCKED has to be tested before VIT_END_LOOOP    */
 		reg = stb0899_read_reg(state, STB0899_VSTATUS);
 		lock = STB0899_GETFIELD(VSTATUS_LOCKEDVIT, reg);
 		loop = STB0899_GETFIELD(VSTATUS_END_LOOPVIT, reg);
 
 		if (lock || loop || (index > dataTime))
+		{
 			break;
+		}
 		index++;
 	}
 
-	if (lock)  	/* DATA LOCK indicator	*/
-	{
+	if (lock)
+	{  /* DATA LOCK indicator */
 		internal->status = DATAOK;
 		dprintk(state->verbose, FE_DEBUG, 1, "-----------------> DATA OK !");
 	}
-
 	return internal->status;
 }
 
@@ -447,23 +452,24 @@ static enum stb0899_status stb0899_search_data(struct stb0899_state *state)
 	derot_freq = internal->derot_freq;
 	base_freq = internal->derot_freq;
 
-	dprintk(state->verbose, FE_DEBUG, 1, "limit = %d, step = %d, mclk = %d",
-		derot_limit, derot_step, internal->mclk);
+	dprintk(state->verbose, FE_DEBUG, 1, "limit = %d, step = %d, mclk = %d", derot_limit, derot_step, internal->mclk);
 
 	do
 	{
-		if ((internal->status != CARRIEROK) || (stb0899_check_data(state) != DATAOK))
+		if ((internal->status != CARRIEROK)
+		||  (stb0899_check_data(state) != DATAOK))
 		{
-
-			derot_freq += index * internal->direction * derot_step;	/* next zig zag derotator position	*/
+			derot_freq += index * internal->direction * derot_step;	/* next zig zag derotator position      */
 
 			dprintk(state->verbose, FE_DEBUG, 1, "index = %d, derot_freq = %d, limit = %d, direction = %d, step = %d",
 				index, derot_freq, derot_limit, internal->direction, derot_step);
 
 			// Alex: should limit based on initial base freq
-			if (derot_freq > base_freq + derot_limit || derot_freq < base_freq - derot_limit)
+			if (derot_freq > base_freq + derot_limit
+			||  derot_freq < base_freq - derot_limit)
+			{
 				next_loop--;
-
+			}
 			if (next_loop)
 			{
 				dprintk(state->verbose, FE_DEBUG, 1, "Derot freq=%d, mclk=%d", derot_freq, internal->mclk);
@@ -471,26 +477,24 @@ static enum stb0899_status stb0899_search_data(struct stb0899_state *state)
 				STB0899_SETFIELD_VAL(CFD_ON, reg, 1);
 				stb0899_write_reg(state, STB0899_CFD, reg);
 
-				STB0899_SETFIELD_VAL(CFRM, cfr[0], MSB(state->config->inversion * derot_freq));
-				STB0899_SETFIELD_VAL(CFRL, cfr[1], LSB(state->config->inversion * derot_freq));
-				stb0899_write_regs(state, STB0899_CFRM, cfr, 2); /* derotator frequency	*/
+				STB0899_SETFIELD_VAL(CFRM, cfr[0], MSB(state->config->inversion *derot_freq));
+				STB0899_SETFIELD_VAL(CFRL, cfr[1], LSB(state->config->inversion *derot_freq));
+				stb0899_write_regs(state, STB0899_CFRM, cfr, 2);  /* derotator frequency */
 
 				stb0899_check_carrier(state);
 			}
 		}
-
 		index++;
-		internal->direction = -internal->direction; /* change zig zag direction		*/
+		internal->direction = -internal->direction;  /* change zig zag direction */
 	}
 	while ((internal->status != DATAOK) && next_loop);
 
 	if (internal->status == DATAOK)
 	{
-		stb0899_read_regs(state, STB0899_CFRM, cfr, 2); /* get derotator frequency	*/
+		stb0899_read_regs(state, STB0899_CFRM, cfr, 2);  /* get derotator frequency */
 		internal->derot_freq = state->config->inversion * MAKEWORD16(cfr[0], cfr[1]);
 		dprintk(state->verbose, FE_DEBUG, 1, "------> DATAOK ! Derot Freq=%d", internal->derot_freq);
 	}
-
 	return internal->status;
 }
 
@@ -508,7 +512,8 @@ static enum stb0899_status stb0899_check_range(struct stb0899_state *state)
 	range_offst = internal->srch_range / 2000;
 	tp_freq = internal->freq + (internal->derot_freq * internal->mclk) / 1000;
 
-	if ((tp_freq >= params->freq - range_offst) && (tp_freq <= params->freq + range_offst))
+	if ((tp_freq >= params->freq - range_offst)
+	&&  (tp_freq <= params->freq + range_offst))
 	{
 		internal->status = RANGEOK;
 		dprintk(state->verbose, FE_DEBUG, 1, "----> RANGEOK !");
@@ -518,7 +523,6 @@ static enum stb0899_status stb0899_check_range(struct stb0899_state *state)
 		internal->status = OUTOFRANGE;
 		dprintk(state->verbose, FE_DEBUG, 1, "----> OUT OF RANGE !");
 	}
-
 	return internal->status;
 }
 
@@ -536,16 +540,14 @@ static void next_sub_range(struct stb0899_state *state)
 	if (internal->sub_dir > 0)
 	{
 		old_sub_range = internal->sub_range;
-		internal->sub_range = min((internal->srch_range / 2) -
-					  (internal->tuner_offst + internal->sub_range / 2),
-					  internal->sub_range);
+		internal->sub_range = min((internal->srch_range / 2) - (internal->tuner_offst +  internal->sub_range / 2), internal->sub_range);
 
 		if (internal->sub_range < 0)
+		{
 			internal->sub_range = 0;
-
+		}
 		internal->tuner_offst += (old_sub_range + internal->sub_range) / 2;
 	}
-
 	internal->freq = params->freq + (internal->sub_dir * internal->tuner_offst) / 1000;
 	internal->sub_dir = -internal->sub_dir;
 }
@@ -557,9 +559,9 @@ static void next_sub_range(struct stb0899_state *state)
  */
 enum stb0899_status stb0899_dvbs_algo(struct stb0899_state *state)
 {
-	struct stb0899_params *params		= &state->params;
-	struct stb0899_internal *internal	= &state->internal;
-	struct stb0899_config *config		= state->config;
+	struct stb0899_params   *params   = &state->params;
+	struct stb0899_internal *internal = &state->internal;
+	struct stb0899_config  *config    = state->config;
 
 	u8 bclc, reg;
 	u8 cfr[2];
@@ -567,21 +569,20 @@ enum stb0899_status stb0899_dvbs_algo(struct stb0899_state *state)
 	s32 clnI = 3;
 	u32 bandwidth = 0;
 
-	/* BETA values rated @ 99MHz	*/
+	/* BETA values rated @ 99MHz */
 	s32 betaTab[5][4] =
 	{
-		/*  5   10   20   30MBps */
-		{ 37,  34,  32,  31 }, /* QPSK 1/2	*/
-		{ 37,  35,  33,  31 }, /* QPSK 2/3	*/
-		{ 37,  35,  33,  31 }, /* QPSK 3/4	*/
-		{ 37,  36,  33,	 32 }, /* QPSK 5/6	*/
-		{ 37,  36,  33,	 32 }  /* QPSK 7/8	*/
+		/* 5  10  20  30MBps */
+		{ 37, 34, 32, 31 },  /* QPSK 1/2 */
+		{ 37, 35, 33, 31 },  /* QPSK 2/3 */
+		{ 37, 35, 33, 31 },  /* QPSK 3/4 */
+		{ 37, 36, 33, 32 },  /* QPSK 5/6 */
+		{ 37, 36, 33, 32 }   /* QPSK 7/8 */
 	};
-
 	internal->direction = 1;
 
 	stb0899_set_srate(state, internal->master_clk, params->srate);
-	/* Carrier loop optimization versus symbol rate for acquisition*/
+	/* Carrier loop optimization versus symbol rate for acquisition */
 	if (params->srate <= 5000000)
 	{
 		stb0899_write_reg(state, STB0899_ACLC, 0x89);
@@ -614,9 +615,8 @@ enum stb0899_status stb0899_dvbs_algo(struct stb0899_state *state)
 		stb0899_write_reg(state, STB0899_BCLC, bclc);
 		clnI = 3;
 	}
-
 	dprintk(state->verbose, FE_DEBUG, 1, "Set the timing loop to acquisition");
-	/* Set the timing loop to acquisition	*/
+	/* Set the timing loop to acquisition */
 	stb0899_write_reg(state, STB0899_RTC, 0x46);
 	stb0899_write_reg(state, STB0899_CFD, 0xee);
 
@@ -626,20 +626,18 @@ enum stb0899_status stb0899_dvbs_algo(struct stb0899_state *state)
 	 * querying status while acquiring causes the
 	 * acquisition to go bad and hence no locks.
 	 */
-	dprintk(state->verbose, FE_DEBUG, 1, "Derot Percent=%d Srate=%d mclk=%d",
-		internal->derot_percent, params->srate, internal->mclk);
+	dprintk(state->verbose, FE_DEBUG, 1, "Derot Percent=%d Srate=%d mclk=%d", internal->derot_percent, params->srate, internal->mclk);
 
-	/* Initial calculations	*/
-	internal->derot_step = internal->derot_percent * (params->srate / 1000L) / internal->mclk; /* DerotStep/1000 * Fsymbol	*/
+	/* Initial calculations */
+	internal->derot_step = internal->derot_percent * (params->srate / 1000L) / internal->mclk;	/* DerotStep/1000 * Fsymbol  */
 
-	dprintk(state->verbose, FE_DEBUG, 1, "Derot step=%d",
-		internal->derot_step);
+	dprintk(state->verbose, FE_DEBUG, 1, "Derot step=%d", internal->derot_step);
 
 	internal->t_derot = stb0899_calc_derot_time(params->srate);
 	internal->t_data = 500;
 
 	dprintk(state->verbose, FE_DEBUG, 1, "RESET stream merger");
-	/* RESET Stream merger	*/
+	/* RESET Stream merger */
 	reg = stb0899_read_reg(state, STB0899_TSTRES);
 	STB0899_SETFIELD_VAL(FRESRS, reg, 1);
 	stb0899_write_reg(state, STB0899_TSTRES, reg);
@@ -652,15 +650,15 @@ enum stb0899_status stb0899_dvbs_algo(struct stb0899_state *state)
 	STB0899_SETFIELD_VAL(DEMAPVIT_KDIVIDER, reg, 60);
 	stb0899_write_reg(state, STB0899_DEMAPVIT, reg);
 
-	stb0899_write_reg(state, STB0899_EQON, 0x01); /* Equalizer OFF while acquiring	*/
+	stb0899_write_reg(state, STB0899_EQON, 0x01);  /* Equalizer OFF while acquiring */
 	stb0899_write_reg(state, STB0899_VITSYNC, 0x19);
 
 	stb0899_first_subrange(state);
 	do
 	{
-		/* Initialisations	*/
+		/* Initialisations */
 		cfr[0] = cfr[1] = 0;
-		stb0899_write_regs(state, STB0899_CFRM, cfr, 2); /* RESET derotator frequency	*/
+		stb0899_write_regs(state, STB0899_CFRM, cfr, 2);  /* RESET derotator frequency */
 
 		stb0899_write_reg(state, STB0899_RTF, 0);
 		reg = stb0899_read_reg(state, STB0899_CFD);
@@ -673,83 +671,78 @@ enum stb0899_status stb0899_dvbs_algo(struct stb0899_state *state)
 		/* enable tuner I/O */
 		stb0899_i2c_gate_ctrl(&state->frontend, 1);
 
-		/* Move tuner to frequency	*/
+		/* Move tuner to frequency */
 		dprintk(state->verbose, FE_DEBUG, 1, "Tuner set frequency");
 		if (state->config->tuner_set_frequency)
+		{
 			state->config->tuner_set_frequency(&state->frontend, internal->freq);
-
+		}
 		if (state->config->tuner_get_frequency)
+		{
 			state->config->tuner_get_frequency(&state->frontend, &internal->freq);
-
-		msleep(internal->t_agc1 + internal->t_agc2 + internal->t_derot); /* AGC1, AGC2 and timing loop	*/
+		}
+		msleep(internal->t_agc1 + internal->t_agc2 + internal->t_derot);  /* AGC1, AGC2 and timing loop */
 		dprintk(state->verbose, FE_DEBUG, 1, "current derot freq=%d", internal->derot_freq);
 		internal->status = AGC1OK;
 
-		/* There is signal in the band	*/
+		/* There is signal in the band */
 		if (config->tuner_get_bandwidth)
+		{
 			config->tuner_get_bandwidth(&state->frontend, &bandwidth);
-
+		}
 		/* disable tuner I/O */
 		stb0899_i2c_gate_ctrl(&state->frontend, 0);
 
 		if (params->srate <= bandwidth / 2)
-			stb0899_search_tmg(state); /* For low rates (SCPC)	*/
+		{
+			stb0899_search_tmg(state);  /* For low rates (SCPC) */
+		}
 		else
-			stb0899_check_tmg(state); /* For high rates (MCPC)	*/
-
+		{
+			stb0899_check_tmg(state);  /* For high rates (MCPC) */
+		}
 		if (internal->status == TIMINGOK)
 		{
-			dprintk(state->verbose, FE_DEBUG, 1,
-				"TIMING OK ! Derot freq=%d, mclk=%d",
-				internal->derot_freq, internal->mclk);
+			dprintk(state->verbose, FE_DEBUG, 1, "TIMING OK ! Derot freq=%d, mclk=%d", internal->derot_freq, internal->mclk);
 
-			if (stb0899_search_carrier(state) == CARRIEROK)  	/* Search for carrier	*/
-			{
-				dprintk(state->verbose, FE_DEBUG, 1,
-					"CARRIER OK ! Derot freq=%d, mclk=%d",
-					internal->derot_freq, internal->mclk);
+			if (stb0899_search_carrier(state) == CARRIEROK)
+			{  /* Search for carrier */
+				dprintk(state->verbose, FE_DEBUG, 1, "CARRIER OK ! Derot freq=%d, mclk=%d", internal->derot_freq, internal->mclk);
 
-				if (stb0899_search_data(state) == DATAOK)  	/* Check for data	*/
-				{
-					dprintk(state->verbose, FE_DEBUG, 1,
-						"DATA OK ! Derot freq=%d, mclk=%d",
-						internal->derot_freq, internal->mclk);
+				if (stb0899_search_data(state) == DATAOK)
+				{  /* Check for data */
+					dprintk(state->verbose, FE_DEBUG, 1, "DATA OK ! Derot freq=%d, mclk=%d", internal->derot_freq, internal->mclk);
 
 					if (stb0899_check_range(state) == RANGEOK)
 					{
-						dprintk(state->verbose, FE_DEBUG, 1,
-							"RANGE OK ! derot freq=%d, mclk=%d",
-							internal->derot_freq, internal->mclk);
+						dprintk(state->verbose, FE_DEBUG, 1, "RANGE OK ! derot freq=%d, mclk=%d", internal->derot_freq, internal->mclk);
 
-						internal->freq = params->freq + ((internal->derot_freq * internal->mclk) / 1000);
+						internal->freq = params->freq + ((internal->derot_freq *internal->mclk) / 1000);
 						reg = stb0899_read_reg(state, STB0899_PLPARM);
 						internal->fecrate = STB0899_GETFIELD(VITCURPUN, reg);
-						dprintk(state->verbose, FE_DEBUG, 1,
-							"freq=%d, internal resultant freq=%d",
-							params->freq, internal->freq);
+						dprintk(state->verbose, FE_DEBUG, 1, "freq=%d, internal resultant freq=%d", params->freq, internal->freq);
 
-						dprintk(state->verbose, FE_DEBUG, 1,
-							"internal puncture rate=%d",
-							internal->fecrate);
+						dprintk(state->verbose, FE_DEBUG, 1, "internal puncture rate=%d", internal->fecrate);
 					}
 				}
 			}
 		}
 		if (internal->status != RANGEOK)
+		{
 			next_sub_range(state);
-
+		}
 	}
 	while (internal->sub_range && internal->status != RANGEOK);
 
-	/* Set the timing loop to tracking	*/
+	/* Set the timing loop to tracking */
 	stb0899_write_reg(state, STB0899_RTC, 0x33);
 	stb0899_write_reg(state, STB0899_CFD, 0xf7);
-	/* if locked and range ok, set Kdiv	*/
+	/* if locked and range ok, set Kdiv */
 	if (internal->status == RANGEOK)
 	{
 		dprintk(state->verbose, FE_DEBUG, 1, "Locked & Range OK !");
-		stb0899_write_reg(state, STB0899_EQON, 0x41);		/* Equalizer OFF while acquiring	*/
-		stb0899_write_reg(state, STB0899_VITSYNC, 0x39);	/* SN to b'11 for acquisition		*/
+		stb0899_write_reg(state, STB0899_EQON, 0x41);	/* Equalizer OFF while acquiring        */
+		stb0899_write_reg(state, STB0899_VITSYNC, 0x39);	/* SN to b'11 for acquisition           */
 
 		/*
 		 * Carrier loop optimization versus
@@ -758,53 +751,66 @@ enum stb0899_status stb0899_dvbs_algo(struct stb0899_state *state)
 		reg = stb0899_read_reg(state, STB0899_BCLC);
 		switch (internal->fecrate)
 		{
-			case STB0899_FEC_1_2:		/* 13	*/
+			case STB0899_FEC_1_2:  /* 13 */
+			{
 				stb0899_write_reg(state, STB0899_DEMAPVIT, 0x1a);
 				STB0899_SETFIELD_VAL(BETA, reg, betaTab[0][clnI]);
 				stb0899_write_reg(state, STB0899_BCLC, reg);
 				break;
-			case STB0899_FEC_2_3:		/* 18	*/
+			}
+			case STB0899_FEC_2_3:  /* 18 */
+			{
 				stb0899_write_reg(state, STB0899_DEMAPVIT, 44);
 				STB0899_SETFIELD_VAL(BETA, reg, betaTab[1][clnI]);
 				stb0899_write_reg(state, STB0899_BCLC, reg);
 				break;
-			case STB0899_FEC_3_4:		/* 21	*/
+			}
+			case STB0899_FEC_3_4:  /* 21 */
+			{
 				stb0899_write_reg(state, STB0899_DEMAPVIT, 60);
 				STB0899_SETFIELD_VAL(BETA, reg, betaTab[2][clnI]);
 				stb0899_write_reg(state, STB0899_BCLC, reg);
 				break;
-			case STB0899_FEC_5_6:		/* 24	*/
+			}
+			case STB0899_FEC_5_6:  /* 24 */
+			{
 				stb0899_write_reg(state, STB0899_DEMAPVIT, 75);
 				STB0899_SETFIELD_VAL(BETA, reg, betaTab[3][clnI]);
 				stb0899_write_reg(state, STB0899_BCLC, reg);
 				break;
-			case STB0899_FEC_6_7:		/* 25	*/
+			}
+			case STB0899_FEC_6_7:  /* 25 */
+			{
 				stb0899_write_reg(state, STB0899_DEMAPVIT, 88);
 				stb0899_write_reg(state, STB0899_ACLC, 0x88);
 				stb0899_write_reg(state, STB0899_BCLC, 0x9a);
 				break;
-			case STB0899_FEC_7_8:		/* 26	*/
+			}
+			case STB0899_FEC_7_8:  /* 26 */
+			{
 				stb0899_write_reg(state, STB0899_DEMAPVIT, 94);
 				STB0899_SETFIELD_VAL(BETA, reg, betaTab[4][clnI]);
 				stb0899_write_reg(state, STB0899_BCLC, reg);
 				break;
+			}
 			default:
+			{
 				dprintk(state->verbose, FE_DEBUG, 1, "Unsupported Puncture Rate");
 				break;
+			}
 		}
-		/* release stream merger RESET	*/
+		/* release stream merger RESET */
 		reg = stb0899_read_reg(state, STB0899_TSTRES);
 		STB0899_SETFIELD_VAL(FRESRS, reg, 0);
 		stb0899_write_reg(state, STB0899_TSTRES, reg);
 
-		/* disable carrier detector	*/
+		/* disable carrier detector */
 		reg = stb0899_read_reg(state, STB0899_CFD);
 		STB0899_SETFIELD_VAL(CFD_ON, reg, 0);
 		stb0899_write_reg(state, STB0899_CFD, reg);
 
 		stb0899_read_regs(state, STB0899_EQUAI1, eq_const, 10);
 	}
-
 	return internal->status;
 }
 

@@ -108,6 +108,10 @@ struct core
 
 	void *priv;
 };
+
+// Global variables (module parameters)
+extern int paramDebug;  // debug level
+
 extern void fe_core_register_frontend(struct dvb_adapter *dvb_adap);
 
 #endif
