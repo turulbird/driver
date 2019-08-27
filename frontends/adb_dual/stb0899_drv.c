@@ -3052,7 +3052,7 @@ struct dvb_frontend *stb0899_attach(struct stb0899_config *config, struct i2c_ad
 		goto error;
 	}
 	inversion                        = config->inversion;
-	state->verbose                   = verbose;
+	state->verbose                   = &verbose;
 	state->config                    = config;
 	state->i2c                       = i2c;
 
