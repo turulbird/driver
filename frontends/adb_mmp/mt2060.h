@@ -39,3 +39,4 @@ struct mt2060_config
 
 extern struct dvb_frontend *mt2060_attach(struct dvb_frontend *fe, struct mt2060_config *cfg, struct i2c_adapter *i2c, u16 if1);
 #endif
+// vim:ts=4

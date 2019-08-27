@@ -12,8 +12,8 @@
 #include <linux/proc_fs.h>
 #include <pvr_config.h>
 
-#define I2C_ADDR_STV0297 	(0x38 >> 1)
-#define I2C_ADDR_MT2060 	(0xc0 >> 1)
+#define I2C_ADDR_STV0297 (0x38 >> 1)
+#define I2C_ADDR_MT2060  (0xc0 >> 1)
 
 static struct core *core[MAX_DVB_ADAPTERS];
 
@@ -98,40 +98,40 @@ static struct dvb_frontend *frontend_init(struct core_config *cfg, int i)
 	printk(KERN_INFO "%s frontend_init >\n", __FUNCTION__);
 
 	if (i > 0)
+	{
 		return NULL;
-
+	}
 	frontend = dvb_attach(stv0297_attach, &stv0297_config, cfg->i2c_adap);
 
 	if (frontend)
 	{
-		printk("fe_core : stv0297 attached OK \n");
+		printk("[fe_core] stv0297 attached OK\n");
 
 		if (dvb_attach(mt2060_attach, frontend, &mt2060_config, cfg->i2c_adap, 1220) == 0)
 		{
 			printk(KERN_INFO "error attaching mt2060\n");
 			goto error_out;
 		}
-
-		printk("fe_core : mt2060 attached OK \n");
+		printk("[fe_core] mt2060 attached OK\n");
 	}
 	else
 	{
 		printk(KERN_INFO "%s: error attaching stv0297\n", __FUNCTION__);
 		goto error_out;
 	}
-
 	return frontend;
 
 error_out:
-	printk("core: Frontend registration failed!\n");
+	printk("[fe_core] Frontend registration failed!\n");
 	if (frontend)
+	{
 		dvb_frontend_detach(frontend);
+	}
 	return NULL;
 }
 
 static struct dvb_frontend *
-init_fe_device(struct dvb_adapter *adapter,
-	       struct plat_tuner_config *tuner_cfg, int i)
+init_fe_device(struct dvb_adapter *adapter, struct plat_tuner_config *tuner_cfg, int i)
 {
 	struct fe_core_state *state;
 	struct dvb_frontend *frontend;
@@ -142,7 +142,7 @@ init_fe_device(struct dvb_adapter *adapter,
 	cfg = kmalloc(sizeof(struct core_config), GFP_KERNEL);
 	if (cfg == NULL)
 	{
-		printk("fe-core: kmalloc failed\n");
+		printk("[fe_core] kmalloc failed\n");
 		return NULL;
 	}
 
@@ -153,12 +153,10 @@ init_fe_device(struct dvb_adapter *adapter,
 
 	cfg->i2c_addr = tuner_cfg->i2c_addr;
 
-
 	if (cfg->i2c_adap == NULL)
 	{
 
-		printk("fe-core: failed to allocate resources (%s)\n",
-		       (cfg->i2c_adap == NULL) ? "i2c" : "STPIO error");
+		printk("[fe_core] failed to allocate resources (%s)\n", (cfg->i2c_adap == NULL) ? "i2c" : "STPIO error");
 		kfree(cfg);
 		return NULL;
 	}
@@ -171,28 +169,29 @@ init_fe_device(struct dvb_adapter *adapter,
 		return NULL;
 	}
 
-	printk(KERN_INFO "%s: Call dvb_register_frontend (adapter = 0x%x)\n",
-	       __FUNCTION__, (unsigned int) adapter);
+	printk(KERN_INFO "%s: Call dvb_register_frontend (adapter = 0x%x)\n", __func__, (unsigned int) adapter);
 
 	if (dvb_register_frontend(adapter, frontend))
 	{
 		printk("%s: Frontend registration failed !\n", __FUNCTION__);
 		if (frontend->ops.release)
+		{
 			frontend->ops.release(frontend);
+		}
 		return NULL;
 	}
 
 	state = frontend->demodulator_priv;
-
 	return frontend;
 }
 
 struct plat_tuner_config tuner_resources[] =
 {
 
-	[0] = {
-		.adapter 	= 0,
-		.i2c_bus 	= 0,
+	[0] =
+	{
+		.adapter = 0,
+		.i2c_bus = 0,
 	},
 };
 
@@ -201,12 +200,13 @@ void fe_core_register_frontend(struct dvb_adapter *dvb_adap)
 	int i = 0;
 	int vLoop = 0;
 
-	printk(KERN_INFO "%s: frontend core\n", __FUNCTION__);
+	printk(KERN_INFO "%s: frontend core\n", __func__);
 
 	core[i] = (struct core *) kmalloc(sizeof(struct core), GFP_KERNEL);
 	if (!core[i])
+	{
 		return;
-
+	}
 	memset(core[i], 0, sizeof(struct core));
 
 	core[i]->dvb_adapter = dvb_adap;
@@ -219,13 +219,10 @@ void fe_core_register_frontend(struct dvb_adapter *dvb_adap)
 		if (core[i]->frontend[vLoop] == NULL)
 		{
 			printk("%s: init tuner %d\n", __FUNCTION__, vLoop);
-			core[i]->frontend[vLoop] =
-				init_fe_device(core[i]->dvb_adapter, &tuner_resources[vLoop], vLoop);
+			core[i]->frontend[vLoop] = init_fe_device(core[i]->dvb_adapter, &tuner_resources[vLoop], vLoop);
 		}
 	}
-
-	printk(KERN_INFO "%s: <\n", __FUNCTION__);
-
+	printk(KERN_INFO "%s: <\n", __func__);
 	return;
 }
 
@@ -249,3 +246,4 @@ module_exit(fe_core_exit);
 MODULE_DESCRIPTION("STV0297_MT2060_Frontend_core");
 MODULE_AUTHOR("-=Mario=-");
 MODULE_LICENSE("GPL");
+// vim:ts=4

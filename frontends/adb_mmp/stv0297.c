@@ -1,23 +1,23 @@
 /*
-    Driver for STV0297 demodulator
-
-    Copyright (C) 2004 Andrew de Quincey <adq_dvb@lidskialf.net>
-    Copyright (C) 2003-2004 Dennis Noermann <dennis.noermann@noernet.de>
-
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-*/
+ *    Driver for STV0297 demodulator
+ *
+ *    Copyright (C) 2004 Andrew de Quincey <adq_dvb@lidskialf.net>
+ *    Copyright (C) 2003-2004 Dennis Noermann <dennis.noermann@noernet.de>
+ *
+ *    This program is free software; you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation; either version 2 of the License, or
+ *    (at your option) any later version.
+ *
+ *    This program is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *
+ *    You should have received a copy of the GNU General Public License
+ *    along with this program; if not, write to the Free Software
+ *    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ */
 
 #include <linux/init.h>
 #include <linux/kernel.h>
@@ -42,16 +42,17 @@ struct stv0297_state
 	unsigned long base_freq;
 };
 
-#define STV0297_CLOCK_KHZ   28900
+#define STV0297_CLOCK_KHZ 28900
 
 static int stv0297_readreg(struct stv0297_state *state, u8 reg)
 {
 	u8 b0[] = { reg };
 	u8 b1[] = { 0 };
-	struct i2c_msg msg[] = { {.addr = state->config->demod_address, .flags = 0, .buf = b0, .len = 1},
-		{.addr = state->config->demod_address, .flags = I2C_M_RD, .buf = b1, .len = 1}
+	struct i2c_msg msg[] =
+	{
+		{ .addr = state->config->demod_address, .flags = 0,        .buf = b0, .len = 1},
+		{ .addr = state->config->demod_address, .flags = I2C_M_RD, .buf = b1, .len = 1}
 	};
-
 	int ret;
 
 	// this device needs a STOP between the register and data
@@ -83,14 +84,14 @@ static int stv0297_writereg(struct stv0297_state *state, u8 reg, u8 data)
 {
 	int ret;
 	u8 buf[] = { reg, data };
-	struct i2c_msg msg = {.addr = state->config->demod_address, .flags = 0, .buf = buf, .len = 2 };
+	struct i2c_msg msg = { .addr = state->config->demod_address, .flags = 0, .buf = buf, .len = 2 };
 
 	ret = i2c_transfer(state->i2c, &msg, 1);
 
 	if (ret != 1)
-		dprintk("%s: writereg error (reg == 0x%02x, val == 0x%02x, "
-			"ret == %i)\n", __func__, reg, data, ret);
-
+	{
+		dprintk("%s: writereg error (reg == 0x%02x, val == 0x%02x, ret == %i)\n", __func__, reg, data, ret);
+	}
 	return (ret != 1) ? -1 : 0;
 }
 
@@ -102,18 +103,20 @@ static int stv0297_writereg_mask(struct stv0297_state *state, u8 reg, u8 mask, u
 	val &= ~mask;
 	val |= (data & mask);
 	stv0297_writereg(state, reg, val);
-
 	return 0;
 }
 
 static int stv0297_readregs(struct stv0297_state *state, u8 reg1, u8 *b, u8 len)
 {
 	int ret;
-	struct i2c_msg msg[] = { {
-			.addr = state->config->demod_address, .flags = 0, .buf =
-			&reg1, .len = 1
+	struct i2c_msg msg[] =
+	{
+		{
+			.addr = state->config->demod_address, .flags = 0, .buf = &reg1, .len = 1
 		},
-		{.addr = state->config->demod_address, .flags = I2C_M_RD, .buf = b, .len = len}
+		{
+			.addr = state->config->demod_address, .flags = I2C_M_RD, .buf = b, .len = len
+		}
 	};
 
 	// this device needs a STOP between the register and data
@@ -138,7 +141,6 @@ static int stv0297_readregs(struct stv0297_state *state, u8 reg1, u8 *b, u8 len)
 			return -1;
 		}
 	}
-
 	return 0;
 }
 
@@ -153,7 +155,6 @@ static u32 stv0297_get_symbolrate(struct stv0297_state *state)
 
 	tmp *= STV0297_CLOCK_KHZ;
 	tmp >>= 32;
-
 	return (u32) tmp;
 }
 
@@ -175,9 +176,9 @@ static void stv0297_set_sweeprate(struct stv0297_state *state, short fshift, lon
 {
 	long tmp;
 
-	tmp = (long) fshift * 262144L;	/* 262144 = 2*18 */
+	tmp = (long) fshift * 262144L;  /* 262144 = 2**18 */
 	tmp /= symrate;
-	tmp *= 1024;		/* 1024 = 2*10   */
+	tmp *= 1024;  /* 1024 = 2**10 */
 
 	// adjust
 	if (tmp >= 0)
@@ -201,7 +202,9 @@ static void stv0297_set_carrieroffset(struct stv0297_state *state, long offset)
 	/* symrate is hardcoded to 10000 */
 	tmp = offset * 26844L;	/* (2**28)/10000 */
 	if (tmp < 0)
+	{
 		tmp += 0x10000000;
+	}
 	tmp &= 0x0FFFFFFF;
 
 	stv0297_writereg(state, 0x66, (unsigned char)(tmp & 0xFF));
@@ -224,7 +227,6 @@ static long stv0297_get_carrieroffset(struct stv0297_state *state)
 
 	tmp *= stv0297_get_symbolrate(state);
 	tmp >>= 28;
-
 	return (s32) tmp;
 }
 */
@@ -234,13 +236,15 @@ static void stv0297_set_initialdemodfreq(struct stv0297_state *state, long freq)
 	s32 tmp;
 
 	if (freq > 10000)
+	{
 		freq -= STV0297_CLOCK_KHZ;
-
+	}
 	tmp = (STV0297_CLOCK_KHZ * 1000) / (1 << 16);
 	tmp = (freq * 1000) / tmp;
 	if (tmp > 0xffff)
+	{
 		tmp = 0xffff;
-
+	}
 	stv0297_writereg_mask(state, 0x25, 0x80, 0x80);
 	stv0297_writereg(state, 0x21, tmp >> 8);
 	stv0297_writereg(state, 0x20, tmp);
@@ -253,31 +257,36 @@ static int stv0297_set_qam(struct stv0297_state *state, fe_modulation_t modulati
 	switch (modulation)
 	{
 		case QAM_16:
+		{
 			val = 0;
 			break;
-
+		}
 		case QAM_32:
+		{
 			val = 1;
 			break;
-
+		}
 		case QAM_64:
+		{
 			val = 4;
 			break;
-
+		}
 		case QAM_128:
+		{
 			val = 2;
 			break;
-
+		}
 		case QAM_256:
+		{
 			val = 3;
 			break;
-
+		}
 		default:
+		{
 			return -EINVAL;
+		}
 	}
-
 	stv0297_writereg_mask(state, 0x00, 0x70, val << 4);
-
 	return 0;
 }
 
@@ -288,19 +297,21 @@ static int stv0297_set_inversion(struct stv0297_state *state, fe_spectral_invers
 	switch (inversion)
 	{
 		case INVERSION_OFF:
+		{
 			val = 0;
 			break;
-
+		}
 		case INVERSION_ON:
+		{
 			val = 1;
 			break;
-
+		}
 		default:
+		{
 			return -EINVAL;
+		}
 	}
-
 	stv0297_writereg_mask(state, 0x83, 0x08, val << 3);
-
 	return 0;
 }
 
@@ -310,12 +321,12 @@ static int stv0297_i2c_gate_ctrl(struct dvb_frontend *fe, int enable)
 
 	if (enable)
 	{
-		/*		stv0297_writereg(state, 0x87, 0x78);
-				stv0297_writereg(state, 0x86, 0xc8);*/
-		stv0297_writereg(state, 0x87, 0x7A);	//5800c
-		stv0297_writereg(state, 0x86, 0xc0);	//5800c
+		/* stv0297_writereg(state, 0x87, 0x78);
+		   stv0297_writereg(state, 0x86, 0xc8);
+		 */
+		stv0297_writereg(state, 0x87, 0x7A);  // 5800c
+		stv0297_writereg(state, 0x86, 0xc0);  // 5800c
 	}
-
 	return 0;
 }
 
@@ -326,12 +337,12 @@ static int stv0297_init(struct dvb_frontend *fe)
 
 	/* load init table */
 	for (i = 0; !(state->config->inittab[i] == 0xff && state->config->inittab[i + 1] == 0xff); i += 2)
+	{
 		stv0297_writereg(state, state->config->inittab[i], state->config->inittab[i + 1]);
-
+	}
 	msleep(200);
 
 	state->last_ber = 0;
-
 	return 0;
 }
 
@@ -340,7 +351,6 @@ static int stv0297_sleep(struct dvb_frontend *fe)
 	struct stv0297_state *state = fe->demodulator_priv;
 
 	stv0297_writereg_mask(state, 0x80, 1, 1);
-
 	return 0;
 }
 
@@ -352,8 +362,9 @@ static int stv0297_read_status(struct dvb_frontend *fe, fe_status_t *status)
 
 	*status = 0;
 	if (sync & 0x80)
-		*status |=
-			FE_HAS_SYNC | FE_HAS_SIGNAL | FE_HAS_CARRIER | FE_HAS_VITERBI | FE_HAS_LOCK;
+	{
+		*status |= FE_HAS_SYNC | FE_HAS_SIGNAL | FE_HAS_CARRIER | FE_HAS_VITERBI | FE_HAS_LOCK;
+	}
 	return 0;
 }
 
@@ -368,12 +379,9 @@ static int stv0297_read_ber(struct dvb_frontend *fe, u32 *ber)
 		state->last_ber = BER[2] << 8 | BER[1];
 		stv0297_writereg_mask(state, 0xA0, 0x80, 0x80);
 	}
-
 	*ber = state->last_ber;
-
 	return 0;
 }
-
 
 static int stv0297_read_signal_strength(struct dvb_frontend *fe, u16 *strength)
 {
@@ -386,16 +394,24 @@ static int stv0297_read_signal_strength(struct dvb_frontend *fe, u16 *strength)
 	if (STRENGTH[2] & 0x20)
 	{
 		if (tmp < 0x200)
+		{
 			tmp = 0;
+		}
 		else
+		{
 			tmp = tmp - 0x200;
+		}
 	}
 	else
 	{
 		if (tmp > 0x1ff)
+		{
 			tmp = 0;
+		}
 		else
+		{
 			tmp = 0x1ff - tmp;
+		}
 	}
 	*strength = (tmp << 7) | (tmp >> 2);
 	return 0;
@@ -408,7 +424,6 @@ static int stv0297_read_snr(struct dvb_frontend *fe, u16 *snr)
 
 	stv0297_readregs(state, 0x07, SNR, 2);
 	*snr = SNR[1] << 8 | SNR[0];
-
 	return 0;
 }
 
@@ -416,14 +431,12 @@ static int stv0297_read_ucblocks(struct dvb_frontend *fe, u32 *ucblocks)
 {
 	struct stv0297_state *state = fe->demodulator_priv;
 
-	stv0297_writereg_mask(state, 0xDF, 0x03, 0x03); /* freeze the counters */
+	stv0297_writereg_mask(state, 0xDF, 0x03, 0x03);  /* freeze the counters */
 
-	*ucblocks = (stv0297_readreg(state, 0xD5) << 8)
-		    | stv0297_readreg(state, 0xD4);
+	*ucblocks = (stv0297_readreg(state, 0xD5) << 8) | stv0297_readreg(state, 0xD4);
 
-	stv0297_writereg_mask(state, 0xDF, 0x03, 0x02); /* clear the counters */
-	stv0297_writereg_mask(state, 0xDF, 0x03, 0x01); /* re-enable the counters */
-
+	stv0297_writereg_mask(state, 0xDF, 0x03, 0x02);  /* clear the counters */
+	stv0297_writereg_mask(state, 0xDF, 0x03, 0x01);  /* re-enable the counters */
 	return 0;
 }
 
@@ -444,55 +457,66 @@ static int stv0297_set_frontend(struct dvb_frontend *fe, struct dvb_frontend_par
 		case QAM_16:
 		case QAM_32:
 		case QAM_64:
+		{
 			delay = 100;
 			sweeprate = 1500;
 			break;
-
+		}
 		case QAM_128:
+		{
 			delay = 150;
 			sweeprate = 1000;
 			break;
-
+		}
 		case QAM_256:
+		{
 			delay = 200;
 			sweeprate = 500;
 			break;
-
+		}
 		default:
+		{
 			return -EINVAL;
+		}
 	}
-
 	// determine inversion dependant parameters
 	inversion = p->inversion;
 	if (state->config->invert)
+	{
 		inversion = (inversion == INVERSION_ON) ? INVERSION_OFF : INVERSION_ON;
+	}
 	carrieroffset = -330;
 	switch (inversion)
 	{
 		case INVERSION_OFF:
+		{
 			break;
-
+		}
 		case INVERSION_ON:
+		{
 			sweeprate = -sweeprate;
 			carrieroffset = -carrieroffset;
 			break;
-
+		}
 		default:
+		{
 			return -EINVAL;
+		}
 	}
-
 	stv0297_init(fe);
 	if (fe->ops.tuner_ops.set_params)
 	{
 		fe->ops.tuner_ops.set_params(fe, p);
-//		if (fe->ops.i2c_gate_ctrl) fe->ops.i2c_gate_ctrl(fe, 0);
+//		if (fe->ops.i2c_gate_ctrl)
+//		{
+//			fe->ops.i2c_gate_ctrl(fe, 0);
+//		}
 	}
-
 	/* clear software interrupts */
 	stv0297_writereg(state, 0x82, 0x0);
 
 	/* set initial demodulation frequency */
-	stv0297_set_initialdemodfreq(state, 7225);    //7250
+	stv0297_set_initialdemodfreq(state, 7225);  // 7250
 
 	/* setup AGC */
 	stv0297_writereg_mask(state, 0x43, 0x10, 0x00);
@@ -556,12 +580,14 @@ static int stv0297_set_frontend(struct dvb_frontend *fe, struct dvb_frontend_par
 
 	/* kick off lock */
 	/* Disable corner detection for higher QAMs */
-	if (p->u.qam.modulation == QAM_128 ||
-			p->u.qam.modulation == QAM_256)
+	if (p->u.qam.modulation == QAM_128 || p->u.qam.modulation == QAM_256)
+	{
 		stv0297_writereg_mask(state, 0x88, 0x08, 0x00);
+	}
 	else
+	{
 		stv0297_writereg_mask(state, 0x88, 0x08, 0x08);
-
+	}
 	stv0297_writereg_mask(state, 0x5a, 0x20, 0x00);
 	stv0297_writereg_mask(state, 0x6a, 0x01, 0x01);
 	stv0297_writereg_mask(state, 0x43, 0x40, 0x40);
@@ -577,7 +603,9 @@ static int stv0297_set_frontend(struct dvb_frontend *fe, struct dvb_frontend_par
 		msleep(10);
 		timeout += 10;
 		if (stv0297_readreg(state, 0x43) & 0x08)
+		{
 			break;
+		}
 	}
 	if (timeout >= 2000)
 	{
@@ -623,7 +651,7 @@ static int stv0297_set_frontend(struct dvb_frontend *fe, struct dvb_frontend_par
 
 	/* wait for main lock */
 	timeout = 0;
-	while (timeout < 200)    //20
+	while (timeout < 200)  // 20
 	{
 		msleep(10);
 		timeout += 10;
@@ -665,29 +693,40 @@ static int stv0297_get_frontend(struct dvb_frontend *fe, struct dvb_frontend_par
 	p->frequency = state->base_freq;
 	p->inversion = (reg_83 & 0x08) ? INVERSION_ON : INVERSION_OFF;
 	if (state->config->invert)
+	{
 		p->inversion = (p->inversion == INVERSION_ON) ? INVERSION_OFF : INVERSION_ON;
+	}
 	p->u.qam.symbol_rate = stv0297_get_symbolrate(state) * 1000;
 	p->u.qam.fec_inner = FEC_NONE;
 
 	switch ((reg_00 >> 4) & 0x7)
 	{
 		case 0:
+		{
 			p->u.qam.modulation = QAM_16;
 			break;
+		}
 		case 1:
+		{
 			p->u.qam.modulation = QAM_32;
 			break;
+		}
 		case 2:
+		{
 			p->u.qam.modulation = QAM_128;
 			break;
+		}
 		case 3:
+		{
 			p->u.qam.modulation = QAM_256;
 			break;
+		}
 		case 4:
+		{
 			p->u.qam.modulation = QAM_64;
 			break;
+		}
 	}
-
 	return 0;
 }
 
@@ -699,16 +738,16 @@ static void stv0297_release(struct dvb_frontend *fe)
 
 static struct dvb_frontend_ops stv0297_ops;
 
-struct dvb_frontend *stv0297_attach(const struct stv0297_config *config,
-				    struct i2c_adapter *i2c)
+struct dvb_frontend *stv0297_attach(const struct stv0297_config *config, struct i2c_adapter *i2c)
 {
 	struct stv0297_state *state = NULL;
 
 	/* allocate memory for the internal state */
 	state = kzalloc(sizeof(struct stv0297_state), GFP_KERNEL);
 	if (state == NULL)
+	{
 		goto error;
-
+	}
 	/* setup the state */
 	state->config = config;
 	state->i2c = i2c;
@@ -717,8 +756,9 @@ struct dvb_frontend *stv0297_attach(const struct stv0297_config *config,
 
 	/* check if the demod is there */
 	if ((stv0297_readreg(state, 0x80) & 0x70) != 0x20)
+	{
 		goto error;
-
+	}
 	/* create dvb_frontend */
 	memcpy(&state->frontend.ops, &stv0297_ops, sizeof(struct dvb_frontend_ops));
 	state->frontend.demodulator_priv = state;
@@ -729,14 +769,12 @@ error:
 	return NULL;
 }
 
-static int stv0297_set_property(struct dvb_frontend *fe,
-				struct dtv_property *tvp)
+static int stv0297_set_property(struct dvb_frontend *fe, struct dtv_property *tvp)
 {
 	return 0;
 }
 
-static int stv0297_get_property(struct dvb_frontend *fe,
-				struct dtv_property *tvp)
+static int stv0297_get_property(struct dvb_frontend *fe, struct dtv_property *tvp)
 {
 	dprintk("%s(..)\n", __func__);
 	/* get delivery system info */
@@ -745,9 +783,13 @@ static int stv0297_get_property(struct dvb_frontend *fe,
 		switch (tvp->u.data)
 		{
 			case SYS_DVBC_ANNEX_AC:
+			{
 				break;
+			}
 			default:
+			{
 				return -EINVAL;
+			}
 		}
 	}
 	return 0;
@@ -756,35 +798,38 @@ static int stv0297_get_property(struct dvb_frontend *fe,
 static struct dvb_frontend_ops stv0297_ops =
 {
 
-	.info = {
-		.name = "ST STV0297 DVB-C",
-		.type = FE_QAM,
-		.frequency_min = 47000000,
-		.frequency_max = 862000000,
+	.info =
+	{
+		.name               = "ST STV0297 DVB-C",
+		.type               = FE_QAM,
+		.frequency_min      = 47000000,
+		.frequency_max      = 862000000,
 		.frequency_stepsize = 62500,
-		.symbol_rate_min = 870000,
-		.symbol_rate_max = 11700000,
-		.caps = FE_CAN_QAM_16 | FE_CAN_QAM_32 | FE_CAN_QAM_64 |
-		FE_CAN_QAM_128 | FE_CAN_QAM_256 | FE_CAN_FEC_AUTO
+		.symbol_rate_min    = 870000,
+		.symbol_rate_max    = 11700000,
+	    .caps                   = FE_CAN_QAM_16
+	                            | FE_CAN_QAM_32
+	                            | FE_CAN_QAM_64
+	                            | FE_CAN_QAM_128
+	                            | FE_CAN_QAM_256
+	                            | FE_CAN_FEC_AUTO
 	},
+	.release                    = stv0297_release,
+	.init                       = stv0297_init,
+	.sleep                      = stv0297_sleep,
+	.i2c_gate_ctrl              = stv0297_i2c_gate_ctrl,
 
-	.release 		= stv0297_release,
+	.set_frontend               = stv0297_set_frontend,
+	.get_frontend               = stv0297_get_frontend,
 
-	.init 			= stv0297_init,
-	.sleep 			= stv0297_sleep,
-	.i2c_gate_ctrl 		= stv0297_i2c_gate_ctrl,
+	.read_status                = stv0297_read_status,
+	.read_ber                   = stv0297_read_ber,
+	.read_signal_strength       = stv0297_read_signal_strength,
+	.read_snr                   = stv0297_read_snr,
+	.read_ucblocks              = stv0297_read_ucblocks,
 
-	.set_frontend 		= stv0297_set_frontend,
-	.get_frontend 		= stv0297_get_frontend,
-
-	.read_status 		= stv0297_read_status,
-	.read_ber 		= stv0297_read_ber,
-	.read_signal_strength 	= stv0297_read_signal_strength,
-	.read_snr 		= stv0297_read_snr,
-	.read_ucblocks 		= stv0297_read_ucblocks,
-
-	.set_property 		= stv0297_set_property,
-	.get_property 		= stv0297_get_property,
+	.set_property               = stv0297_set_property,
+	.get_property               = stv0297_get_property,
 };
 
 MODULE_DESCRIPTION("ST STV0297 DVB-C Demodulator driver");
@@ -792,3 +837,4 @@ MODULE_AUTHOR("Dennis Noermann and Andrew de Quincey mod -=Mario=-");
 MODULE_LICENSE("GPL");
 
 EXPORT_SYMBOL(stv0297_attach);
+// vim:ts=4
