@@ -1,23 +1,47 @@
 /*
-	STV0900/0903 Multistandard Broadcast Frontend driver
-	Copyright (C) Manu Abraham <abraham.manu@gmail.com>
-
-	Copyright (C) ST Microelectronics
-
-	This program is free software; you can redistribute it and/or modify
-	it under the terms of the GNU General Public License as published by
-	the Free Software Foundation; either version 2 of the License, or
-	(at your option) any later version.
-
-	This program is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY; without even the implied warranty of
-	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-	GNU General Public License for more details.
-
-	You should have received a copy of the GNU General Public License
-	along with this program; if not, write to the Free Software
-	Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-*/
+ * STV0900/0903 Multistandard Broadcast Frontend driver
+ * Copyright (C) Manu Abraham <abraham.manu@gmail.com>
+ *
+ * Copyright (C) ST Microelectronics
+ *
+ * Version for:
+ * Fortis FS9000/9200 (STV0903) Tuner STV6110X
+ * Fortis HS7110      (STX7111) Tuner STV6110X
+ * Fortis HS7119      (STX7111) Tuner STV6110X
+ * Fortis HS7420      (STX7111) Tuner STV6110X
+ * Fortis HS7429      (STX7111) Tuner STV6110X
+ * Fortis HS7810A     (STX7111) Tuner STV6110X
+ * Fortis HS7819      (STX7111) Tuner STV6110X
+ * Atemio 520         (STX7111) Tuner STV6110X
+ * Atemio 530         (STX7111) Tuner STV6110X
+ * Kathrein UFS912    (STX7111) Tuner STV6110X
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ */
+#if !defined(FORTIS_HDBOX) \
+ && !defined(HS7110) \
+ && !defined(HS7119) \
+ && !defined(HS7420) \
+ && !defined(HS7429) \
+ && !defined(HS7810A) \
+ && !defined(HS7819) \
+ && !defined(ATEMIO520) \
+ && !defined(ATEMIO530) \
+ && !defined(UFS912)
+#warning: Wrong receiver model!
+#endif
 
 #include <linux/version.h>
 #include <linux/module.h>
@@ -31,26 +55,27 @@
 
 #include <linux/dvb/version.h>
 
-#include <asm/io.h> /* ctrl_xy */
+#include <asm/io.h>  /* ctrl_xy */
 
 #include <linux/dvb/frontend.h>
 #include "dvb_frontend.h"
 
-#include "stv6110x.h" /* for demodulator internal modes */
+#include "stv6110x.h"  /* for demodulator internal modes */
 
 #include "stv090x_reg.h"
 #include "stv090x.h"
 #include "stv090x_priv.h"
 
-#if defined(IPBOX9900)
-extern int _12v_isON; //defined in e2_proc ->I will implement a better mechanism later
-#endif
 extern int bbgain;
 extern short paramDebug;
 #define TAGDEBUG "[stv090x] "
 
-#define dprintk(level, x...) do { \
-		if ((paramDebug) && (level <= paramDebug)) printk(TAGDEBUG x); \
+#define dprintk(level, x...) do \
+	{ \
+		if ((paramDebug) && (paramDebug > level)) \
+		{ \
+			printk(TAGDEBUG x); \
+		} \
 	} while (0)
 
 static unsigned int verbose = FE_DEBUGREG;
@@ -103,26 +128,26 @@ static const struct stv090x_tab stv090x_s1cn_tab[] =
 	{ 210, 1315 }, /* 21.0dB */
 	{ 220, 1181 }, /* 22.0dB */
 	{ 230, 1064 }, /* 23.0dB */
-	{ 240,	960 }, /* 24.0dB */
-	{ 250,	869 }, /* 25.0dB */
-	{ 260,	792 }, /* 26.0dB */
-	{ 270,	724 }, /* 27.0dB */
-	{ 280,	665 }, /* 28.0dB */
-	{ 290,	616 }, /* 29.0dB */
-	{ 300,	573 }, /* 30.0dB */
-	{ 310,	537 }, /* 31.0dB */
-	{ 320,	507 }, /* 32.0dB */
-	{ 330,	483 }, /* 33.0dB */
-	{ 400,	398 }, /* 40.0dB */
-	{ 450,	381 }, /* 45.0dB */
-	{ 500,	377 }  /* 50.0dB */
+	{ 240,  960 }, /* 24.0dB */
+	{ 250,  869 }, /* 25.0dB */
+	{ 260,  792 }, /* 26.0dB */
+	{ 270,  724 }, /* 27.0dB */
+	{ 280,  665 }, /* 28.0dB */
+	{ 290,  616 }, /* 29.0dB */
+	{ 300,  573 }, /* 30.0dB */
+	{ 310,  537 }, /* 31.0dB */
+	{ 320,  507 }, /* 32.0dB */
+	{ 330,  483 }, /* 33.0dB */
+	{ 400,  398 }, /* 40.0dB */
+	{ 450,  381 }, /* 45.0dB */
+	{ 500,  377 }  /* 50.0dB */
 };
 
 /* DVBS2 C/N Lookup table */
 static const struct stv090x_tab stv090x_s2cn_tab[] =
 {
 	{ -30, 13348 }, /* -3.0dB */
-	{ -20, 12640 }, /* -2d.0B */
+	{ -20, 12640 }, /* -2.0dB */
 	{ -10, 11883 }, /* -1.0dB */
 	{   0, 11101 }, /* -0.0dB */
 	{   5, 10718 }, /*  0.5dB */
@@ -175,7 +200,7 @@ static const struct stv090x_tab stv090x_s2cn_tab[] =
 	{ 330,   571 }, /* 33.0dB */
 	{ 400,   498 }, /* 40.0dB */
 	{ 450,   484 }, /* 45.0dB */
-	{ 500,	 481 }	/* 50.0dB */
+	{ 500,   481 }	/* 50.0dB */
 };
 
 /* RF level C/N lookup table */
@@ -910,907 +935,919 @@ static struct stv090x_reg stv090x_defval[] =
 static struct stv090x_reg stv0900_initval[] =
 {
 
-	{ STV090x_OUTCFG,		0x00 },
-	{ STV090x_MODECFG,		0xff },
-	{ STV090x_AGCRF1CFG,		0x11 },
-	{ STV090x_AGCRF2CFG,		0x13 },
-	{ STV090x_TSGENERAL1X,		0x14 },
-	{ STV090x_TSTTNR2,		0x21 },
-	{ STV090x_TSTTNR4,		0x21 },
-	{ STV090x_P2_DISTXCTL,		0x22 },
-	{ STV090x_P2_F22TX,		0xc0 },
-	{ STV090x_P2_F22RX,		0xc0 },
-	{ STV090x_P2_DISRXCTL,		0x00 },
+	{ STV090x_OUTCFG,         0x00 },
+	{ STV090x_MODECFG,        0xff },
+	{ STV090x_AGCRF1CFG,      0x11 },
+	{ STV090x_AGCRF2CFG,      0x13 },
+	{ STV090x_TSGENERAL1X,    0x14 },
+	{ STV090x_TSTTNR2,        0x21 },
+	{ STV090x_TSTTNR4,        0x21 },
+	{ STV090x_P2_DISTXCTL,    0x22 },
+	{ STV090x_P2_F22TX,       0xc0 },
+	{ STV090x_P2_F22RX,       0xc0 },
+	{ STV090x_P2_DISRXCTL,    0x00 },
 #if 0
-	{ STV090x_P2_TNRSTEPS,		0x87 },
-	{ STV090x_P2_TNRGAIN,		0x09 },
+	{ STV090x_P2_TNRSTEPS,    0x87 },
+	{ STV090x_P2_TNRGAIN,     0x09 },
 #endif
-	{ STV090x_P2_DMDCFGMD,		0xF9 },
-	{ STV090x_P2_DEMOD,		0x08 },
-	{ STV090x_P2_DMDCFG3,		0xc4 },
-	{ STV090x_P2_CARFREQ,		0xed },
+	{ STV090x_P2_DMDCFGMD,    0xF9 },
+	{ STV090x_P2_DEMOD,       0x08 },
+	{ STV090x_P2_DMDCFG3,     0xc4 },
+	{ STV090x_P2_CARFREQ,     0xed },
 #if 0
-	{ STV090x_P2_TNRCFG2,		0x02 },
-	{ STV090x_P2_TNRCFG3,		0x02 },
+	{ STV090x_P2_TNRCFG2,     0x02 },
+	{ STV090x_P2_TNRCFG3,     0x02 },
 #endif
-	{ STV090x_P2_LDT,		0xd0 },
-	{ STV090x_P2_LDT2,		0xb8 },
-	{ STV090x_P2_TMGCFG,		0xd2 },
-	{ STV090x_P2_TMGTHRISE,		0x20 },
-	{ STV090x_P1_TMGCFG,		0xd2 },
+	{ STV090x_P2_LDT,         0xd0 },
+	{ STV090x_P2_LDT2,        0xb8 },
+	{ STV090x_P2_TMGCFG,      0xd2 },
+	{ STV090x_P2_TMGTHRISE,   0x20 },
+	{ STV090x_P1_TMGCFG,      0xd2 },
 
-	{ STV090x_P2_TMGTHFALL,		0x00 },
-	{ STV090x_P2_FECSPY,		0x88 },
-	{ STV090x_P2_FSPYDATA,		0x3a },
-	{ STV090x_P2_FBERCPT4,		0x00 },
-	{ STV090x_P2_FSPYBER,		0x10 },
-	{ STV090x_P2_ERRCTRL1,		0x35 },
-	{ STV090x_P2_ERRCTRL2,		0xc1 },
-	{ STV090x_P2_CFRICFG,		0xf8 },
-	{ STV090x_P2_NOSCFG,		0x1c },
-	{ STV090x_P2_DMDTOM,		0x20 },
-	{ STV090x_P2_CORRELMANT,	0x70 },
-	{ STV090x_P2_CORRELABS,		0x88 },
-	{ STV090x_P2_AGC2O,		0x5b },
-	{ STV090x_P2_AGC2REF,		0x38 },
-	{ STV090x_P2_CARCFG,		0xe4 },
-	{ STV090x_P2_ACLC,		0x1A },
-	{ STV090x_P2_BCLC,		0x09 },
-	{ STV090x_P2_CARHDR,		0x08 },
-	{ STV090x_P2_KREFTMG,		0xc1 },
-	{ STV090x_P2_SFRUPRATIO,	0xf0 },
-	{ STV090x_P2_SFRLOWRATIO,	0x70 },
-	{ STV090x_P2_SFRSTEP,		0x58 },
-	{ STV090x_P2_TMGCFG2,		0x01 },
-	{ STV090x_P2_CAR2CFG,		0x26 },
-	{ STV090x_P2_BCLC2S2Q,		0x86 },
-	{ STV090x_P2_BCLC2S28,		0x86 },
-	{ STV090x_P2_SMAPCOEF7,		0x77 },
-	{ STV090x_P2_SMAPCOEF6,		0x85 },
-	{ STV090x_P2_SMAPCOEF5,		0x77 },
-	{ STV090x_P2_TSCFGL,		0x20 },
-	{ STV090x_P2_DMDCFG2,		0x3b },
-	{ STV090x_P2_MODCODLST0,	0xff },
-	{ STV090x_P2_MODCODLST1,	0xff },
-	{ STV090x_P2_MODCODLST2,	0xff },
-	{ STV090x_P2_MODCODLST3,	0xff },
-	{ STV090x_P2_MODCODLST4,	0xff },
-	{ STV090x_P2_MODCODLST5,	0xff },
-	{ STV090x_P2_MODCODLST6,	0xff },
-	{ STV090x_P2_MODCODLST7,	0xcc },
-	{ STV090x_P2_MODCODLST8,	0xcc },
-	{ STV090x_P2_MODCODLST9,	0xcc },
-	{ STV090x_P2_MODCODLSTA,	0xcc },
-	{ STV090x_P2_MODCODLSTB,	0xcc },
-	{ STV090x_P2_MODCODLSTC,	0xcc },
-	{ STV090x_P2_MODCODLSTD,	0xcc },
-	{ STV090x_P2_MODCODLSTE,	0xcc },
-	{ STV090x_P2_MODCODLSTF,	0xcf },
-	{ STV090x_P1_DISTXCTL,		0x22 },
-	{ STV090x_P1_F22TX,		0xc0 },
-	{ STV090x_P1_F22RX,		0xc0 },
-	{ STV090x_P1_DISRXCTL,		0x00 },
+	{ STV090x_P2_TMGTHFALL,   0x00 },
+	{ STV090x_P2_FECSPY,      0x88 },
+	{ STV090x_P2_FSPYDATA,    0x3a },
+	{ STV090x_P2_FBERCPT4,    0x00 },
+	{ STV090x_P2_FSPYBER,     0x10 },
+	{ STV090x_P2_ERRCTRL1,    0x35 },
+	{ STV090x_P2_ERRCTRL2,    0xc1 },
+	{ STV090x_P2_CFRICFG,     0xf8 },
+	{ STV090x_P2_NOSCFG,      0x1c },
+	{ STV090x_P2_DMDTOM,      0x20 },
+	{ STV090x_P2_CORRELMANT,  0x70 },
+	{ STV090x_P2_CORRELABS,   0x88 },
+	{ STV090x_P2_AGC2O,       0x5b },
+	{ STV090x_P2_AGC2REF,     0x38 },
+	{ STV090x_P2_CARCFG,      0xe4 },
+	{ STV090x_P2_ACLC,        0x1A },
+	{ STV090x_P2_BCLC,        0x09 },
+	{ STV090x_P2_CARHDR,      0x08 },
+	{ STV090x_P2_KREFTMG,     0xc1 },
+	{ STV090x_P2_SFRUPRATIO,  0xf0 },
+	{ STV090x_P2_SFRLOWRATIO, 0x70 },
+	{ STV090x_P2_SFRSTEP,     0x58 },
+	{ STV090x_P2_TMGCFG2,     0x01 },
+	{ STV090x_P2_CAR2CFG,     0x26 },
+	{ STV090x_P2_BCLC2S2Q,    0x86 },
+	{ STV090x_P2_BCLC2S28,    0x86 },
+	{ STV090x_P2_SMAPCOEF7,   0x77 },
+	{ STV090x_P2_SMAPCOEF6,   0x85 },
+	{ STV090x_P2_SMAPCOEF5,   0x77 },
+	{ STV090x_P2_TSCFGL,      0x20 },
+	{ STV090x_P2_DMDCFG2,     0x3b },
+	{ STV090x_P2_MODCODLST0,  0xff },
+	{ STV090x_P2_MODCODLST1,  0xff },
+	{ STV090x_P2_MODCODLST2,  0xff },
+	{ STV090x_P2_MODCODLST3,  0xff },
+	{ STV090x_P2_MODCODLST4,  0xff },
+	{ STV090x_P2_MODCODLST5,  0xff },
+	{ STV090x_P2_MODCODLST6,  0xff },
+	{ STV090x_P2_MODCODLST7,  0xcc },
+	{ STV090x_P2_MODCODLST8,  0xcc },
+	{ STV090x_P2_MODCODLST9,  0xcc },
+	{ STV090x_P2_MODCODLSTA,  0xcc },
+	{ STV090x_P2_MODCODLSTB,  0xcc },
+	{ STV090x_P2_MODCODLSTC,  0xcc },
+	{ STV090x_P2_MODCODLSTD,  0xcc },
+	{ STV090x_P2_MODCODLSTE,  0xcc },
+	{ STV090x_P2_MODCODLSTF,  0xcf },
+	{ STV090x_P1_DISTXCTL,    0x22 },
+	{ STV090x_P1_F22TX,       0xc0 },
+	{ STV090x_P1_F22RX,       0xc0 },
+	{ STV090x_P1_DISRXCTL,    0x00 },
 #if 0
-	{ STV090x_P1_TNRSTEPS,		0x87 },
-	{ STV090x_P1_TNRGAIN,		0x09 },
+	{ STV090x_P1_TNRSTEPS,    0x87 },
+	{ STV090x_P1_TNRGAIN,     0x09 },
 #endif
-	{ STV090x_P1_DMDCFGMD,		0xf9 },
-	{ STV090x_P1_DEMOD,		0x08 },
-	{ STV090x_P1_DMDCFG3,		0xc4 },
-	{ STV090x_P1_DMDTOM,		0x20 },
-	{ STV090x_P1_CARFREQ,		0xed },
+	{ STV090x_P1_DMDCFGMD,    0xf9 },
+	{ STV090x_P1_DEMOD,       0x08 },
+	{ STV090x_P1_DMDCFG3,     0xc4 },
+	{ STV090x_P1_DMDTOM,      0x20 },
+	{ STV090x_P1_CARFREQ,     0xed },
 #if 0
-	{ STV090x_P1_TNRCFG2,		0x82 },
-	{ STV090x_P1_TNRCFG3,		0x02 },
+	{ STV090x_P1_TNRCFG2,     0x82 },
+	{ STV090x_P1_TNRCFG3,     0x02 },
 #endif
-	{ STV090x_P1_LDT,		0xd0 },
-	{ STV090x_P1_LDT2,		0xb8 },
-	{ STV090x_P1_TMGCFG,		0xd2 },
-	{ STV090x_P1_TMGTHRISE,		0x20 },
-	{ STV090x_P1_TMGTHFALL,		0x00 },
-	{ STV090x_P1_SFRUPRATIO,	0xf0 },
-	{ STV090x_P1_SFRLOWRATIO,	0x70 },
-	{ STV090x_P1_TSCFGL,		0x20 },
-	{ STV090x_P1_FECSPY,		0x88 },
-	{ STV090x_P1_FSPYDATA,		0x3a },
-	{ STV090x_P1_FBERCPT4,		0x00 },
-	{ STV090x_P1_FSPYBER,		0x10 },
-	{ STV090x_P1_ERRCTRL1,		0x35 },
-	{ STV090x_P1_ERRCTRL2,		0xc1 },
-	{ STV090x_P1_CFRICFG,		0xf8 },
-	{ STV090x_P1_NOSCFG,		0x1c },
-	{ STV090x_P1_CORRELMANT,	0x70 },
-	{ STV090x_P1_CORRELABS,		0x88 },
-	{ STV090x_P1_AGC2O,		0x5b },
-	{ STV090x_P1_AGC2REF,		0x38 },
-	{ STV090x_P1_CARCFG,		0xe4 },
-	{ STV090x_P1_ACLC,		0x1A },
-	{ STV090x_P1_BCLC,		0x09 },
-	{ STV090x_P1_CARHDR,		0x08 },
-	{ STV090x_P1_KREFTMG,		0xc1 },
-	{ STV090x_P1_SFRSTEP,		0x58 },
-	{ STV090x_P1_TMGCFG2,		0x01 },
-	{ STV090x_P1_CAR2CFG,		0x26 },
-	{ STV090x_P1_BCLC2S2Q,		0x86 },
-	{ STV090x_P1_BCLC2S28,		0x86 },
-	{ STV090x_P1_SMAPCOEF7,		0x77 },
-	{ STV090x_P1_SMAPCOEF6,		0x85 },
-	{ STV090x_P1_SMAPCOEF5,		0x77 },
-	{ STV090x_P1_DMDCFG2,		0x3b },
-	{ STV090x_P1_MODCODLST0,	0xff },
-	{ STV090x_P1_MODCODLST1,	0xff },
-	{ STV090x_P1_MODCODLST2,	0xff },
-	{ STV090x_P1_MODCODLST3,	0xff },
-	{ STV090x_P1_MODCODLST4,	0xff },
-	{ STV090x_P1_MODCODLST5,	0xff },
-	{ STV090x_P1_MODCODLST6,	0xff },
-	{ STV090x_P1_MODCODLST7,	0xcc },
-	{ STV090x_P1_MODCODLST8,	0xcc },
-	{ STV090x_P1_MODCODLST9,	0xcc },
-	{ STV090x_P1_MODCODLSTA,	0xcc },
-	{ STV090x_P1_MODCODLSTB,	0xcc },
-	{ STV090x_P1_MODCODLSTC,	0xcc },
-	{ STV090x_P1_MODCODLSTD,	0xcc },
-	{ STV090x_P1_MODCODLSTE,	0xcc },
-	{ STV090x_P1_MODCODLSTF,	0xcf },
-	{ STV090x_GENCFG,		0x1d },
-	{ STV090x_NBITER_NF4,		0x37 },
-	{ STV090x_NBITER_NF5,		0x29 },
-	{ STV090x_NBITER_NF6,		0x37 },
-	{ STV090x_NBITER_NF7,		0x33 },
-	{ STV090x_NBITER_NF8,		0x31 },
-	{ STV090x_NBITER_NF9,		0x2f },
-	{ STV090x_NBITER_NF10,		0x39 },
-	{ STV090x_NBITER_NF11,		0x3a },
-	{ STV090x_NBITER_NF12,		0x29 },
-	{ STV090x_NBITER_NF13,		0x37 },
-	{ STV090x_NBITER_NF14,		0x33 },
-	{ STV090x_NBITER_NF15,		0x2f },
-	{ STV090x_NBITER_NF16,		0x39 },
-	{ STV090x_NBITER_NF17,		0x3a },
-	{ STV090x_NBITERNOERR,		0x04 },
-	{ STV090x_GAINLLR_NF4,		0x0C },
-	{ STV090x_GAINLLR_NF5,		0x0F },
-	{ STV090x_GAINLLR_NF6,		0x11 },
-	{ STV090x_GAINLLR_NF7,		0x14 },
-	{ STV090x_GAINLLR_NF8,		0x17 },
-	{ STV090x_GAINLLR_NF9,		0x19 },
-	{ STV090x_GAINLLR_NF10,		0x20 },
-	{ STV090x_GAINLLR_NF11,		0x21 },
-	{ STV090x_GAINLLR_NF12,		0x0D },
-	{ STV090x_GAINLLR_NF13,		0x0F },
-	{ STV090x_GAINLLR_NF14,		0x13 },
-	{ STV090x_GAINLLR_NF15,		0x1A },
-	{ STV090x_GAINLLR_NF16,		0x1F },
-	{ STV090x_GAINLLR_NF17,		0x21 },
-	{ STV090x_RCCFGH,		0x20 },
-	{ STV090x_P1_FECM,		0x01 }, /* disable DSS modes */
-	{ STV090x_P2_FECM,		0x01 }, /* disable DSS modes */
-	{ STV090x_P1_PRVIT,		0x2F }, /* disable PR 6/7 */
-	{ STV090x_P2_PRVIT,		0x2F }, /* disable PR 6/7 */
+	{ STV090x_P1_LDT,         0xd0 },
+	{ STV090x_P1_LDT2,        0xb8 },
+	{ STV090x_P1_TMGCFG,      0xd2 },
+	{ STV090x_P1_TMGTHRISE,   0x20 },
+	{ STV090x_P1_TMGTHFALL,   0x00 },
+	{ STV090x_P1_SFRUPRATIO,  0xf0 },
+	{ STV090x_P1_SFRLOWRATIO, 0x70 },
+	{ STV090x_P1_TSCFGL,      0x20 },
+	{ STV090x_P1_FECSPY,      0x88 },
+	{ STV090x_P1_FSPYDATA,    0x3a },
+	{ STV090x_P1_FBERCPT4,    0x00 },
+	{ STV090x_P1_FSPYBER,     0x10 },
+	{ STV090x_P1_ERRCTRL1,    0x35 },
+	{ STV090x_P1_ERRCTRL2,    0xc1 },
+	{ STV090x_P1_CFRICFG,     0xf8 },
+	{ STV090x_P1_NOSCFG,      0x1c },
+	{ STV090x_P1_CORRELMANT,  0x70 },
+	{ STV090x_P1_CORRELABS,   0x88 },
+	{ STV090x_P1_AGC2O,       0x5b },
+	{ STV090x_P1_AGC2REF,     0x38 },
+	{ STV090x_P1_CARCFG,      0xe4 },
+	{ STV090x_P1_ACLC,        0x1A },
+	{ STV090x_P1_BCLC,        0x09 },
+	{ STV090x_P1_CARHDR,      0x08 },
+	{ STV090x_P1_KREFTMG,     0xc1 },
+	{ STV090x_P1_SFRSTEP,     0x58 },
+	{ STV090x_P1_TMGCFG2,     0x01 },
+	{ STV090x_P1_CAR2CFG,     0x26 },
+	{ STV090x_P1_BCLC2S2Q,    0x86 },
+	{ STV090x_P1_BCLC2S28,    0x86 },
+	{ STV090x_P1_SMAPCOEF7,   0x77 },
+	{ STV090x_P1_SMAPCOEF6,   0x85 },
+	{ STV090x_P1_SMAPCOEF5,   0x77 },
+	{ STV090x_P1_DMDCFG2,     0x3b },
+	{ STV090x_P1_MODCODLST0,  0xff },
+	{ STV090x_P1_MODCODLST1,  0xff },
+	{ STV090x_P1_MODCODLST2,  0xff },
+	{ STV090x_P1_MODCODLST3,  0xff },
+	{ STV090x_P1_MODCODLST4,  0xff },
+	{ STV090x_P1_MODCODLST5,  0xff },
+	{ STV090x_P1_MODCODLST6,  0xff },
+	{ STV090x_P1_MODCODLST7,  0xcc },
+	{ STV090x_P1_MODCODLST8,  0xcc },
+	{ STV090x_P1_MODCODLST9,  0xcc },
+	{ STV090x_P1_MODCODLSTA,  0xcc },
+	{ STV090x_P1_MODCODLSTB,  0xcc },
+	{ STV090x_P1_MODCODLSTC,  0xcc },
+	{ STV090x_P1_MODCODLSTD,  0xcc },
+	{ STV090x_P1_MODCODLSTE,  0xcc },
+	{ STV090x_P1_MODCODLSTF,  0xcf },
+	{ STV090x_GENCFG,         0x1d },
+	{ STV090x_NBITER_NF4,     0x37 },
+	{ STV090x_NBITER_NF5,     0x29 },
+	{ STV090x_NBITER_NF6,     0x37 },
+	{ STV090x_NBITER_NF7,     0x33 },
+	{ STV090x_NBITER_NF8,     0x31 },
+	{ STV090x_NBITER_NF9,     0x2f },
+	{ STV090x_NBITER_NF10,    0x39 },
+	{ STV090x_NBITER_NF11,    0x3a },
+	{ STV090x_NBITER_NF12,    0x29 },
+	{ STV090x_NBITER_NF13,    0x37 },
+	{ STV090x_NBITER_NF14,    0x33 },
+	{ STV090x_NBITER_NF15,    0x2f },
+	{ STV090x_NBITER_NF16,    0x39 },
+	{ STV090x_NBITER_NF17,    0x3a },
+	{ STV090x_NBITERNOERR,    0x04 },
+	{ STV090x_GAINLLR_NF4,    0x0C },
+	{ STV090x_GAINLLR_NF5,    0x0F },
+	{ STV090x_GAINLLR_NF6,    0x11 },
+	{ STV090x_GAINLLR_NF7,    0x14 },
+	{ STV090x_GAINLLR_NF8,    0x17 },
+	{ STV090x_GAINLLR_NF9,    0x19 },
+	{ STV090x_GAINLLR_NF10,   0x20 },
+	{ STV090x_GAINLLR_NF11,   0x21 },
+	{ STV090x_GAINLLR_NF12,   0x0D },
+	{ STV090x_GAINLLR_NF13,   0x0F },
+	{ STV090x_GAINLLR_NF14,   0x13 },
+	{ STV090x_GAINLLR_NF15,   0x1A },
+	{ STV090x_GAINLLR_NF16,   0x1F },
+	{ STV090x_GAINLLR_NF17,   0x21 },
+	{ STV090x_RCCFGH,         0x20 },
+	{ STV090x_P1_FECM,        0x01 },  /* disable DSS modes */
+	{ STV090x_P2_FECM,        0x01 },  /* disable DSS modes */
+	{ STV090x_P1_PRVIT,       0x2F },  /* disable PR 6/7 */
+	{ STV090x_P2_PRVIT,       0x2F },  /* disable PR 6/7 */
 };
 
-#define STV090x_P1_TNRSTEPS     0xf4e7
-#define STV090x_P2_TNRSTEPS     0xf2e7
-#define STV090x_P1_TNRGAIN      0xf4e8
-#define STV090x_P2_TNRGAIN      0xf2e8
-#define STV090x_P1_TNRCFG3      0xf4ee
-#define STV090x_P2_TNRCFG3      0xf2ee
+#define STV090x_P1_TNRSTEPS 0xf4e7
+#define STV090x_P2_TNRSTEPS 0xf2e7
+#define STV090x_P1_TNRGAIN  0xf4e8
+#define STV090x_P2_TNRGAIN  0xf2e8
+#define STV090x_P1_TNRCFG3  0xf4ee
+#define STV090x_P2_TNRCFG3  0xf2ee
 
 /* #define JUST_PLAYING */
 #ifdef JUST_PLAYING
 static struct stv090x_reg stx7111_initval[] =
 {
 	/* demod2 */
-	{ STV090x_OUTCFG,        0x00 },
-	{ STV090x_AGCRF1CFG,     0x11 },
-	{ STV090x_AGCRF2CFG,     0x13 },
-	{ STV090x_TSGENERAL,     0x00 },
-	{ STV090x_P2_DISTXCTL,   0x22 },
-	{ STV090x_P2_F22TX,      0xc0 },
-	{ STV090x_P2_F22RX,      0xc0 },
-	{ STV090x_P2_DISRXCTL,   0x00 },
-	{ STV090x_P2_TNRSTEPS,   0x87 },
-	{ STV090x_P2_TNRGAIN,    0x09 },
-	{ STV090x_P2_DMDCFGMD,   0xf9 },
-	{ STV090x_P2_DEMOD,      0x0E },
-	{ STV090x_P2_DMDCFG3,    0x48 },
-	{ STV090x_P2_DMDTOM,     0x20 },
+	{ STV090x_OUTCFG,         0x00 },
+	{ STV090x_AGCRF1CFG,      0x11 },
+	{ STV090x_AGCRF2CFG,      0x13 },
+	{ STV090x_TSGENERAL,      0x00 },
+	{ STV090x_P2_DISTXCTL,    0x22 },
+	{ STV090x_P2_F22TX,       0xc0 },
+	{ STV090x_P2_F22RX,       0xc0 },
+	{ STV090x_P2_DISRXCTL,    0x00 },
+	{ STV090x_P2_TNRSTEPS,    0x87 },
+	{ STV090x_P2_TNRGAIN,     0x09 },
+	{ STV090x_P2_DMDCFGMD,    0xf9 },
+	{ STV090x_P2_DEMOD,       0x0E },
+	{ STV090x_P2_DMDCFG3,     0x48 },
+	{ STV090x_P2_DMDTOM,      0x20 },
 
-	{ STV090x_P2_CARFREQ,    0x88 },
-	{ STV090x_P2_TNRCFG2,    0x02 },
-	{ STV090x_P2_TNRCFG3,    0x02 },
+	{ STV090x_P2_CARFREQ,     0x88 },
+	{ STV090x_P2_TNRCFG2,     0x02 },
+	{ STV090x_P2_TNRCFG3,     0x02 },
 
-	{ STV090x_P2_LDT,        0xd0 },
-	{ STV090x_P2_LDT2,       0xb0 },
+	{ STV090x_P2_LDT,         0xd0 },
+	{ STV090x_P2_LDT2,        0xb0 },
 
-	{ STV090x_P2_TMGCFG,     0xd3 },
-	{ STV090x_P2_TMGTHRISE,  0x20 },
-	{ STV090x_P2_TMGTHFALL,  0x00 },
+	{ STV090x_P2_TMGCFG,      0xd3 },
+	{ STV090x_P2_TMGTHRISE,   0x20 },
+	{ STV090x_P2_TMGTHFALL,   0x00 },
 
-	{ STV090x_P2_SFRUPRATIO, 0xf0 },
+	{ STV090x_P2_SFRUPRATIO,  0xf0 },
 	{ STV090x_P2_SFRLOWRATIO, 0x70 },
 
-	{ STV090x_P2_FECSPY,     0x88 },
-	{ STV090x_P2_FSPYDATA,   0x3a },
-	{ STV090x_P2_FBERCPT4,   0x00 },
-	{ STV090x_P2_FSPYBER,    0x10 },
-	{ STV090x_P2_TSCFGH,     0x40 },
-	{ STV090x_P2_ERRCTRL1,   0x35 },
-	{ STV090x_P2_ERRCTRL2,   0xc1 },
-	{ STV090x_P2_CFRICFG,    0xf8 },
-	{ STV090x_P2_NOSCFG,     0x0c },
-	{ STV090x_P2_AGC2O,      0x5b },
-	{ STV090x_P2_AGC2REF,    0x38 },
-	{ STV090x_P2_CARCFG,     0xe4 },
-	{ STV090x_P2_ACLC,       0x1A },
-	{ STV090x_P2_BCLC,       0x09 },
-	{ 0xf43b           ,     0x00 },
-	{ 0xf43c           ,     0xc0 },
-	{ STV090x_P2_CARHDR,     0x20 },
-	{ STV090x_P2_TMGTHRISE,  0x20 }, /* new */
-	{ STV090x_P2_KREFTMG,    0x87 },
-	{ STV090x_P2_TMGTHFALL,  0x00 }, /* new */
+	{ STV090x_P2_FECSPY,      0x88 },
+	{ STV090x_P2_FSPYDATA,    0x3a },
+	{ STV090x_P2_FBERCPT4,    0x00 },
+	{ STV090x_P2_FSPYBER,     0x10 },
+	{ STV090x_P2_TSCFGH,      0x40 },
+	{ STV090x_P2_ERRCTRL1,    0x35 },
+	{ STV090x_P2_ERRCTRL2,    0xc1 },
+	{ STV090x_P2_CFRICFG,     0xf8 },
+	{ STV090x_P2_NOSCFG,      0x0c },
+	{ STV090x_P2_AGC2O,       0x5b },
+	{ STV090x_P2_AGC2REF,     0x38 },
+	{ STV090x_P2_CARCFG,      0xe4 },
+	{ STV090x_P2_ACLC,        0x1A },
+	{ STV090x_P2_BCLC,        0x09 },
+	{ 0xf43b,                 0x00 },
+	{ 0xf43c,                 0xc0 },
+	{ STV090x_P2_CARHDR,      0x20 },
+	{ STV090x_P2_TMGTHRISE,   0x20 },  /* new */
+	{ STV090x_P2_KREFTMG,     0x87 },
+	{ STV090x_P2_TMGTHFALL,   0x00 },  /* new */
 
-	{ STV090x_P2_LDT,        0xd0 },
-	{ STV090x_P2_LDT2,       0xb0 },
+	{ STV090x_P2_LDT,         0xd0 },
+	{ STV090x_P2_LDT2,        0xb0 },
 
-	{ STV090x_P2_SFRSTEP,    0x58 },
-	{ STV090x_P2_CAR2CFG,    0x26 },
+	{ STV090x_P2_SFRSTEP,     0x58 },
+	{ STV090x_P2_CAR2CFG,     0x26 },
 #if 1 /* new */
-	{ STV090x_P2_BCLC2S2Q,   0x86 },
-	{ STV090x_P2_BCLC2S28,   0x86 },
+	{ STV090x_P2_BCLC2S2Q,    0x86 },
+	{ STV090x_P2_BCLC2S28,    0x86 },
 #else
-	{ STV090x_P2_BCLC2S2Q,   0xa5 },
-	{ STV090x_P2_BCLC2S28,   0xa5 },
+	{ STV090x_P2_BCLC2S2Q,    0xa5 },
+	{ STV090x_P2_BCLC2S28,    0xa5 },
 #endif
-	{ STV090x_P2_DMDRESCFG,  0xa9 },
-	{ STV090x_P2_SMAPCOEF7,  0xfe },
-	{ STV090x_P2_SMAPCOEF6,  0x00 },
-	{ STV090x_P2_SMAPCOEF5,  0xff },
-	{ STV090x_P2_DMDCFG2,    0x3b },
-	{ STV090x_P2_MODCODLST0, 0xff },
-	{ STV090x_P2_MODCODLST1, 0xff },
-	{ STV090x_P2_MODCODLST2, 0xff },
-	{ STV090x_P2_MODCODLST3, 0xff },
-	{ STV090x_P2_MODCODLST4, 0xff },
-	{ STV090x_P2_MODCODLST5, 0xff },
-	{ STV090x_P2_MODCODLST6, 0xff },
-	{ STV090x_P2_MODCODLST7, 0xcc },
-	{ STV090x_P2_MODCODLST8, 0xcc },
-	{ STV090x_P2_MODCODLST9, 0xcc },
-	{ STV090x_P2_MODCODLSTA, 0xcc },
-	{ STV090x_P2_MODCODLSTB, 0xcc },
-	{ STV090x_P2_MODCODLSTC, 0xcc },
-	{ STV090x_P2_MODCODLSTD, 0xcc },
-	{ STV090x_P2_MODCODLSTE, 0xff },
-	{ STV090x_P2_MODCODLSTF, 0xff },
+	{ STV090x_P2_DMDRESCFG,   0xa9 },
+	{ STV090x_P2_SMAPCOEF7,   0xfe },
+	{ STV090x_P2_SMAPCOEF6,   0x00 },
+	{ STV090x_P2_SMAPCOEF5,   0xff },
+	{ STV090x_P2_DMDCFG2,     0x3b },
+	{ STV090x_P2_MODCODLST0,  0xff },
+	{ STV090x_P2_MODCODLST1,  0xff },
+	{ STV090x_P2_MODCODLST2,  0xff },
+	{ STV090x_P2_MODCODLST3,  0xff },
+	{ STV090x_P2_MODCODLST4,  0xff },
+	{ STV090x_P2_MODCODLST5,  0xff },
+	{ STV090x_P2_MODCODLST6,  0xff },
+	{ STV090x_P2_MODCODLST7,  0xcc },
+	{ STV090x_P2_MODCODLST8,  0xcc },
+	{ STV090x_P2_MODCODLST9,  0xcc },
+	{ STV090x_P2_MODCODLSTA,  0xcc },
+	{ STV090x_P2_MODCODLSTB,  0xcc },
+	{ STV090x_P2_MODCODLSTC,  0xcc },
+	{ STV090x_P2_MODCODLSTD,  0xcc },
+	{ STV090x_P2_MODCODLSTE,  0xff },
+	{ STV090x_P2_MODCODLSTF,  0xff },
 	/* demod1
 	new
-	      { STV090x_P1_DISTXCTL,   0x22 },
-	      { STV090x_P1_F22TX,      0xc0 },
-	      { STV090x_P1_F22RX,      0xc0 },
-	      { STV090x_P1_DISRXCTL,   0x00 },
+	{ STV090x_P1_DISTXCTL,    0x22 },
+	{ STV090x_P1_F22TX,       0xc0 },
+	{ STV090x_P1_F22RX,       0xc0 },
+	{ STV090x_P1_DISRXCTL,    0x00 },
+	{ STV090x_P1_TNRSTEPS,    0x87 },
+	{ STV090x_P1_TNRGAIN,     0x09 },
+	{ STV090x_P1_DMDCFGMD,    0xf9 },
+	{ STV090x_P1_DEMOD,       0x0E },
+	{ STV090x_P1_DMDCFG3,     0x48 },
+	{ STV090x_P1_DMDTOM,      0x20 },
+	{ STV090x_P1_CARFREQ,     0x88 },
+	{ STV090x_P1_TNRCFG2,     0x02 },
+	{ STV090x_P1_TNRCFG3,     0x02 },
 
-	      { STV090x_P1_TNRSTEPS,   0x87 },
-	      { STV090x_P1_TNRGAIN,    0x09 },
-	      { STV090x_P1_DMDCFGMD,   0xf9 },
-	      { STV090x_P1_DEMOD,      0x0E },
-	      { STV090x_P1_DMDCFG3,    0x48 },
-	      { STV090x_P1_DMDTOM,     0x20 },
-	      { STV090x_P1_CARFREQ,    0x88 },
-	      { STV090x_P1_TNRCFG2,    0x02 },
-	      { STV090x_P1_TNRCFG3,    0x02 },
+	{ STV090x_P1_LDT,         0xd0 },
+	{ STV090x_P1_LDT2,        0xb0 },
+	{ STV090x_P1_TMGCFG,      0xd3 },
+	{ STV090x_P1_TMGTHRISE,   0x20 },
+	{ STV090x_P1_TMGTHFALL,   0x00 },
+	{ STV090x_P2_SFRUPRATIO,  0xf0 },
+	{ STV090x_P2_SFRLOWRATIO, 0x70 },
 
-	      { STV090x_P1_LDT,        0xd0 },
-	      { STV090x_P1_LDT2,       0xb0 },
-	      { STV090x_P1_TMGCFG,     0xd3 },
-	      { STV090x_P1_TMGTHRISE,  0x20 },
-	      { STV090x_P1_TMGTHFALL,  0x00 },
-	      { STV090x_P2_SFRUPRATIO, 0xf0 },
-	      { STV090x_P2_SFRLOWRATIO,0x70 },
+	{ STV090x_P1_FECSPY,      0x88 },
+	{ STV090x_P1_FSPYDATA,    0x3a },
+	{ STV090x_P1_FBERCPT4,    0x00 },
+	{ STV090x_P1_FSPYBER,     0x10 },
 
-	      { STV090x_P1_FECSPY,     0x88 },
-	      { STV090x_P1_FSPYDATA,   0x3a },
-	      { STV090x_P1_FBERCPT4,   0x00 },
-	      { STV090x_P1_FSPYBER,    0x10 },
+#if 0
+	{ STV090x_P1_TSCFGH,      0x40 },
+#else
+	{ STV090x_P1_TSCFGH,      0x90 },
+#endif
+	{ STV090x_P1_ERRCTRL1,    0x35 },
+	{ STV090x_P1_ERRCTRL2,    0xc1 },
+	{ STV090x_P1_CFRICFG,     0xf8 },
+	{ STV090x_P1_NOSCFG,      0x0c },
+	{ STV090x_P1_DMDTOM,      0x20 },
+	{ STV090x_P1_AGC2O,       0x5b },
+	{ STV090x_P1_AGC2REF,     0x38 },
+	{ STV090x_P1_CARCFG,      0xe4 },
+	{ STV090x_P1_ACLC,        0x1A },
+	{ STV090x_P1_BCLC,        0x09 },
+	{ 0xf43b,                 0x00 },
+	{ 0xf43c,                 0xc0 },
+	{ STV090x_P1_CARHDR,      0x20 },
+	{ STV090x_P1_TMGTHRISE,   0x20 },
+	{ STV090x_P1_KREFTMG,     0x87 },
+	{ STV090x_P1_TMGTHFALL,   0x00 },
+	{ STV090x_P1_SFRSTEP,     0x58 },
+	{ STV090x_P1_CAR2CFG,     0x26 },
+	{ STV090x_P1_BCLC2S2Q,    0x86 },
+	{ STV090x_P1_BCLC2S28,    0x86 },
 
-	#if 0
-	      { STV090x_P1_TSCFGH,     0x40 },
-	#else
-	      { STV090x_P1_TSCFGH,     0x90 },
-	#endif
-	      { STV090x_P1_ERRCTRL1,   0x35 },
-	      { STV090x_P1_ERRCTRL2,   0xc1 },
-	      { STV090x_P1_CFRICFG,    0xf8 },
-	      { STV090x_P1_NOSCFG,     0x0c },
-	      { STV090x_P1_DMDTOM,     0x20 },
-	      { STV090x_P1_AGC2O,      0x5b },
-	      { STV090x_P1_AGC2REF,    0x38 },
-	      { STV090x_P1_CARCFG,     0xe4 },
-	      { STV090x_P1_ACLC,       0x1A },
-	      { STV090x_P1_BCLC,       0x09 },
-	      { 0xf43b           ,     0x00 },
-	      { 0xf43c           ,     0xc0 },
-	      { STV090x_P1_CARHDR,     0x20 },
-	      { STV090x_P1_TMGTHRISE,  0x20 },
-	      { STV090x_P1_KREFTMG,    0x87 },
-	      { STV090x_P1_TMGTHFALL,  0x00 },
-	      { STV090x_P1_SFRSTEP,    0x58 },
-	      { STV090x_P1_CAR2CFG,    0x26 },
-	      { STV090x_P1_BCLC2S2Q,   0x86 },
-	      { STV090x_P1_BCLC2S28,   0x86 },
-
-	      { STV090x_P1_DMDRESCFG,  0xa9 },
-	      { STV090x_P1_SMAPCOEF7,  0xfe },
-	      { STV090x_P1_SMAPCOEF6,  0x00 },
-	      { STV090x_P1_SMAPCOEF5,  0xff },
-	      { STV090x_P1_DMDCFG2,    0x3b },
-	      { STV090x_P1_MODCODLST0, 0xff },
-	      { STV090x_P1_MODCODLST1, 0xff },
-	      { STV090x_P1_MODCODLST2, 0xff },
-	      { STV090x_P1_MODCODLST3, 0xff },
-	      { STV090x_P1_MODCODLST4, 0xff },
-	      { STV090x_P1_MODCODLST5, 0xff },
-	      { STV090x_P1_MODCODLST6, 0xff },
-	      { STV090x_P1_MODCODLST7, 0xcc },
-	      { STV090x_P1_MODCODLST8, 0xcc },
-	      { STV090x_P1_MODCODLST9, 0xcc },
-	      { STV090x_P1_MODCODLSTA, 0xcc },
-	      { STV090x_P1_MODCODLSTB, 0xcc },
-	      { STV090x_P1_MODCODLSTC, 0xcc },
-	      { STV090x_P1_MODCODLSTD, 0xcc },
-	      { STV090x_P1_MODCODLSTE, 0xff },
-	      { STV090x_P1_MODCODLSTF, 0xff },
+	{ STV090x_P1_DMDRESCFG,   0xa9 },
+	{ STV090x_P1_SMAPCOEF7,   0xfe },
+	{ STV090x_P1_SMAPCOEF6,   0x00 },
+	{ STV090x_P1_SMAPCOEF5,   0xff },
+	{ STV090x_P1_DMDCFG2,     0x3b },
+	{ STV090x_P1_MODCODLST0,  0xff },
+	{ STV090x_P1_MODCODLST1,  0xff },
+	{ STV090x_P1_MODCODLST2,  0xff },
+	{ STV090x_P1_MODCODLST3,  0xff },
+	{ STV090x_P1_MODCODLST4,  0xff },
+	{ STV090x_P1_MODCODLST5,  0xff },
+	{ STV090x_P1_MODCODLST6,  0xff },
+	{ STV090x_P1_MODCODLST7,  0xcc },
+	{ STV090x_P1_MODCODLST8,  0xcc },
+	{ STV090x_P1_MODCODLST9,  0xcc },
+	{ STV090x_P1_MODCODLSTA,  0xcc },
+	{ STV090x_P1_MODCODLSTB,  0xcc },
+	{ STV090x_P1_MODCODLSTC,  0xcc },
+	{ STV090x_P1_MODCODLSTD,  0xcc },
+	{ STV090x_P1_MODCODLSTE,  0xff },
+	{ STV090x_P1_MODCODLSTF,  0xff },
 	*/
 
-	{ STV090x_NBITERNOERR,   0x04 },
-	{ STV090x_GAINLLR_NF4,   0x0f },
-	{ STV090x_GAINLLR_NF5,   0x13 },
-	{ STV090x_GAINLLR_NF6,   0x15 },
-	{ STV090x_GAINLLR_NF7,   0x1a },
-	{ STV090x_GAINLLR_NF8,   0x1F },
-	{ STV090x_GAINLLR_NF9,   0x20 },
-	{ STV090x_GAINLLR_NF10,  0x26 },
-	{ STV090x_GAINLLR_NF11,  0x28 },
-	{ STV090x_GAINLLR_NF12,  0x0D },
-	{ STV090x_GAINLLR_NF13,  0x0F },
-	{ STV090x_GAINLLR_NF14,  0x13 },
-	{ STV090x_GAINLLR_NF15,  0x19 },
-	{ STV090x_GAINLLR_NF16,  0x20 },
-	{ STV090x_GAINLLR_NF17,  0x20 },
-	{ STV090x_NBITER_NF4,    0x38 },
-	{ STV090x_NBITER_NF5,    0x2C },
-	{ STV090x_NBITER_NF6,    0x3b },
-	{ STV090x_NBITER_NF7,    0x38 },
+	{ STV090x_NBITERNOERR,    0x04 },
+	{ STV090x_GAINLLR_NF4,    0x0f },
+	{ STV090x_GAINLLR_NF5,    0x13 },
+	{ STV090x_GAINLLR_NF6,    0x15 },
+	{ STV090x_GAINLLR_NF7,    0x1a },
+	{ STV090x_GAINLLR_NF8,    0x1F },
+	{ STV090x_GAINLLR_NF9,    0x20 },
+	{ STV090x_GAINLLR_NF10,   0x26 },
+	{ STV090x_GAINLLR_NF11,   0x28 },
+	{ STV090x_GAINLLR_NF12,   0x0D },
+	{ STV090x_GAINLLR_NF13,   0x0F },
+	{ STV090x_GAINLLR_NF14,   0x13 },
+	{ STV090x_GAINLLR_NF15,   0x19 },
+	{ STV090x_GAINLLR_NF16,   0x20 },
+	{ STV090x_GAINLLR_NF17,   0x20 },
+	{ STV090x_NBITER_NF4,     0x38 },
+	{ STV090x_NBITER_NF5,     0x2C },
+	{ STV090x_NBITER_NF6,     0x3b },
+	{ STV090x_NBITER_NF7,     0x38 },
 
-	{ STV090x_NBITER_NF8,    0x36 },
-	{ STV090x_NBITER_NF9,    0x35 },
+	{ STV090x_NBITER_NF8,     0x36 },
+	{ STV090x_NBITER_NF9,     0x35 },
 
-	{ STV090x_NBITER_NF10,   0x41 },
-	{ STV090x_NBITER_NF11,   0x41 },
-	{ STV090x_NBITER_NF12,   0x1d },
-	{ STV090x_NBITER_NF13,   0x27 },
-	{ STV090x_NBITER_NF14,   0x25 },
-	{ STV090x_NBITER_NF15,   0x23 },
-	{ STV090x_NBITER_NF16,   0x2b },
-	{ STV090x_NBITER_NF17,   0x2b },
+	{ STV090x_NBITER_NF10,    0x41 },
+	{ STV090x_NBITER_NF11,    0x41 },
+	{ STV090x_NBITER_NF12,    0x1d },
+	{ STV090x_NBITER_NF13,    0x27 },
+	{ STV090x_NBITER_NF14,    0x25 },
+	{ STV090x_NBITER_NF15,    0x23 },
+	{ STV090x_NBITER_NF16,    0x2b },
+	{ STV090x_NBITER_NF17,    0x2b },
 
 	/* new
-	      { STV090x_P2_GAUSSR0,    0xac },
-	      { STV090x_P2_CCIR0,      0x2c },
-	      { STV090x_P2_CCIQUANT,   0xac },
-	      { 0xf2c3             ,   0x00 },
-	*/
-	{ STV090x_P1_GAUSSR0,    0xac },
-	{ STV090x_P1_CCIR0,      0x2c },
-	{ STV090x_P1_CCIQUANT,   0xac },
-	{ 0xf4c3             ,   0x00 },
+	{ STV090x_P2_GAUSSR0,     0xac },
+	{ STV090x_P2_CCIR0,       0x2c },
+	{ STV090x_P2_CCIQUANT,    0xac },
+	{ 0xf2c3,                 0x00 },
+	*/ 
+	{ STV090x_P1_GAUSSR0,     0xac },
+	{ STV090x_P1_CCIR0,       0x2c },
+	{ STV090x_P1_CCIQUANT,    0xac },
+	{ 0xf4c3,                 0x00 },
 
-	/* new      { STV090x_P2_TSCFGL,     0x30 },*/
-	{ STV090x_P1_TSCFGL,     0x30 },
+	/* new
+	{ STV090x_P2_TSCFGL,      0x30 },
+	*/
+	{ STV090x_P1_TSCFGL,      0x30 },
 };
 #else
 
 static struct stv090x_reg stx7111_initval[] =
 {
 	/* demod2 */
-	{ STV090x_OUTCFG,        0x00 },
-	{ STV090x_AGCRF1CFG,     0x11 },
-	{ STV090x_AGCRF2CFG,     0x13 },
-	{ STV090x_TSGENERAL,     0x00 },
-	{ STV090x_P2_DISTXCTL,   0x22 },
-	{ STV090x_P2_F22TX,      0xc0 },
-	{ STV090x_P2_F22RX,      0xc0 },
-	{ STV090x_P2_DISRXCTL,   0x00 },
-	{ STV090x_P2_TNRSTEPS,   0x87 },
-	{ STV090x_P2_TNRGAIN,    0x09 },
-	{ STV090x_P2_DMDCFGMD,   0xf9 },
-	{ STV090x_P2_DEMOD,      0x0E },
-	{ STV090x_P2_DMDCFG3,    0x48 },
-	{ STV090x_P2_CARFREQ,    0x88 },
-	{ STV090x_P2_TNRCFG2,    0x02 },
-	{ STV090x_P2_TNRCFG3,    0x02 },
+	{ STV090x_OUTCFG,         0x00 },
+	{ STV090x_AGCRF1CFG,      0x11 },
+	{ STV090x_AGCRF2CFG,      0x13 },
+	{ STV090x_TSGENERAL,      0x00 },
+	{ STV090x_P2_DISTXCTL,    0x22 },
+	{ STV090x_P2_F22TX,       0xc0 },
+	{ STV090x_P2_F22RX,       0xc0 },
+	{ STV090x_P2_DISRXCTL,    0x00 },
+	{ STV090x_P2_TNRSTEPS,    0x87 },
+	{ STV090x_P2_TNRGAIN,     0x09 },
+	{ STV090x_P2_DMDCFGMD,    0xf9 },
+	{ STV090x_P2_DEMOD,       0x0E },
+	{ STV090x_P2_DMDCFG3,     0x48 },
+	{ STV090x_P2_CARFREQ,     0x88 },
+	{ STV090x_P2_TNRCFG2,     0x02 },
+	{ STV090x_P2_TNRCFG3,     0x02 },
 
-	{ STV090x_P2_LDT,        0xd0 },
-	{ STV090x_P2_LDT2,       0xb0 },
-	{ STV090x_P2_TMGCFG,     0xd3 },
-	{ STV090x_P2_TMGTHRISE,  0x20 },
-	{ STV090x_P2_TMGTHFALL,  0x00 },
+	{ STV090x_P2_LDT,         0xd0 },
+	{ STV090x_P2_LDT2,        0xb0 },
+	{ STV090x_P2_TMGCFG,      0xd3 },
+	{ STV090x_P2_TMGTHRISE,   0x20 },
+	{ STV090x_P2_TMGTHFALL,   0x00 },
 
-	{ STV090x_P2_FECSPY,     0x88 },
-	{ STV090x_P2_FSPYDATA,   0x3a },
-	{ STV090x_P2_FBERCPT4,   0x00 },
-	{ STV090x_P2_FSPYBER,    0x10 },
-	{ STV090x_P2_TSCFGH,     0x40 },
-	{ STV090x_P2_ERRCTRL1,   0x35 },
-	{ STV090x_P2_ERRCTRL2,   0xc1 },
-	{ STV090x_P2_CFRICFG,    0xf8 },
-	{ STV090x_P2_NOSCFG,     0x0c },
-	{ STV090x_P2_DMDTOM,     0x20 },
-	{ STV090x_P2_AGC2O,      0x5b },
-	{ STV090x_P2_AGC2REF,    0x38 },
-	{ STV090x_P2_CARCFG,     0xe4 },
-	{ STV090x_P2_ACLC,       0x1A },
-	{ STV090x_P2_BCLC,       0x09 },
-	{ 0xf43b           ,     0x00 },
-	{ 0xf43c           ,     0xc0 },
-	{ STV090x_P2_CARHDR,     0x20 },
+	{ STV090x_P2_FECSPY,      0x88 },
+	{ STV090x_P2_FSPYDATA,    0x3a },
+	{ STV090x_P2_FBERCPT4,    0x00 },
+	{ STV090x_P2_FSPYBER,     0x10 },
+	{ STV090x_P2_TSCFGH,      0x40 },
+	{ STV090x_P2_ERRCTRL1,    0x35 },
+	{ STV090x_P2_ERRCTRL2,    0xc1 },
+	{ STV090x_P2_CFRICFG,     0xf8 },
+	{ STV090x_P2_NOSCFG,      0x0c },
+	{ STV090x_P2_DMDTOM,      0x20 },
+	{ STV090x_P2_AGC2O,       0x5b },
+	{ STV090x_P2_AGC2REF,     0x38 },
+	{ STV090x_P2_CARCFG,      0xe4 },
+	{ STV090x_P2_ACLC,        0x1A },
+	{ STV090x_P2_BCLC,        0x09 },
+	{ 0xf43b,                 0x00 },
+	{ 0xf43c,                 0xc0 },
+	{ STV090x_P2_CARHDR,      0x20 },
 #if 0
-	{ STV090x_P2_TMGTHRISE,  0x20 },
+	{ STV090x_P2_TMGTHRISE,   0x20 },
 #endif
-	{ STV090x_P2_KREFTMG,    0x87 },
-	{ STV090x_P2_SFRUPRATIO, 0xf0 },
+	{ STV090x_P2_KREFTMG,     0x87 },
+	{ STV090x_P2_SFRUPRATIO,  0xf0 },
 	{ STV090x_P2_SFRLOWRATIO, 0x70 },
 
 #if 0
-	{ STV090x_P2_TMGTHFALL,  0x00 },
+	{ STV090x_P2_TMGTHFALL,   0x00 },
 #endif
 
-	{ STV090x_P2_SFRSTEP,    0x58 },
-	{ STV090x_P2_CAR2CFG,    0x26 },
+	{ STV090x_P2_SFRSTEP,     0x58 },
+	{ STV090x_P2_CAR2CFG,     0x26 },
 #if 0
-	{ STV090x_P2_BCLC2S2Q,   0x86 },
-	{ STV090x_P2_BCLC2S28,   0x86 },
+	{ STV090x_P2_BCLC2S2Q,    0x86 },
+	{ STV090x_P2_BCLC2S28,    0x86 },
 #else
-	{ STV090x_P2_BCLC2S2Q,   0xa5 },
-	{ STV090x_P2_BCLC2S28,   0xa5 },
+	{ STV090x_P2_BCLC2S2Q,    0xa5 },
+	{ STV090x_P2_BCLC2S28,    0xa5 },
 #endif
-	{ STV090x_P2_DMDRESCFG,  0xa9 },
-	{ STV090x_P2_SMAPCOEF7,  0xfe },
-	{ STV090x_P2_SMAPCOEF6,  0x00 },
-	{ STV090x_P2_SMAPCOEF5,  0xff },
-	{ STV090x_P2_DMDCFG2,    0x3b },
-	{ STV090x_P2_MODCODLST0, 0xff },
-	{ STV090x_P2_MODCODLST1, 0xff },
-	{ STV090x_P2_MODCODLST2, 0xff },
-	{ STV090x_P2_MODCODLST3, 0xff },
-	{ STV090x_P2_MODCODLST4, 0xff },
-	{ STV090x_P2_MODCODLST5, 0xff },
-	{ STV090x_P2_MODCODLST6, 0xff },
-	{ STV090x_P2_MODCODLST7, 0xcc },
-	{ STV090x_P2_MODCODLST8, 0xcc },
-	{ STV090x_P2_MODCODLST9, 0xcc },
-	{ STV090x_P2_MODCODLSTA, 0xcc },
-	{ STV090x_P2_MODCODLSTB, 0xcc },
-	{ STV090x_P2_MODCODLSTC, 0xcc },
-	{ STV090x_P2_MODCODLSTD, 0xcc },
-	{ STV090x_P2_MODCODLSTE, 0xff },
-	{ STV090x_P2_MODCODLSTF, 0xff },
+	{ STV090x_P2_DMDRESCFG,   0xa9 },
+	{ STV090x_P2_SMAPCOEF7,   0xfe },
+	{ STV090x_P2_SMAPCOEF6,   0x00 },
+	{ STV090x_P2_SMAPCOEF5,   0xff },
+	{ STV090x_P2_DMDCFG2,     0x3b },
+	{ STV090x_P2_MODCODLST0,  0xff },
+	{ STV090x_P2_MODCODLST1,  0xff },
+	{ STV090x_P2_MODCODLST2,  0xff },
+	{ STV090x_P2_MODCODLST3,  0xff },
+	{ STV090x_P2_MODCODLST4,  0xff },
+	{ STV090x_P2_MODCODLST5,  0xff },
+	{ STV090x_P2_MODCODLST6,  0xff },
+	{ STV090x_P2_MODCODLST7,  0xcc },
+	{ STV090x_P2_MODCODLST8,  0xcc },
+	{ STV090x_P2_MODCODLST9,  0xcc },
+	{ STV090x_P2_MODCODLSTA,  0xcc },
+	{ STV090x_P2_MODCODLSTB,  0xcc },
+	{ STV090x_P2_MODCODLSTC,  0xcc },
+	{ STV090x_P2_MODCODLSTD,  0xcc },
+	{ STV090x_P2_MODCODLSTE,  0xff },
+	{ STV090x_P2_MODCODLSTF,  0xff },
 	/* demod1 */
-	{ STV090x_P1_DISTXCTL,   0x22 },
-	{ STV090x_P1_F22TX,      0xc0 },
-	{ STV090x_P1_F22RX,      0xc0 },
-	{ STV090x_P1_DISRXCTL,   0x00 },
+	{ STV090x_P1_DISTXCTL,    0x22 },
+	{ STV090x_P1_F22TX,       0xc0 },
+	{ STV090x_P1_F22RX,       0xc0 },
+	{ STV090x_P1_DISRXCTL,    0x00 },
 
-	{ STV090x_P1_TNRSTEPS,   0x87 },
-	{ STV090x_P1_TNRGAIN,    0x09 },
-	{ STV090x_P1_DMDCFGMD,   0xf9 },
-	{ STV090x_P1_DEMOD,      0x0E },
-	{ STV090x_P1_DMDCFG3,    0x48 },
-	{ STV090x_P1_DMDTOM,     0x20 },
-	{ STV090x_P1_CARFREQ,    0x88 },
-	{ STV090x_P1_TNRCFG2,    0x02 },
-	{ STV090x_P1_TNRCFG3,    0x02 },
+	{ STV090x_P1_TNRSTEPS,    0x87 },
+	{ STV090x_P1_TNRGAIN,     0x09 },
+	{ STV090x_P1_DMDCFGMD,    0xf9 },
+	{ STV090x_P1_DEMOD,       0x0E },
+	{ STV090x_P1_DMDCFG3,     0x48 },
+	{ STV090x_P1_DMDTOM,      0x20 },
+	{ STV090x_P1_CARFREQ,     0x88 },
+	{ STV090x_P1_TNRCFG2,     0x02 },
+	{ STV090x_P1_TNRCFG3,     0x02 },
 
-	{ STV090x_P1_LDT,        0xd0 },
-	{ STV090x_P1_LDT2,       0xb0 },
-	{ STV090x_P1_TMGCFG,     0xd3 },
-	{ STV090x_P1_TMGTHRISE,  0x20 },
-	{ STV090x_P1_TMGTHFALL,  0x00 },
-	{ STV090x_P2_SFRUPRATIO, 0xf0 },
+	{ STV090x_P1_LDT,         0xd0 },
+	{ STV090x_P1_LDT2,        0xb0 },
+	{ STV090x_P1_TMGCFG,      0xd3 },
+	{ STV090x_P1_TMGTHRISE,   0x20 },
+	{ STV090x_P1_TMGTHFALL,   0x00 },
+	{ STV090x_P2_SFRUPRATIO,  0xf0 },
 	{ STV090x_P2_SFRLOWRATIO, 0x70 },
 
-	{ STV090x_P1_FECSPY,     0x88 },
-	{ STV090x_P1_FSPYDATA,   0x3a },
-	{ STV090x_P1_FBERCPT4,   0x00 },
-	{ STV090x_P1_FSPYBER,    0x10 },
+	{ STV090x_P1_FECSPY,      0x88 },
+	{ STV090x_P1_FSPYDATA,    0x3a },
+	{ STV090x_P1_FBERCPT4,    0x00 },
+	{ STV090x_P1_FSPYBER,     0x10 },
 
 #if 0
-	{ STV090x_P1_TSCFGH,     0x40 },
+	{ STV090x_P1_TSCFGH,      0x40 },
 #else
-	{ STV090x_P1_TSCFGH,     0x90 },
+	{ STV090x_P1_TSCFGH,      0x90 },
 #endif
-	{ STV090x_P1_ERRCTRL1,   0x35 },
-	{ STV090x_P1_ERRCTRL2,   0xc1 },
-	{ STV090x_P1_CFRICFG,    0xf8 },
-	{ STV090x_P1_NOSCFG,     0x0c },
-	{ STV090x_P1_DMDTOM,     0x20 },
-	{ STV090x_P1_AGC2O,      0x5b },
-	{ STV090x_P1_AGC2REF,    0x38 },
-	{ STV090x_P1_CARCFG,     0xe4 },
-	{ STV090x_P1_ACLC,       0x1A },
-	{ STV090x_P1_BCLC,       0x09 },
-	{ 0xf43b           ,     0x00 },
-	{ 0xf43c           ,     0xc0 },
-	{ STV090x_P1_CARHDR,     0x20 },
-	{ STV090x_P1_TMGTHRISE,  0x20 },
-	{ STV090x_P1_KREFTMG,    0x87 },
-	{ STV090x_P1_TMGTHFALL,  0x00 },
-	{ STV090x_P1_SFRSTEP,    0x58 },
-	{ STV090x_P1_CAR2CFG,    0x26 },
-	{ STV090x_P1_BCLC2S2Q,   0x86 },
-	{ STV090x_P1_BCLC2S28,   0x86 },
+	{ STV090x_P1_ERRCTRL1,    0x35 },
+	{ STV090x_P1_ERRCTRL2,    0xc1 },
+	{ STV090x_P1_CFRICFG,     0xf8 },
+	{ STV090x_P1_NOSCFG,      0x0c },
+	{ STV090x_P1_DMDTOM,      0x20 },
+	{ STV090x_P1_AGC2O,       0x5b },
+	{ STV090x_P1_AGC2REF,     0x38 },
+	{ STV090x_P1_CARCFG,      0xe4 },
+	{ STV090x_P1_ACLC,        0x1A },
+	{ STV090x_P1_BCLC,        0x09 },
+	{ 0xf43b,                 0x00 },
+	{ 0xf43c,                 0xc0 },
+	{ STV090x_P1_CARHDR,      0x20 },
+	{ STV090x_P1_TMGTHRISE,   0x20 },
+	{ STV090x_P1_KREFTMG,     0x87 },
+	{ STV090x_P1_TMGTHFALL,   0x00 },
+	{ STV090x_P1_SFRSTEP,     0x58 },
+	{ STV090x_P1_CAR2CFG,     0x26 },
+	{ STV090x_P1_BCLC2S2Q,    0x86 },
+	{ STV090x_P1_BCLC2S28,    0x86 },
 
-	{ STV090x_P1_DMDRESCFG,  0xa9 },
-	{ STV090x_P1_SMAPCOEF7,  0xfe },
-	{ STV090x_P1_SMAPCOEF6,  0x00 },
-	{ STV090x_P1_SMAPCOEF5,  0xff },
-	{ STV090x_P1_DMDCFG2,    0x3b },
-	{ STV090x_P1_MODCODLST0, 0xff },
-	{ STV090x_P1_MODCODLST1, 0xff },
-	{ STV090x_P1_MODCODLST2, 0xff },
-	{ STV090x_P1_MODCODLST3, 0xff },
-	{ STV090x_P1_MODCODLST4, 0xff },
-	{ STV090x_P1_MODCODLST5, 0xff },
-	{ STV090x_P1_MODCODLST6, 0xff },
-	{ STV090x_P1_MODCODLST7, 0xcc },
-	{ STV090x_P1_MODCODLST8, 0xcc },
-	{ STV090x_P1_MODCODLST9, 0xcc },
-	{ STV090x_P1_MODCODLSTA, 0xcc },
-	{ STV090x_P1_MODCODLSTB, 0xcc },
-	{ STV090x_P1_MODCODLSTC, 0xcc },
-	{ STV090x_P1_MODCODLSTD, 0xcc },
-	{ STV090x_P1_MODCODLSTE, 0xff },
-	{ STV090x_P1_MODCODLSTF, 0xff },
+	{ STV090x_P1_DMDRESCFG,   0xa9 },
+	{ STV090x_P1_SMAPCOEF7,   0xfe },
+	{ STV090x_P1_SMAPCOEF6,   0x00 },
+	{ STV090x_P1_SMAPCOEF5,   0xff },
+	{ STV090x_P1_DMDCFG2,     0x3b },
+	{ STV090x_P1_MODCODLST0,  0xff },
+	{ STV090x_P1_MODCODLST1,  0xff },
+	{ STV090x_P1_MODCODLST2,  0xff },
+	{ STV090x_P1_MODCODLST3,  0xff },
+	{ STV090x_P1_MODCODLST4,  0xff },
+	{ STV090x_P1_MODCODLST5,  0xff },
+	{ STV090x_P1_MODCODLST6,  0xff },
+	{ STV090x_P1_MODCODLST7,  0xcc },
+	{ STV090x_P1_MODCODLST8,  0xcc },
+	{ STV090x_P1_MODCODLST9,  0xcc },
+	{ STV090x_P1_MODCODLSTA,  0xcc },
+	{ STV090x_P1_MODCODLSTB,  0xcc },
+	{ STV090x_P1_MODCODLSTC,  0xcc },
+	{ STV090x_P1_MODCODLSTD,  0xcc },
+	{ STV090x_P1_MODCODLSTE,  0xff },
+	{ STV090x_P1_MODCODLSTF,  0xff },
 
-	{ STV090x_NBITERNOERR,   0x04 },
-	{ STV090x_GAINLLR_NF4,   0x0f },
-	{ STV090x_GAINLLR_NF5,   0x13 },
-	{ STV090x_GAINLLR_NF6,   0x15 },
-	{ STV090x_GAINLLR_NF7,   0x1a },
-	{ STV090x_GAINLLR_NF8,   0x1F },
-	{ STV090x_GAINLLR_NF9,   0x20 },
-	{ STV090x_GAINLLR_NF10,  0x26 },
-	{ STV090x_GAINLLR_NF11,  0x28 },
-	{ STV090x_GAINLLR_NF12,  0x0D },
-	{ STV090x_GAINLLR_NF13,  0x0F },
-	{ STV090x_GAINLLR_NF14,  0x13 },
-	{ STV090x_GAINLLR_NF15,  0x19 },
-	{ STV090x_GAINLLR_NF16,  0x20 },
-	{ STV090x_GAINLLR_NF17,  0x20 },
-	{ STV090x_NBITER_NF4,    0x38 },
-	{ STV090x_NBITER_NF5,    0x2C },
-	{ STV090x_NBITER_NF6,    0x3b },
-	{ STV090x_NBITER_NF7,    0x38 },
-	{ STV090x_NBITER_NF8,    0x36 },
-	{ STV090x_NBITER_NF9,    0x35 },
+	{ STV090x_NBITERNOERR,    0x04 },
+	{ STV090x_GAINLLR_NF4,    0x0f },
+	{ STV090x_GAINLLR_NF5,    0x13 },
+	{ STV090x_GAINLLR_NF6,    0x15 },
+	{ STV090x_GAINLLR_NF7,    0x1a },
+	{ STV090x_GAINLLR_NF8,    0x1F },
+	{ STV090x_GAINLLR_NF9,    0x20 },
+	{ STV090x_GAINLLR_NF10,   0x26 },
+	{ STV090x_GAINLLR_NF11,   0x28 },
+	{ STV090x_GAINLLR_NF12,   0x0D },
+	{ STV090x_GAINLLR_NF13,   0x0F },
+	{ STV090x_GAINLLR_NF14,   0x13 },
+	{ STV090x_GAINLLR_NF15,   0x19 },
+	{ STV090x_GAINLLR_NF16,   0x20 },
+	{ STV090x_GAINLLR_NF17,   0x20 },
+	{ STV090x_NBITER_NF4,     0x38 },
+	{ STV090x_NBITER_NF5,     0x2C },
+	{ STV090x_NBITER_NF6,     0x3b },
+	{ STV090x_NBITER_NF7,     0x38 },
+	{ STV090x_NBITER_NF8,     0x36 },
+	{ STV090x_NBITER_NF9,     0x35 },
 
-	{ STV090x_NBITER_NF10,   0x41 },
-	{ STV090x_NBITER_NF11,   0x41 },
-	{ STV090x_NBITER_NF12,   0x1d },
-	{ STV090x_NBITER_NF13,   0x27 },
-	{ STV090x_NBITER_NF14,   0x25 },
-	{ STV090x_NBITER_NF15,   0x23 },
-	{ STV090x_NBITER_NF16,   0x2b },
-	{ STV090x_NBITER_NF17,   0x2b },
+	{ STV090x_NBITER_NF10,    0x41 },
+	{ STV090x_NBITER_NF11,    0x41 },
+	{ STV090x_NBITER_NF12,    0x1d },
+	{ STV090x_NBITER_NF13,    0x27 },
+	{ STV090x_NBITER_NF14,    0x25 },
+	{ STV090x_NBITER_NF15,    0x23 },
+	{ STV090x_NBITER_NF16,    0x2b },
+	{ STV090x_NBITER_NF17,    0x2b },
 
-	{ STV090x_P2_GAUSSR0,    0xac },
-	{ STV090x_P2_CCIR0,      0x2c },
-	{ STV090x_P2_CCIQUANT,   0xac },
-	{ 0xf2c3             ,   0x00 },
+	{ STV090x_P2_GAUSSR0,     0xac },
+	{ STV090x_P2_CCIR0,       0x2c },
+	{ STV090x_P2_CCIQUANT,    0xac },
+	{ 0xf2c3,                 0x00 },
 
-	{ STV090x_P1_GAUSSR0,    0xac },
-	{ STV090x_P1_CCIR0,      0x2c },
-	{ STV090x_P1_CCIQUANT,   0xac },
-	{ 0xf4c3             ,   0x00 },
+	{ STV090x_P1_GAUSSR0,     0xac },
+	{ STV090x_P1_CCIR0,       0x2c },
+	{ STV090x_P1_CCIQUANT,    0xac },
+	{ 0xf4c3,                 0x00 },
 
-	{ STV090x_P2_TSCFGL,     0x30 },
-	{ STV090x_P1_TSCFGL,     0x30 },
+	{ STV090x_P2_TSCFGL,      0x30 },
+	{ STV090x_P1_TSCFGL,      0x30 },
 };
 #endif
 
 
 static struct stv090x_reg stv0903_initval[] =
 {
-	{ STV090x_OUTCFG,		0x00 },
-	{ STV090x_AGCRF1CFG,		0x11 },
-	{ STV090x_STOPCLK1,		0x48 },
-	{ STV090x_STOPCLK2,		0x14 },
-	{ STV090x_TSTTNR1,		0x27 },
-	{ STV090x_TSTTNR2,		0x21 },
-	{ STV090x_P1_DISTXCTL,		0x22 },
-	{ STV090x_P1_F22TX,		0xc0 },
-	{ STV090x_P1_F22RX,		0xc0 },
-	{ STV090x_P1_DISRXCTL,		0x00 },
+	{ STV090x_OUTCFG,         0x00 },
+	{ STV090x_AGCRF1CFG,      0x11 },
+	{ STV090x_STOPCLK1,       0x48 },
+	{ STV090x_STOPCLK2,       0x14 },
+	{ STV090x_TSTTNR1,        0x27 },
+	{ STV090x_TSTTNR2,        0x21 },
+	{ STV090x_P1_DISTXCTL,    0x22 },
+	{ STV090x_P1_F22TX,       0xc0 },
+	{ STV090x_P1_F22RX,       0xc0 },
+	{ STV090x_P1_DISRXCTL,    0x00 },
 	/* __TDT__*/
-	{ STV090x_P1_TNRSTEPS,		0x87 },
-	{ STV090x_P1_TNRGAIN,		0x09 },
+	{ STV090x_P1_TNRSTEPS,    0x87 },
+	{ STV090x_P1_TNRGAIN,     0x09 },
 
 	/* TDT
-	{ STV090x_P1_DMDCFGMD,		0xF9 }, */
-	{ STV090x_P1_DMDCFGMD,		0xc9 },
-	{ STV090x_P1_DEMOD,		0x08 },
-	{ STV090x_P1_DMDCFG3,		0xc4 },
-	{ STV090x_P1_CARFREQ,		0xed },
-	{ STV090x_P1_TNRCFG2,		0x82 },
+	{ STV090x_P1_DMDCFGMD,    0xF9 }, */
+	{ STV090x_P1_DMDCFGMD,    0xc9 },
+	{ STV090x_P1_DEMOD,       0x08 },
+	{ STV090x_P1_DMDCFG3,     0xc4 },
+	{ STV090x_P1_CARFREQ,     0xed },
+	{ STV090x_P1_TNRCFG2,     0x82 },
 	/* __TDT__ */
-	{ STV090x_P1_TNRCFG3,		0x03 },
+	{ STV090x_P1_TNRCFG3,     0x03 },
 
-	{ STV090x_P1_LDT,		0xd0 },
-	{ STV090x_P1_LDT2,		0xb8 },
-	{ STV090x_P1_TMGCFG,		0xd2 },
-	{ STV090x_P1_TMGTHRISE,		0x20 },
-	{ STV090x_P1_TMGTHFALL,		0x00 },
-	{ STV090x_P1_SFRUPRATIO,	0xf0 },
-	{ STV090x_P1_SFRLOWRATIO,	0x70 },
-	{ STV090x_P1_TSCFGL,		0x20 },
-	{ STV090x_P1_FECSPY,		0x88 },
-	{ STV090x_P1_FSPYDATA,		0x3a },
-	{ STV090x_P1_FBERCPT4,		0x00 },
-	{ STV090x_P1_FSPYBER,		0x10 },
-	{ STV090x_P1_ERRCTRL1,		0x35 },
-	{ STV090x_P1_ERRCTRL2,		0xc1 },
-	{ STV090x_P1_CFRICFG,		0xf8 },
-	{ STV090x_P1_NOSCFG,		0x1c },
-	{ STV090x_P1_DMDTOM,		0x20 },
-	{ STV090x_P1_CORRELMANT,	0x70 },
-	{ STV090x_P1_CORRELABS,		0x88 },
-	{ STV090x_P1_AGC2O,		0x5b },
-	{ STV090x_P1_AGC2REF,		0x38 },
-	{ STV090x_P1_CARCFG,		0xe4 },
-	{ STV090x_P1_ACLC,		0x1A },
-	{ STV090x_P1_BCLC,		0x09 },
-	{ STV090x_P1_CARHDR,		0x08 },
-	{ STV090x_P1_KREFTMG,		0xc1 },
-	{ STV090x_P1_SFRSTEP,		0x58 },
-	{ STV090x_P1_TMGCFG2,		0x01 },
-	{ STV090x_P1_CAR2CFG,		0x26 },
-	{ STV090x_P1_BCLC2S2Q,		0x86 },
-	{ STV090x_P1_BCLC2S28,		0x86 },
-	{ STV090x_P1_SMAPCOEF7,		0x77 },
-	{ STV090x_P1_SMAPCOEF6,		0x85 },
-	{ STV090x_P1_SMAPCOEF5,		0x77 },
-	{ STV090x_P1_DMDCFG2,		0x3b },
-	{ STV090x_P1_MODCODLST0,	0xff },
-	{ STV090x_P1_MODCODLST1,	0xff },
-	{ STV090x_P1_MODCODLST2,	0xff },
-	{ STV090x_P1_MODCODLST3,	0xff },
-	{ STV090x_P1_MODCODLST4,	0xff },
-	{ STV090x_P1_MODCODLST5,	0xff },
-	{ STV090x_P1_MODCODLST6,	0xff },
-	{ STV090x_P1_MODCODLST7,	0xcc },
-	{ STV090x_P1_MODCODLST8,	0xcc },
-	{ STV090x_P1_MODCODLST9,	0xcc },
-	{ STV090x_P1_MODCODLSTA,	0xcc },
-	{ STV090x_P1_MODCODLSTB,	0xcc },
-	{ STV090x_P1_MODCODLSTC,	0xcc },
-	{ STV090x_P1_MODCODLSTD,	0xcc },
-	{ STV090x_P1_MODCODLSTE,	0xcc },
-	{ STV090x_P1_MODCODLSTF,	0xcf },
-	{ STV090x_GENCFG,		0x1c },
-	{ STV090x_NBITER_NF4,		0x37 },
-	{ STV090x_NBITER_NF5,		0x29 },
-	{ STV090x_NBITER_NF6,		0x37 },
-	{ STV090x_NBITER_NF7,		0x33 },
-	{ STV090x_NBITER_NF8,		0x31 },
-	{ STV090x_NBITER_NF9,		0x2f },
-	{ STV090x_NBITER_NF10,		0x39 },
-	{ STV090x_NBITER_NF11,		0x3a },
-	{ STV090x_NBITER_NF12,		0x29 },
-	{ STV090x_NBITER_NF13,		0x37 },
-	{ STV090x_NBITER_NF14,		0x33 },
-	{ STV090x_NBITER_NF15,		0x2f },
-	{ STV090x_NBITER_NF16,		0x39 },
-	{ STV090x_NBITER_NF17,		0x3a },
-	{ STV090x_NBITERNOERR,		0x04 },
-	{ STV090x_GAINLLR_NF4,		0x0C },
-	{ STV090x_GAINLLR_NF5,		0x0F },
-	{ STV090x_GAINLLR_NF6,		0x11 },
-	{ STV090x_GAINLLR_NF7,		0x14 },
-	{ STV090x_GAINLLR_NF8,		0x17 },
-	{ STV090x_GAINLLR_NF9,		0x19 },
-	{ STV090x_GAINLLR_NF10,		0x20 },
-	{ STV090x_GAINLLR_NF11,		0x21 },
-	{ STV090x_GAINLLR_NF12,		0x0D },
-	{ STV090x_GAINLLR_NF13,		0x0F },
-	{ STV090x_GAINLLR_NF14,		0x13 },
-	{ STV090x_GAINLLR_NF15,		0x1A },
-	{ STV090x_GAINLLR_NF16,		0x1F },
-	{ STV090x_GAINLLR_NF17,		0x21 },
-	{ STV090x_RCCFGH,		0x20 },
-	{ STV090x_P1_FECM,		0x01 },  /*disable the DSS mode */
-	{ STV090x_P1_PRVIT,		0x2f }   /*disable puncture rate 6/7*/
+	{ STV090x_P1_LDT,         0xd0 },
+	{ STV090x_P1_LDT2,        0xb8 },
+	{ STV090x_P1_TMGCFG,      0xd2 },
+	{ STV090x_P1_TMGTHRISE,   0x20 },
+	{ STV090x_P1_TMGTHFALL,   0x00 },
+	{ STV090x_P1_SFRUPRATIO,  0xf0 },
+	{ STV090x_P1_SFRLOWRATIO, 0x70 },
+	{ STV090x_P1_TSCFGL,      0x20 },
+	{ STV090x_P1_FECSPY,      0x88 },
+	{ STV090x_P1_FSPYDATA,    0x3a },
+	{ STV090x_P1_FBERCPT4,    0x00 },
+	{ STV090x_P1_FSPYBER,     0x10 },
+	{ STV090x_P1_ERRCTRL1,    0x35 },
+	{ STV090x_P1_ERRCTRL2,    0xc1 },
+	{ STV090x_P1_CFRICFG,     0xf8 },
+	{ STV090x_P1_NOSCFG,      0x1c },
+	{ STV090x_P1_DMDTOM,      0x20 },
+	{ STV090x_P1_CORRELMANT,  0x70 },
+	{ STV090x_P1_CORRELABS,   0x88 },
+	{ STV090x_P1_AGC2O,       0x5b },
+	{ STV090x_P1_AGC2REF,     0x38 },
+	{ STV090x_P1_CARCFG,      0xe4 },
+	{ STV090x_P1_ACLC,        0x1A },
+	{ STV090x_P1_BCLC,        0x09 },
+	{ STV090x_P1_CARHDR,      0x08 },
+	{ STV090x_P1_KREFTMG,     0xc1 },
+	{ STV090x_P1_SFRSTEP,     0x58 },
+	{ STV090x_P1_TMGCFG2,     0x01 },
+	{ STV090x_P1_CAR2CFG,     0x26 },
+	{ STV090x_P1_BCLC2S2Q,    0x86 },
+	{ STV090x_P1_BCLC2S28,    0x86 },
+	{ STV090x_P1_SMAPCOEF7,   0x77 },
+	{ STV090x_P1_SMAPCOEF6,   0x85 },
+	{ STV090x_P1_SMAPCOEF5,   0x77 },
+	{ STV090x_P1_DMDCFG2,     0x3b },
+	{ STV090x_P1_MODCODLST0,  0xff },
+	{ STV090x_P1_MODCODLST1,  0xff },
+	{ STV090x_P1_MODCODLST2,  0xff },
+	{ STV090x_P1_MODCODLST3,  0xff },
+	{ STV090x_P1_MODCODLST4,  0xff },
+	{ STV090x_P1_MODCODLST5,  0xff },
+	{ STV090x_P1_MODCODLST6,  0xff },
+	{ STV090x_P1_MODCODLST7,  0xcc },
+	{ STV090x_P1_MODCODLST8,  0xcc },
+	{ STV090x_P1_MODCODLST9,  0xcc },
+	{ STV090x_P1_MODCODLSTA,  0xcc },
+	{ STV090x_P1_MODCODLSTB,  0xcc },
+	{ STV090x_P1_MODCODLSTC,  0xcc },
+	{ STV090x_P1_MODCODLSTD,  0xcc },
+	{ STV090x_P1_MODCODLSTE,  0xcc },
+	{ STV090x_P1_MODCODLSTF,  0xcf },
+	{ STV090x_GENCFG,         0x1c },
+	{ STV090x_NBITER_NF4,     0x37 },
+	{ STV090x_NBITER_NF5,     0x29 },
+	{ STV090x_NBITER_NF6,     0x37 },
+	{ STV090x_NBITER_NF7,     0x33 },
+	{ STV090x_NBITER_NF8,     0x31 },
+	{ STV090x_NBITER_NF9,     0x2f },
+	{ STV090x_NBITER_NF10,    0x39 },
+	{ STV090x_NBITER_NF11,    0x3a },
+	{ STV090x_NBITER_NF12,    0x29 },
+	{ STV090x_NBITER_NF13,    0x37 },
+	{ STV090x_NBITER_NF14,    0x33 },
+	{ STV090x_NBITER_NF15,    0x2f },
+	{ STV090x_NBITER_NF16,    0x39 },
+	{ STV090x_NBITER_NF17,    0x3a },
+	{ STV090x_NBITERNOERR,    0x04 },
+	{ STV090x_GAINLLR_NF4,    0x0C },
+	{ STV090x_GAINLLR_NF5,    0x0F },
+	{ STV090x_GAINLLR_NF6,    0x11 },
+	{ STV090x_GAINLLR_NF7,    0x14 },
+	{ STV090x_GAINLLR_NF8,    0x17 },
+	{ STV090x_GAINLLR_NF9,    0x19 },
+	{ STV090x_GAINLLR_NF10,   0x20 },
+	{ STV090x_GAINLLR_NF11,   0x21 },
+	{ STV090x_GAINLLR_NF12,   0x0D },
+	{ STV090x_GAINLLR_NF13,   0x0F },
+	{ STV090x_GAINLLR_NF14,   0x13 },
+	{ STV090x_GAINLLR_NF15,   0x1A },
+	{ STV090x_GAINLLR_NF16,   0x1F },
+	{ STV090x_GAINLLR_NF17,   0x21 },
+	{ STV090x_RCCFGH,         0x20 },
+	{ STV090x_P1_FECM,        0x01 },  /* disable the DSS mode */
+	{ STV090x_P1_PRVIT,       0x2f }   /* disable puncture rate 6/7 */
 };
 
 static struct stv090x_reg stv0900_cut20_val[] =
 {
-
-	{ STV090x_P2_DMDCFG3,		0xe8 },
-	{ STV090x_P2_DMDCFG4,		0x10 },
-	{ STV090x_P2_CARFREQ,		0x38 },
-	{ STV090x_P2_CARHDR,		0x20 },
-	{ STV090x_P2_KREFTMG,		0x5a },
-	{ STV090x_P2_SMAPCOEF7,		0x06 },
-	{ STV090x_P2_SMAPCOEF6,		0x00 },
-	{ STV090x_P2_SMAPCOEF5,		0x04 },
-	{ STV090x_P2_NOSCFG,		0x0c },
-	{ STV090x_P1_DMDCFG3,		0xe8 },
-	{ STV090x_P1_DMDCFG4,		0x10 },
-	{ STV090x_P1_CARFREQ,		0x38 },
-	{ STV090x_P1_CARHDR,		0x20 },
-	{ STV090x_P1_KREFTMG,		0x5a },
-	{ STV090x_P1_SMAPCOEF7,		0x06 },
-	{ STV090x_P1_SMAPCOEF6,		0x00 },
-	{ STV090x_P1_SMAPCOEF5,		0x04 },
-	{ STV090x_P1_NOSCFG,		0x0c },
-	{ STV090x_GAINLLR_NF4,		0x21 },
-	{ STV090x_GAINLLR_NF5,		0x21 },
-	{ STV090x_GAINLLR_NF6,		0x20 },
-	{ STV090x_GAINLLR_NF7,		0x1F },
-	{ STV090x_GAINLLR_NF8,		0x1E },
-	{ STV090x_GAINLLR_NF9,		0x1E },
-	{ STV090x_GAINLLR_NF10,		0x1D },
-	{ STV090x_GAINLLR_NF11,		0x1B },
-	{ STV090x_GAINLLR_NF12,		0x20 },
-	{ STV090x_GAINLLR_NF13,		0x20 },
-	{ STV090x_GAINLLR_NF14,		0x20 },
-	{ STV090x_GAINLLR_NF15,		0x20 },
-	{ STV090x_GAINLLR_NF16,		0x20 },
-	{ STV090x_GAINLLR_NF17,		0x21 },
+	{ STV090x_P2_DMDCFG3,     0xe8 },
+	{ STV090x_P2_DMDCFG4,     0x10 },
+	{ STV090x_P2_CARFREQ,     0x38 },
+	{ STV090x_P2_CARHDR,      0x20 },
+	{ STV090x_P2_KREFTMG,     0x5a },
+	{ STV090x_P2_SMAPCOEF7,   0x06 },
+	{ STV090x_P2_SMAPCOEF6,   0x00 },
+	{ STV090x_P2_SMAPCOEF5,   0x04 },
+	{ STV090x_P2_NOSCFG,      0x0c },
+	{ STV090x_P1_DMDCFG3,     0xe8 },
+	{ STV090x_P1_DMDCFG4,     0x10 },
+	{ STV090x_P1_CARFREQ,     0x38 },
+	{ STV090x_P1_CARHDR,      0x20 },
+	{ STV090x_P1_KREFTMG,     0x5a },
+	{ STV090x_P1_SMAPCOEF7,   0x06 },
+	{ STV090x_P1_SMAPCOEF6,   0x00 },
+	{ STV090x_P1_SMAPCOEF5,   0x04 },
+	{ STV090x_P1_NOSCFG,      0x0c },
+	{ STV090x_GAINLLR_NF4,    0x21 },
+	{ STV090x_GAINLLR_NF5,    0x21 },
+	{ STV090x_GAINLLR_NF6,    0x20 },
+	{ STV090x_GAINLLR_NF7,    0x1F },
+	{ STV090x_GAINLLR_NF8,    0x1E },
+	{ STV090x_GAINLLR_NF9,    0x1E },
+	{ STV090x_GAINLLR_NF10,   0x1D },
+	{ STV090x_GAINLLR_NF11,   0x1B },
+	{ STV090x_GAINLLR_NF12,   0x20 },
+	{ STV090x_GAINLLR_NF13,   0x20 },
+	{ STV090x_GAINLLR_NF14,   0x20 },
+	{ STV090x_GAINLLR_NF15,   0x20 },
+	{ STV090x_GAINLLR_NF16,   0x20 },
+	{ STV090x_GAINLLR_NF17,   0x21 },
 };
 
 static struct stv090x_reg stv0903_cut20_val[] =
 {
-	{ STV090x_P1_DMDCFG3,		0xe8 },
-	{ STV090x_P1_DMDCFG4,		0x10 },
-	{ STV090x_P1_CARFREQ,		0x38 },
-	{ STV090x_P1_CARHDR,		0x20 },
-	{ STV090x_P1_KREFTMG,		0x5a },
-	{ STV090x_P1_SMAPCOEF7,		0x06 },
-	{ STV090x_P1_SMAPCOEF6,		0x00 },
-	{ STV090x_P1_SMAPCOEF5,		0x04 },
-	{ STV090x_P1_NOSCFG,		0x0c },
-	{ STV090x_GAINLLR_NF4,		0x21 },
-	{ STV090x_GAINLLR_NF5,		0x21 },
-	{ STV090x_GAINLLR_NF6,		0x20 },
-	{ STV090x_GAINLLR_NF7,		0x1F },
-	{ STV090x_GAINLLR_NF8,		0x1E },
-	{ STV090x_GAINLLR_NF9,		0x1E },
-	{ STV090x_GAINLLR_NF10,		0x1D },
-	{ STV090x_GAINLLR_NF11,		0x1B },
-	{ STV090x_GAINLLR_NF12,		0x20 },
-	{ STV090x_GAINLLR_NF13,		0x20 },
-	{ STV090x_GAINLLR_NF14,		0x20 },
-	{ STV090x_GAINLLR_NF15,		0x20 },
-	{ STV090x_GAINLLR_NF16,		0x20 },
-	{ STV090x_GAINLLR_NF17,		0x21 }
+	{ STV090x_P1_DMDCFG3,     0xe8 },
+	{ STV090x_P1_DMDCFG4,     0x10 },
+	{ STV090x_P1_CARFREQ,     0x38 },
+	{ STV090x_P1_CARHDR,      0x20 },
+	{ STV090x_P1_KREFTMG,     0x5a },
+	{ STV090x_P1_SMAPCOEF7,   0x06 },
+	{ STV090x_P1_SMAPCOEF6,   0x00 },
+	{ STV090x_P1_SMAPCOEF5,   0x04 },
+	{ STV090x_P1_NOSCFG,      0x0c },
+	{ STV090x_GAINLLR_NF4,    0x21 },
+	{ STV090x_GAINLLR_NF5,    0x21 },
+	{ STV090x_GAINLLR_NF6,    0x20 },
+	{ STV090x_GAINLLR_NF7,    0x1F },
+	{ STV090x_GAINLLR_NF8,    0x1E },
+	{ STV090x_GAINLLR_NF9,    0x1E },
+	{ STV090x_GAINLLR_NF10,   0x1D },
+	{ STV090x_GAINLLR_NF11,   0x1B },
+	{ STV090x_GAINLLR_NF12,   0x20 },
+	{ STV090x_GAINLLR_NF13,   0x20 },
+	{ STV090x_GAINLLR_NF14,   0x20 },
+	{ STV090x_GAINLLR_NF15,   0x20 },
+	{ STV090x_GAINLLR_NF16,   0x20 },
+	{ STV090x_GAINLLR_NF17,   0x21 }
 };
 
 /* Cut 2.0 Long Frame Tracking CR loop */
 static struct stv090x_long_frame_crloop stv090x_s2_crl_cut20[] =
 {
-	/* MODCOD  2MPon 2MPoff 5MPon 5MPoff 10MPon 10MPoff 20MPon 20MPoff 30MPon 30MPoff */
-	{ STV090x_QPSK_12,  0x1f, 0x3f, 0x1e, 0x3f, 0x3d, 0x1f, 0x3d, 0x3e, 0x3d, 0x1e },
-	{ STV090x_QPSK_35,  0x2f, 0x3f, 0x2e, 0x2f, 0x3d, 0x0f, 0x0e, 0x2e, 0x3d, 0x0e },
-	{ STV090x_QPSK_23,  0x2f, 0x3f, 0x2e, 0x2f, 0x0e, 0x0f, 0x0e, 0x1e, 0x3d, 0x3d },
-	{ STV090x_QPSK_34,  0x3f, 0x3f, 0x3e, 0x1f, 0x0e, 0x3e, 0x0e, 0x1e, 0x3d, 0x3d },
-	{ STV090x_QPSK_45,  0x3f, 0x3f, 0x3e, 0x1f, 0x0e, 0x3e, 0x0e, 0x1e, 0x3d, 0x3d },
-	{ STV090x_QPSK_56,  0x3f, 0x3f, 0x3e, 0x1f, 0x0e, 0x3e, 0x0e, 0x1e, 0x3d, 0x3d },
-	{ STV090x_QPSK_89,  0x3f, 0x3f, 0x3e, 0x1f, 0x1e, 0x3e, 0x0e, 0x1e, 0x3d, 0x3d },
-	{ STV090x_QPSK_910, 0x3f, 0x3f, 0x3e, 0x1f, 0x1e, 0x3e, 0x0e, 0x1e, 0x3d, 0x3d },
-	{ STV090x_8PSK_35,  0x3c, 0x3e, 0x1c, 0x2e, 0x0c, 0x1e, 0x2b, 0x2d, 0x1b, 0x1d },
-	{ STV090x_8PSK_23,  0x1d, 0x3e, 0x3c, 0x2e, 0x2c, 0x1e, 0x0c, 0x2d, 0x2b, 0x1d },
-	{ STV090x_8PSK_34,  0x0e, 0x3e, 0x3d, 0x2e, 0x0d, 0x1e, 0x2c, 0x2d, 0x0c, 0x1d },
-	{ STV090x_8PSK_56,  0x2e, 0x3e, 0x1e, 0x2e, 0x2d, 0x1e, 0x3c, 0x2d, 0x2c, 0x1d },
-	{ STV090x_8PSK_89,  0x3e, 0x3e, 0x1e, 0x2e, 0x3d, 0x1e, 0x0d, 0x2d, 0x3c, 0x1d },
-	{ STV090x_8PSK_910, 0x3e, 0x3e, 0x1e, 0x2e, 0x3d, 0x1e, 0x1d, 0x2d, 0x0d, 0x1d }
+	/* MODCOD           2MPon 2MPoff 5MPon 5MPoff 10MPon 10MPoff 20MPon 20MPoff 30MPon 30MPoff */
+	{ STV090x_QPSK_12,  0x1f, 0x3f,  0x1e, 0x3f,  0x3d,  0x1f,   0x3d,  0x3e,   0x3d,  0x1e },
+	{ STV090x_QPSK_35,  0x2f, 0x3f,  0x2e, 0x2f,  0x3d,  0x0f,   0x0e,  0x2e,   0x3d,  0x0e },
+	{ STV090x_QPSK_23,  0x2f, 0x3f,  0x2e, 0x2f,  0x0e,  0x0f,   0x0e,  0x1e,   0x3d,  0x3d },
+	{ STV090x_QPSK_34,  0x3f, 0x3f,  0x3e, 0x1f,  0x0e,  0x3e,   0x0e,  0x1e,   0x3d,  0x3d },
+	{ STV090x_QPSK_45,  0x3f, 0x3f,  0x3e, 0x1f,  0x0e,  0x3e,   0x0e,  0x1e,   0x3d,  0x3d },
+	{ STV090x_QPSK_56,  0x3f, 0x3f,  0x3e, 0x1f,  0x0e,  0x3e,   0x0e,  0x1e,   0x3d,  0x3d },
+	{ STV090x_QPSK_89,  0x3f, 0x3f,  0x3e, 0x1f,  0x1e,  0x3e,   0x0e,  0x1e,   0x3d,  0x3d },
+	{ STV090x_QPSK_910, 0x3f, 0x3f,  0x3e, 0x1f,  0x1e,  0x3e,   0x0e,  0x1e,   0x3d,  0x3d },
+	{ STV090x_8PSK_35,  0x3c, 0x3e,  0x1c, 0x2e,  0x0c,  0x1e,   0x2b,  0x2d,   0x1b,  0x1d },
+	{ STV090x_8PSK_23,  0x1d, 0x3e,  0x3c, 0x2e,  0x2c,  0x1e,   0x0c,  0x2d,   0x2b,  0x1d },
+	{ STV090x_8PSK_34,  0x0e, 0x3e,  0x3d, 0x2e,  0x0d,  0x1e,   0x2c,  0x2d,   0x0c,  0x1d },
+	{ STV090x_8PSK_56,  0x2e, 0x3e,  0x1e, 0x2e,  0x2d,  0x1e,   0x3c,  0x2d,   0x2c,  0x1d },
+	{ STV090x_8PSK_89,  0x3e, 0x3e,  0x1e, 0x2e,  0x3d,  0x1e,   0x0d,  0x2d,   0x3c,  0x1d },
+	{ STV090x_8PSK_910, 0x3e, 0x3e,  0x1e, 0x2e,  0x3d,  0x1e,   0x1d,  0x2d,   0x0d,  0x1d }
 };
 
 /* Cut 2.0 Long Frame Tracking CR loop */
 static struct stv090x_long_frame_crloop stx7111_s2_crl_cut20[] =
 {
-	/* MODCOD  2MPon 2MPoff 5MPon 5MPoff 10MPon 10MPoff 20MPon 20MPoff 30MPon 30MPoff */
-	{STV090x_QPSK_12,  0x1c, 0x3c, 0x1b, 0x3c, 0x3a, 0x1c, 0x0b, 0x1c, 0x0b, 0x3b},
-	{STV090x_QPSK_35,  0x2c, 0x3c, 0x2b, 0x2c, 0x3a, 0x0c, 0x0b, 0x1c, 0x0b, 0x3b},
-	{STV090x_QPSK_23,  0x2c, 0x3c, 0x2b, 0x2c, 0x0b, 0x0c, 0x0b, 0x0c, 0x0b, 0x2b},
-	{STV090x_QPSK_34,  0x3c, 0x3c, 0x3b, 0x1c, 0x0b, 0x3b, 0x0b, 0x0c, 0x0b, 0x2b},
-	{STV090x_QPSK_45,  0x3c, 0x3c, 0x3b, 0x1c, 0x0b, 0x3b, 0x0b, 0x0c, 0x0b, 0x2b},
-	{STV090x_QPSK_56,  0x3c, 0x3c, 0x3b, 0x1c, 0x0b, 0x3b, 0x0b, 0x0c, 0x0b, 0x2b},
-	{STV090x_QPSK_89,  0x3c, 0x3c, 0x3b, 0x1c, 0x1b, 0x3b, 0x1b, 0x0c, 0x0b, 0x2b},
-	{STV090x_QPSK_910, 0x0d, 0x3c, 0x3b, 0x1c, 0x1b, 0x3b, 0x1b, 0x0c, 0x0b, 0x2b},
-	{STV090x_8PSK_35,  0x39, 0x19, 0x19, 0x09, 0x09, 0x38, 0x09, 0x09, 0x38, 0x29},
-	{STV090x_8PSK_23,  0x1a, 0x19, 0x39, 0x19, 0x29, 0x38, 0x29, 0x29, 0x19, 0x38},
-	{STV090x_8PSK_34,  0x0b, 0x28, 0x3a, 0x19, 0x0a, 0x28, 0x1a, 0x28, 0x0a, 0x28},
-	{STV090x_8PSK_56,  0x2b, 0x0c, 0x1b, 0x2b, 0x2a, 0x1b, 0x3a, 0x2b, 0x2a, 0x1b},
-	{STV090x_8PSK_89,  0x0c, 0x0c, 0x1b, 0x2b, 0x3a, 0x1b, 0x0b, 0x3b, 0x3a, 0x1b},
-	{STV090x_8PSK_910, 0x0c, 0x0c, 0x1b, 0x2b, 0x3a, 0x1b, 0x0b, 0x3b, 0x3a, 0x1b}
+	/* MODCOD          2MPon 2MPoff 5MPon 5MPoff 10MPon 10MPoff 20MPon 20MPoff 30MPon 30MPoff */
+	{STV090x_QPSK_12,  0x1c, 0x3c,  0x1b, 0x3c,  0x3a,  0x1c,   0x0b,  0x1c,   0x0b,  0x3b},
+	{STV090x_QPSK_35,  0x2c, 0x3c,  0x2b, 0x2c,  0x3a,  0x0c,   0x0b,  0x1c,   0x0b,  0x3b},
+	{STV090x_QPSK_23,  0x2c, 0x3c,  0x2b, 0x2c,  0x0b,  0x0c,   0x0b,  0x0c,   0x0b,  0x2b},
+	{STV090x_QPSK_34,  0x3c, 0x3c,  0x3b, 0x1c,  0x0b,  0x3b,   0x0b,  0x0c,   0x0b,  0x2b},
+	{STV090x_QPSK_45,  0x3c, 0x3c,  0x3b, 0x1c,  0x0b,  0x3b,   0x0b,  0x0c,   0x0b,  0x2b},
+	{STV090x_QPSK_56,  0x3c, 0x3c,  0x3b, 0x1c,  0x0b,  0x3b,   0x0b,  0x0c,   0x0b,  0x2b},
+	{STV090x_QPSK_89,  0x3c, 0x3c,  0x3b, 0x1c,  0x1b,  0x3b,   0x1b,  0x0c,   0x0b,  0x2b},
+	{STV090x_QPSK_910, 0x0d, 0x3c,  0x3b, 0x1c,  0x1b,  0x3b,   0x1b,  0x0c,   0x0b,  0x2b},
+	{STV090x_8PSK_35,  0x39, 0x19,  0x19, 0x09,  0x09,  0x38,   0x09,  0x09,   0x38,  0x29},
+	{STV090x_8PSK_23,  0x1a, 0x19,  0x39, 0x19,  0x29,  0x38,   0x29,  0x29,   0x19,  0x38},
+	{STV090x_8PSK_34,  0x0b, 0x28,  0x3a, 0x19,  0x0a,  0x28,   0x1a,  0x28,   0x0a,  0x28},
+	{STV090x_8PSK_56,  0x2b, 0x0c,  0x1b, 0x2b,  0x2a,  0x1b,   0x3a,  0x2b,   0x2a,  0x1b},
+	{STV090x_8PSK_89,  0x0c, 0x0c,  0x1b, 0x2b,  0x3a,  0x1b,   0x0b,  0x3b,   0x3a,  0x1b},
+	{STV090x_8PSK_910, 0x0c, 0x0c,  0x1b, 0x2b,  0x3a,  0x1b,   0x0b,  0x3b,   0x3a,  0x1b}
 };
 
 /* Cut 3.0 Long Frame Tracking CR loop */
 static	struct stv090x_long_frame_crloop stv090x_s2_crl_cut30[] =
 {
-	/* MODCOD  2MPon 2MPoff 5MPon 5MPoff 10MPon 10MPoff 20MPon 20MPoff 30MPon 30MPoff */
-	{ STV090x_QPSK_12,  0x3c, 0x2c, 0x0c, 0x2c, 0x1b, 0x2c, 0x1b, 0x1c, 0x0b, 0x3b },
-	{ STV090x_QPSK_35,  0x0d, 0x0d, 0x0c, 0x0d, 0x1b, 0x3c, 0x1b, 0x1c, 0x0b, 0x3b },
-	{ STV090x_QPSK_23,  0x1d, 0x0d, 0x0c, 0x1d, 0x2b, 0x3c, 0x1b, 0x1c, 0x0b, 0x3b },
-	{ STV090x_QPSK_34,  0x1d, 0x1d, 0x0c, 0x1d, 0x2b, 0x3c, 0x1b, 0x1c, 0x0b, 0x3b },
-	{ STV090x_QPSK_45,  0x2d, 0x1d, 0x1c, 0x1d, 0x2b, 0x3c, 0x2b, 0x0c, 0x1b, 0x3b },
-	{ STV090x_QPSK_56,  0x2d, 0x1d, 0x1c, 0x1d, 0x2b, 0x3c, 0x2b, 0x0c, 0x1b, 0x3b },
-	{ STV090x_QPSK_89,  0x3d, 0x2d, 0x1c, 0x1d, 0x3b, 0x3c, 0x2b, 0x0c, 0x1b, 0x3b },
-	{ STV090x_QPSK_910, 0x3d, 0x2d, 0x1c, 0x1d, 0x3b, 0x3c, 0x2b, 0x0c, 0x1b, 0x3b },
-	{ STV090x_8PSK_35,  0x39, 0x29, 0x39, 0x19, 0x19, 0x19, 0x19, 0x19, 0x09, 0x19 },
-	{ STV090x_8PSK_23,  0x2a, 0x39, 0x1a, 0x0a, 0x39, 0x0a, 0x29, 0x39, 0x29, 0x0a },
-	{ STV090x_8PSK_34,  0x2b, 0x3a, 0x1b, 0x1b, 0x3a, 0x1b, 0x1a, 0x0b, 0x1a, 0x3a },
-	{ STV090x_8PSK_56,  0x0c, 0x1b, 0x3b, 0x3b, 0x1b, 0x3b, 0x3a, 0x3b, 0x3a, 0x1b },
-	{ STV090x_8PSK_89,  0x0d, 0x3c, 0x2c, 0x2c, 0x2b, 0x0c, 0x0b, 0x3b, 0x0b, 0x1b },
-	{ STV090x_8PSK_910, 0x0d, 0x0d, 0x2c, 0x3c, 0x3b, 0x1c, 0x0b, 0x3b, 0x0b, 0x1b }
+	/* MODCOD           2MPon 2MPoff 5MPon 5MPoff 10MPon 10MPoff 20MPon 20MPoff 30MPon 30MPoff */
+	{ STV090x_QPSK_12,  0x3c, 0x2c,  0x0c, 0x2c,  0x1b,  0x2c,   0x1b,  0x1c,   0x0b,  0x3b },
+	{ STV090x_QPSK_35,  0x0d, 0x0d,  0x0c, 0x0d,  0x1b,  0x3c,   0x1b,  0x1c,   0x0b,  0x3b },
+	{ STV090x_QPSK_23,  0x1d, 0x0d,  0x0c, 0x1d,  0x2b,  0x3c,   0x1b,  0x1c,   0x0b,  0x3b },
+	{ STV090x_QPSK_34,  0x1d, 0x1d,  0x0c, 0x1d,  0x2b,  0x3c,   0x1b,  0x1c,   0x0b,  0x3b },
+	{ STV090x_QPSK_45,  0x2d, 0x1d,  0x1c, 0x1d,  0x2b,  0x3c,   0x2b,  0x0c,   0x1b,  0x3b },
+	{ STV090x_QPSK_56,  0x2d, 0x1d,  0x1c, 0x1d,  0x2b,  0x3c,   0x2b,  0x0c,   0x1b,  0x3b },
+	{ STV090x_QPSK_89,  0x3d, 0x2d,  0x1c, 0x1d,  0x3b,  0x3c,   0x2b,  0x0c,   0x1b,  0x3b },
+	{ STV090x_QPSK_910, 0x3d, 0x2d,  0x1c, 0x1d,  0x3b,  0x3c,   0x2b,  0x0c,   0x1b,  0x3b },
+	{ STV090x_8PSK_35,  0x39, 0x29,  0x39, 0x19,  0x19,  0x19,   0x19,  0x19,   0x09,  0x19 },
+	{ STV090x_8PSK_23,  0x2a, 0x39,  0x1a, 0x0a,  0x39,  0x0a,   0x29,  0x39,   0x29,  0x0a },
+	{ STV090x_8PSK_34,  0x2b, 0x3a,  0x1b, 0x1b,  0x3a,  0x1b,   0x1a,  0x0b,   0x1a,  0x3a },
+	{ STV090x_8PSK_56,  0x0c, 0x1b,  0x3b, 0x3b,  0x1b,  0x3b,   0x3a,  0x3b,   0x3a,  0x1b },
+	{ STV090x_8PSK_89,  0x0d, 0x3c,  0x2c, 0x2c,  0x2b,  0x0c,   0x0b,  0x3b,   0x0b,  0x1b },
+	{ STV090x_8PSK_910, 0x0d, 0x0d,  0x2c, 0x3c,  0x3b,  0x1c,   0x0b,  0x3b,   0x0b,  0x1b }
 };
 
 /* Cut 2.0 Long Frame Tracking CR Loop */
 static struct stv090x_long_frame_crloop stv090x_s2_apsk_crl_cut20[] =
 {
-	/* MODCOD  2MPon 2MPoff 5MPon 5MPoff 10MPon 10MPoff 20MPon 20MPoff 30MPon 30MPoff */
-	{ STV090x_16APSK_23,  0x0c, 0x0c, 0x0c, 0x0c, 0x1d, 0x0c, 0x3c, 0x0c, 0x2c, 0x0c },
-	{ STV090x_16APSK_34,  0x0c, 0x0c, 0x0c, 0x0c, 0x0e, 0x0c, 0x2d, 0x0c, 0x1d, 0x0c },
-	{ STV090x_16APSK_45,  0x0c, 0x0c, 0x0c, 0x0c, 0x1e, 0x0c, 0x3d, 0x0c, 0x2d, 0x0c },
-	{ STV090x_16APSK_56,  0x0c, 0x0c, 0x0c, 0x0c, 0x1e, 0x0c, 0x3d, 0x0c, 0x2d, 0x0c },
-	{ STV090x_16APSK_89,  0x0c, 0x0c, 0x0c, 0x0c, 0x2e, 0x0c, 0x0e, 0x0c, 0x3d, 0x0c },
-	{ STV090x_16APSK_910, 0x0c, 0x0c, 0x0c, 0x0c, 0x2e, 0x0c, 0x0e, 0x0c, 0x3d, 0x0c },
-	{ STV090x_32APSK_34,  0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c },
-	{ STV090x_32APSK_45,  0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c },
-	{ STV090x_32APSK_56,  0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c },
-	{ STV090x_32APSK_89,  0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c },
-	{ STV090x_32APSK_910, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c }
+	/* MODCOD             2MPon 2MPoff 5MPon 5MPoff 10MPon 10MPoff 20MPon 20MPoff 30MPon 30MPoff */
+	{ STV090x_16APSK_23,  0x0c, 0x0c,  0x0c, 0x0c,  0x1d,  0x0c,   0x3c,  0x0c,   0x2c,  0x0c },
+	{ STV090x_16APSK_34,  0x0c, 0x0c,  0x0c, 0x0c,  0x0e,  0x0c,   0x2d,  0x0c,   0x1d,  0x0c },
+	{ STV090x_16APSK_45,  0x0c, 0x0c,  0x0c, 0x0c,  0x1e,  0x0c,   0x3d,  0x0c,   0x2d,  0x0c },
+	{ STV090x_16APSK_56,  0x0c, 0x0c,  0x0c, 0x0c,  0x1e,  0x0c,   0x3d,  0x0c,   0x2d,  0x0c },
+	{ STV090x_16APSK_89,  0x0c, 0x0c,  0x0c, 0x0c,  0x2e,  0x0c,   0x0e,  0x0c,   0x3d,  0x0c },
+	{ STV090x_16APSK_910, 0x0c, 0x0c,  0x0c, 0x0c,  0x2e,  0x0c,   0x0e,  0x0c,   0x3d,  0x0c },
+	{ STV090x_32APSK_34,  0x0c, 0x0c,  0x0c, 0x0c,  0x0c,  0x0c,   0x0c,  0x0c,   0x0c,  0x0c },
+	{ STV090x_32APSK_45,  0x0c, 0x0c,  0x0c, 0x0c,  0x0c,  0x0c,   0x0c,  0x0c,   0x0c,  0x0c },
+	{ STV090x_32APSK_56,  0x0c, 0x0c,  0x0c, 0x0c,  0x0c,  0x0c,   0x0c,  0x0c,   0x0c,  0x0c },
+	{ STV090x_32APSK_89,  0x0c, 0x0c,  0x0c, 0x0c,  0x0c,  0x0c,   0x0c,  0x0c,   0x0c,  0x0c },
+	{ STV090x_32APSK_910, 0x0c, 0x0c,  0x0c, 0x0c,  0x0c,  0x0c,   0x0c,  0x0c,   0x0c,  0x0c }
 };
 
 /* Cut 3.0 Long Frame Tracking CR Loop */
 static struct stv090x_long_frame_crloop	stv090x_s2_apsk_crl_cut30[] =
 {
-	/* MODCOD  2MPon 2MPoff 5MPon 5MPoff 10MPon 10MPoff 20MPon 20MPoff 30MPon 30MPoff */
-	{ STV090x_16APSK_23,  0x0a, 0x0a, 0x0a, 0x0a, 0x1a, 0x0a, 0x3a, 0x0a, 0x2a, 0x0a },
-	{ STV090x_16APSK_34,  0x0a, 0x0a, 0x0a, 0x0a, 0x0b, 0x0a, 0x3b, 0x0a, 0x1b, 0x0a },
-	{ STV090x_16APSK_45,  0x0a, 0x0a, 0x0a, 0x0a, 0x1b, 0x0a, 0x3b, 0x0a, 0x2b, 0x0a },
-	{ STV090x_16APSK_56,  0x0a, 0x0a, 0x0a, 0x0a, 0x1b, 0x0a, 0x3b, 0x0a, 0x2b, 0x0a },
-	{ STV090x_16APSK_89,  0x0a, 0x0a, 0x0a, 0x0a, 0x2b, 0x0a, 0x0c, 0x0a, 0x3b, 0x0a },
-	{ STV090x_16APSK_910, 0x0a, 0x0a, 0x0a, 0x0a, 0x2b, 0x0a, 0x0c, 0x0a, 0x3b, 0x0a },
-	{ STV090x_32APSK_34,  0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a },
-	{ STV090x_32APSK_45,  0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a },
-	{ STV090x_32APSK_56,  0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a },
-	{ STV090x_32APSK_89,  0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a },
-	{ STV090x_32APSK_910, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a }
+	/* MODCOD             2MPon 2MPoff 5MPon 5MPoff 10MPon 10MPoff 20MPon 20MPoff 30MPon 30MPoff */
+	{ STV090x_16APSK_23,  0x0a, 0x0a,  0x0a, 0x0a,  0x1a,  0x0a,   0x3a,  0x0a,   0x2a,  0x0a },
+	{ STV090x_16APSK_34,  0x0a, 0x0a,  0x0a, 0x0a,  0x0b,  0x0a,   0x3b,  0x0a,   0x1b,  0x0a },
+	{ STV090x_16APSK_45,  0x0a, 0x0a,  0x0a, 0x0a,  0x1b,  0x0a,   0x3b,  0x0a,   0x2b,  0x0a },
+	{ STV090x_16APSK_56,  0x0a, 0x0a,  0x0a, 0x0a,  0x1b,  0x0a,   0x3b,  0x0a,   0x2b,  0x0a },
+	{ STV090x_16APSK_89,  0x0a, 0x0a,  0x0a, 0x0a,  0x2b,  0x0a,   0x0c,  0x0a,   0x3b,  0x0a },
+	{ STV090x_16APSK_910, 0x0a, 0x0a,  0x0a, 0x0a,  0x2b,  0x0a,   0x0c,  0x0a,   0x3b,  0x0a },
+	{ STV090x_32APSK_34,  0x0a, 0x0a,  0x0a, 0x0a,  0x0a,  0x0a,   0x0a,  0x0a,   0x0a,  0x0a },
+	{ STV090x_32APSK_45,  0x0a, 0x0a,  0x0a, 0x0a,  0x0a,  0x0a,   0x0a,  0x0a,   0x0a,  0x0a },
+	{ STV090x_32APSK_56,  0x0a, 0x0a,  0x0a, 0x0a,  0x0a,  0x0a,   0x0a,  0x0a,   0x0a,  0x0a },
+	{ STV090x_32APSK_89,  0x0a, 0x0a,  0x0a, 0x0a,  0x0a,  0x0a,   0x0a,  0x0a,   0x0a,  0x0a },
+	{ STV090x_32APSK_910, 0x0a, 0x0a,  0x0a, 0x0a,  0x0a,  0x0a,   0x0a,  0x0a,   0x0a,  0x0a }
 };
 
 static struct stv090x_long_frame_crloop stv090x_s2_lowqpsk_crl_cut20[] =
 {
-	/* MODCOD  2MPon 2MPoff 5MPon 5MPoff 10MPon 10MPoff 20MPon 20MPoff 30MPon 30MPoff */
-	{ STV090x_QPSK_14,  0x0f, 0x3f, 0x0e, 0x3f, 0x2d, 0x2f, 0x2d, 0x1f, 0x3d, 0x3e },
-	{ STV090x_QPSK_13,  0x0f, 0x3f, 0x0e, 0x3f, 0x2d, 0x2f, 0x3d, 0x0f, 0x3d, 0x2e },
-	{ STV090x_QPSK_25,  0x1f, 0x3f, 0x1e, 0x3f, 0x3d, 0x1f, 0x3d, 0x3e, 0x3d, 0x2e }
+	/* MODCOD           2MPon 2MPoff 5MPon 5MPoff 10MPon 10MPoff 20MPon 20MPoff 30MPon 30MPoff */
+	{ STV090x_QPSK_14,  0x0f, 0x3f,  0x0e, 0x3f,  0x2d,  0x2f,   0x2d,  0x1f,   0x3d,  0x3e },
+	{ STV090x_QPSK_13,  0x0f, 0x3f,  0x0e, 0x3f,  0x2d,  0x2f,   0x3d,  0x0f,   0x3d,  0x2e },
+	{ STV090x_QPSK_25,  0x1f, 0x3f,  0x1e, 0x3f,  0x3d,  0x1f,   0x3d,  0x3e,   0x3d,  0x2e }
 };
 
 static struct stv090x_long_frame_crloop	stv090x_s2_lowqpsk_crl_cut30[] =
 {
-	/* MODCOD  2MPon 2MPoff 5MPon 5MPoff 10MPon 10MPoff 20MPon 20MPoff 30MPon 30MPoff */
-	{ STV090x_QPSK_14,  0x0c, 0x3c, 0x0b, 0x3c, 0x2a, 0x2c, 0x2a, 0x1c, 0x3a, 0x3b },
-	{ STV090x_QPSK_13,  0x0c, 0x3c, 0x0b, 0x3c, 0x2a, 0x2c, 0x3a, 0x0c, 0x3a, 0x2b },
-	{ STV090x_QPSK_25,  0x1c, 0x3c, 0x1b, 0x3c, 0x3a, 0x1c, 0x3a, 0x3b, 0x3a, 0x2b }
+	/* MODCOD           2MPon 2MPoff 5MPon 5MPoff 10MPon 10MPoff 20MPon 20MPoff 30MPon 30MPoff */
+	{ STV090x_QPSK_14,  0x0c, 0x3c,  0x0b, 0x3c,  0x2a,  0x2c,   0x2a,  0x1c,   0x3a,  0x3b },
+	{ STV090x_QPSK_13,  0x0c, 0x3c,  0x0b, 0x3c,  0x2a,  0x2c,   0x3a,  0x0c,   0x3a,  0x2b },
+	{ STV090x_QPSK_25,  0x1c, 0x3c,  0x1b, 0x3c,  0x3a,  0x1c,   0x3a,  0x3b,   0x3a,  0x2b }
 };
+
+#if 0
+/* Cut 1.2 & 2.0 Short Frame Tracking CR Loop */
+static struct stv090x_short_frame_crloop stv090x_s2_short_crl[] =
+{
+	/* MODCOD         2M_cut1.2 2M_cut2.0 5M_cut1.2 5M_cut2.0 10M_cut1.2 10M_cut2.0 20M_cut1.2 20M_cut2.0 30M_cut1.2 30M_cut2.0 */
+	{ STV090x_QPSK,   0x3c,     0x2f,     0x2b,     0x2e,     0x0b,      0x0e,      0x3a,      0x0e,      0x2a,    0x3d },
+	{ STV090x_8PSK,   0x0b,     0x3e,     0x2a,     0x0e,     0x0a,      0x2d,      0x19,      0x0d,      0x09,    0x3c },
+	{ STV090x_16APSK, 0x1b,     0x1e,     0x1b,     0x1e,     0x1b,      0x1e,      0x3a,      0x3d,      0x2a,    0x2d },
+	{ STV090x_32APSK, 0x1b,     0x1e,     0x1b,     0x1e,     0x1b,      0x1e,      0x3a,      0x3d,      0x2a,    0x2d }
+};
+#endif
 
 /* Cut 2.0 Short Frame Tracking CR Loop */
 static struct stv090x_short_frame_crloop stv090x_s2_short_crl_cut20[] =
 {
-	/* MODCOD	  2M    5M    10M   20M   30M */
+	/* MODCOD         2M    5M    10M   20M   30M */
 	{ STV090x_QPSK,   0x2f, 0x2e, 0x0e, 0x0e, 0x3d },
 	{ STV090x_8PSK,   0x3e, 0x0e, 0x2d, 0x0d, 0x3c },
 	{ STV090x_16APSK, 0x1e, 0x1e, 0x1e, 0x3d, 0x2d },
@@ -1820,7 +1857,7 @@ static struct stv090x_short_frame_crloop stv090x_s2_short_crl_cut20[] =
 /* Cut 3.0 Short Frame Tracking CR Loop */
 static struct stv090x_short_frame_crloop stv090x_s2_short_crl_cut30[] =
 {
-	/* MODCOD  	  2M    5M    10M   20M   30M */
+	/* MODCOD         2M    5M    10M   20M   30M */
 	{ STV090x_QPSK,   0x2C, 0x2B, 0x0B, 0x0B, 0x3A },
 	{ STV090x_8PSK,   0x3B, 0x0B, 0x2A, 0x0A, 0x39 },
 	{ STV090x_16APSK, 0x1B, 0x1B, 0x1B, 0x3A, 0x2A },
@@ -1851,7 +1888,6 @@ static int stv090x_read_reg(struct stv090x_state *state, unsigned int reg)
 		{ .addr	= config->address, .flags = 0,        .buf = b0,   .len = 2 },
 		{ .addr	= config->address, .flags = I2C_M_RD, .buf = &buf, .len = 1 }
 	};
-
 	dprintk(150, "stv090x_read_reg config->address=0x%x \n", config->address);
 
 	ret = i2c_transfer(state->i2c, msg, 2);
@@ -1859,11 +1895,10 @@ static int stv090x_read_reg(struct stv090x_state *state, unsigned int reg)
 	{
 		if (ret != -ERESTARTSYS)
 		{
-			printk("Read error, Reg=[0x%02x], Status=%d\n", reg, ret);
+			dprintk(FE_ERROR, "Read error, Reg=[0x%02x], Status=%d\n", reg, ret);
 		}
 		return ret < 0 ? ret : -EREMOTEIO;
 	}
-
 	dprintk(200, "%s: reg=0x%02x , result=0x%02x\n", __func__, reg, buf);
 	return (unsigned int) buf;
 }
@@ -1872,6 +1907,7 @@ static int stv090x_write_regs(struct stv090x_state *state, unsigned int reg, u8 
 {
 	const struct stv090x_config *config = state->config;
 	int ret;
+	int i;
 	u8 buf[2 + count];
 	struct i2c_msg i2c_msg = { .addr = config->address, .flags = 0, .buf = buf, .len = 2 + count };
 
@@ -1879,17 +1915,13 @@ static int stv090x_write_regs(struct stv090x_state *state, unsigned int reg, u8 
 	buf[1] = reg & 0xff;
 	memcpy(&buf[2], data, count);
 
+	dprintk(150, "%s [reg = 0x%04x, count = %d]:", __func__, reg, count);
+	dprintk(150, "%s 0x%02x, 0x%02x", __func__, (reg >> 8) & 0xff, reg & 0xff);
+	for (i = 0; i < count; i++)
 	{
-		int i;
-
-		dprintk(150, "%s [reg = 0x%04x, count = %d]:", __func__, reg, count);
-		dprintk(150, "%s 0x%02x, 0x%02x", __func__, (reg >> 8) & 0xff, reg & 0xff);
-		for (i = 0; i < count; i++)
-		{
-			dprintk(150, " 0x%02x", data[i]);
-		}
-		dprintk(150, "\n");
+		dprintk(150, " 0x%02x", data[i]);
 	}
+	dprintk(150, "\n");
 
 	ret = i2c_transfer(state->i2c, &i2c_msg, 1);
 
@@ -1901,7 +1933,6 @@ static int stv090x_write_regs(struct stv090x_state *state, unsigned int reg, u8 
 		}
 		return ret < 0 ? ret : -EREMOTEIO;
 	}
-
 	return 0;
 }
 
@@ -1934,12 +1965,15 @@ static int stv090x_i2c_gate_ctrl(struct dvb_frontend *fe, int enable)
 			dprintk(250, "Disable Gate\n");
 			STV090x_SETFIELD_Px(reg, I2CT_ON_FIELD, 0);
 			if ((STV090x_WRITE_DEMOD(state, I2CRPT, reg)) < 0)
+			{
 				goto err;
+			}
 		}
 	}
 	return 0;
+
 err:
-	printk("stv090x_i2c_gate_ctrl: I/O error\n");
+	dprintk(1, "stv090x_i2c_gate_ctrl: I/O error\n");
 	return -1;
 }
 
@@ -2088,22 +2122,30 @@ static int stv090x_set_max_srate(struct stv090x_state *state, u32 clk, u32 srate
 	if (sym < 0x7fff)
 	{
 		if (STV090x_WRITE_DEMOD(state, SFRUP1, (sym >> 8) & 0x7f) < 0) /* MSB */
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, SFRUP0, sym & 0xff) < 0) /* LSB */
+		{
 			goto err;
+		}
 	}
 	else
 	{
 		if (STV090x_WRITE_DEMOD(state, SFRUP1, 0x7f) < 0) /* MSB */
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, SFRUP0, 0xff) < 0) /* LSB */
+		{
 			goto err;
+		}
 	}
 
 	dprintk(10, "%s <\n", __func__);
 	return 0;
 err:
-	printk("stv090x_set_max_srate: I/O error\n");
+	dprintk(1, "stv090x_set_max_srate: I/O error\n");
 	return -1;
 }
 
@@ -2130,14 +2172,18 @@ static int stv090x_set_min_srate(struct stv090x_state *state, u32 clk, u32 srate
 		sym /= (state->mclk >> 7);
 	}
 	if (STV090x_WRITE_DEMOD(state, SFRLOW1, ((sym >> 8) & 0x7f)) < 0) /* MSB */
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, SFRLOW0, (sym & 0xff)) < 0) /* LSB */
+	{
 		goto err;
-
+	}
 	dprintk(10, "%s <\n", __func__);
 	return 0;
+
 err:
-	printk("stv090x_set_min_srate: I/O error\n");
+	dprintk(1, "stv090x_set_min_srate: I/O error\n");
 	return -1;
 }
 
@@ -2174,21 +2220,34 @@ static int stv090x_set_vit_thacq(struct stv090x_state *state)
 {
 	dprintk(10, "%s >\n", __func__);
 	if (STV090x_WRITE_DEMOD(state, VTH12, 0x96) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, VTH23, 0x64) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, VTH34, 0x36) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, VTH56, 0x23) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, VTH67, 0x1e) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, VTH78, 0x19) < 0)
+	{
 		goto err;
+	}
 	dprintk(10, "%s <\n", __func__);
 	return 0;
+
 err:
-	printk("stv090x_set_vit_thacq: I/O error\n");
+	dprintk(1, "stv090x_set_vit_thacq: I/O error\n");
 	return -1;
 }
 
@@ -2196,21 +2255,34 @@ static int stv090x_set_vit_thtracq(struct stv090x_state *state)
 {
 	dprintk(10, "%s >\n", __func__);
 	if (STV090x_WRITE_DEMOD(state, VTH12, 0xd0) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, VTH23, 0x7d) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, VTH34, 0x53) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, VTH56, 0x2f) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, VTH67, 0x24) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, VTH78, 0x1f) < 0)
+	{
 		goto err;
+	}
 	dprintk(10, "%s <\n", __func__);
 	return 0;
+
 err:
-	printk("stv090x_set_vit_thtracq: I/O error\n");
+	dprintk(1, "stv090x_set_vit_thtracq: I/O error\n");
 	return -1;
 }
 
@@ -2224,59 +2296,81 @@ static int stv090x_set_viterbi(struct stv090x_state *state)
 			if (state->device != STX7111)
 			{
 				if (STV090x_WRITE_DEMOD(state, FECM, 0x00) < 0) /* DVB-S and DVB-S2 */
+				{
 					goto err;
+				}
 				if (STV090x_WRITE_DEMOD(state, PRVIT, 0x2f) < 0) /* all puncture rate */
+				{
 					goto err;
+				}
 			}
 			else
 			{
 				if (STV090x_WRITE_DEMOD(state, FECM, 0x10) < 0) /* DVB-S and DVB-S2 */
+				{
 					goto err;
+				}
 				if (STV090x_WRITE_DEMOD(state, PRVIT, 0x3f) < 0) /* all puncture rate */
+				{
 					goto err;
+				}
 			}
 			break;
 		}
 		case STV090x_SEARCH_DVBS1:
 		{
 			if (STV090x_WRITE_DEMOD(state, FECM, 0x00) < 0) /* disable DSS */
+			{
 				goto err;
+			}
 			switch (state->fec)
 			{
 				case STV090x_PR12:
 				{
 					if (STV090x_WRITE_DEMOD(state, PRVIT, 0x01) < 0)
+					{
 						goto err;
+					}
 					break;
 				}
 				case STV090x_PR23:
 				{
 					if (STV090x_WRITE_DEMOD(state, PRVIT, 0x02) < 0)
+					{
 						goto err;
+					}
 					break;
 				}
 				case STV090x_PR34:
 				{
 					if (STV090x_WRITE_DEMOD(state, PRVIT, 0x04) < 0)
+					{
 						goto err;
+					}
 					break;
 				}
 				case STV090x_PR56:
 				{
 					if (STV090x_WRITE_DEMOD(state, PRVIT, 0x08) < 0)
+					{
 						goto err;
+					}
 					break;
 				}
 				case STV090x_PR78:
 				{
 					if (STV090x_WRITE_DEMOD(state, PRVIT, 0x20) < 0)
+					{
 						goto err;
+					}
 					break;
 				}
 				default:
 				{
 					if (STV090x_WRITE_DEMOD(state, PRVIT, 0x2f) < 0) /* all */
+					{
 						goto err;
+					}
 					break;
 				}
 			}
@@ -2285,31 +2379,41 @@ static int stv090x_set_viterbi(struct stv090x_state *state)
 		case STV090x_SEARCH_DSS:
 		{
 			if (STV090x_WRITE_DEMOD(state, FECM, 0x80) < 0)
+			{
 				goto err;
+			}
 			switch (state->fec)
 			{
 				case STV090x_PR12:
 				{
 					if (STV090x_WRITE_DEMOD(state, PRVIT, 0x01) < 0)
+					{
 						goto err;
+					}
 					break;
 				}
 				case STV090x_PR23:
 				{
 					if (STV090x_WRITE_DEMOD(state, PRVIT, 0x02) < 0)
+					{
 						goto err;
+					}
 					break;
 				}
 				case STV090x_PR67:
 				{
 					if (STV090x_WRITE_DEMOD(state, PRVIT, 0x10) < 0)
+					{
 						goto err;
+					}
 					break;
 				}
 				default:
 				{
 					if (STV090x_WRITE_DEMOD(state, PRVIT, 0x13) < 0) /* 1/2, 2/3, 6/7 */
+					{
 						goto err;
+					}
 					break;
 				}
 			}
@@ -2322,8 +2426,9 @@ static int stv090x_set_viterbi(struct stv090x_state *state)
 	}
 	dprintk(10, "%s <\n", __func__);
 	return 0;
+
 err:
-	printk("stv090x_set_viterbi: I/O error\n");
+	dprintk(1, "stv090x_set_viterbi: I/O error\n");
 	return -1;
 }
 
@@ -2331,41 +2436,74 @@ static int stv090x_stop_modcod(struct stv090x_state *state)
 {
 	dprintk(10, "%s >\n", __func__);
 	if (STV090x_WRITE_DEMOD(state, MODCODLST0, 0xff) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, MODCODLST1, 0xff) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, MODCODLST2, 0xff) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, MODCODLST3, 0xff) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, MODCODLST4, 0xff) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, MODCODLST5, 0xff) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, MODCODLST6, 0xff) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, MODCODLST7, 0xff) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, MODCODLST8, 0xff) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, MODCODLST9, 0xff) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, MODCODLSTA, 0xff) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, MODCODLSTB, 0xff) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, MODCODLSTC, 0xff) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, MODCODLSTD, 0xff) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, MODCODLSTE, 0xff) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, MODCODLSTF, 0xff) < 0)
+	{
 		goto err;
+	}
 	dprintk(10, "%s <\n", __func__);
 	return 0;
+
 err:
-	printk("stv090x_stop_modcod: I/O error\n");
+	dprintk(1, "stv090x_stop_modcod: I/O error\n");
 	return -1;
 }
 
@@ -2376,77 +2514,142 @@ static int stv090x_activate_modcod(struct stv090x_state *state)
 	if (state->device == STX7111)
 	{
 		if (STV090x_WRITE_DEMOD(state, MODCODLST0, 0xff) < 0)
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, MODCODLST1, 0xff) < 0)
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, MODCODLST2, 0xff) < 0)
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, MODCODLST3, 0xff) < 0)
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, MODCODLST4, 0xff) < 0)
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, MODCODLST5, 0xff) < 0)
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, MODCODLST6, 0xff) < 0)
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, MODCODLST7, 0xcc) < 0)
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, MODCODLST8, 0xcc) < 0)
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, MODCODLST9, 0xcc) < 0)
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, MODCODLSTA, 0xcc) < 0)
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, MODCODLSTB, 0xcc) < 0)
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, MODCODLSTC, 0xcc) < 0)
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, MODCODLSTD, 0xcc) < 0)
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, MODCODLSTE, 0xff) < 0)
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, MODCODLSTF, 0xff) < 0)
+		{
 			goto err;
+		}
 	}
 	else
 	{
 		if (STV090x_WRITE_DEMOD(state, MODCODLST0, 0xff) < 0)
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, MODCODLST1, 0xfc) < 0)
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, MODCODLST2, 0xcc) < 0)
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, MODCODLST3, 0xcc) < 0)
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, MODCODLST4, 0xcc) < 0)
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, MODCODLST5, 0xcc) < 0)
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, MODCODLST6, 0xcc) < 0)
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, MODCODLST7, 0xcc) < 0)
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, MODCODLST8, 0xcc) < 0)
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, MODCODLST9, 0xcc) < 0)
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, MODCODLSTA, 0xcc) < 0)
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, MODCODLSTB, 0xcc) < 0)
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, MODCODLSTC, 0xcc) < 0)
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, MODCODLSTD, 0xcc) < 0)
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, MODCODLSTE, 0xcc) < 0)
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, MODCODLSTF, 0xcf) < 0)
+		{
 			goto err;
+		}
 	}
 	dprintk(10, "%s <\n", __func__);
 	return 0;
+
 err:
-	printk("stv090x_activate_modcod: I/O error\n");
+	dprintk(1, "stv090x_activate_modcod: I/O error\n");
 	return -1;
 }
 
@@ -2455,42 +2658,74 @@ static int stv090x_activate_modcod_single(struct stv090x_state *state)
 	dprintk(10, "%s >\n", __func__);
 
 	if (STV090x_WRITE_DEMOD(state, MODCODLST0, 0xff) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, MODCODLST1, 0xf0) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, MODCODLST2, 0x00) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, MODCODLST3, 0x00) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, MODCODLST4, 0x00) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, MODCODLST5, 0x00) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, MODCODLST6, 0x00) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, MODCODLST7, 0x00) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, MODCODLST8, 0x00) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, MODCODLST9, 0x00) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, MODCODLSTA, 0x00) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, MODCODLSTB, 0x00) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, MODCODLSTC, 0x00) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, MODCODLSTD, 0x00) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, MODCODLSTE, 0x00) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, MODCODLSTF, 0x0f) < 0)
+	{
 		goto err;
+	}
 	dprintk(10, "%s <\n", __func__);
 	return 0;
 
 err:
-	printk("stv090x_activate_modcod_single: I/O error\n");
+	dprintk(1, "stv090x_activate_modcod_single: I/O error\n");
 	return -1;
 }
 
@@ -2508,7 +2743,9 @@ static int stv090x_vitclk_ctl(struct stv090x_state *state, int enable)
 			reg = stv090x_read_reg(state, STV090x_STOPCLK2);
 			STV090x_SETFIELD(reg, STOP_CLKVIT1_FIELD, enable);
 			if (stv090x_write_reg(state, STV090x_STOPCLK2, reg) < 0)
+			{
 				goto err;
+			}
 			mutex_unlock(&demod_lock);
 			break;
 		}
@@ -2518,7 +2755,9 @@ static int stv090x_vitclk_ctl(struct stv090x_state *state, int enable)
 			reg = stv090x_read_reg(state, STV090x_STOPCLK2);
 			STV090x_SETFIELD(reg, STOP_CLKVIT2_FIELD, enable);
 			if (stv090x_write_reg(state, STV090x_STOPCLK2, reg) < 0)
+			{
 				goto err;
+			}
 			mutex_unlock(&demod_lock);
 			break;
 		}
@@ -2530,9 +2769,10 @@ static int stv090x_vitclk_ctl(struct stv090x_state *state, int enable)
 	}
 	dprintk(10, "%s <\n", __func__);
 	return 0;
+
 err:
 	mutex_unlock(&demod_lock);
-	printk("stv090x_vitclk_ctl: I/O error\n");
+	dprintk(1, "stv090x_vitclk_ctl: I/O error\n");
 	return -1;
 }
 
@@ -2545,23 +2785,35 @@ static int stv090x_dvbs_track_crl(struct stv090x_state *state)
 		if (state->srate >= 15000000)
 		{
 			if (STV090x_WRITE_DEMOD(state, ACLC, 0x2b) < 0)
+			{
 				goto err;
+			}
 			if (STV090x_WRITE_DEMOD(state, BCLC, 0x1a) < 0)
+			{
 				goto err;
+			}
+		}
+		else if ((state->srate >= 7000000) && (15000000 > state->srate))
+		{
+			if (STV090x_WRITE_DEMOD(state, ACLC, 0x0c) < 0)
+			{
+				goto err;
+			}
+			if (STV090x_WRITE_DEMOD(state, BCLC, 0x1b) < 0)
+			{
+				goto err;
+			}
 		}
 		else if (state->srate < 7000000)
 		{
 			if (STV090x_WRITE_DEMOD(state, ACLC, 0x2c) < 0)
+			{
 				goto err;
+			}
 			if (STV090x_WRITE_DEMOD(state, BCLC, 0x1c) < 0)
+			{
 				goto err;
-		}
-		else //if ((state->srate >= 7000000) && (state->srate < 15000000))
-		{
-			if (STV090x_WRITE_DEMOD(state, ACLC, 0x0c) < 0)
-				goto err;
-			if (STV090x_WRITE_DEMOD(state, BCLC, 0x1b) < 0)
-				goto err;
+			}
 		}
 	}
 	else
@@ -2570,22 +2822,31 @@ static int stv090x_dvbs_track_crl(struct stv090x_state *state)
 		if (state->device == STX7111)
 		{
 			if (STV090x_WRITE_DEMOD(state, ACLC, 0x2b) < 0)
+			{
 				goto err;
+			}
 			if (STV090x_WRITE_DEMOD(state, BCLC, 0x1a) < 0)
+			{
 				goto err;
+			}
 		}
 		else
 		{
 			if (STV090x_WRITE_DEMOD(state, ACLC, 0x1a) < 0)
+			{
 				goto err;
+			}
 			if (STV090x_WRITE_DEMOD(state, BCLC, 0x09) < 0)
+			{
 				goto err;
+			}
 		}
 	}
 	dprintk(10, "%s <\n", __func__);
 	return 0;
+
 err:
-	printk("stv090x_dvbs_track_crl: I/O error\n");
+	dprintk(1, "stv090x_dvbs_track_crl: I/O error\n");
 	return -1;
 }
 
@@ -2604,21 +2865,32 @@ static int stv090x_delivery_search(struct stv090x_state *state)
 			STV090x_SETFIELD_Px(reg, DVBS1_ENABLE_FIELD, 1);
 			STV090x_SETFIELD_Px(reg, DVBS2_ENABLE_FIELD, 0);
 			if (STV090x_WRITE_DEMOD(state, DMDCFGMD, reg) < 0)
+			{
 				goto err;
-
+			}
 			/* Activate Viterbi decoder in legacy search,
 			 * do not use FRESVIT1, might impact VITERBI2
 			 */
 			if (stv090x_vitclk_ctl(state, 0) < 0)
+			{
 				goto err;
+			}
 			if (stv090x_dvbs_track_crl(state) < 0)
+			{
 				goto err;
+			}
 			if (STV090x_WRITE_DEMOD(state, CAR2CFG, 0x22) < 0) /* disable DVB-S2 */
+			{
 				goto err;
+			}
 			if (stv090x_set_vit_thacq(state) < 0)
+			{
 				goto err;
+			}
 			if (stv090x_set_viterbi(state) < 0)
+			{
 				goto err;
+			}
 			break;
 		}
 		case STV090x_SEARCH_DVBS2:
@@ -2627,42 +2899,64 @@ static int stv090x_delivery_search(struct stv090x_state *state)
 			STV090x_SETFIELD_Px(reg, DVBS1_ENABLE_FIELD, 0);
 			STV090x_SETFIELD_Px(reg, DVBS2_ENABLE_FIELD, 0);
 			if (STV090x_WRITE_DEMOD(state, DMDCFGMD, reg) < 0)
+			{
 				goto err;
+			}
 			STV090x_SETFIELD_Px(reg, DVBS1_ENABLE_FIELD, 1);
 			STV090x_SETFIELD_Px(reg, DVBS2_ENABLE_FIELD, 1);
 			if (STV090x_WRITE_DEMOD(state, DMDCFGMD, reg) < 0)
+			{
 				goto err;
+			}
 			if (stv090x_vitclk_ctl(state, 1) < 0)
+			{
 				goto err;
+			}
 			if (STV090x_WRITE_DEMOD(state, ACLC, 0x1a) < 0) /* stop DVB-S CR loop */
+			{
 				goto err;
+			}
 			if (STV090x_WRITE_DEMOD(state, BCLC, 0x09) < 0)
+			{
 				goto err;
+			}
 			if ((state->dev_ver <= 0x20) || (state->device == STX7111))
 			{
 				/* enable S2 carrier loop */
 				if (STV090x_WRITE_DEMOD(state, CAR2CFG, 0x26) < 0)
+				{
 					goto err;
+				}
 			}
 			else
 			{
 				/* > Cut 3: Stop carrier 3 */
 				if (STV090x_WRITE_DEMOD(state, CAR2CFG, 0x66) < 0)
+				{
 					goto err;
+				}
 			}
 			if (state->device == STX7111)
 			{
 				if (stv090x_write_reg(state, STV090x_GENCFG, 0x16) < 0)
+				{
 					goto err;
+				}
 				reg = stv090x_read_reg(state, STV090x_TSTRES0);
 				STV090x_SETFIELD(reg, FRESFEC_FIELD, 0x01); /* ldpc reset */
 				if (stv090x_write_reg(state, STV090x_TSTRES0, reg) < 0)
+				{
 					goto err;
+				}
 				STV090x_SETFIELD(reg, FRESFEC_FIELD, 0);
 				if (stv090x_write_reg(state, STV090x_TSTRES0, reg) < 0)
+				{
 					goto err;
+				}
 				if (stv090x_activate_modcod(state) < 0)
+				{
 					goto err;
+				}
 			}
 			else
 			{
@@ -2670,7 +2964,9 @@ static int stv090x_delivery_search(struct stv090x_state *state)
 				{
 					/* Cut 2: enable link during search */
 					if (stv090x_activate_modcod(state) < 0)
+					{
 						goto err;
+					}
 				}
 				else
 				{
@@ -2679,7 +2975,9 @@ static int stv090x_delivery_search(struct stv090x_state *state)
 					 * QPSK, 8PSK, 16APSK and 32APSK
 					 */
 					if (stv090x_activate_modcod_single(state) < 0)
+					{
 						goto err;
+					}
 				}
 			}
 			break;
@@ -2694,34 +2992,48 @@ static int stv090x_delivery_search(struct stv090x_state *state)
 			STV090x_SETFIELD_Px(reg, DVBS1_ENABLE_FIELD, 0);
 			STV090x_SETFIELD_Px(reg, DVBS2_ENABLE_FIELD, 0);
 			if (STV090x_WRITE_DEMOD(state, DMDCFGMD, reg) < 0)
+			{
 				goto err;
+			}
 			reg = STV090x_READ_DEMOD(state, DMDCFGMD);
 			STV090x_SETFIELD_Px(reg, DVBS1_ENABLE_FIELD, 1);
 			STV090x_SETFIELD_Px(reg, DVBS2_ENABLE_FIELD, 1);
 			if (STV090x_WRITE_DEMOD(state, DMDCFGMD, reg) < 0)
+			{
 				goto err;
+			}
 #ifndef FORTIS_HDBOX
 			if (stv090x_vitclk_ctl(state, 0) < 0)
+			{
 				goto err;
+			}
 #else
 			reg = stv090x_read_reg(state, STV090x_TSTRES0);
 			STV090x_SETFIELD(reg, FRESFEC_FIELD, 0x0);
 			if (stv090x_write_reg(state, STV090x_TSTRES0, reg) < 0)
+			{
 				goto err;
+			}
 #endif
 			if (stv090x_dvbs_track_crl(state) < 0)
+			{
 				goto err;
+			}
 			if ((state->dev_ver <= 0x20) || (state->device == STX7111))
 			{
 				/* enable S2 carrier loop */
 				if (STV090x_WRITE_DEMOD(state, CAR2CFG, 0x26) < 0)
+				{
 					goto err;
+				}
 			}
 			else
 			{
 				/* > Cut 3: Stop carrier 3 */
 				if (STV090x_WRITE_DEMOD(state, CAR2CFG, 0x66) < 0)
+				{
 					goto err;
+				}
 			}
 			if (state->device != STX7111)
 			{
@@ -2729,7 +3041,9 @@ static int stv090x_delivery_search(struct stv090x_state *state)
 				{
 					/* Cut 2: enable link during search */
 					if (stv090x_activate_modcod(state) < 0)
+					{
 						goto err;
+					}
 				}
 				else
 				{
@@ -2738,24 +3052,36 @@ static int stv090x_delivery_search(struct stv090x_state *state)
 					 * QPSK, 8PSK, 16APSK and 32APSK
 					 */
 					if (stv090x_activate_modcod_single(state) < 0)
+					{
 						goto err;
+					}
 				}
 				if (stv090x_set_vit_thacq(state) < 0)
+				{
 					goto err;
+				}
 				if (stv090x_set_viterbi(state) < 0)
+				{
 					goto err;
+				}
 			}
 			else
 			{
 				if (stv090x_set_vit_thacq(state) < 0)
+				{
 					goto err;
+				}
 				if (stv090x_set_viterbi(state) < 0)
+				{
 					goto err;
+				}
 				if (state->demod_mode != STV090x_SINGLE)
 				{
 					/* Cut 2: enable link during search */
 					if (stv090x_activate_modcod(state) < 0)
+					{
 						goto err;
+					}
 				}
 				else
 				{
@@ -2764,7 +3090,9 @@ static int stv090x_delivery_search(struct stv090x_state *state)
 					 * QPSK, 8PSK, 16APSK and 32APSK
 					 */
 					if (stv090x_activate_modcod_single(state) < 0)
+					{
 						goto err;
+					}
 				}
 			}
 			break;
@@ -2772,8 +3100,9 @@ static int stv090x_delivery_search(struct stv090x_state *state)
 	}
 	dprintk(10, "%s <\n", __func__);
 	return 0;
+
 err:
-	printk("stv090x_delivery_search: I/O error\n");
+	dprintk(1, "stv090x_delivery_search: I/O error\n");
 	return -1;
 }
 
@@ -2788,8 +3117,9 @@ static int stv090x_start_search(struct stv090x_state *state)
 	reg = STV090x_READ_DEMOD(state, DMDISTATE);
 	STV090x_SETFIELD_Px(reg, I2C_DEMOD_MODE_FIELD, 0x1f);
 	if (STV090x_WRITE_DEMOD(state, DMDISTATE, reg) < 0)
+	{
 		goto err;
-
+	}
 	if (state->dev_ver <= 0x20)
 	{
 		if (state->srate <= 5000000)
@@ -2797,45 +3127,64 @@ static int stv090x_start_search(struct stv090x_state *state)
 			if (state->device == STX7111)
 			{
 				if (STV090x_WRITE_DEMOD(state, CARCFG, 0x46) < 0)
+				{
 					goto err;
+				}
 			}
 			else
 			{
 				if (STV090x_WRITE_DEMOD(state, CARCFG, 0x44) < 0)
+				{
 					goto err;
+				}
 			}
 			if (STV090x_WRITE_DEMOD(state, CFRUP1, 0x0f) < 0)
+			{
 				goto err;
+			}
 			if (STV090x_WRITE_DEMOD(state, CFRUP0, 0xff) < 0)
+			{
 				goto err;
+			}
 			if (STV090x_WRITE_DEMOD(state, CFRLOW1, 0xf0) < 0)
+			{
 				goto err;
+			}
 			if (STV090x_WRITE_DEMOD(state, CFRLOW0, 0x00) < 0)
+			{
 				goto err;
-
-			/* enlarge the timing bandwidth for Low SR */
+			}
+			/* Enlarge the timing bandwidth for Low SR */
 			if (STV090x_WRITE_DEMOD(state, RTCS2, 0x68) < 0)
+			{
 				goto err;
+			}
 		}
 		else
 		{
 			if (state->device == STX7111)
 			{
 				/* If the symbol rate is >5 Msps
-				   Set The carrier search up and low to auto mode */
+				Set The carrier search up and low to auto mode */
 				if (STV090x_WRITE_DEMOD(state, CARCFG, 0xc6) < 0)
+				{
 					goto err;
+				}
 			}
 			else
 			{
 				/* If the symbol rate is >5 Msps
-				  Set The carrier search up and low to auto mode */
+				Set The carrier search up and low to auto mode */
 				if (STV090x_WRITE_DEMOD(state, CARCFG, 0xc4) < 0)
+				{
 					goto err;
+				}
 			}
-			/* Reduce the timing bandwidth for high SR*/
+			/* Reduce the timing bandwidth for high SR */
 			if (STV090x_WRITE_DEMOD(state, RTCS2, 0x44) < 0)
+			{
 				goto err;
+			}
 		}
 	}
 	else
@@ -2851,7 +3200,6 @@ static int stv090x_start_search(struct stv090x_state *state)
 			/* Reduce timing bandwidth for high SR */
 			STV090x_WRITE_DEMOD(state, RTCS2, 0x44);
 		}
-
 		/* Set CFR min and max to manual mode */
 		STV090x_WRITE_DEMOD(state, CARCFG, 0x46);
 
@@ -2877,48 +3225,72 @@ static int stv090x_start_search(struct stv090x_state *state)
 			freq_abs /= (state->mclk / 1000);
 			freq      = (s16) freq_abs;
 		}
-
 		if (STV090x_WRITE_DEMOD(state, CFRUP1, MSB(freq)) < 0)
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, CFRUP0, LSB(freq)) < 0)
+		{
 			goto err;
-
+		}
 		freq *= -1;
 
 		if (STV090x_WRITE_DEMOD(state, CFRLOW1, MSB(freq)) < 0)
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, CFRLOW0, LSB(freq)) < 0)
+		{
 			goto err;
+		}
 	}
 	if (STV090x_WRITE_DEMOD(state, CFRINIT1, 0) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, CFRINIT0, 0) < 0)
+	{
 		goto err;
+	}
 	if (state->dev_ver >= 0x20)
 	{
 		if (STV090x_WRITE_DEMOD(state, EQUALCFG, 0x41) < 0)
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, FFECFG, 0x41) < 0)
+		{
 			goto err;
+		}
 
 		if ((state->search_mode == STV090x_SEARCH_DVBS1)
-				|| (state->search_mode == STV090x_SEARCH_DSS)
-				|| (state->search_mode == STV090x_SEARCH_AUTO))
+		||  (state->search_mode == STV090x_SEARCH_DSS)
+		||  (state->search_mode == STV090x_SEARCH_AUTO))
 		{
 			if (STV090x_WRITE_DEMOD(state, VITSCALE, 0x82) < 0)
+			{
 				goto err;
+			}
 			if (STV090x_WRITE_DEMOD(state, VAVSRVIT, 0x00) < 0)
+			{
 				goto err;
+			}
 		}
 	}
 	if (STV090x_WRITE_DEMOD(state, SFRSTEP, 0x00) < 0)
+	{
 		goto err;
+	}
 	if (state->device != STX7111)
 	{
 		if (STV090x_WRITE_DEMOD(state, TMGTHRISE, 0xe0) < 0)
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, TMGTHFALL, 0xc0) < 0)
+		{
 			goto err;
+		}
 	}
 	reg = STV090x_READ_DEMOD(state, DMDCFGMD);
 	STV090x_SETFIELD_Px(reg, SCAN_ENABLE_FIELD, 0);
@@ -2933,9 +3305,10 @@ static int stv090x_start_search(struct stv090x_state *state)
 	if (state->device == STX7111)
 	{
 		if (STV090x_WRITE_DEMOD(state, RTC, 0x88) < 0)
+		{
 			goto err;
+		}
 	}
-
 	if (state->dev_ver >= 0x20)
 	{
 		/*Frequency offset detector setting*/
@@ -2948,13 +3321,17 @@ static int stv090x_start_search(struct stv090x_state *state)
 			{
 				/* Cut 2 */
 				if (STV090x_WRITE_DEMOD(state, CARFREQ, 0x39) < 0)
+				{
 					goto err;
+				}
 			}
 			else // 21 or higher...
 			{
-				/* Cut 2 */
+				/* Cut 3 */
 				if (STV090x_WRITE_DEMOD(state, CARFREQ, 0x89) < 0)
+				{
 					goto err;
+				}
 			}
 			if (STV090x_WRITE_DEMOD(state, CARHDR, 0x40) < 0)
 				goto err;
@@ -2962,21 +3339,29 @@ static int stv090x_start_search(struct stv090x_state *state)
 		if (state->srate < 10000000)
 		{
 			if (STV090x_WRITE_DEMOD(state, CARFREQ, 0x4c) < 0)
+			{
 				goto err;
+			}
 			if (state->device != STX7111)
 			{
 				if (STV090x_WRITE_DEMOD(state, CARHDR, 0x20) < 0)
+				{
 					goto err;
+				}
 			}
 		}
 		else
 		{
 			if (STV090x_WRITE_DEMOD(state, CARFREQ, 0x4b) < 0)
+			{
 				goto err;
+			}
 			if (state->device != STX7111)
 			{
 				if (STV090x_WRITE_DEMOD(state, CARHDR, 0x20) < 0)
+				{
 					goto err;
+				}
 			}
 		}
 	}
@@ -2985,12 +3370,16 @@ static int stv090x_start_search(struct stv090x_state *state)
 		if (state->srate < 10000000)
 		{
 			if (STV090x_WRITE_DEMOD(state, CARFREQ, 0xef) < 0)
+			{
 				goto err;
+			}
 		}
 		else
 		{
 			if (STV090x_WRITE_DEMOD(state, CARFREQ, 0xed) < 0)
+			{
 				goto err;
+			}
 		}
 	}
 
@@ -3011,9 +3400,13 @@ static int stv090x_start_search(struct stv090x_state *state)
 		{
 			/* The symbol rate is known */
 			if (STV090x_WRITE_DEMOD(state, DMDISTATE, 0x1f) < 0)
+			{
 				goto err;
+			}
 			if (STV090x_WRITE_DEMOD(state, DMDISTATE, 0x15) < 0)
+			{
 				goto err;
+			}
 			break;
 		}
 		default:
@@ -3023,8 +3416,9 @@ static int stv090x_start_search(struct stv090x_state *state)
 	}
 	dprintk(10, "%s <\n", __func__);
 	return 0;
+
 err:
-	printk("stv090x_start_search: I/O error\n");
+	dprintk(1, "stv090x_start_search: I/O error\n");
 	return -1;
 }
 
@@ -3036,24 +3430,40 @@ static int stv090x_get_agc2_min_level(struct stv090x_state *state)
 	dprintk(10, "%s >\n", __func__);
 
 	if (STV090x_WRITE_DEMOD(state, AGC2REF, 0x38) < 0)
+	{
 		goto err;
+	}
 	reg = STV090x_READ_DEMOD(state, DMDCFGMD);
 	STV090x_SETFIELD_Px(reg, SCAN_ENABLE_FIELD, 0);
 	STV090x_SETFIELD_Px(reg, CFR_AUTOSCAN_FIELD, 0);
 	if (STV090x_WRITE_DEMOD(state, DMDCFGMD, reg) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, SFRUP1, 0x83) < 0) /* SR = 65 Msps Max */
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, SFRUP0, 0xc0) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, SFRLOW1, 0x82) < 0) /* SR= 400 ksps Min */
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, SFRLOW0, 0xa0) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, DMDTOM, 0x00) < 0) /* stop acq @ coarse carrier state */
+	{
 		goto err;
+	}
 	if (stv090x_set_srate(state, 1000000) < 0)
+	{
 		goto err;
+	}
 	steps  = state->search_range / 1000000;
 	if (steps <= 0)
 	{
@@ -3076,19 +3486,28 @@ static int stv090x_get_agc2_min_level(struct stv090x_state *state)
 		dir *= -1;
 
 		if (STV090x_WRITE_DEMOD(state, DMDISTATE, 0x5c) < 0) /* Demod RESET */
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, CFRINIT1, (freq_init >> 8) & 0xff) < 0)
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, CFRINIT0, freq_init & 0xff) < 0)
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, DMDISTATE, 0x58) < 0) /* Demod RESET */
+		{
 			goto err;
+		}
 		msleep(1);
 
 		agc2 = 0;
 		for (j = 0; j < 10; j++)
 		{
-			agc2 += (STV090x_READ_DEMOD(state, AGC2I1) << 8) | STV090x_READ_DEMOD(state, AGC2I0);
+			agc2 += (STV090x_READ_DEMOD(state, AGC2I1) << 8)
+			      | STV090x_READ_DEMOD(state, AGC2I0);
 		}
 		agc2 /= 10;
 		if (agc2 < agc2_min)
@@ -3096,11 +3515,11 @@ static int stv090x_get_agc2_min_level(struct stv090x_state *state)
 			agc2_min = agc2;
 		}
 	}
-
 	dprintk(10, "%s <\n", __func__);
 	return agc2_min;
+
 err:
-	printk("stv090x_get_agc2_min_level: I/O error\n");
+	dprintk(1, "stv090x_get_agc2_min_level: I/O error\n");
 	return -1;
 }
 
@@ -3125,7 +3544,6 @@ static u32 stv090x_get_srate(struct stv090x_state *state, u32 clk)
 	tmp_2 = srate % 0x10000;
 
 	srate = (int_1 * int_2) + ((int_1 * tmp_2) >> 16) + ((int_2 * tmp_1) >> 16);
-
 	dprintk(10, "%s srate %d<\n", __func__, srate);
 	return srate;
 }
@@ -3152,46 +3570,77 @@ static u32 stv090x_srate_srch_coarse(struct stv090x_state *state)
 	reg = STV090x_READ_DEMOD(state, DMDISTATE);
 	STV090x_SETFIELD_Px(reg, I2C_DEMOD_MODE_FIELD, 0x1f); /* Demod RESET */
 	if (STV090x_WRITE_DEMOD(state, DMDISTATE, reg) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, TMGCFG, 0x12) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, TMGCFG2, 0xc0) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, TMGTHRISE, 0xf0) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, TMGTHFALL, 0xe0) < 0)
+	{
 		goto err;
+	}
 	reg = STV090x_READ_DEMOD(state, DMDCFGMD);
 	STV090x_SETFIELD_Px(reg, SCAN_ENABLE_FIELD, 1);
 	STV090x_SETFIELD_Px(reg, CFR_AUTOSCAN_FIELD, 0);
 	if (STV090x_WRITE_DEMOD(state, DMDCFGMD, reg) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, SFRUP1, 0x83) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, SFRUP0, 0xc0) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, SFRLOW1, 0x82) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, SFRLOW0, 0xa0) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, DMDTOM, 0x00) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, AGC2REF, 0x50) < 0)
+	{
 		goto err;
-
+	}
 	if (state->dev_ver >= 0x30)
 	{
 		if (STV090x_WRITE_DEMOD(state, CARFREQ, 0x99) < 0)
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, SFRSTEP, 0x98) < 0)
+		{
 			goto err;
+		}
 	}
 	else if (state->dev_ver >= 0x20)
 	{
 		if (STV090x_WRITE_DEMOD(state, CARFREQ, 0x6a) < 0)
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, SFRSTEP, 0x95) < 0)
+		{
 			goto err;
+		}
 	}
 	if (state->srate <= 2000000)
 	{
@@ -3228,15 +3677,25 @@ static u32 stv090x_srate_srch_coarse(struct stv090x_state *state)
 	while ((!tmg_lock) && (cur_step < steps))
 	{
 		if (STV090x_WRITE_DEMOD(state, DMDISTATE, 0x5f) < 0) /* Demod RESET */
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, CFRINIT1, 0x00) < 0)
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, CFRINIT0, 0x00) < 0)
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, SFRINIT1, 0x00) < 0)
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, SFRINIT0, 0x00) < 0)
+		{
 			goto err;
+		}
 		/* trigger acquisition */
 		if (STV090x_WRITE_DEMOD(state, DMDISTATE, 0x40) < 0)
 			goto err;
@@ -3245,15 +3704,20 @@ static u32 stv090x_srate_srch_coarse(struct stv090x_state *state)
 		{
 			reg = STV090x_READ_DEMOD(state, DSTATUS);
 			if (STV090x_GETFIELD_Px(reg, TMGLOCK_QUALITY_FIELD) >= 2)
+			{
 				tmg_cpt++;
-			agc2 += (STV090x_READ_DEMOD(state, AGC2I1) << 8) | STV090x_READ_DEMOD(state, AGC2I0);
+			}
+			agc2 += (STV090x_READ_DEMOD(state, AGC2I1) << 8)
+			      | STV090x_READ_DEMOD(state, AGC2I0);
 		}
 		agc2 /= 10;
 		srate_coarse = stv090x_get_srate(state, state->mclk);
 		cur_step++;
 		dir *= -1;
-		if ((tmg_cpt >= 5) && (agc2 < agc2th)
-				&& (srate_coarse < 50000000) && (srate_coarse > 850000))
+		if ((tmg_cpt >= 5)
+		&&  (agc2 < agc2th)
+		&&  (srate_coarse < 50000000)
+		&&  (srate_coarse > 850000))
 		{
 			tmg_lock = 1;
 		}
@@ -3271,20 +3735,25 @@ static u32 stv090x_srate_srch_coarse(struct stv090x_state *state)
 			if (state->config->tuner_set_frequency)
 			{
 				if (state->config->tuner_set_frequency(fe, freq) < 0)
+				{
 					goto err;
+				}
 			}
 			if (state->config->tuner_set_bandwidth)
 			{
 				if (state->config->tuner_set_bandwidth(fe, state->tuner_bw) < 0)
+				{
 					goto err;
+				}
 			}
 			msleep(1);
 			if (state->config->tuner_get_status)
 			{
 				if (state->config->tuner_get_status(fe, &reg) < 0)
+				{
 					goto err;
+				}
 			}
-
 			if (reg)
 			{
 				dprintk(50, "Tuner phase locked");
@@ -3305,8 +3774,9 @@ static u32 stv090x_srate_srch_coarse(struct stv090x_state *state)
 	}
 	dprintk(50, "%s srate_coarse %d<\n", __func__, srate_coarse);
 	return srate_coarse;
+
 err:
-	printk("stv090x_srate_srch_coarse: I/O error\n");
+	dprintk(1, "stv090x_srate_srch_coarse: I/O error\n");
 	return -1;
 }
 
@@ -3328,56 +3798,83 @@ static u32 stv090x_srate_srch_fine(struct stv090x_state *state)
 	else
 	{
 		if (STV090x_WRITE_DEMOD(state, DMDISTATE, 0x1f) < 0) /* Demod RESET */
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, TMGCFG2, 0xc1) < 0)
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, TMGTHRISE, 0x20) < 0)
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, TMGTHFALL, 0x00) < 0)
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, TMGCFG, 0xd2) < 0)
+		{
 			goto err;
+		}
 		reg = STV090x_READ_DEMOD(state, DMDCFGMD);
 		STV090x_SETFIELD_Px(reg, CFR_AUTOSCAN_FIELD, 0x00);
 		if (STV090x_WRITE_DEMOD(state, DMDCFGMD, reg) < 0)
+		{
 			goto err;
-
+		}
 		if (STV090x_WRITE_DEMOD(state, AGC2REF, 0x38) < 0)
+		{
 			goto err;
-
+		}
 		if (state->dev_ver >= 0x30)
 		{
 			if (STV090x_WRITE_DEMOD(state, CARFREQ, 0x79) < 0)
+			{
 				goto err;
+			}
 		}
 		else if (state->dev_ver >= 0x20)
 		{
 			if (STV090x_WRITE_DEMOD(state, CARFREQ, 0x49) < 0)
+			{
 				goto err;
+			}
 		}
-
 		if (srate_coarse > 3000000)
 		{
 			sym  = 13 * (srate_coarse / 10); /* SFRUP = SFR + 30% */
 			sym  = (sym / 1000) * 65536;
 			sym /= (state->mclk / 1000);
 			if (STV090x_WRITE_DEMOD(state, SFRUP1, (sym >> 8) & 0x7f) < 0)
+			{
 				goto err;
+			}
 			if (STV090x_WRITE_DEMOD(state, SFRUP0, sym & 0xff) < 0)
+			{
 				goto err;
+			}
 			sym  = 10 * (srate_coarse / 13); /* SFRLOW = SFR - 30% */
 			sym  = (sym / 1000) * 65536;
 			sym /= (state->mclk / 1000);
 			if (STV090x_WRITE_DEMOD(state, SFRLOW1, (sym >> 8) & 0x7f) < 0)
+			{
 				goto err;
+			}
 			if (STV090x_WRITE_DEMOD(state, SFRLOW0, sym & 0xff) < 0)
+			{
 				goto err;
+			}
 			sym  = (srate_coarse / 1000) * 65536;
 			sym /= (state->mclk / 1000);
 			if (STV090x_WRITE_DEMOD(state, SFRINIT1, (sym >> 8) & 0xff) < 0)
+			{
 				goto err;
+			}
 			if (STV090x_WRITE_DEMOD(state, SFRINIT0, sym & 0xff) < 0)
+			{
 				goto err;
+			}
 		}
 		else
 		{
@@ -3385,37 +3882,57 @@ static u32 stv090x_srate_srch_fine(struct stv090x_state *state)
 			sym  = (sym / 100) * 65536;
 			sym /= (state->mclk / 100);
 			if (STV090x_WRITE_DEMOD(state, SFRUP1, (sym >> 8) & 0x7f) < 0)
+			{
 				goto err;
+			}
 			if (STV090x_WRITE_DEMOD(state, SFRUP0, sym & 0xff) < 0)
+			{
 				goto err;
+			}
 			sym  = 10 * (srate_coarse / 14); /* SFRLOW = SFR - 30% */
 			sym  = (sym / 100) * 65536;
 			sym /= (state->mclk / 100);
 			if (STV090x_WRITE_DEMOD(state, SFRLOW1, (sym >> 8) & 0x7f) < 0)
+			{
 				goto err;
+			}
 			if (STV090x_WRITE_DEMOD(state, SFRLOW0, sym & 0xff) < 0)
+			{
 				goto err;
+			}
 			sym  = (srate_coarse / 100) * 65536;
 			sym /= (state->mclk / 100);
 			if (STV090x_WRITE_DEMOD(state, SFRINIT1, (sym >> 8) & 0xff) < 0)
+			{
 				goto err;
+			}
 			if (STV090x_WRITE_DEMOD(state, SFRINIT0, sym & 0xff) < 0)
+			{
 				goto err;
+			}
 		}
 		if (STV090x_WRITE_DEMOD(state, DMDTOM, 0x20) < 0)
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, CFRINIT1, (freq_coarse >> 8) & 0xff) < 0)
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, CFRINIT0, freq_coarse & 0xff) < 0)
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, DMDISTATE, 0x15) < 0) /* trigger acquisition */
+		{
 			goto err;
+		}
 	}
 	dprintk(10, "%s <\n", __func__);
 	return srate_coarse;
 
 err:
-	printk("stv090x_srate_srch_fine: I/O error\n");
+	dprintk(1, "stv090x_srate_srch_fine: I/O error\n");
 	return -1;
 }
 
@@ -3438,7 +3955,7 @@ static int stv090x_get_dmdlock(struct stv090x_state *state, s32 timeout)
 			case 1: /* first PLH detected */
 			default:
 			{
-				dprintk(150, "Demodulator searching...\n");
+				dprintk(150, "Demodulator searching ..\n");
 				lock = 0;
 				break;
 			}
@@ -3450,14 +3967,13 @@ static int stv090x_get_dmdlock(struct stv090x_state *state, s32 timeout)
 				break;
 			}
 		}
-
 		if (!lock)
 		{
 			msleep(1);
 		}
 		else
 		{
-			printk("Demodulator acquired LOCK\n");
+			dprintk(1,"Demodulator acquired LOCK\n");
 		}
 		timer += 4;
 	}
@@ -3490,41 +4006,55 @@ static int stv090x_blind_search(struct stv090x_state *state)
 		if (state->dev_ver <= 0x20)
 		{
 			if (STV090x_WRITE_DEMOD(state, CARCFG, 0xc4) < 0)
+			{
 				goto err;
+			}
 		}
 		else
 		{
 			/* > Cut 3 */
 			if (STV090x_WRITE_DEMOD(state, CARCFG, 0x06) < 0)
+			{
 				goto err;
+			}
 		}
-
 		if (STV090x_WRITE_DEMOD(state, RTCS2, 0x44) < 0)
+		{
 			goto err;
+		}
 		if (state->dev_ver >= 0x20)
 		{
 			if (STV090x_WRITE_DEMOD(state, EQUALCFG, 0x41) < 0)
+			{
 				goto err;
+			}
 			if (STV090x_WRITE_DEMOD(state, FFECFG, 0x41) < 0)
+			{
 				goto err;
+			}
 			if (STV090x_WRITE_DEMOD(state, VITSCALE, 0x82) < 0)
+			{
 				goto err;
+			}
 			if (STV090x_WRITE_DEMOD(state, VAVSRVIT, 0x00) < 0) /* set viterbi hysteresis */
+			{
 				goto err;
+			}
 		}
 		k_ref = k_max;
 		do
 		{
 			if (STV090x_WRITE_DEMOD(state, KREFTMG, k_ref) < 0)
+			{
 				goto err;
+			}
 			if (stv090x_srate_srch_coarse(state) != 0)
 			{
 				srate_coarse = stv090x_srate_srch_fine(state);
 				if (srate_coarse != 0)
 				{
 					stv090x_get_lock_tmg(state);
-					lock = stv090x_get_dmdlock(state,
-								   state->DemodTimeout);
+					lock = stv090x_get_dmdlock(state, state->DemodTimeout);
 				}
 				else
 				{
@@ -3537,14 +4067,15 @@ static int stv090x_blind_search(struct stv090x_state *state)
 				agc2_ovflw = 0;
 				for (i = 0; i < 4; i++)
 				{
-					agc2 += (STV090x_READ_DEMOD(state, AGC2I1) << 8) | STV090x_READ_DEMOD(state, AGC2I0);
+					agc2 += (STV090x_READ_DEMOD(state, AGC2I1) << 8)
+					      | STV090x_READ_DEMOD(state, AGC2I0);
 					if (agc2 >= 0xff00)
 					{
 						agc2_ovflw++;
 					}
 					reg = STV090x_READ_DEMOD(state, DSTATUS2);
 					if ((STV090x_GETFIELD_Px(reg, CFR_OVERFLOW_FIELD) == 0x01)
-							&& (STV090x_GETFIELD_Px(reg, DEMOD_DELOCK_FIELD) == 0x01))
+					&&  (STV090x_GETFIELD_Px(reg, DEMOD_DELOCK_FIELD) == 0x01))
 					{
 						cpt_fail++;
 					}
@@ -3560,8 +4091,9 @@ static int stv090x_blind_search(struct stv090x_state *state)
 		while ((k_ref >= k_min) && (!lock) && (!coarse_fail));
 	}
 	return lock;
+
 err:
-	printk("%s: I/O error", __func__);
+	dprintk(1, "%s: I/O error", __func__);
 	return -1;
 }
 
@@ -3578,31 +4110,49 @@ static int stv090x_chk_tmg(struct stv090x_state *state)
 	tmg_thh = STV090x_READ_DEMOD(state, TMGTHRISE);
 	tmg_thl = STV090x_READ_DEMOD(state, TMGTHFALL);
 	if (STV090x_WRITE_DEMOD(state, TMGTHRISE, 0x20) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, TMGTHFALL, 0x00) < 0)
+	{
 		goto err;
-
+	}
 	reg = STV090x_READ_DEMOD(state, DMDCFGMD);
 	STV090x_SETFIELD_Px(reg, CFR_AUTOSCAN_FIELD, 0x00); /* stop carrier offset search */
 	if (STV090x_WRITE_DEMOD(state, DMDCFGMD, reg) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, RTC, 0x80) < 0)
+	{
 		goto err;
+	}
 
 	if (STV090x_WRITE_DEMOD(state, RTCS2, 0x40) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, CARFREQ, 0x00) < 0)
+	{
 		goto err;
+	}
 
 	if (STV090x_WRITE_DEMOD(state, CFRINIT1, 0x00) < 0) /* set car ofset to 0 */
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, CFRINIT0, 0x00) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, AGC2REF, 0x65) < 0)
+	{
 		goto err;
-
+	}
 	if (STV090x_WRITE_DEMOD(state, DMDISTATE, 0x18) < 0) /* trigger acquisition */
+	{
 		goto err;
+	}
 	msleep(1);
 
 	for (i = 0; i < 4; i++)
@@ -3619,23 +4169,34 @@ static int stv090x_chk_tmg(struct stv090x_state *state)
 		tmg_lock = 1;
 	}
 	if (STV090x_WRITE_DEMOD(state, AGC2REF, 0x38) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, RTC, 0x88) < 0) /* DVB-S1 timing */
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, RTCS2, 0x68) < 0) /* DVB-S2 timing */
+	{
 		goto err;
-
+	}
 	if (STV090x_WRITE_DEMOD(state, CARFREQ, freq) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, TMGTHRISE, tmg_thh) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, TMGTHFALL, tmg_thl) < 0)
+	{
 		goto err;
-
+	}
 	dprintk(10, "%s <\n", __func__);
 	return	tmg_lock;
+
 err:
-	printk("stv090x_chk_tmg: I/O error\n");
+	dprintk(1, "stv090x_chk_tmg: I/O error\n");
 	return -1;
 }
 
@@ -3666,9 +4227,13 @@ static int stv090x_get_coldlock(struct stv090x_state *state, s32 timeout_dmd)
 			if (stv090x_chk_tmg(state))
 			{
 				if (STV090x_WRITE_DEMOD(state, DMDISTATE, 0x1f) < 0)
+				{
 					goto err;
+				}
 				if (STV090x_WRITE_DEMOD(state, DMDISTATE, 0x15) < 0)
+				{
 					goto err;
+				}
 				lock = stv090x_get_dmdlock(state, timeout_dmd);
 			}
 			else
@@ -3727,21 +4292,26 @@ static int stv090x_get_coldlock(struct stv090x_state *state, s32 timeout_dmd)
 					if (state->config->tuner_set_frequency)
 					{
 						if (state->config->tuner_set_frequency(fe, freq) < 0)
+						{
 							goto err;
+						}
 					}
 
 					if (state->config->tuner_set_bandwidth)
 					{
 						if (state->config->tuner_set_bandwidth(fe, state->tuner_bw) < 0)
+						{
 							goto err;
+						}
 					}
-
 					msleep(1);
 
 					if (state->config->tuner_get_status)
 					{
 						if (state->config->tuner_get_status(fe, &reg) < 0)
+						{
 							goto err;
+						}
 					}
 					if (reg)
 					{
@@ -3759,23 +4329,39 @@ static int stv090x_get_coldlock(struct stv090x_state *state, s32 timeout_dmd)
 						reg = STV090x_READ_DEMOD(state, DMDCFGMD);
 						STV090x_SETFIELD_Px(reg, DVBS1_ENABLE_FIELD, 0);
 						STV090x_SETFIELD_Px(reg, DVBS2_ENABLE_FIELD, 0);
+
 						if (STV090x_WRITE_DEMOD(state, DMDCFGMD, reg) < 0)
+						{
 							goto err;
+						}
 						reg = STV090x_READ_DEMOD(state, DMDCFGMD);
 						STV090x_SETFIELD_Px(reg, DVBS1_ENABLE_FIELD, 1);
 						STV090x_SETFIELD_Px(reg, DVBS2_ENABLE_FIELD, 1);
+
 						if (STV090x_WRITE_DEMOD(state, DMDCFGMD, reg) < 0)
+						{
 							goto err;
+						}
 					}
+
 					if (STV090x_WRITE_DEMOD(state, CFRINIT1, 0x00) < 0)
+					{
 						goto err;
+					}
 					if (STV090x_WRITE_DEMOD(state, CFRINIT0, 0x00) < 0)
+					{
 						goto err;
+					}
 					if (STV090x_WRITE_DEMOD(state, DMDISTATE, 0x1f) < 0)
+					{
 						goto err;
+					}
 					if (STV090x_WRITE_DEMOD(state, DMDISTATE, 0x15) < 0)
+					{
 						goto err;
+					}
 					lock = stv090x_get_dmdlock(state, (timeout_dmd / 3));
+
 					dir *= -1;
 					cur_step++;
 				}
@@ -3784,8 +4370,9 @@ static int stv090x_get_coldlock(struct stv090x_state *state, s32 timeout_dmd)
 	}
 	dprintk(10, "%s <\n", __func__);
 	return lock;
+
 err:
-	printk("stv090x_get_coldlock: I/O error\n");
+	dprintk(1, "stv090x_get_coldlock: I/O error\n");
 	return -1;
 }
 
@@ -3856,7 +4443,6 @@ static int stv090x_get_loop_params(struct stv090x_state *state, s32 *freq_inc, s
 	*freq_inc = inc;
 	*timeout_sw = timeout;
 	*steps = steps_max;
-
 	dprintk(10, "%s <\n", __func__);
 	return 0;
 }
@@ -3894,7 +4480,6 @@ static int stv090x_chk_signal(struct stv090x_state *state)
 		no_signal = 0;
 		dprintk(1, "Found Signal\n");
 	}
-
 	dprintk(10, "%s no_signal %d>\n", __func__, no_signal);
 	return no_signal;
 }
@@ -3912,8 +4497,9 @@ static int stv090x_search_car_loop(struct stv090x_state *state, s32 inc, s32 tim
 	car_max  = (65536 * car_max / 2);
 	car_max /= (state->mclk / 1000);
 	if (car_max > 0x4000)
+	{
 		car_max = 0x4000;
-
+	}
 	if (zigzag)
 	{
 		offst_freq = 0;
@@ -3926,19 +4512,27 @@ static int stv090x_search_car_loop(struct stv090x_state *state, s32 inc, s32 tim
 	do
 	{
 		if (STV090x_WRITE_DEMOD(state, DMDISTATE, 0x1c) < 0)
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, CFRINIT1, ((offst_freq / 256) & 0xff)) < 0)
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, CFRINIT0, offst_freq & 0xff) < 0)
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, DMDISTATE, 0x18) < 0)
+		{
 			goto err;
-
+		}
 		reg = STV090x_READ_DEMOD(state, PDELCTRL1);
 		STV090x_SETFIELD_Px(reg, ALGOSWRST_FIELD, 0x1); /* stop DVB-S2 packet delin */
 		if (STV090x_WRITE_DEMOD(state, PDELCTRL1, reg) < 0)
+		{
 			goto err;
-
+		}
 		if (zigzag)
 		{
 			if (offst_freq >= 0)
@@ -3955,6 +4549,7 @@ static int stv090x_search_car_loop(struct stv090x_state *state, s32 inc, s32 tim
 			offst_freq += 2 * inc;
 		}
 		cpt_step++;
+
 		lock = stv090x_get_dmdlock(state, timeout);
 		no_signal = stv090x_chk_signal(state);
 
@@ -3965,19 +4560,24 @@ static int stv090x_search_car_loop(struct stv090x_state *state, s32 inc, s32 tim
 		dprintk(100, "%s: car_max    = %d\n", __func__, car_max);
 		dprintk(100, "%s: cpt_step   = %d\n", __func__, cpt_step);
 		dprintk(100, "%s: steps_max  = %d\n", __func__, steps_max);
-
 	}
-	while ((!lock) && (!no_signal) && ((offst_freq - inc) < car_max) && ((offst_freq + inc) > -car_max) && (cpt_step < steps_max));
+	while ((!lock)
+	&&     (!no_signal)
+	&&     ((offst_freq - inc) < car_max)
+	&&     ((offst_freq + inc) > -car_max)
+	&&     (cpt_step < steps_max));
 
 	reg = STV090x_READ_DEMOD(state, PDELCTRL1);
 	STV090x_SETFIELD_Px(reg, ALGOSWRST_FIELD, 0);
 	if (STV090x_WRITE_DEMOD(state, PDELCTRL1, reg) < 0)
+	{
 		goto err;
-
+	}
 	dprintk(10, "%s <\n", __func__);
 	return lock;
+
 err:
-	printk("stv090x_search_car_loop: I/O error\n");
+	dprintk(1, "stv090x_search_car_loop: I/O error\n");
 	return -1;
 }
 
@@ -4003,10 +4603,14 @@ static int stv090x_sw_algo(struct stv090x_state *state)
 			if (state->dev_ver >= 0x20)
 			{
 				if (STV090x_WRITE_DEMOD(state, CARFREQ, 0x3B) < 0)
+				{
 					goto err;
+				}
 			}
 			if (STV090x_WRITE_DEMOD(state, DMDCFGMD, 0x49) < 0)
+			{
 				goto err;
+			}
 			zigzag = 0;
 			break;
 		}
@@ -4015,10 +4619,14 @@ static int stv090x_sw_algo(struct stv090x_state *state)
 			if (state->dev_ver >= 0x20)
 			{
 				if (STV090x_WRITE_DEMOD(state, CORRELABS, 0x79) < 0)
+				{
 					goto err;
+				}
 			}
 			if (STV090x_WRITE_DEMOD(state, DMDCFGMD, 0x89) < 0)
+			{
 				goto err;
+			}
 			zigzag = 1;
 			break;
 		}
@@ -4029,12 +4637,18 @@ static int stv090x_sw_algo(struct stv090x_state *state)
 			if (state->dev_ver >= 0x20)
 			{
 				if (STV090x_WRITE_DEMOD(state, CARFREQ, 0x3b) < 0)
+				{
 					goto err;
+				}
 				if (STV090x_WRITE_DEMOD(state, CORRELABS, 0x79) < 0)
+				{
 					goto err;
+				}
 			}
 			if (STV090x_WRITE_DEMOD(state, DMDCFGMD, 0xc9) < 0)
+			{
 				goto err;
+			}
 			zigzag = 0;
 			break;
 		}
@@ -4046,21 +4660,25 @@ static int stv090x_sw_algo(struct stv090x_state *state)
 		no_signal = stv090x_chk_signal(state);
 		trials++;
 
-		/* run the SW search 2 times maximum*/
+		/* Run the SW search 2 times maximum */
 		if (lock || no_signal || (trials == 2))
 		{
-			/* Check if the demod is not losing lock in DVBS2*/
+			/* Check if the demod is not losing lock in DVBS2 */
 			if (state->dev_ver >= 0x20)
 			{
 				if (STV090x_WRITE_DEMOD(state, CARFREQ, 0x49) < 0)
+				{
 					goto err;
+				}
 				if (STV090x_WRITE_DEMOD(state, CORRELABS, 0x9e) < 0)
+				{
 					goto err;
+				}
 			}
 			reg = STV090x_READ_DEMOD(state, DMDSTATE);
 			if ((lock) && (STV090x_GETFIELD_Px(reg, HEADER_MODE_FIELD) == STV090x_DVBS2))
 			{
-				/* Check if the demod is not losing lock in DVBS2*/
+				/* Check if the demod is not losing lock in DVBS2 */
 				msleep(timeout_step);
 				reg = STV090x_READ_DEMOD(state, DMDFLYW);
 				dvbs2_fly_wheel = STV090x_GETFIELD_Px(reg, FLYWHEEL_CPT_FIELD);
@@ -4080,10 +4698,14 @@ static int stv090x_sw_algo(struct stv090x_state *state)
 						if (state->dev_ver >= 0x20)
 						{
 							if (STV090x_WRITE_DEMOD(state, CORRELABS, 0x79) < 0)
+							{
 								goto err;
+							}
 						}
 						if (STV090x_WRITE_DEMOD(state, DMDCFGMD, 0x89) < 0)
+						{
 							goto err;
+						}
 					}
 				}
 			}
@@ -4096,8 +4718,9 @@ static int stv090x_sw_algo(struct stv090x_state *state)
 
 	dprintk(10, "%s lock %d<\n", __func__, lock);
 	return lock;
+
 err:
-	printk("stv090x_sw_algo: I/O error\n");
+	dprintk(1, "stv090x_sw_algo: I/O error\n");
 	return -1;
 }
 
@@ -4153,7 +4776,6 @@ static s32 stv090x_get_car_freq(struct stv090x_state *state, u32 mclk)
 	tmp_2 = derot % 0x1000;
 
 	derot = (int_1 * int_2) + ((int_1 * tmp_2) >> 12) + ((int_2 * tmp_1) >> 12);
-
 	dprintk(10, "%s derot %d <\n", __func__, derot);
 	return derot;
 }
@@ -4205,7 +4827,6 @@ static int stv090x_get_viterbi(struct stv090x_state *state)
 			break;
 		}
 	}
-
 	dprintk(10, "%s <\n", __func__);
 	return 0;
 }
@@ -4240,15 +4861,18 @@ static enum stv090x_signal_state stv090x_get_sig_params(struct stv090x_state *st
 	if (state->config->tuner_get_frequency)
 	{
 		if (state->config->tuner_get_frequency(fe, &state->frequency) < 0)
+		{
 			goto err;
+		}
 	}
 
 	offst_freq = stv090x_get_car_freq(state, state->mclk) / 1000;
 	state->frequency += offst_freq;
 
 	if (stv090x_get_viterbi(state) < 0)
+	{
 		goto err;
-
+	}
 	reg = STV090x_READ_DEMOD(state, DMDMODCOD);
 	state->modcod = STV090x_GETFIELD_Px(reg, DEMOD_MODCOD_FIELD);
 
@@ -4280,9 +4904,10 @@ static enum stv090x_signal_state stv090x_get_sig_params(struct stv090x_state *st
 		if (state->config->tuner_get_frequency)
 		{
 			if (state->config->tuner_get_frequency(fe, &state->frequency) < 0)
+			{
 				goto err;
+			}
 		}
-
 		if (abs(offst_freq) <= ((state->search_range / 2000) + 500))
 		{
 			dprintk(100, "%s: rangeok1\n", __func__);
@@ -4313,11 +4938,11 @@ static enum stv090x_signal_state stv090x_get_sig_params(struct stv090x_state *st
 			return STV090x_OUTOFRANGE;
 		}
 	}
-
 	dprintk(10, "%s: out of range <\n", __func__);
 	return STV090x_OUTOFRANGE;
+
 err:
-	printk("stv090x_signal_state stv090x_get_sig_params: I/O error\n");
+	dprintk(1, "stv090x_signal_state stv090x_get_sig_params: I/O error\n");
 	return -1;
 }
 
@@ -4357,7 +4982,7 @@ static u8 stv090x_optimize_carloop(struct stv090x_state *state, enum stv090x_mod
 	{
 		printk("%s STX7111 cut 0x20 handling (modcod %d, pilots %d)\n", __func__, modcod, pilots);
 		car_loop          = stx7111_s2_crl_cut20;
-#warning stv090x: fixme fixme do not know lowqpsk crl
+#warning stv090x: fixme do not know lowqpsk crl
 		car_loop_qpsk_low = stv090x_s2_lowqpsk_crl_cut20;
 		/* FIXME: do not know apsk values */
 		car_loop_apsk_low = stv090x_s2_apsk_crl_cut20;
@@ -4415,27 +5040,42 @@ static u8 stv090x_optimize_carloop(struct stv090x_state *state, enum stv090x_mod
 		{
 			aclc = car_loop_qpsk_low[i].crl_pilots_on_30;
 			if (state->srate <= 25000000)
+			{
 				aclc = car_loop_qpsk_low[i].crl_pilots_on_20;
+			}
 			else if (state->srate <= 15000000)
+			{
 				aclc = car_loop_qpsk_low[i].crl_pilots_on_10;
+			}
 			else if (state->srate <= 7000000)
+			{
 				aclc = car_loop_qpsk_low[i].crl_pilots_on_5;
+			}
 			else if (state->srate <= 3000000)
+			{
 				aclc = car_loop_qpsk_low[i].crl_pilots_on_2;
+			}
 		}
 		else
 		{
 			aclc = car_loop_qpsk_low[i].crl_pilots_off_30;
 			if (state->srate <= 25000000)
+			{
 				aclc = car_loop_qpsk_low[i].crl_pilots_off_20;
+			}
 			else if (state->srate <= 15000000)
+			{
 				aclc = car_loop_qpsk_low[i].crl_pilots_off_10;
+			}
 			else if (state->srate <= 7000000)
+			{
 				aclc = car_loop_qpsk_low[i].crl_pilots_off_5;
+			}
 			else if (state->srate <= 3000000)
+			{
 				aclc = car_loop_qpsk_low[i].crl_pilots_off_2;
+			}
 		}
-
 	}
 	else if (modcod <= STV090x_8PSK_910)
 	{
@@ -4443,25 +5083,41 @@ static u8 stv090x_optimize_carloop(struct stv090x_state *state, enum stv090x_mod
 		{
 			aclc = car_loop[i].crl_pilots_on_30;
 			if (state->srate <= 25000000)
+			{
 				aclc = car_loop[i].crl_pilots_on_20;
+			}
 			else if (state->srate <= 15000000)
+			{
 				aclc = car_loop[i].crl_pilots_on_10;
+			}
 			else if (state->srate <= 7000000)
+			{
 				aclc = car_loop[i].crl_pilots_on_5;
+			}
 			else if (state->srate <= 3000000)
+			{
 				aclc = car_loop[i].crl_pilots_on_2;
+			}
 		}
 		else
 		{
 			aclc = car_loop[i].crl_pilots_off_30;
 			if (state->srate <= 25000000)
+			{
 				aclc = car_loop[i].crl_pilots_off_20;
+			}
 			else if (state->srate <= 15000000)
+			{
 				aclc = car_loop[i].crl_pilots_off_10;
+			}
 			else if (state->srate <= 7000000)
+			{
 				aclc = car_loop[i].crl_pilots_off_5;
+			}
 			else if (state->srate <= 3000000)
+			{
 				aclc = car_loop[i].crl_pilots_off_2;
+			}
 		}
 	}
 	else
@@ -4469,13 +5125,21 @@ static u8 stv090x_optimize_carloop(struct stv090x_state *state, enum stv090x_mod
 		/* 16APSK and 32APSK */
 		aclc = car_loop_apsk_low[i].crl_pilots_on_30;
 		if (state->srate <= 25000000)
+		{
 			aclc = car_loop_apsk_low[i].crl_pilots_on_20;
+		}
 		else if (state->srate <= 15000000)
+		{
 			aclc = car_loop_apsk_low[i].crl_pilots_on_10;
+		}
 		else if (state->srate <= 7000000)
+		{
 			aclc = car_loop_apsk_low[i].crl_pilots_on_5;
+		}
 		else if (state->srate <= 3000000)
+		{
 			aclc = car_loop_apsk_low[i].crl_pilots_on_2;
+		}
 	}
 	dprintk(10, "%s <\n", __func__);
 	return aclc;
@@ -4522,17 +5186,27 @@ static u8 stv090x_optimize_carloop_short(struct stv090x_state *state)
 		/* Cut 2.0 and up: we don't support cuts older than 2.0 */
 		short_crl = stv090x_s2_short_crl_cut20;
 	}
-	if (state->srate <= 3000000)
-		aclc = short_crl[index].crl_2;
-	else if (state->srate <= 7000000)
-		aclc = short_crl[index].crl_5;
-	else if (state->srate <= 15000000)
-		aclc = short_crl[index].crl_10;
-	else if (state->srate <= 25000000)
-		aclc = short_crl[index].crl_20;
-	else
-		aclc = short_crl[index].crl_30;
 
+	if (state->srate <= 3000000)
+	{
+		aclc = short_crl[index].crl_2;
+	}
+	else if (state->srate <= 7000000)
+	{
+		aclc = short_crl[index].crl_5;
+	}
+	else if (state->srate <= 15000000)
+	{
+		aclc = short_crl[index].crl_10;
+	}
+	else if (state->srate <= 25000000)
+	{
+		aclc = short_crl[index].crl_20;
+	}
+	else
+	{
+		aclc = short_crl[index].crl_30;
+	}
 	dprintk(10, "%s <\n", __func__);
 	return aclc;
 }
@@ -4564,38 +5238,56 @@ static int stv090x_optimize_track(struct stv090x_state *state)
 				STV090x_SETFIELD_Px(reg, DVBS1_ENABLE_FIELD, 1);
 				STV090x_SETFIELD_Px(reg, DVBS2_ENABLE_FIELD, 0);
 				if (STV090x_WRITE_DEMOD(state, DMDCFGMD, reg) < 0)
+				{
 					goto err;
+				}
 			}
 			reg = STV090x_READ_DEMOD(state, DEMOD);
 			STV090x_SETFIELD_Px(reg, ROLLOFF_CONTROL_FIELD, state->rolloff);
 			STV090x_SETFIELD_Px(reg, MANUAL_SXROLLOFF_FIELD, 0x01);
 			if (STV090x_WRITE_DEMOD(state, DEMOD, reg) < 0)
+			{
 				goto err;
+			}
 #ifndef FORTIS_HDBOX
 			if (state->device == STX7111)
 			{
 				if (STV090x_WRITE_DEMOD(state, ERRCTRL1, 0x73) < 0)
+				{
 					goto err;
+				}
 				if (STV090x_WRITE_DEMOD(state, U1, 0x73) < 0)
+				{
 					goto err;
+				}
 			}
 			if ((state->dev_ver >= 0x30) && (state->device != STX7111))
 			{
 				if (stv090x_get_viterbi(state) < 0)
+				{
 					goto err;
+				}
 				if (state->fec == STV090x_PR12)
 				{
 					if (STV090x_WRITE_DEMOD(state, GAUSSR0, 0x98) < 0)
+					{
 						goto err;
+					}
 					if (STV090x_WRITE_DEMOD(state, CCIR0, 0x18) < 0)
+					{
 						goto err;
+					}
 				}
 				else
 				{
 					if (STV090x_WRITE_DEMOD(state, GAUSSR0, 0x18) < 0)
+					{
 						goto err;
+					}
 					if (STV090x_WRITE_DEMOD(state, CCIR0, 0x18) < 0)
+					{
 						goto err;
+					}
 				}
 			}
 			else if ((state->dev_ver >= 0x20) && (state->device == STX7111))
@@ -4603,23 +5295,35 @@ static int stv090x_optimize_track(struct stv090x_state *state)
 				if (srate >= 15000000)
 				{
 					if (STV090x_WRITE_DEMOD(state, ACLC, 0x2b) < 0)
+					{
 						goto err;
+					}
 					if (STV090x_WRITE_DEMOD(state, BCLC, 0x2b) < 0)
+					{
 						goto err;
+					}
 				}
 				else if (srate < 7000000)
 				{
 					if (STV090x_WRITE_DEMOD(state, ACLC, 0x2c) < 0)
+					{
 						goto err;
+					}
 					if (STV090x_WRITE_DEMOD(state, BCLC, 0x1c) < 0)
+					{
 						goto err;
+					}
 				}
 				else //if ((srate>=7000000) && (srate < 15000000))
 				{
 					if (STV090x_WRITE_DEMOD(state, ACLC, 0x0c) < 0)
+					{
 						goto err;
+					}
 					if (STV090x_WRITE_DEMOD(state, BCLC, 0x1b) < 0)
+					{
 						goto err;
+					}
 				}
 				stv090x_get_viterbi(state);
 				if (state->fec == STV090x_PR12)
@@ -4637,7 +5341,9 @@ static int stv090x_optimize_track(struct stv090x_state *state)
 			if (state->device != STX7111)
 			{
 				if (STV090x_WRITE_DEMOD(state, ERRCTRL1, 0x75) < 0)
+				{
 					goto err;
+				}
 			}
 			break;
 		}
@@ -4649,11 +5355,17 @@ static int stv090x_optimize_track(struct stv090x_state *state)
 			STV090x_SETFIELD_Px(reg, DVBS1_ENABLE_FIELD, 0);
 			STV090x_SETFIELD_Px(reg, DVBS2_ENABLE_FIELD, 1);
 			if (STV090x_WRITE_DEMOD(state, DMDCFGMD, reg) < 0)
+			{
 				goto err;
+			}
 			if (STV090x_WRITE_DEMOD(state, ACLC, 0) < 0)
+			{
 				goto err;
+			}
 			if (STV090x_WRITE_DEMOD(state, BCLC, 0) < 0)
+			{
 				goto err;
+			}
 #ifndef FORTIS_HDBOX
 			if (state->frame_len == STV090x_LONG_FRAME)
 			{
@@ -4668,25 +5380,37 @@ static int stv090x_optimize_track(struct stv090x_state *state)
 				else if (modcod <= STV090x_8PSK_910)
 				{
 					if (STV090x_WRITE_DEMOD(state, ACLC2S2Q, 0x2a) < 0)
+					{
 						goto err;
+					}
 					if (STV090x_WRITE_DEMOD(state, ACLC2S28, aclc) < 0)
+					{
 						goto err;
+					}
 				}
 				if ((state->demod_mode == STV090x_SINGLE) && (modcod > STV090x_8PSK_910))
 				{
 					if (modcod <= STV090x_16APSK_910)
 					{
 						if (STV090x_WRITE_DEMOD(state, ACLC2S2Q, 0x2a) < 0)
+						{
 							goto err;
+						}
 						if (STV090x_WRITE_DEMOD(state, ACLC2S216A, aclc) < 0)
+						{
 							goto err;
+						}
 					}
 					else
 					{
 						if (STV090x_WRITE_DEMOD(state, ACLC2S2Q, 0x2a) < 0)
+						{
 							goto err;
+						}
 						if (STV090x_WRITE_DEMOD(state, ACLC2S232A, aclc) < 0)
+						{
 							goto err;
+						}
 					}
 				}
 			}
@@ -4697,28 +5421,42 @@ static int stv090x_optimize_track(struct stv090x_state *state)
 				if (state->modulation == STV090x_QPSK)
 				{
 					if (STV090x_WRITE_DEMOD(state, ACLC2S2Q, aclc) < 0)
+					{
 						goto err;
+					}
 				}
 				else if (state->modulation == STV090x_8PSK)
 				{
 					if (STV090x_WRITE_DEMOD(state, ACLC2S2Q, 0x2a) < 0)
+					{
 						goto err;
+					}
 					if (STV090x_WRITE_DEMOD(state, ACLC2S28, aclc) < 0)
+					{
 						goto err;
+					}
 				}
 				else if (state->modulation == STV090x_16APSK)
 				{
 					if (STV090x_WRITE_DEMOD(state, ACLC2S2Q, 0x2a) < 0)
+					{
 						goto err;
+					}
 					if (STV090x_WRITE_DEMOD(state, ACLC2S216A, aclc) < 0)
+					{
 						goto err;
+					}
 				}
 				else if (state->modulation == STV090x_32APSK)
 				{
 					if (STV090x_WRITE_DEMOD(state, ACLC2S2Q, 0x2a) < 0)
+					{
 						goto err;
+					}
 					if (STV090x_WRITE_DEMOD(state, ACLC2S232A, aclc) < 0)
+					{
 						goto err;
+					}
 				}
 			}
 			if (state->device == STX7111)
@@ -4726,20 +5464,28 @@ static int stv090x_optimize_track(struct stv090x_state *state)
 				if (state->search_mode == STV090x_SEARCH_AUTO)
 				{
 					if (stv090x_write_reg(state, STV090x_GENCFG, 0x16 /* 0x14 ??? */) < 0)
+					{
 						goto err;
+					}
 					reg = stv090x_read_reg(state, STV090x_TSTRES0);
 					STV090x_SETFIELD(reg, FRESFEC_FIELD, 0x01); /* ldpc reset */
 					if (stv090x_write_reg(state, STV090x_TSTRES0, reg) < 0)
+					{
 						goto err;
+					}
 					STV090x_SETFIELD(reg, FRESFEC_FIELD, 0);
 					if (stv090x_write_reg(state, STV090x_TSTRES0, reg) < 0)
+					{
 						goto err;
+					}
 				}
 				STV090x_WRITE_DEMOD(state, ERRCTRL1, 0x63); /* PER */
 				reg = STV090x_READ_DEMOD(state, DEMOD);
 				STV090x_SETFIELD_Px(reg, MANUAL_SXROLLOFF_FIELD, 0); /* auto rolloff */
 				if (STV090x_WRITE_DEMOD(state, DEMOD, reg) < 0)
+				{
 					goto err;
+				}
 				STV090x_WRITE_DEMOD(state, GAUSSR0, 0xac);
 				STV090x_WRITE_DEMOD(state, CCIR0, 0x2c);
 			}
@@ -4759,9 +5505,13 @@ static int stv090x_optimize_track(struct stv090x_state *state)
 			else if (modcod <= STV090x_8PSK_910)
 			{
 				if (STV090x_WRITE_DEMOD(state, ACLC2S2Q, 0x2a) < 0)
+				{
 					goto err;
+				}
 				if (STV090x_WRITE_DEMOD(state, ACLC2S28, aclc) < 0)
+				{
 					goto err;
+				}
 			}
 			STV090x_WRITE_DEMOD(state, ERRCTRL1, 0x67); /* PER */
 #endif
@@ -4774,7 +5524,9 @@ static int stv090x_optimize_track(struct stv090x_state *state)
 			STV090x_SETFIELD_Px(reg, DVBS1_ENABLE_FIELD, 1);
 			STV090x_SETFIELD_Px(reg, DVBS2_ENABLE_FIELD, 1);
 			if (STV090x_WRITE_DEMOD(state, DMDCFGMD, reg) < 0)
+			{
 				goto err;
+			}
 			break;
 		}
 	} //switch end
@@ -4791,45 +5543,66 @@ static int stv090x_optimize_track(struct stv090x_state *state)
 		STV090x_SETFIELD_Px(reg, SCAN_ENABLE_FIELD, 0x00);
 		STV090x_SETFIELD_Px(reg, CFR_AUTOSCAN_FIELD, 0x00);
 		if (STV090x_WRITE_DEMOD(state, DMDCFGMD, reg) < 0)
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, TMGCFG2, 0xc1) < 0)
+		{
 			goto err;
-
+		}
 		if (stv090x_set_srate(state, srate) < 0)
+		{
 			goto err;
+		}
 #if 0
 		if (stv090x_set_max_srate(state, state->mclk, srate) < 0)
+		{
 			goto err;
+		}
 		if (stv090x_set_min_srate(state, state->mclk, srate) < 0)
+		{
 			goto err;
+		}
 #endif
 		blind_tune = 1;
 
 		if (stv090x_dvbs_track_crl(state) < 0)
+		{
 			goto err;
+		}
 	}
 
 	if (state->dev_ver >= 0x20)
 	{
 		if ((state->search_mode == STV090x_SEARCH_DVBS1)
-		|| (state->search_mode == STV090x_SEARCH_DSS)
-		|| (state->search_mode == STV090x_SEARCH_AUTO))
+		||  (state->search_mode == STV090x_SEARCH_DSS)
+		||  (state->search_mode == STV090x_SEARCH_AUTO))
 		{
 			if (STV090x_WRITE_DEMOD(state, VAVSRVIT, 0x0a) < 0)
+			{
 				goto err;
+			}
 			if (STV090x_WRITE_DEMOD(state, VITSCALE, 0x00) < 0)
+			{
 				goto err;
+			}
 		}
 	}
 	if (STV090x_WRITE_DEMOD(state, AGC2REF, 0x38) < 0)
+	{
 		goto err;
+	}
 #ifndef FORTIS_HDBOX
 	/* AUTO tracking MODE */
 	if (STV090x_WRITE_DEMOD(state, SFRUP1, 0x80) < 0)
+	{
 		goto err;
+	}
 	/* AUTO tracking MODE */
 	if (STV090x_WRITE_DEMOD(state, SFRLOW1, 0x80) < 0)
+	{
 		goto err;
+	}
 #endif
 	if ((state->dev_ver >= 0x20) || (blind_tune == 1) || (state->srate < 10000000))
 	{
@@ -4837,9 +5610,13 @@ static int stv090x_optimize_track(struct stv090x_state *state)
 		dprintk(1, "f_1 0x%x\n", f_1);
 		dprintk(1, "f_0 0x%x\n", f_0);
 		if (STV090x_WRITE_DEMOD(state, CFRINIT1, f_1) < 0)
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, CFRINIT0, f_0) < 0)
+		{
 			goto err;
+		}
 		state->tuner_bw = stv090x_car_width(srate, state->rolloff) + 10000000;
 
 		if ((state->dev_ver >= 0x20) || (blind_tune == 1))
@@ -4849,7 +5626,9 @@ static int stv090x_optimize_track(struct stv090x_state *state)
 				if (state->config->tuner_set_bandwidth)
 				{
 					if (state->config->tuner_set_bandwidth(fe, state->tuner_bw) < 0)
+					{
 						goto err;
+					}
 				}
 			}
 		}
@@ -4866,24 +5645,40 @@ static int stv090x_optimize_track(struct stv090x_state *state)
 		if (!(stv090x_get_dmdlock(state, (state->DemodTimeout / 2))))
 		{
 			if (STV090x_WRITE_DEMOD(state, DMDISTATE, 0x1f) < 0)
+			{
 				goto err;
+			}
 			if (STV090x_WRITE_DEMOD(state, CFRINIT1, f_1) < 0)
+			{
 				goto err;
+			}
 			if (STV090x_WRITE_DEMOD(state, CFRINIT0, f_0) < 0)
+			{
 				goto err;
+			}
 			if (STV090x_WRITE_DEMOD(state, DMDISTATE, 0x18) < 0)
+			{
 				goto err;
+			}
 			i = 0;
 			while ((!(stv090x_get_dmdlock(state, (state->DemodTimeout / 2)))) && (i <= 2))
 			{
 				if (STV090x_WRITE_DEMOD(state, DMDISTATE, 0x1f) < 0)
+				{
 					goto err;
+				}
 				if (STV090x_WRITE_DEMOD(state, CFRINIT1, f_1) < 0)
+				{
 					goto err;
+				}
 				if (STV090x_WRITE_DEMOD(state, CFRINIT0, f_0) < 0)
+				{
 					goto err;
+				}
 				if (STV090x_WRITE_DEMOD(state, DMDISTATE, 0x18) < 0)
+				{
 					goto err;
+				}
 				i++;
 			}
 		}
@@ -4891,18 +5686,21 @@ static int stv090x_optimize_track(struct stv090x_state *state)
 	if (state->dev_ver >= 0x20)
 	{
 		if (STV090x_WRITE_DEMOD(state, CARFREQ, 0x49) < 0)
+		{
 			goto err;
+		}
 	}
 	if ((state->delsys == STV090x_DVBS1)
-	|| (state->delsys == STV090x_DSS)
-	|| state->device == STX7111)
+	||  (state->delsys == STV090x_DSS)
+	||  state->device == STX7111)
 	{
 		stv090x_set_vit_thtracq(state);
 	}
 	dprintk(10, "%s <\n", __func__);
 	return 0;
+
 err:
-	printk("stv090x_optimize_track: I/O error\n");
+	dprintk(1, "stv090x_optimize_track: I/O error\n");
 	return -1;
 }
 
@@ -4924,21 +5722,25 @@ static int stv090x_get_feclock(struct stv090x_state *state, s32 timeout)
 			case 0: /* searching */
 			case 1: /* first PLH detected */
 			default:
+			{
 				lock = 0;
 				dprintk(20, "%s searching, plh detected or default\n", __func__);
 				break;
-
+			}
 			case 2: /* DVB-S2 mode */
+			{
 				reg = STV090x_READ_DEMOD(state, PDELSTATUS1);
 				lock = STV090x_GETFIELD_Px(reg, PKTDELIN_LOCK_FIELD);
 				dprintk(20, "%s dvb-s2 mode: reg = 0x%x, lock = %d\n", __func__, reg, lock);
 				break;
-
+			}
 			case 3: /* DVB-S1/legacy mode */
+			{
 				reg = STV090x_READ_DEMOD(state, VSTATUSVIT);
 				lock = STV090x_GETFIELD_Px(reg, LOCKEDVIT_FIELD);
 				dprintk(20, "%s dvb-s1 mode: reg = 0x%x, lock = %d\n", __func__, reg, lock);
 				break;
+			}
 		}
 		if (!lock)
 		{
@@ -4991,7 +5793,9 @@ static int stv090x_set_s2rolloff(struct stv090x_state *state)
 		reg = STV090x_READ_DEMOD(state, DEMOD);
 		STV090x_SETFIELD_Px(reg, MANUAL_SXROLLOFF_FIELD, 0x00);
 		if (STV090x_WRITE_DEMOD(state, DEMOD, reg) < 0)
+		{
 			goto err;
+		}
 	}
 	else
 	{
@@ -4999,10 +5803,13 @@ static int stv090x_set_s2rolloff(struct stv090x_state *state)
 		reg = STV090x_READ_DEMOD(state, DEMOD);
 		STV090x_SETFIELD_Px(reg, MANUAL_S2ROLLOFF_FIELD, 0x00);
 		if (STV090x_WRITE_DEMOD(state, DEMOD, reg) < 0)
+		{
 			goto err;
+		}
 	}
 	dprintk(10, "%s <\n", __func__);
 	return 0;
+
 err:
 	printk("stv090x_set_s2rolloff: I/O error\n");
 	return -1;
@@ -5026,7 +5833,9 @@ static enum stv090x_signal_state stv090x_acq_fixs1(struct stv090x_state *state)
 		if (state->algo == STV090x_BLIND_SEARCH)
 		{
 			if (stv090x_set_srate(state, state->srate) < 0)
+			{
 				goto err;
+			}
 		}
 		stv090x_get_lock_tmg(state);
 
@@ -5036,21 +5845,31 @@ static enum stv090x_signal_state stv090x_acq_fixs1(struct stv090x_state *state)
 		reg = STV090x_READ_DEMOD(state, DMDCFGMD);
 		STV090x_SETFIELD_Px(reg, CFR_AUTOSCAN_FIELD, 0);
 		if (STV090x_WRITE_DEMOD(state, DMDCFGMD, reg) < 0)
+		{
 			goto err;
-
+		}
 		reg = STV090x_READ_DEMOD(state, DEMOD);
 		STV090x_SETFIELD_Px(reg, SPECINV_CONTROL_FIELD, STV090x_IQ_SWAP);
 		if (STV090x_WRITE_DEMOD(state, DEMOD, reg) < 0)
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, DMDISTATE, 0x1c) < 0) /* stop demod */
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, CFRINIT1, f_1) < 0)
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, CFRINIT0, f_2) < 0)
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, DMDISTATE, 0x18) < 0) /* warm start trigger */
+		{
 			goto err;
-
+		}
 		if (stv090x_get_lock(state, state->DemodTimeout, state->FecTimeout))
 		{
 			lock = 1;
@@ -5062,15 +5881,25 @@ static enum stv090x_signal_state stv090x_acq_fixs1(struct stv090x_state *state)
 			reg = STV090x_READ_DEMOD(state, DEMOD);
 			STV090x_SETFIELD_Px(reg, SPECINV_CONTROL_FIELD, STV090x_IQ_NORMAL);
 			if (STV090x_WRITE_DEMOD(state, DEMOD, reg) < 0)
+			{
 				goto err;
+			}
 			if (STV090x_WRITE_DEMOD(state, DMDISTATE, 0x1c) < 0)
+			{
 				goto err;
+			}
 			if (STV090x_WRITE_DEMOD(state, CFRINIT1, f_1) < 0)
+			{
 				goto err;
+			}
 			if (STV090x_WRITE_DEMOD(state, CFRINIT0, f_2) < 0)
+			{
 				goto err;
+			}
 			if (STV090x_WRITE_DEMOD(state, DMDISTATE, 0x18) < 0) /* warm start trigger */
+			{
 				goto err;
+			}
 			if (stv090x_get_lock(state, state->DemodTimeout, state->FecTimeout))
 			{
 				lock = 1;
@@ -5083,10 +5912,10 @@ static enum stv090x_signal_state stv090x_acq_fixs1(struct stv090x_state *state)
 	{
 		lock = 0;
 	}
-
 	return signal_state;
+
 err:
-	dprintk(FE_ERROR, 1, "I/O error\n");
+	dprintk(1, "%s: I/O error\n", __func__);
 	return -1;
 }
 #endif
@@ -5106,29 +5935,38 @@ static enum stv090x_signal_state stv090x_algo(struct stv090x_state *state)
 		reg = STV090x_READ_DEMOD(state, TSCFGH);
 		STV090x_SETFIELD_Px(reg, RST_HWARE_FIELD, 1); /* Stop path 1 stream merger */
 		if (STV090x_WRITE_DEMOD(state, TSCFGH, reg) < 0)
+		{
 			goto err;
+		}
 	}
 	if (STV090x_WRITE_DEMOD(state, DMDISTATE, 0x5c) < 0) /* Demod stop */
+	{
 		goto err;
-
+	}
 	if (state->device == STX7111)
 	{
 		reg = STV090x_READ_DEMOD(state, PDELCTRL1);
 		STV090x_SETFIELD_Px(reg, ALGOSWRST_FIELD, 1);
 		if (STV090x_WRITE_DEMOD(state, PDELCTRL1, reg) < 0)
+		{
 			goto err;
+		}
 	}
 	if (state->dev_ver >= 0x20)
 	{
 		if (state->srate > 5000000)
 		{
 			if (STV090x_WRITE_DEMOD(state, CORRELABS, 0x9e) < 0)
+			{
 				goto err;
+			}
 		}
 		else
 		{
 			if (STV090x_WRITE_DEMOD(state, CORRELABS, 0x82) < 0)
+			{
 				goto err;
+			}
 		}
 	}
 	if (state->device == STX7111)
@@ -5136,7 +5974,9 @@ static enum stv090x_signal_state stv090x_algo(struct stv090x_state *state)
 		reg = STV090x_READ_DEMOD(state, TSCFGH);
 		STV090x_SETFIELD_Px(reg, RST_HWARE_FIELD, 1); /* Stop path 1 stream merger */
 		if (STV090x_WRITE_DEMOD(state, TSCFGH, reg) < 0)
+		{
 			goto err;
+		}
 	}
 	stv090x_get_lock_tmg(state);
 
@@ -5144,19 +5984,29 @@ static enum stv090x_signal_state stv090x_algo(struct stv090x_state *state)
 	{
 		state->tuner_bw = 2 * 36000000; /* wide bw for unknown srate */
 		if (STV090x_WRITE_DEMOD(state, TMGCFG2, 0xc0) < 0) /* wider srate scan */
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, CORRELMANT, 0x70) < 0)
+		{
 			goto err;
+		}
 		if (stv090x_set_srate(state, 1000000) < 0) /* inital srate = 1Msps */
+		{
 			goto err;
+		}
 	}
 	else
 	{
 		/* known srate */
 		if (STV090x_WRITE_DEMOD(state, DMDTOM, 0x20) < 0)
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, TMGCFG, 0xd2) < 0)
+		{
 			goto err;
+		}
 #ifndef FORTIS_HDBOX
 		if (state->device != STX7111)
 		{
@@ -5164,22 +6014,30 @@ static enum stv090x_signal_state stv090x_algo(struct stv090x_state *state)
 			{
 				/* SR < 2MSPS */
 				if (STV090x_WRITE_DEMOD(state, CORRELMANT, 0x63) < 0)
+				{
 					goto err;
+				}
 			}
 			else
 			{
 				/* SR >= 2Msps */
 				if (STV090x_WRITE_DEMOD(state, CORRELMANT, 0x70) < 0)
+				{
 					goto err;
+				}
 			}
 		}
 #endif
 		if (STV090x_WRITE_DEMOD(state, AGC2REF, 0x38) < 0)
+		{
 			goto err;
+		}
 		if (state->dev_ver >= 0x20)
 		{
 			if (STV090x_WRITE_DEMOD(state, KREFTMG, 0x5a) < 0)
+			{
 				goto err;
+			}
 			if (state->algo == STV090x_COLD_SEARCH)
 			{
 				if (state->device != STX7111)
@@ -5204,13 +6062,21 @@ static enum stv090x_signal_state stv090x_algo(struct stv090x_state *state)
 		 * use a Narrow symbol rate scan range
 		 */
 		if (STV090x_WRITE_DEMOD(state, TMGCFG2, 0x01) < 0) /* narrow srate scan */
+		{
 			goto err;
+		}
 		if (stv090x_set_srate(state, state->srate) < 0)
+		{
 			goto err;
+		}
 		if (stv090x_set_max_srate(state, state->mclk, state->srate) < 0)
+		{
 			goto err;
+		}
 		if (stv090x_set_min_srate(state, state->mclk, state->srate) < 0)
+		{
 			goto err;
+		}
 		if (state->srate >= 10000000)
 		{
 			low_sr = 0;
@@ -5233,23 +6099,31 @@ static enum stv090x_signal_state stv090x_algo(struct stv090x_state *state)
 			reg = bbgain;
 		}
 		if (state->config->tuner_set_bbgain(fe, reg) < 0)
+		{
 			goto err;
+		}
 	}
 #endif
 	if (state->config->tuner_set_frequency)
 	{
 		if (state->config->tuner_set_frequency(fe, state->frequency) < 0)
+		{
 			goto err;
+		}
 	}
 	if (state->config->tuner_set_bandwidth)
 	{
 		if (state->config->tuner_set_bandwidth(fe, state->tuner_bw) < 0)
+		{
 			goto err;
+		}
 	}
 	if (state->config->tuner_get_status)
 	{
 		if (state->config->tuner_get_status(fe, &reg) < 0)
+		{
 			goto err;
+		}
 	}
 	if (reg)
 	{
@@ -5295,25 +6169,37 @@ static enum stv090x_signal_state stv090x_algo(struct stv090x_state *state)
 			STV090x_SETFIELD_Px(reg, MANUAL_S2ROLLOFF_FIELD, 1);
 		}
 		if (STV090x_WRITE_DEMOD(state, DEMOD, reg) < 0)
+		{
 			goto err;
+		}
 		if (stv090x_delivery_search(state) < 0)
+		{
 			goto err;
+		}
 		if (state->algo != STV090x_BLIND_SEARCH)
 		{
 			if (stv090x_start_search(state) < 0)
+			{
 				goto err;
+			}
 		}
 		if (state->device == STX7111)
 		{
 			reg = STV090x_READ_DEMOD(state, PDELCTRL1);
 			STV090x_SETFIELD_Px(reg, ALGOSWRST_FIELD, 0);
 			if (STV090x_WRITE_DEMOD(state, PDELCTRL1, reg) < 0)
+			{
 				goto err;
-#warning fixme fixme 0xf3d0 ??? !!!
+			}
+#warning fixme 0xf3d0 ??? !!!
 			if (stv090x_write_reg(state, 0xf5d0, 0x8) < 0)
+			{
 				goto err;
+			}
 			if (stv090x_write_reg(state, 0xf5d0, 0x0) < 0)
+			{
 				goto err;
+			}
 		}
 	}
 	if (signal_state == STV090x_NOAGC1)
@@ -5327,14 +6213,20 @@ static enum stv090x_signal_state stv090x_algo(struct stv090x_state *state)
 		reg = STV090x_READ_DEMOD(state, TSCFGH);
 		STV090x_SETFIELD_Px(reg, RST_HWARE_FIELD, 0x00);
 		if (STV090x_WRITE_DEMOD(state, TSCFGH, reg) < 0)
+		{
 			goto err;
+		}
 		msleep(1);
 		STV090x_SETFIELD_Px(reg, RST_HWARE_FIELD, 0x01);
 		if (STV090x_WRITE_DEMOD(state, TSCFGH, reg) < 0)
+		{
 			goto err;
+		}
 		STV090x_SETFIELD_Px(reg, RST_HWARE_FIELD, 0x00);
 		if (STV090x_WRITE_DEMOD(state, TSCFGH, reg) < 0)
+		{
 			goto err;
+		}
 	}
 	/* need to check for AGC1 state */
 	if (state->algo == STV090x_BLIND_SEARCH)
@@ -5378,11 +6270,15 @@ static enum stv090x_signal_state stv090x_algo(struct stv090x_state *state)
 			reg = stv090x_read_reg(state, STV090x_TSTRES0);
 			STV090x_SETFIELD(reg, FRESFEC_FIELD, 0x1);
 			if (stv090x_write_reg(state, STV090x_TSTRES0, reg) < 0)
+			{
 				goto err;
+			}
 			reg = STV090x_READ_DEMOD(state, PDELCTRL1);
 			STV090x_SETFIELD_Px(reg, ALGOSWRST_FIELD, 0x01);
 			if (STV090x_WRITE_DEMOD(state, PDELCTRL1, reg) < 0)
+			{
 				goto err;
+			}
 #endif
 			/* >= Cut 2.0 :release TS reset after
 			 * demod lock and optimized Tracking
@@ -5390,26 +6286,35 @@ static enum stv090x_signal_state stv090x_algo(struct stv090x_state *state)
 			reg = STV090x_READ_DEMOD(state, TSCFGH);
 			STV090x_SETFIELD_Px(reg, RST_HWARE_FIELD, 0); /* release merger reset */
 			if (STV090x_WRITE_DEMOD(state, TSCFGH, reg) < 0)
+			{
 				goto err;
+			}
 			msleep(1);
 			STV090x_SETFIELD_Px(reg, RST_HWARE_FIELD, 1); /* merger reset */
 			if (STV090x_WRITE_DEMOD(state, TSCFGH, reg) < 0)
+			{
 				goto err;
+			}
 #ifdef FORTIS_HDBOX
 			reg = stv090x_read_reg(state, STV090x_TSTRES0);
 			STV090x_SETFIELD(reg, FRESFEC_FIELD, 0x0);
 			if (stv090x_write_reg(state, STV090x_TSTRES0, reg) < 0)
+			{
 				goto err;
-
+			}
 			reg = STV090x_READ_DEMOD(state, PDELCTRL1);
 			STV090x_SETFIELD_Px(reg, ALGOSWRST_FIELD, 0x00);
 			if (STV090x_WRITE_DEMOD(state, PDELCTRL1, reg) < 0)
+			{
 				goto err;
+			}
 			reg = STV090x_READ_DEMOD(state, TSCFGH);
 #endif
 			STV090x_SETFIELD_Px(reg, RST_HWARE_FIELD, 0); /* release merger reset */
 			if (STV090x_WRITE_DEMOD(state, TSCFGH, reg) < 0)
+			{
 				goto err;
+			}
 		}
 		lock = stv090x_get_lock(state, state->FecTimeout, state->FecTimeout);
 		dprintk(10, "get_lock ->lock\n");
@@ -5424,36 +6329,52 @@ static enum stv090x_signal_state stv090x_algo(struct stv090x_state *state)
 				reg = STV090x_READ_DEMOD(state, PDELCTRL2);
 				STV090x_SETFIELD_Px(reg, RESET_UPKO_COUNT, 1);
 				if (STV090x_WRITE_DEMOD(state, PDELCTRL2, reg) < 0)
+				{
 					goto err;
+				}
 				/* Reset DVBS2 packet delinator error counter */
 				reg = STV090x_READ_DEMOD(state, PDELCTRL2);
 				STV090x_SETFIELD_Px(reg, RESET_UPKO_COUNT, 0);
 				if (STV090x_WRITE_DEMOD(state, PDELCTRL2, reg) < 0)
+				{
 					goto err;
+				}
 				if (STV090x_WRITE_DEMOD(state, ERRCTRL1, 0x67) < 0) /* PER */
+				{
 					goto err;
+				}
 			}
 			else
 			{
 				if (state->device != STX7111)
 				{
 					if (STV090x_WRITE_DEMOD(state, ERRCTRL1, 0x75) < 0)
+					{
 						goto err;
+					}
 				}
 				else
 				{
 					if (STV090x_WRITE_DEMOD(state, ERRCTRL1, 0x73) < 0)
+					{
 						goto err;
+					}
 					if (STV090x_WRITE_DEMOD(state, U1, 0x73) < 0)
+					{
 						goto err;
+					}
 				}
 			}
 			/* Reset the Total packet counter */
 			if (STV090x_WRITE_DEMOD(state, FBERCPT4, 0x00) < 0)
+			{
 				goto err;
+			}
 			/* Reset the packet Error counter2 */
 			if (STV090x_WRITE_DEMOD(state, ERRCTRL2, 0xc1) < 0)
+			{
 				goto err;
+			}
 		}
 		else
 		{
@@ -5466,8 +6387,9 @@ static enum stv090x_signal_state stv090x_algo(struct stv090x_state *state)
 	}
 	dprintk(10, "%s signal_state %d<\n", __func__, signal_state);
 	return signal_state;
+
 err:
-	printk("stv090x_algo: I/O error\n");
+	dprintk(1, "stv090x_algo: I/O error\n");
 	return -1;
 }
 
@@ -5482,11 +6404,13 @@ static enum dvbfe_search stv090x_search(struct dvb_frontend *fe, struct dvbfe_pa
 		p->delsys.dvbs.modulation, p->delsys.dvbs.fec,
 		p->delivery);
 
-	if ((p->frequency == 0) && (p->delsys.dvbs.symbol_rate == 0) && (p->inversion == 0)
-			&& (p->delsys.dvbs.rolloff == 0) && (p->delsys.dvbs.modulation == 0)
-			&& (p->delsys.dvbs.fec == 0) && (p->delivery == 0))
+	if ((p->frequency == 0) && (p->delsys.dvbs.symbol_rate == 0)
+	&& (p->inversion == 0)
+	&& (p->delsys.dvbs.rolloff == 0)
+	&& (p->delsys.dvbs.modulation == 0)
+	&& (p->delsys.dvbs.fec == 0) && (p->delivery == 0))
 	{
-		printk("[stv090x] %s exit: -EINVAL\n", __func__);
+		dprintk(1, "%s exit: -EINVAL\n", __func__);
 		return DVBFE_ALGO_SEARCH_FAILED;
 	}
 	if (p->delivery == DVBFE_DELSYS_DVBS2)
@@ -5513,19 +6437,19 @@ static enum dvbfe_search stv090x_search(struct dvb_frontend *fe, struct dvbfe_pa
 
 	if (state->srate > 10000000)
 	{
-		dprintk(10, "Search range: 10 MHz\n");
+		dprintk(1, "Search range: 10 MHz\n");
 		state->search_range = 10000000;
 	}
 	else
 	{
-		dprintk(10, "Search range: 5 MHz\n");
+		dprintk(1, "Search range: 5 MHz\n");
 		state->search_range = 5000000;
 	}
 	algo_state = stv090x_algo(state);
 
 	if (algo_state == STV090x_RANGEOK)
 	{
-		dprintk(10, "Search success!\n");
+		dprintk(1, "Search success!\n");
 		return DVBFE_ALGO_SEARCH_SUCCESS;
 	}
 	else
@@ -5545,7 +6469,6 @@ static enum dvbfe_search stv090x_search(struct dvb_frontend *fe, struct dvb_fron
 	{
 		return DVBFE_ALGO_SEARCH_INVALID;
 	}
-
 	state->delsys = props->delivery_system;
 	state->frequency = p->frequency;
 	state->srate = p->u.qpsk.symbol_rate;
@@ -5573,7 +6496,6 @@ static enum dvbfe_search stv090x_search(struct dvb_frontend *fe, struct dvb_fron
 		dprintk(1, "Search failed!\n");
 		return DVBFE_ALGO_SEARCH_FAILED;
 	}
-
 	return DVBFE_ALGO_SEARCH_ERROR;
 }
 #endif
@@ -5584,7 +6506,7 @@ static int stv090x_read_status(struct dvb_frontend *fe, enum fe_status *status)
 	u32 reg;
 	u8 search_state;
 
-	dprintk(10, "%s >\n", __FUNCTION__);
+	dprintk(10, "%s >\n", __func__);
 
 	reg = STV090x_READ_DEMOD(state, DMDSTATE);
 	search_state = STV090x_GETFIELD_Px(reg, HEADER_MODE_FIELD);
@@ -5612,10 +6534,10 @@ static int stv090x_read_status(struct dvb_frontend *fe, enum fe_status *status)
 					if (STV090x_GETFIELD_Px(reg, TSFIFO_LINEOK_FIELD))
 					{
 						*status = FE_HAS_SIGNAL
-							  | FE_HAS_CARRIER
-							  | FE_HAS_VITERBI
-							  | FE_HAS_SYNC
-							  | FE_HAS_LOCK;
+						        | FE_HAS_CARRIER
+						        | FE_HAS_VITERBI
+						        | FE_HAS_SYNC
+						        | FE_HAS_LOCK;
 					}
 				}
 			}
@@ -5634,16 +6556,17 @@ static int stv090x_read_status(struct dvb_frontend *fe, enum fe_status *status)
 					if (STV090x_GETFIELD_Px(reg, TSFIFO_LINEOK_FIELD))
 					{
 						*status = FE_HAS_SIGNAL
-							  | FE_HAS_CARRIER						        | FE_HAS_VITERBI
-							  | FE_HAS_SYNC
-							  | FE_HAS_LOCK;
+						        | FE_HAS_CARRIER
+						        | FE_HAS_VITERBI
+						        | FE_HAS_SYNC
+						        | FE_HAS_LOCK;
 					}
 				}
 			}
 			break;
 		}
 	}
-	dprintk(10, "%s status = %d<\n", __FUNCTION__, *status);
+	dprintk(10, "%s status = %d<\n", __func__, *status);
 	return 0;
 }
 
@@ -5655,7 +6578,7 @@ static int stv090x_read_per(struct dvb_frontend *fe, u32 *per)
 	u32 reg, h, m, l;
 	enum fe_status status;
 
-	dprintk(10, "%s >\n", __FUNCTION__);
+	dprintk(10, "%s >\n", __func__);
 
 	stv090x_read_status(fe, &status);
 	if (!(status & FE_HAS_LOCK))
@@ -5698,14 +6621,18 @@ static int stv090x_read_per(struct dvb_frontend *fe, u32 *per)
 		}
 	}
 	if (STV090x_WRITE_DEMOD(state, FBERCPT4, 0) < 0)
+	{
 		goto err;
+	}
 	if (STV090x_WRITE_DEMOD(state, ERRCTRL2, 0xc1) < 0)
+	{
 		goto err;
-
-	dprintk(10, "%s per = %d<\n", __FUNCTION__, *per);
+	}
+	dprintk(10, "%s per = %d<\n", __func__, *per);
 	return 0;
+
 err:
-	printk("stv090x_read_per: I/O error\n");
+	dprintk(1, "stv090x_read_per: I/O error\n");
 	return -1;
 }
 
@@ -5716,13 +6643,13 @@ static int stv090x_table_lookup(const struct stv090x_tab *tab, int max, int val)
 	int min = 0, med;
 
 	if ((val >= tab[min].read && val < tab[max].read)
-	|| (val >= tab[max].read && val < tab[min].read))
+	||  (val >= tab[max].read && val < tab[min].read))
 	{
 		while ((max - min) > 1)
 		{
 			med = (max + min) / 2;
 			if ((val >= tab[min].read && val < tab[med].read)
-					|| (val >= tab[med].read && val < tab[min].read))
+			||  (val >= tab[med].read && val < tab[min].read))
 			{
 				max = med;
 			}
@@ -5765,7 +6692,7 @@ static int stv090x_read_signal_strength(struct dvb_frontend *fe, u16 *strength)
 	s32 agc_0, agc_1, agc;
 	s32 str;
 
-	dprintk(10, "%s >\n", __FUNCTION__);
+	dprintk(10, "%s >\n", __func__);
 
 	reg = STV090x_READ_DEMOD(state, AGCIQIN1);
 	agc_1 = STV090x_GETFIELD_Px(reg, AGCIQ_VALUE_FIELD);
@@ -5777,12 +6704,15 @@ static int stv090x_read_signal_strength(struct dvb_frontend *fe, u16 *strength)
 
 	str = stv090x_table_lookup(stv090x_rf_tab, ARRAY_SIZE(stv090x_rf_tab) - 1, agc);
 	if (agc > stv090x_rf_tab[0].read)
+	{
 		str = 0;
+	}
 	else if (agc < stv090x_rf_tab[ARRAY_SIZE(stv090x_rf_tab) - 1].read)
+	{
 		str = -100;
+	}
 	*strength = (str + 100) * 0xFFFF / 100;
-
-	dprintk(10, "%s strength %d <\n", __FUNCTION__, *strength);
+	dprintk(10, "%s strength %d <\n", __func__, *strength);
 	return 0;
 }
 
@@ -5851,7 +6781,7 @@ static int stv090x_read_cnr(struct dvb_frontend *fe, u16 *cnr)
 			break;
 		}
 	}
-	dprintk(10, "%s cnr %d <\n", __FUNCTION__, *cnr);
+	dprintk(10, "%s cnr %d <\n", __func__, *cnr);
 	return 0;
 }
 
@@ -5860,7 +6790,7 @@ static int stv090x_set_tone(struct dvb_frontend *fe, fe_sec_tone_mode_t tone)
 	struct stv090x_state *state = fe->demodulator_priv;
 	u32 reg;
 
-	dprintk(10, "%s >\n", __FUNCTION__);
+	dprintk(10, "%s >\n", __func__);
 
 	reg = STV090x_READ_DEMOD(state, DISTXCTL);
 	switch (tone)
@@ -5870,10 +6800,14 @@ static int stv090x_set_tone(struct dvb_frontend *fe, fe_sec_tone_mode_t tone)
 			STV090x_SETFIELD_Px(reg, DISTX_MODE_FIELD, 0);
 			STV090x_SETFIELD_Px(reg, DISEQC_RESET_FIELD, 1);
 			if (STV090x_WRITE_DEMOD(state, DISTXCTL, reg) < 0)
+			{
 				goto err;
+			}
 			STV090x_SETFIELD_Px(reg, DISEQC_RESET_FIELD, 0);
 			if (STV090x_WRITE_DEMOD(state, DISTXCTL, reg) < 0)
+			{
 				goto err;
+			}
 			break;
 		}
 		case SEC_TONE_OFF:
@@ -5881,7 +6815,9 @@ static int stv090x_set_tone(struct dvb_frontend *fe, fe_sec_tone_mode_t tone)
 			STV090x_SETFIELD_Px(reg, DISTX_MODE_FIELD, 0);
 			STV090x_SETFIELD_Px(reg, DISEQC_RESET_FIELD, 1);
 			if (STV090x_WRITE_DEMOD(state, DISTXCTL, reg) < 0)
+			{
 				goto err;
+			}
 			break;
 		}
 		default:
@@ -5889,10 +6825,11 @@ static int stv090x_set_tone(struct dvb_frontend *fe, fe_sec_tone_mode_t tone)
 			return -EINVAL;
 		}
 	}
-	dprintk(10, "%s <\n", __FUNCTION__);
+	dprintk(10, "%s <\n", __func__);
 	return 0;
+
 err:
-	printk("stv090x_set_tone: I/O error\n");
+	dprintk(1, "stv090x_set_tone: I/O error\n");
 	return -1;
 }
 
@@ -5907,7 +6844,7 @@ static int stv090x_send_diseqc_msg(struct dvb_frontend *fe, struct dvb_diseqc_ma
 	u32 reg, idle = 0, fifo_full = 1;
 	int i;
 
-	dprintk(10, "%s >\n", __FUNCTION__);
+	dprintk(10, "%s >\n", __func__);
 
 	reg = STV090x_READ_DEMOD(state, DISTXCTL);
 
@@ -5915,11 +6852,14 @@ static int stv090x_send_diseqc_msg(struct dvb_frontend *fe, struct dvb_diseqc_ma
 
 	STV090x_SETFIELD_Px(reg, DISEQC_RESET_FIELD, 1);
 	if (STV090x_WRITE_DEMOD(state, DISTXCTL, reg) < 0)
+	{
 		goto err;
+	}
 	STV090x_SETFIELD_Px(reg, DISEQC_RESET_FIELD, 0);
 	if (STV090x_WRITE_DEMOD(state, DISTXCTL, reg) < 0)
+	{
 		goto err;
-
+	}
 	STV090x_SETFIELD_Px(reg, DIS_PRECHARGE_FIELD, 1);
 	if (STV090x_WRITE_DEMOD(state, DISTXCTL, reg) < 0)
 		goto err;
@@ -5932,13 +6872,16 @@ static int stv090x_send_diseqc_msg(struct dvb_frontend *fe, struct dvb_diseqc_ma
 			fifo_full = STV090x_GETFIELD_Px(reg, FIFO_FULL_FIELD);
 		}
 		if (STV090x_WRITE_DEMOD(state, DISTXDATA, cmd->msg[i]) < 0)
+		{
 			goto err;
+		}
 	}
 	reg = STV090x_READ_DEMOD(state, DISTXCTL);
 	STV090x_SETFIELD_Px(reg, DIS_PRECHARGE_FIELD, 0);
 	if (STV090x_WRITE_DEMOD(state, DISTXCTL, reg) < 0)
+	{
 		goto err;
-
+	}
 	i = 0;
 
 	while ((!idle) && (i < 4))
@@ -5948,10 +6891,11 @@ static int stv090x_send_diseqc_msg(struct dvb_frontend *fe, struct dvb_diseqc_ma
 		msleep(2);
 		i++;
 	}
-	dprintk(10, "%s <\n", __FUNCTION__);
+	dprintk(10, "%s <\n", __func__);
 	return 0;
+
 err:
-	printk("stv090x_send_diseqc_msg: I/O error\n");
+	dprintk(1, "stv090x_send_diseqc_msg: I/O error\n");
 	return -1;
 }
 
@@ -5962,7 +6906,7 @@ static int stv090x_send_diseqc_burst(struct dvb_frontend *fe, fe_sec_mini_cmd_t 
 	u8 mode, value;
 	int i;
 
-	dprintk(10, "%s >\n", __FUNCTION__);
+	dprintk(10, "%s >\n", __func__);
 	reg = STV090x_READ_DEMOD(state, DISTXCTL);
 
 	if (burst == SEC_MINI_A)
@@ -5978,15 +6922,19 @@ static int stv090x_send_diseqc_burst(struct dvb_frontend *fe, fe_sec_mini_cmd_t 
 	STV090x_SETFIELD_Px(reg, DISTX_MODE_FIELD, mode);
 	STV090x_SETFIELD_Px(reg, DISEQC_RESET_FIELD, 1);
 	if (STV090x_WRITE_DEMOD(state, DISTXCTL, reg) < 0)
+	{
 		goto err;
+	}
 	STV090x_SETFIELD_Px(reg, DISEQC_RESET_FIELD, 0);
 	if (STV090x_WRITE_DEMOD(state, DISTXCTL, reg) < 0)
+	{
 		goto err;
-
+	}
 	STV090x_SETFIELD_Px(reg, DIS_PRECHARGE_FIELD, 1);
 	if (STV090x_WRITE_DEMOD(state, DISTXCTL, reg) < 0)
+	{
 		goto err;
-
+	}
 	while (fifo_full)
 	{
 		reg = STV090x_READ_DEMOD(state, DISTXSTATUS);
@@ -5994,26 +6942,29 @@ static int stv090x_send_diseqc_burst(struct dvb_frontend *fe, fe_sec_mini_cmd_t 
 	}
 
 	if (STV090x_WRITE_DEMOD(state, DISTXDATA, value) < 0)
+	{
 		goto err;
-
+	}
 	reg = STV090x_READ_DEMOD(state, DISTXCTL);
 	STV090x_SETFIELD_Px(reg, DIS_PRECHARGE_FIELD, 0);
 	if (STV090x_WRITE_DEMOD(state, DISTXCTL, reg) < 0)
+	{
 		goto err;
-
+	}
 	i = 0;
 
-	while ((!idle) && (i < 4))
+	while ((!idle) && (i < 10))
 	{
 		reg = STV090x_READ_DEMOD(state, DISTXSTATUS);
 		idle = STV090x_GETFIELD_Px(reg, TX_IDLE_FIELD);
 		msleep(2);
 		i++;
 	}
-	dprintk(10, "%s <\n", __FUNCTION__);
+	dprintk(10, "%s <\n", __func__);
 	return 0;
+
 err:
-	printk("stv090x_send_diseqc_burst: I/O error\n");
+	dprintk(1, "stv090x_send_diseqc_burst: I/O error\n");
 	return -1;
 }
 
@@ -6022,7 +6973,7 @@ static int stv090x_recv_slave_reply(struct dvb_frontend *fe, struct dvb_diseqc_s
 	struct stv090x_state *state = fe->demodulator_priv;
 	u32 reg = 0, i = 0, rx_end = 0;
 
-	dprintk(10, "%s >\n", __FUNCTION__);
+	dprintk(10, "%s >\n", __func__);
 
 	while ((rx_end != 1) && (i < 4))
 	{
@@ -6031,14 +6982,15 @@ static int stv090x_recv_slave_reply(struct dvb_frontend *fe, struct dvb_diseqc_s
 		reg = STV090x_READ_DEMOD(state, DISRX_ST0);
 		rx_end = STV090x_GETFIELD_Px(reg, RX_END_FIELD);
 	}
-
 	if (rx_end)
 	{
 		reply->msg_len = STV090x_GETFIELD_Px(reg, FIFO_BYTENBR_FIELD);
 		for (i = 0; i < reply->msg_len; i++)
+		{
 			reply->msg[i] = STV090x_READ_DEMOD(state, DISRXDATA);
+		}
 	}
-	dprintk(10, "%s <\n", __FUNCTION__);
+	dprintk(10, "%s <\n", __func__);
 	return 0;
 }
 
@@ -6050,25 +7002,28 @@ static int stv090x_sleep(struct dvb_frontend *fe)
 	if (state->config->tuner_sleep)
 	{
 		if (state->config->tuner_sleep(fe) < 0)
+		{
 			goto err;
+		}
 	}
-
-	dprintk(10, "Set %s to sleep\n",
-		state->device == STV0900 ? "STV0900" : "STV0903");
+	dprintk(10, "Set %s to sleep\n", state->device == STV0900 ? "STV0900" : "STV0903");
 
 	reg = stv090x_read_reg(state, STV090x_SYNTCTRL);
 	STV090x_SETFIELD(reg, STANDBY_FIELD, 0x01);
 	if (stv090x_write_reg(state, STV090x_SYNTCTRL, reg) < 0)
+	{
 		goto err;
-
+	}
 	reg = stv090x_read_reg(state, STV090x_TSTTNR1);
 	STV090x_SETFIELD(reg, ADC1_PON_FIELD, 0);
 	if (stv090x_write_reg(state, STV090x_TSTTNR1, reg) < 0)
+	{
 		goto err;
-
+	}
 	return 0;
+
 err:
-	printk("stv090x_sleep: I/O error\n");
+	dprintk(1, "stv090x_sleep: I/O error\n");
 	return -1;
 }
 
@@ -6082,16 +7037,19 @@ static int stv090x_wakeup(struct dvb_frontend *fe)
 	reg = stv090x_read_reg(state, STV090x_SYNTCTRL);
 	STV090x_SETFIELD(reg, STANDBY_FIELD, 0x00);
 	if (stv090x_write_reg(state, STV090x_SYNTCTRL, reg) < 0)
+	{
 		goto err;
-
+	}
 	reg = stv090x_read_reg(state, STV090x_TSTTNR1);
 	STV090x_SETFIELD(reg, ADC1_PON_FIELD, 1);
 	if (stv090x_write_reg(state, STV090x_TSTTNR1, reg) < 0)
+	{
 		goto err;
-
+	}
 	return 0;
+
 err:
-	printk("stv090x_wakeup: I/O error\n");
+	dprintk(1, "stv090x_wakeup: I/O error\n");
 	return -1;
 }
 
@@ -6119,50 +7077,88 @@ static int stv090x_ldpc_mode(struct stv090x_state *state, enum stv090x_mode ldpc
 			{
 				/* set LDPC to dual mode */
 				if (stv090x_write_reg(state, STV090x_GENCFG, 0x1d) < 0)
+				{
 					goto err;
-
+				}
 				dprintk(10, "setting to dual mode\n");
 
 				state->demod_mode = STV090x_DUAL;
+
 				reg = stv090x_read_reg(state, STV090x_TSTRES0);
 				STV090x_SETFIELD(reg, FRESFEC_FIELD, 0x1);
 				if (stv090x_write_reg(state, STV090x_TSTRES0, reg) < 0)
+				{
 					goto err;
+				}
 				STV090x_SETFIELD(reg, FRESFEC_FIELD, 0x0);
 				if (stv090x_write_reg(state, STV090x_TSTRES0, reg) < 0)
+				{
 					goto err;
+				}
 				if (STV090x_WRITE_DEMOD(state, MODCODLST0, 0xff) < 0)
+				{
 					goto err;
+				}
 				if (STV090x_WRITE_DEMOD(state, MODCODLST1, 0xff) < 0)
+				{
 					goto err;
+				}
 				if (STV090x_WRITE_DEMOD(state, MODCODLST2, 0xff) < 0)
+				{
 					goto err;
+				}
 				if (STV090x_WRITE_DEMOD(state, MODCODLST3, 0xff) < 0)
+				{
 					goto err;
+				}
 				if (STV090x_WRITE_DEMOD(state, MODCODLST4, 0xff) < 0)
+				{
 					goto err;
+				}
 				if (STV090x_WRITE_DEMOD(state, MODCODLST5, 0xff) < 0)
+				{
 					goto err;
+				}
 				if (STV090x_WRITE_DEMOD(state, MODCODLST6, 0xff) < 0)
+				{
 					goto err;
+				}
 				if (STV090x_WRITE_DEMOD(state, MODCODLST7, 0xcc) < 0)
+				{
 					goto err;
+				}
 				if (STV090x_WRITE_DEMOD(state, MODCODLST8, 0xcc) < 0)
+				{
 					goto err;
+				}
 				if (STV090x_WRITE_DEMOD(state, MODCODLST9, 0xcc) < 0)
+				{
 					goto err;
+				}
 				if (STV090x_WRITE_DEMOD(state, MODCODLSTA, 0xcc) < 0)
+				{
 					goto err;
+				}
 				if (STV090x_WRITE_DEMOD(state, MODCODLSTB, 0xcc) < 0)
+				{
 					goto err;
+				}
 				if (STV090x_WRITE_DEMOD(state, MODCODLSTC, 0xcc) < 0)
+				{
 					goto err;
+				}
 				if (STV090x_WRITE_DEMOD(state, MODCODLSTD, 0xcc) < 0)
+				{
 					goto err;
+				}
 				if (STV090x_WRITE_DEMOD(state, MODCODLSTE, 0xff) < 0)
+				{
 					goto err;
+				}
 				if (STV090x_WRITE_DEMOD(state, MODCODLSTF, 0xcf) < 0)
+				{
 					goto err;
+				}
 			}
 			break;
 		}
@@ -6170,13 +7166,20 @@ static int stv090x_ldpc_mode(struct stv090x_state *state, enum stv090x_mode ldpc
 		{
 			dprintk(10, "setting to single mode\n");
 			if (stv090x_stop_modcod(state) < 0)
+			{
 				goto err;
+			}
 			if (stv090x_activate_modcod_single(state) < 0)
+			{
 				goto err;
+			}
+
 			if (state->demod == STV090x_DEMODULATOR_1)
 			{
 				if (stv090x_write_reg(state, STV090x_GENCFG, 0x06) < 0) /* path 2 */
+				{
 					goto err;
+				}
 			}
 			else
 			{
@@ -6186,25 +7189,34 @@ static int stv090x_ldpc_mode(struct stv090x_state *state, enum stv090x_mode ldpc
 			reg = stv090x_read_reg(state, STV090x_TSTRES0);
 			STV090x_SETFIELD(reg, FRESFEC_FIELD, 0x1);
 			if (stv090x_write_reg(state, STV090x_TSTRES0, reg) < 0)
+			{
 				goto err;
+			}
 			STV090x_SETFIELD(reg, FRESFEC_FIELD, 0x0);
 			if (stv090x_write_reg(state, STV090x_TSTRES0, reg) < 0)
+			{
 				goto err;
+			}
 
 			reg = STV090x_READ_DEMOD(state, PDELCTRL1);
 			STV090x_SETFIELD_Px(reg, ALGOSWRST_FIELD, 0x01);
 			if (STV090x_WRITE_DEMOD(state, PDELCTRL1, reg) < 0)
+			{
 				goto err;
+			}
 			STV090x_SETFIELD_Px(reg, ALGOSWRST_FIELD, 0x00);
 			if (STV090x_WRITE_DEMOD(state, PDELCTRL1, reg) < 0)
+			{
 				goto err;
+			}
 			break;
 		}
-	} //end switch
+	}  // end switch
 	dprintk(10, "%s <\n", __func__);
 	return 0;
+
 err:
-	printk("stv090x_ldpc_mode: I/O error\n");
+	dprintk(1, "stv090x_ldpc_mode: I/O error\n");
 	return -1;
 }
 
@@ -6232,7 +7244,6 @@ static u32 stv090x_get_mclk(struct stv090x_state *state)
 		{
 			m_div = 1;
 		}
-
 		if (n_div == 0)
 		{
 			n_div = 1;
@@ -6270,15 +7281,17 @@ static int stv090x_set_mclk(struct stv090x_state *state, u32 mclk, u32 clk)
 		reg = stv090x_read_reg(state, STV090x_NCOARSE);
 		STV090x_SETFIELD(reg, M_DIV_FIELD, 0x06);
 		if (stv090x_write_reg(state, STV090x_NCOARSE, reg) < 0)
+		{
 			goto err;
-
+		}
 		msleep(2);
 
 		reg = stv090x_read_reg(state, STV090x_NCOARSE1);
 		STV090x_SETFIELD(reg, N_DIV_FIELD, 0x37);
 		if (stv090x_write_reg(state, STV090x_NCOARSE1, reg) < 0)
+		{
 			goto err;
-
+		}
 		state->mclk = stv090x_get_mclk(state);
 
 		dprintk(10, "%s: reading the masterclock = %d\n", __func__, state->mclk);
@@ -6293,8 +7306,9 @@ static int stv090x_set_mclk(struct stv090x_state *state, u32 mclk, u32 clk)
 		reg = stv090x_read_reg(state, STV090x_NCOARSE);
 		STV090x_SETFIELD(reg, M_DIV_FIELD, div);
 		if (stv090x_write_reg(state, STV090x_NCOARSE, reg) < 0)
+		{
 			goto err;
-
+		}
 		state->mclk = stv090x_get_mclk(state);
 
 		dprintk(10, "%s: reading the masterclock = %d\n", __func__, state->mclk);
@@ -6306,14 +7320,19 @@ static int stv090x_set_mclk(struct stv090x_state *state, u32 mclk, u32 clk)
 		dprintk(10, "%d 0x%02x\n", div, div);
 
 		if (STV090x_WRITE_DEMOD(state, F22TX, div) < 0)
+		{
 			goto err;
+		}
 		if (STV090x_WRITE_DEMOD(state, F22RX, div) < 0)
+		{
 			goto err;
+		}
 	}
 	dprintk(10, "%s <\n", __func__);
 	return 0;
+
 err:
-	printk("stv090x_set_mclk: I/O error\n");
+	dprintk(1, "stv090x_set_mclk: I/O error\n");
 	return -1;
 }
 
@@ -6321,7 +7340,7 @@ static int stv090x_set_tspath(struct stv090x_state *state)
 {
 	u32 reg;
 
-	dprintk(10, "%s >\n", __FUNCTION__);
+	dprintk(10, "%s >\n", __func__);
 
 	dprintk(20, "\tts path1 %d\n", state->config->ts1_mode);
 	dprintk(20, "\tts path2 %d\n", state->config->ts2_mode);
@@ -6346,22 +7365,32 @@ static int stv090x_set_tspath(struct stv090x_state *state)
 					case STV090x_TSMODE_DVBCI:
 					{
 						if (stv090x_write_reg(state, STV090x_TSGENERAL, 0x06) < 0) /* Mux'd stream mode */
+						{
 							goto err;
+						}
 						reg = stv090x_read_reg(state, STV090x_P1_TSCFGM);
 						STV090x_SETFIELD_Px(reg, TSFIFO_MANSPEED_FIELD, 3);
 						if (stv090x_write_reg(state, STV090x_P1_TSCFGM, reg) < 0)
+						{
 							goto err;
+						}
 						reg = stv090x_read_reg(state, STV090x_P2_TSCFGM);
 						STV090x_SETFIELD_Px(reg, TSFIFO_MANSPEED_FIELD, 3);
 						if (stv090x_write_reg(state, STV090x_P2_TSCFGM, reg) < 0)
+						{
 							goto err;
+						}
 						if (stv090x_write_reg(state, STV090x_P1_TSSPEED, 0x14) < 0)
+						{
 							goto err;
+						}
 						if (stv090x_write_reg(state, STV090x_P2_TSSPEED, 0x28) < 0)
+						{
 							goto err;
+						}
 						break;
 					}
-				}
+				}  // end of switch
 				break;
 			}
 			case STV090x_TSMODE_SERIAL_PUNCTURED:
@@ -6375,14 +7404,18 @@ static int stv090x_set_tspath(struct stv090x_state *state)
 					default:
 					{
 						if (stv090x_write_reg(state, STV090x_TSGENERAL, 0x0c) < 0)
+						{
 							goto err;
+						}
 						break;
 					}
 					case STV090x_TSMODE_PARALLEL_PUNCTURED:
 					case STV090x_TSMODE_DVBCI:
 					{
 						if (stv090x_write_reg(state, STV090x_TSGENERAL, 0x0a) < 0)
+						{
 							goto err;
+						}
 						break;
 					}
 				}
@@ -6413,15 +7446,23 @@ static int stv090x_set_tspath(struct stv090x_state *state)
 						reg = stv090x_read_reg(state, STV090x_P1_TSCFGM);
 						STV090x_SETFIELD_Px(reg, TSFIFO_MANSPEED_FIELD, 3);
 						if (stv090x_write_reg(state, STV090x_P1_TSCFGM, reg) < 0)
+						{
 							goto err;
+						}
 						reg = stv090x_read_reg(state, STV090x_P1_TSCFGM);
 						STV090x_SETFIELD_Px(reg, TSFIFO_MANSPEED_FIELD, 0);
 						if (stv090x_write_reg(state, STV090x_P1_TSCFGM, reg) < 0)
+						{
 							goto err;
+						}
 						if (stv090x_write_reg(state, STV090x_P1_TSSPEED, 0x14) < 0)
+						{
 							goto err;
+						}
 						if (stv090x_write_reg(state, STV090x_P2_TSSPEED, 0x28) < 0)
+						{
 							goto err;
+						}
 						break;
 					}
 				}
@@ -6451,7 +7492,6 @@ static int stv090x_set_tspath(struct stv090x_state *state)
 			}
 		}
 	}
-
 	switch (state->config->ts1_mode)
 	{
 		case STV090x_TSMODE_PARALLEL_PUNCTURED:
@@ -6460,7 +7500,9 @@ static int stv090x_set_tspath(struct stv090x_state *state)
 			STV090x_SETFIELD_Px(reg, TSFIFO_SERIAL_FIELD, 0x00);
 			STV090x_SETFIELD_Px(reg, TSFIFO_DVBCI_FIELD, 0x00);
 			if (stv090x_write_reg(state, STV090x_P1_TSCFGH, reg) < 0)
+			{
 				goto err;
+			}
 			break;
 		}
 		case STV090x_TSMODE_DVBCI:
@@ -6469,7 +7511,9 @@ static int stv090x_set_tspath(struct stv090x_state *state)
 			STV090x_SETFIELD_Px(reg, TSFIFO_SERIAL_FIELD, 0x00);
 			STV090x_SETFIELD_Px(reg, TSFIFO_DVBCI_FIELD, 0x01);
 			if (stv090x_write_reg(state, STV090x_P1_TSCFGH, reg) < 0)
+			{
 				goto err;
+			}
 			break;
 		}
 		case STV090x_TSMODE_SERIAL_PUNCTURED:
@@ -6478,7 +7522,9 @@ static int stv090x_set_tspath(struct stv090x_state *state)
 			STV090x_SETFIELD_Px(reg, TSFIFO_SERIAL_FIELD, 0x01);
 			STV090x_SETFIELD_Px(reg, TSFIFO_DVBCI_FIELD, 0x00);
 			if (stv090x_write_reg(state, STV090x_P1_TSCFGH, reg) < 0)
+			{
 				goto err;
+			}
 			break;
 		}
 		case STV090x_TSMODE_SERIAL_CONTINUOUS:
@@ -6487,7 +7533,9 @@ static int stv090x_set_tspath(struct stv090x_state *state)
 			STV090x_SETFIELD_Px(reg, TSFIFO_SERIAL_FIELD, 0x01);
 			STV090x_SETFIELD_Px(reg, TSFIFO_DVBCI_FIELD, 0x01);
 			if (stv090x_write_reg(state, STV090x_P1_TSCFGH, reg) < 0)
+			{
 				goto err;
+			}
 			break;
 		}
 		default:
@@ -6495,7 +7543,6 @@ static int stv090x_set_tspath(struct stv090x_state *state)
 			break;
 		}
 	}
-
 	switch (state->config->ts2_mode)
 	{
 		case STV090x_TSMODE_PARALLEL_PUNCTURED:
@@ -6504,7 +7551,9 @@ static int stv090x_set_tspath(struct stv090x_state *state)
 			STV090x_SETFIELD_Px(reg, TSFIFO_SERIAL_FIELD, 0x00);
 			STV090x_SETFIELD_Px(reg, TSFIFO_DVBCI_FIELD, 0x00);
 			if (stv090x_write_reg(state, STV090x_P2_TSCFGH, reg) < 0)
+			{
 				goto err;
+			}
 			break;
 		}
 		case STV090x_TSMODE_DVBCI:
@@ -6513,7 +7562,9 @@ static int stv090x_set_tspath(struct stv090x_state *state)
 			STV090x_SETFIELD_Px(reg, TSFIFO_SERIAL_FIELD, 0x00);
 			STV090x_SETFIELD_Px(reg, TSFIFO_DVBCI_FIELD, 0x01);
 			if (stv090x_write_reg(state, STV090x_P2_TSCFGH, reg) < 0)
+			{
 				goto err;
+			}
 			break;
 		}
 		case STV090x_TSMODE_SERIAL_PUNCTURED:
@@ -6522,7 +7573,9 @@ static int stv090x_set_tspath(struct stv090x_state *state)
 			STV090x_SETFIELD_Px(reg, TSFIFO_SERIAL_FIELD, 0x01);
 			STV090x_SETFIELD_Px(reg, TSFIFO_DVBCI_FIELD, 0x00);
 			if (stv090x_write_reg(state, STV090x_P2_TSCFGH, reg) < 0)
+			{
 				goto err;
+			}
 			break;
 		}
 		case STV090x_TSMODE_SERIAL_CONTINUOUS:
@@ -6531,15 +7584,16 @@ static int stv090x_set_tspath(struct stv090x_state *state)
 			STV090x_SETFIELD_Px(reg, TSFIFO_SERIAL_FIELD, 0x01);
 			STV090x_SETFIELD_Px(reg, TSFIFO_DVBCI_FIELD, 0x01);
 			if (stv090x_write_reg(state, STV090x_P2_TSCFGH, reg) < 0)
+			{
 				goto err;
+			}
 			break;
 		}
 		default:
 		{
 			break;
 		}
-	}
-
+	}  // end switch
 	if (state->config->ts1_clk > 0)
 	{
 		u32 speed;
@@ -6579,11 +7633,14 @@ static int stv090x_set_tspath(struct stv090x_state *state)
 		reg = stv090x_read_reg(state, STV090x_P1_TSCFGM);
 		STV090x_SETFIELD_Px(reg, TSFIFO_MANSPEED_FIELD, 3);
 		if (stv090x_write_reg(state, STV090x_P1_TSCFGM, reg) < 0)
+		{
 			goto err;
+		}
 		if (stv090x_write_reg(state, STV090x_P1_TSSPEED, speed) < 0)
+		{
 			goto err;
+		}
 	}
-
 	if (state->config->ts2_clk > 0)
 	{
 		u32 speed;
@@ -6610,39 +7667,54 @@ static int stv090x_set_tspath(struct stv090x_state *state)
 			{
 				speed = state->mclk / (state->config->ts2_clk / 32);
 				if (speed < 0x20)
+				{
 					speed = 0x20;
+				}
 				if (speed > 0xFF)
+				{
 					speed = 0xFF;
+				}
 				break;
 			}
 		}
 		reg = stv090x_read_reg(state, STV090x_P2_TSCFGM);
 		STV090x_SETFIELD_Px(reg, TSFIFO_MANSPEED_FIELD, 3);
 		if (stv090x_write_reg(state, STV090x_P2_TSCFGM, reg) < 0)
+		{
 			goto err;
+		}
 		if (stv090x_write_reg(state, STV090x_P2_TSSPEED, speed) < 0)
+		{
 			goto err;
+		}
 	}
 	reg = stv090x_read_reg(state, STV090x_P2_TSCFGH);
 	STV090x_SETFIELD_Px(reg, RST_HWARE_FIELD, 0x01);
 	if (stv090x_write_reg(state, STV090x_P2_TSCFGH, reg) < 0)
+	{
 		goto err;
+	}
 	STV090x_SETFIELD_Px(reg, RST_HWARE_FIELD, 0x00);
 	if (stv090x_write_reg(state, STV090x_P2_TSCFGH, reg) < 0)
+	{
 		goto err;
-
+	}
 	reg = stv090x_read_reg(state, STV090x_P1_TSCFGH);
 	STV090x_SETFIELD_Px(reg, RST_HWARE_FIELD, 0x01);
 	if (stv090x_write_reg(state, STV090x_P1_TSCFGH, reg) < 0)
+	{
 		goto err;
+	}
 	STV090x_SETFIELD_Px(reg, RST_HWARE_FIELD, 0x00);
 	if (stv090x_write_reg(state, STV090x_P1_TSCFGH, reg) < 0)
+	{
 		goto err;
-
-	dprintk(10, "%s <\n", __FUNCTION__);
+	}
+	dprintk(10, "%s <\n", __func__);
 	return 0;
+
 err:
-	printk("stv090x_set_tspath: I/O error\n");
+	dprintk(1, "stv090x_set_tspath: I/O error\n");
 	return -1;
 }
 
@@ -6652,55 +7724,65 @@ static int stv090x_init(struct dvb_frontend *fe)
 	const struct stv090x_config *config = state->config;
 	u32 reg;
 
-	dprintk(10, "%s >\n", __FUNCTION__);
+	dprintk(10, "%s >\n", __func__);
 
 	if (state->mclk == 0)
 	{
-		/* Call tuner init to configure the tuner's clock output
+		/* call tuner init to configure the tuner's clock output
 		   divider directly before setting up the master clock of
 		   the stv090x. */
 		if (config->tuner_init)
 		{
 			if (config->tuner_init(fe) < 0)
+			{
 				goto err;
+			}
 		}
 		stv090x_set_mclk(state, 135000000, config->xtal); /* 135 Mhz */
+
 		msleep(1);
 		if (stv090x_write_reg(state, STV090x_SYNTCTRL, 0x20 | config->clk_mode) < 0)
+		{
 			goto err;
+		}
 		stv090x_get_mclk(state);
 	}
-
 	if (stv090x_wakeup(fe) < 0)
 	{
-		printk("Error waking device\n");
+		dprintk(1, "Error waking device\n");
 		goto err;
 	}
 
 	if (stv090x_ldpc_mode(state, state->demod_mode) < 0)
+	{
 		goto err;
-
+	}
 	reg = STV090x_READ_DEMOD(state, TNRCFG2);
 	STV090x_SETFIELD_Px(reg, TUN_IQSWAP_FIELD, state->inversion);
 	if (STV090x_WRITE_DEMOD(state, TNRCFG2, reg) < 0)
+	{
 		goto err;
+	}
 	reg = STV090x_READ_DEMOD(state, DEMOD);
 	STV090x_SETFIELD_Px(reg, ROLLOFF_CONTROL_FIELD, state->rolloff);
 	if (STV090x_WRITE_DEMOD(state, DEMOD, reg) < 0)
+	{
 		goto err;
-
+	}
 	if (config->tuner_set_mode)
 	{
 		if (config->tuner_set_mode(fe, TUNER_WAKE) < 0)
+		{
 			goto err;
+		}
 	}
-
 	if (config->tuner_init)
 	{
 		if (config->tuner_init(fe) < 0)
+		{
 			goto err;
+		}
 	}
-
 #if defined(UFS912)
 	writereg_lnb_supply(state, 0xc8);
 	msleep(1);
@@ -6708,12 +7790,14 @@ static int stv090x_init(struct dvb_frontend *fe)
 #endif
 
 	if (stv090x_set_tspath(state) < 0)
+	{
 		goto err;
-
-	dprintk(10, "%s <\n", __FUNCTION__);
+	}
+	dprintk(10, "%s <\n", __func__);
 	return 0;
+
 err:
-	printk("stv090x_init: I/O error\n");
+	dprintk(1, "stv090x_init: I/O error\n");
 	return -1;
 }
 
@@ -6754,16 +7838,24 @@ static int stv090x_setup(struct dvb_frontend *fe)
 	/* STV090x init */
 	/* Stop Demod */
 	if (stv090x_write_reg(state, STV090x_P1_DMDISTATE, 0x5c) < 0)
+	{
 		goto err;
+	}
 	if (stv090x_write_reg(state, STV090x_P2_DMDISTATE, 0x5c) < 0)
+	{
 		goto err;
+	}
 	msleep(1);
 
 	/* Set No Tuner Mode */
 	if (stv090x_write_reg(state, STV090x_P1_TNRCFG, 0x6c) < 0)
+	{
 		goto err;
+	}
 	if (stv090x_write_reg(state, STV090x_P2_TNRCFG, 0x6c) < 0)
+	{
 		goto err;
+	}
 
 #if defined(UFS912) \
  || defined(HS7110) \
@@ -6780,15 +7872,22 @@ static int stv090x_setup(struct dvb_frontend *fe)
 	/* I2C repeater OFF */
 	STV090x_SETFIELD_Px(reg, ENARPT_LEVEL_FIELD, config->repeater_level);
 	if (stv090x_write_reg(state, STV090x_P1_I2CRPT, reg) < 0)
+	{
 		goto err;
+	}
 	if (stv090x_write_reg(state, STV090x_P2_I2CRPT, reg) < 0)
+	{
 		goto err;
-
+	}
 	if (stv090x_write_reg(state, STV090x_NCOARSE, 0x13) < 0) /* set PLL divider */
+	{
 		goto err;
+	}
 	msleep(1);
 	if (stv090x_write_reg(state, STV090x_I2CCFG, 0x08) < 0) /* 1/41 oversampling */
+	{
 		goto err;
+	}
 #if defined(UFS912) \
  || defined(HS7110) \
  || defined(HS7119) \
@@ -6800,10 +7899,14 @@ static int stv090x_setup(struct dvb_frontend *fe)
  || defined(ATEMIO530) \
  || defined(SPARK)
 	if (stv090x_write_reg(state, STV090x_SYNTCTRL, 0x10 | config->clk_mode) < 0) /* enable PLL */
+	{
 		goto err;
+	}
 #else
 	if (stv090x_write_reg(state, STV090x_SYNTCTRL, 0x20 | config->clk_mode) < 0) /* enable PLL */
+	{
 		goto err;
+	}
 #endif
 	msleep(1);
 
@@ -6812,27 +7915,30 @@ static int stv090x_setup(struct dvb_frontend *fe)
 	for (i = 0; i < t1_size; i++)
 	{
 		if (stv090x_write_reg(state, stv090x_initval[i].addr, stv090x_initval[i].data) < 0)
+		{
 			goto err;
+		}
 	}
-
 	state->dev_ver = stv090x_read_reg(state, STV090x_MID);
 	if (state->dev_ver >= 0x20)
 	{
 		if (stv090x_write_reg(state, STV090x_TSGENERAL, 0x0c) < 0)
+		{
 			goto err;
-
+		}
 		/* write cut20_val*/
 		dprintk(10, "Setting up Cut 2.0 initial values\n");
 		for (i = 0; i < t2_size; i++)
 		{
 			if (stv090x_write_reg(state, stv090x_cut20_val[i].addr, stv090x_cut20_val[i].data) < 0)
+			{
 				goto err;
+			}
 		}
-
 	}
 	else if (state->dev_ver < 0x20)
 	{
-		printk("ERROR: Unsupported Cut: 0x%02x!\n", state->dev_ver);
+		dprintk(1, "ERROR: Unsupported Cut: 0x%02x!\n", state->dev_ver);
 		goto err;
 	}
 	else if (state->dev_ver > 0x30)
@@ -6845,66 +7951,84 @@ static int stv090x_setup(struct dvb_frontend *fe)
 	reg = stv090x_read_reg(state, STV090x_TSTTNR1);
 	STV090x_SETFIELD(reg, ADC1_INMODE_FIELD, (config->adc1_range == STV090x_ADC_1Vpp) ? 0 : 1);
 	if (stv090x_write_reg(state, STV090x_TSTTNR1, reg) < 0)
+	{
 		goto err;
-
+	}
 	/* ADC2 range */
 	reg = stv090x_read_reg(state, STV090x_TSTTNR3);
 	STV090x_SETFIELD(reg, ADC2_INMODE_FIELD, (config->adc2_range == STV090x_ADC_1Vpp) ? 0 : 1);
 	if (stv090x_write_reg(state, STV090x_TSTTNR3, reg) < 0)
+	{
 		goto err;
+	}
 #endif
 	if (stv090x_write_reg(state, STV090x_TSTRES0, 0x80) < 0)
+	{
 		goto err;
+	}
 	if (stv090x_write_reg(state, STV090x_TSTRES0, 0x00) < 0)
+	{
 		goto err;
-
+	}
 	return 0;
+
 err:
-	printk("stv090x_setup: I/O error\n");
+	dprintk(1, "stv090x_setup: I/O error\n");
 	return -1;
 }
 
 #if DVB_API_VERSION < 5
-
 static struct dvbfe_info dvbs_info =
 {
-	.name = "STV090x Multistandard",
-	.delivery = DVBFE_DELSYS_DVBS,
-	.delsys = {
-		.dvbs.modulation = DVBFE_MOD_QPSK,
-		.dvbs.fec = DVBFE_FEC_1_2 | DVBFE_FEC_2_3
-		          | DVBFE_FEC_3_4 | DVBFE_FEC_4_5
-		          | DVBFE_FEC_5_6 | DVBFE_FEC_6_7
-		          | DVBFE_FEC_7_8 | DVBFE_FEC_AUTO
+	.name                     = "STV090x Multistandard",
+	.delivery                 = DVBFE_DELSYS_DVBS,
+	.delsys                   =
+	{
+		.dvbs.modulation      = DVBFE_MOD_QPSK,
+		.dvbs.fec             = DVBFE_FEC_1_2
+		                      | DVBFE_FEC_2_3
+		                      | DVBFE_FEC_3_4
+		                      | DVBFE_FEC_4_5
+		                      | DVBFE_FEC_5_6
+		                      | DVBFE_FEC_6_7
+		                      | DVBFE_FEC_7_8
+		                      | DVBFE_FEC_AUTO,
 	},
-	.frequency_min = 950000,
-	.frequency_max = 2150000,
-	.frequency_step = 0,
-	.frequency_tolerance = 0,
-	.symbol_rate_min = 1000000,
-	.symbol_rate_max = 45000000
+	.frequency_min            = 950000,
+	.frequency_max            = 2150000,
+	.frequency_step           = 0,
+	.frequency_tolerance      = 0,
+	.symbol_rate_min          = 1000000,
+	.symbol_rate_max          = 45000000
 };
 
 static const struct dvbfe_info dvbs2_info =
 {
-	.name = "STV090x Multistandard",
-	.delivery = DVBFE_DELSYS_DVBS2,
-	.delsys = {
-		.dvbs2.modulation = DVBFE_MOD_QPSK | DVBFE_MOD_8PSK,
+	.name                     = "STV090x Multistandard",
+	.delivery                 = DVBFE_DELSYS_DVBS2,
+	.delsys =
+	{
+		.dvbs2.modulation = DVBFE_MOD_QPSK
+		                  | DVBFE_MOD_8PSK,
 		/* TODO: Review these */
-		.dvbs2.fec = DVBFE_FEC_1_4 | DVBFE_FEC_1_3
-		           | DVBFE_FEC_2_5 | DVBFE_FEC_1_2
-		           | DVBFE_FEC_3_5 | DVBFE_FEC_2_3
-		           | DVBFE_FEC_3_4 | DVBFE_FEC_4_5
-		           | DVBFE_FEC_5_6 | DVBFE_FEC_8_9
-		           | DVBFE_FEC_9_10,
+		.dvbs2.fec        = DVBFE_FEC_1_4
+		                  | DVBFE_FEC_1_3
+		                  | DVBFE_FEC_2_5
+		                  | DVBFE_FEC_1_2
+		                  | DVBFE_FEC_3_5
+		                  | DVBFE_FEC_2_3
+		                  | DVBFE_FEC_3_4
+		                  | DVBFE_FEC_4_5
+		                  | DVBFE_FEC_5_6
+		                  | DVBFE_FEC_8_9
+		                  | DVBFE_FEC_9_10,
 	},
-	.frequency_min = 950000,
-	.frequency_max = 2150000,
-	.frequency_step = 0,
-	.symbol_rate_min = 1000000,
-	.symbol_rate_max = 45000000,
-	.symbol_rate_tolerance = 0
+	.frequency_min            = 950000,
+	.frequency_max            = 2150000,
+	.frequency_step           = 0,
+	.symbol_rate_min          = 1000000,
+	.symbol_rate_max          = 45000000,
+	.symbol_rate_tolerance    = 0
 };
 
 static int stv090x_get_info(struct dvb_frontend *fe, struct dvbfe_info *fe_info)
@@ -6923,7 +8047,7 @@ static int stv090x_get_info(struct dvb_frontend *fe, struct dvbfe_info *fe_info)
 		}
 		default:
 		{
-			printk("%s() invalid arg\n", __FUNCTION__);
+			printk("%s() invalid arg\n", __func__);
 			return -EINVAL;
 		}
 	}
@@ -7155,7 +8279,8 @@ static int lnbh23_set_voltage(struct dvb_frontend *fe, enum fe_sec_voltage volta
 
 static struct dvb_frontend_ops stv090x_ops =
 {
-	.info = {
+	.info =
+	{
 		.name                = "STV090x Multistandard",
 		.type                = FE_QPSK,
 		.frequency_min       = 950000,
@@ -7164,7 +8289,9 @@ static struct dvb_frontend_ops stv090x_ops =
 		.frequency_tolerance = 0,
 		.symbol_rate_min     = 1000000,
 		.symbol_rate_max     = 70000000,
-		.caps                = FE_CAN_INVERSION_AUTO | FE_CAN_FEC_AUTO | FE_CAN_QPSK
+		.caps                = FE_CAN_INVERSION_AUTO
+		                     | FE_CAN_FEC_AUTO
+		                     | FE_CAN_QPSK
 	},
 	.release                     = stv090x_release,
 	.init                        = stv090x_init,
@@ -7227,9 +8354,9 @@ struct dvb_frontend *stv090x_attach(const struct stv090x_config *config,
 	state->config                    = config;
 	state->i2c                       = i2c;
 	state->demod                     = demod;
-	state->demod_mode                = config->demod_mode; /* Single or Dual mode */
+	state->demod_mode                = config->demod_mode;  /* Single or Dual mode */
 	state->device                    = config->device;
-	state->rolloff                   = STV090x_RO_35; /* default */
+	state->rolloff                   = STV090x_RO_35;  /* default */
 	state->tuner                     = tuner;
 	state->frontend.ops              = stv090x_ops;
 	state->frontend.demodulator_priv = state;
@@ -7270,15 +8397,12 @@ struct dvb_frontend *stv090x_attach(const struct stv090x_config *config,
 		printk("Error waking device\n");
 		goto error;
 	}
-
-	dprintk(10, "Attaching %s demodulator(%d) Cut=0x%02x\n",
-		state->device == STV0900 ? "STV0900" : "STV0903",
-		demod, state->dev_ver);
-
+	dprintk(10, "Attaching %s demodulator(%d) Cut=0x%02x\n", state->device == STV0900 ? "STV0900" : "STV0903", demod, state->dev_ver);
 	return &state->frontend;
+
 error:
 	kfree(state);
 	return NULL;
 }
 EXPORT_SYMBOL(stv090x_attach);
-
+// vim:ts=4
