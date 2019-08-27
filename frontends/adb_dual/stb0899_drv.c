@@ -4,6 +4,8 @@
  *
  * Copyright (C) ST Microelectronics
  *
+ * Customized for adb_box, bsla model
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
@@ -72,7 +74,7 @@ static unsigned char isl6405_tone_sr2 = 0;
 static struct stpio_pin *pio_diseqrx1;
 static struct stpio_pin *pio_diseqrx2;
 
-static unsigned int *verbose = 0;
+static unsigned int verbose = 0;
 static unsigned int bsla_init = 0;
 
 /* C/N in dB/10, NIRM/NIRL */
@@ -358,7 +360,7 @@ static int pwm_wait_diseqc1_idle(int timeout)
 		}
 		if (jiffies - start > timeout)
 		{
-			dprintk(verbose, FE_DEBUG, 1, "%s: timeout!!", __func__);
+			dprintk(&verbose, FE_ERROR, 1, "%s: timeout!!", __func__);
 			return -ETIMEDOUT;
 		}
 		msleep(10);
@@ -379,7 +381,7 @@ static int pwm_wait_diseqc2_idle(int timeout)
 		}
 		if (jiffies - start > timeout)
 		{
-			dprintk(verbose, FE_DEBUG, 1, "%s: timeout!!\n", __func__);
+			dprintk(&verbose, FE_ERROR, 1, "%s: timeout!!\n", __func__);
 			return -ETIMEDOUT;
 		}
 		msleep(10);
@@ -406,7 +408,7 @@ static int pwm_send_diseqc1_burst(struct dvb_frontend *fe, fe_sec_mini_cmd_t bur
 	{
 		case SEC_MINI_A:
 		{
-			dprintk(verbose, FE_DEBUG, 1, "%s Tone=A\n", __func__);
+			dprintk(&verbose, FE_INFO, 1, "%s Tone=A\n", __func__);
 			for (i = 0; i < 8; i++)
 			{
 				pwm_diseqc_buf1_len += 1;
@@ -422,7 +424,7 @@ static int pwm_send_diseqc1_burst(struct dvb_frontend *fe, fe_sec_mini_cmd_t bur
 		}
 		case SEC_MINI_B:
 		{
-			dprintk(verbose, FE_DEBUG, 1, "%s Tone=B\n", __func__);
+			dprintk(&verbose, FE_INFO, 1, "%s Tone=B\n", __func__);
 			for (i = 0; i < 8; i++)
 			{
 				pwm_diseqc_buf1_len += 1;
@@ -467,7 +469,7 @@ static int pwm_send_diseqc2_burst(struct dvb_frontend *fe, fe_sec_mini_cmd_t bur
 	{
 		case SEC_MINI_A:
 		{
-			dprintk(verbose, FE_DEBUG, 1, "%s Tone=A\n", __func__);
+			dprintk(&verbose, FE_INFO, 1, "%s Tone=A\n", __func__);
 			for (i = 0; i < 8; i++)
 			{
 				pwm_diseqc_buf2_len++;
@@ -483,7 +485,7 @@ static int pwm_send_diseqc2_burst(struct dvb_frontend *fe, fe_sec_mini_cmd_t bur
 		}
 		case SEC_MINI_B:
 		{
-			dprintk(verbose, FE_DEBUG, 1, "%s Tone=B\n", __func__);
+			dprintk(&verbose, FE_INFO, 1, "%s Tone=B\n", __func__);
 			for (i = 0; i < 8; i++)
 			{
 				pwm_diseqc_buf2_len++;
@@ -513,7 +515,7 @@ static int pwm_diseqc1_send_msg(struct dvb_frontend *fe, struct dvb_diseqc_maste
 {
 	int i, j;
 
-	dprintk(verbose, FE_DEBUG, 1, "%s: msg len %x\n", __func__, m->msg_len);
+	dprintk(&verbose, FE_DEBUG, 1, "%s: msg len %x\n", __func__, m->msg_len);
 
 	if (pwm_wait_diseqc1_idle(100) < 0)
 	{
@@ -591,7 +593,7 @@ static int pwm_diseqc2_send_msg(struct dvb_frontend *fe, struct dvb_diseqc_maste
 {
 	int i, j;
 
-	dprintk(verbose, FE_DEBUG, 1, "%s: msg len %x\n", __func__, m->msg_len);
+	dprintk(&verbose, FE_DEBUG, 1, "%s: msg len %x\n", __func__, m->msg_len);
 
 	if (pwm_wait_diseqc2_idle(100) < 0)
 	{
@@ -667,13 +669,13 @@ static int pwm_diseqc2_send_msg(struct dvb_frontend *fe, struct dvb_diseqc_maste
 
 int pwm_diseqc_init(void)
 {
-	dprintk(verbose, FE_DEBUG, 1, "PWM Diseqc Init\n");
+	dprintk(&verbose, FE_DEBUG, 1, "PWM Diseqc Init\n");
 	pwm_registers = (unsigned long) ioremap(0x18010000, 0x100);
 
 	pin_tx_diseqc1 = stpio_request_pin(5, 5, "pin_tx_diseqc1", STPIO_OUT);
 	if (pin_tx_diseqc1 == NULL)
 	{
-		dprintk(verbose, FE_DEBUG, 1, "FAIL : request pin 5,5\n");
+		dprintk(&verbose, FE_ERROR, 1, "FAIL : request pin 5,5\n");
 		goto err;
 	}
 	stpio_set_pin(pin_tx_diseqc1, 0);
@@ -681,14 +683,14 @@ int pwm_diseqc_init(void)
 	pin_tx_diseqc2 = stpio_request_pin(2, 5, "pin_tx_diseqc2", STPIO_OUT);
 	if (pin_tx_diseqc2 == NULL)
 	{
-		dprintk(verbose, FE_DEBUG, 1, "FAIL : request pin 2,5\n");
+		dprintk(&verbose, FE_ERROR, 1, "FAIL : request pin 2,5\n");
 		goto err;
 	}
 	stpio_set_pin(pin_tx_diseqc2, 0);
 
 	if (request_irq(126, pwm_diseqc_irq , IRQF_DISABLED , "timer_pwm", NULL))
 	{
-		dprintk(verbose, FE_DEBUG, 1, "FAIL : request irq pwm\n");
+		dprintk(&verbose, FE_ERROR, 1, "FAIL : request irq pwm\n");
 		goto err;
 	}
 
@@ -712,7 +714,7 @@ int pwm_diseqc_init(void)
 	pwm_diseqc_buf2_pos = 1;
 	pwm_diseqc_buf2_len = 0;
 
-	dprintk(verbose, FE_DEBUG, 1, "PWM Diseqc Init : OK\n");
+	dprintk(&verbose, FE_INFO, 1, "PWM DiSEqC Init : OK\n");
 	return 0;
 
 err:
@@ -1118,14 +1120,14 @@ static void stb0899_set_mclk(struct stb0899_state *state, u32 Mclk)
 	struct stb0899_internal *internal = &state->internal;
 	u8 mdiv = 0;
 
-	dprintk(state->verbose, FE_DEBUG, 1, "state->config=%p", state->config);
+	dprintk(state->verbose, FE_INFO, 1, "state->config=%p", state->config);
 	mdiv = ((6 * Mclk) / state->config->xtal_freq) - 1;
-	dprintk(state->verbose, FE_DEBUG, 1, "mdiv=%d", mdiv);
+	dprintk(state->verbose, FE_INFO, 1, "mdiv=%d", mdiv);
 
 	stb0899_write_reg(state, STB0899_NCOARSE, mdiv);
 	internal->master_clk = stb0899_get_mclk(state);
 
-	dprintk(state->verbose, FE_DEBUG, 1, "MasterCLOCK=%d", internal->master_clk);
+	dprintk(state->verbose, FE_INFO, 1, "MasterCLOCK=%d", internal->master_clk);
 }
 
 static int stb0899_postproc(struct stb0899_state *state, u8 ctl, int enable)
@@ -1170,7 +1172,7 @@ static void stb0899_release(struct dvb_frontend *fe)
 {
 	struct stb0899_state *state = fe->demodulator_priv;
 
-	dprintk(state->verbose, FE_DEBUG, 1, "Release Frontend");
+	dprintk(state->verbose, FE_INFO, 1, "Release Frontend");
 	/* post process event */
 	stb0899_postproc(state, STB0899_POSTPROC_GPIO_POWER, 0);
 	kfree(state);
@@ -1469,7 +1471,7 @@ static int stb0899_sleep(struct dvb_frontend *fe)
 #if 1
 	return 0;  // fix
 #else
-	dprintk(state->verbose, FE_DEBUG, 1, "Going to Sleep .. (Really tired .. :-))");
+	dprintk(state->verbose, FE_INFO, 1, "Going to Sleep.. (Really tired..)");
 
 	/* post process event */
 	stb0899_postproc(state, STB0899_POSTPROC_GPIO_POWER, 0);
@@ -1527,7 +1529,7 @@ static int stb0899_init(struct dvb_frontend *fe)
 		ret = i2c_transfer(state->i2c, &msg, 1);
 		if (ret != 1)
 		{
-			dprintk(state->verbose, FE_DEBUG, 1, "Error: ISL6405 1\n");
+			dprintk(state->verbose, FE_ERROR, 1, "Error: ISL6405 1\n");
 		}
 		isl6405_tone_sr2 = 0;
 		b = ISL6405_EN2 + ISL6405_SR; //power on
@@ -1535,29 +1537,29 @@ static int stb0899_init(struct dvb_frontend *fe)
 		ret = i2c_transfer(state->i2c, &msg, 1);
 		if (ret = !1)
 		{
-			dprintk(state->verbose, FE_DEBUG, 1, "Error: ISL6405 2\n");
+			dprintk(state->verbose, FE_ERROR, 1, "Error: ISL6405 2\n");
 		}
 	}
 
 	/* init device */
-	dprintk(state->verbose, FE_DEBUG, 1, "init device");
+	dprintk(state->verbose, FE_INFO, 1, "init device");
 	for (i = 0; config->init_dev[i].address != 0xffff; i++)
 	{
 		stb0899_write_reg(state, config->init_dev[i].address, config->init_dev[i].data);
 	}
-	dprintk(state->verbose, FE_DEBUG, 1, "init S2 demod");
+	dprintk(state->verbose, FE_INFO, 1, "init S2 demod");
 	/* init S2 demod */
 	for (i = 0; config->init_s2_demod[i].offset != 0xffff; i++)
 	{
 		stb0899_write_s2reg(state, STB0899_S2DEMOD, config->init_s2_demod[i].base_address, config->init_s2_demod[i].offset, config->init_s2_demod[i].data);
 	}
-	dprintk(state->verbose, FE_DEBUG, 1, "init S1 demod");
+	dprintk(state->verbose, FE_INFO, 1, "init S1 demod");
 	/* init S1 demod */
 	for (i = 0; config->init_s1_demod[i].address != 0xffff; i++)
 	{
 		stb0899_write_reg(state, config->init_s1_demod[i].address, config->init_s1_demod[i].data);
 	}
-	dprintk(state->verbose, FE_DEBUG, 1, "init S2 FEC");
+	dprintk(state->verbose, FE_INFO, 1, "init S2 FEC");
 	/* init S2 fec */
 	for (i = 0; config->init_s2_fec[i].offset != 0xffff; i++)
 	{
@@ -1566,7 +1568,7 @@ static int stb0899_init(struct dvb_frontend *fe)
 				    config->init_s2_fec[i].offset,
 				    config->init_s2_fec[i].data);
 	}
-	dprintk(state->verbose, FE_DEBUG, 1, "init TST");
+	dprintk(state->verbose, FE_INFO, 1, "init TST");
 	/* init test		*/
 	for (i = 0; config->init_tst[i].address != 0xffff; i++)
 	{
@@ -1655,7 +1657,7 @@ static int stb0899_read_signal_strength(struct dvb_frontend *fe, u16 *strength)
 					{
 						*strength = (*strength - MIN_STRENGTH_DVBS) * 0xFFFF / (MAX_STRENGTH_DVBS - MIN_STRENGTH_DVBS);
 					}
-					dprintk(state->verbose, FE_DEBUG, 1, "AGCIQVALUE = 0x%02x, C = %d * 0.1 dBm", val & 0xff, *strength);
+					dprintk(state->verbose, FE_INFO, 1, "AGCIQVALUE = 0x%02x, C = %d * 0.1 dBm", val & 0xff, *strength);
 				}
 			}
 			break;
@@ -1689,7 +1691,7 @@ static int stb0899_read_signal_strength(struct dvb_frontend *fe, u16 *strength)
 		}
 		default:
 		{
-			dprintk(state->verbose, FE_DEBUG, 1, "Unsupported delivery system");
+			dprintk(state->verbose, FE_ERROR, 1, "Unsupported delivery system");
 			return -EINVAL;
 		}
 	}
@@ -1782,13 +1784,13 @@ static int stb0899_read_snr(struct dvb_frontend *fe, u16 *snr)
 				{
 					*snr = (*snr - MIN_SNR_DVBS2) * 0xFFFF / (MAX_SNR_DVBS2 - MIN_SNR_DVBS2);
 				}
-				dprintk(state->verbose, FE_DEBUG, 1, "Es/N0 quant = %d (%d) estimate = %u (%d), C/N = %d * 0.1 dBm", quant, quantn, est, estn, val);
+				dprintk(state->verbose, FE_INFO, 1, "Es/N0 quant = %d (%d) estimate = %u (%d), C/N = %d * 0.1 dBm", quant, quantn, est, estn, val);
 			}
 			break;
 		}
 		default:
 		{
-			dprintk(state->verbose, FE_DEBUG, 1, "Unsupported delivery system");
+			dprintk(state->verbose, FE_ERROR, 1, "Unsupported delivery system");
 			return -EINVAL;
 		}
 	}
@@ -1813,13 +1815,13 @@ static int stb0899_read_status(struct dvb_frontend *fe, enum fe_status *status)
 				reg  = stb0899_read_reg(state, STB0899_VSTATUS);
 				if (STB0899_GETFIELD(VSTATUS_LOCKEDVIT, reg))
 				{
-					dprintk(state->verbose, FE_DEBUG, 1, "--------> FE_HAS_CARRIER | FE_HAS_LOCK");
+					dprintk(state->verbose, FE_INFO, 1, "--------> FE_HAS_CARRIER | FE_HAS_LOCK");
 					*status |= FE_HAS_SIGNAL | FE_HAS_CARRIER | FE_HAS_LOCK;
 
 					reg = stb0899_read_reg(state, STB0899_PLPARM);
 					if (STB0899_GETFIELD(VITCURPUN, reg))
 					{
-						dprintk(state->verbose, FE_DEBUG, 1, "--------> FE_HAS_VITERBI | FE_HAS_SYNC");
+						dprintk(state->verbose, FE_INFO, 1, "--------> FE_HAS_VITERBI | FE_HAS_SYNC");
 						*status |= FE_HAS_VITERBI | FE_HAS_SYNC;
 						/* post process event */
 						stb0899_postproc(state, STB0899_POSTPROC_GPIO_LOCK, 1);
@@ -1837,23 +1839,23 @@ static int stb0899_read_status(struct dvb_frontend *fe, enum fe_status *status)
 				if (STB0899_GETFIELD(UWP_LOCK, reg) && STB0899_GETFIELD(CSM_LOCK, reg))
 				{
 					*status |= FE_HAS_SIGNAL | FE_HAS_CARRIER;
-					dprintk(state->verbose, FE_DEBUG, 1, "UWP & CSM Lock ! ---> DVB-S2 FE_HAS_CARRIER");
+					dprintk(state->verbose, FE_INFO, 1, "UWP & CSM Lock ! ---> DVB-S2 FE_HAS_CARRIER");
 
 					reg = stb0899_read_reg(state, STB0899_CFGPDELSTATUS1);
 					if (STB0899_GETFIELD(CFGPDELSTATUS_LOCK, reg))
 					{
 						*status |= FE_HAS_LOCK;
-						dprintk(state->verbose, FE_DEBUG, 1, "Packet Delineator Locked ! -----> DVB-S2 FE_HAS_LOCK");
+						dprintk(state->verbose, FE_INFO, 1, "Packet Delineator Locked ! -----> DVB-S2 FE_HAS_LOCK");
 					}
 					if (STB0899_GETFIELD(CONTINUOUS_STREAM, reg))
 					{
 						*status |= FE_HAS_VITERBI;
-						dprintk(state->verbose, FE_DEBUG, 1, "Packet Delineator found VITERBI ! -----> DVB-S2 FE_HAS_VITERBI");
+						dprintk(state->verbose, FE_INFO, 1, "Packet Delineator found VITERBI ! -----> DVB-S2 FE_HAS_VITERBI");
 					}
 					if (STB0899_GETFIELD(ACCEPTED_STREAM, reg))
 					{
 						*status |= FE_HAS_SYNC;
-						dprintk(state->verbose, FE_DEBUG, 1, "Packet Delineator found SYNC ! -----> DVB-S2 FE_HAS_SYNC");
+						dprintk(state->verbose, FE_INFO, 1, "Packet Delineator found SYNC ! -----> DVB-S2 FE_HAS_SYNC");
 						/* post process event */
 						stb0899_postproc(state, STB0899_POSTPROC_GPIO_LOCK, 1);
 					}
@@ -1863,7 +1865,7 @@ static int stb0899_read_status(struct dvb_frontend *fe, enum fe_status *status)
 		}
 		default:
 		{
-			dprintk(state->verbose, FE_DEBUG, 1, "Unsupported delivery system");
+			dprintk(state->verbose, FE_ERROR, 1, "Unsupported delivery system");
 			return -EINVAL;
 		}
 	}
@@ -1927,7 +1929,7 @@ static int stb0899_read_ber(struct dvb_frontend *fe, u32 *ber)
 		}
 		default:
 		{
-			dprintk(state->verbose, FE_DEBUG, 1, "Unsupported delivery system");
+			dprintk(state->verbose, FE_ERROR, 1, "Unsupported delivery system");
 			return -EINVAL;
 		}
 	}
@@ -1953,38 +1955,38 @@ static int stb0899_set_voltage(struct dvb_frontend *fe, fe_sec_voltage_t voltage
 		{
 			case SEC_VOLTAGE_13:
 			{
-				dprintk(state->verbose, FE_DEBUG, 1, "SEC_VOLTAGE_13 POL:V");
+				dprintk(state->verbose, FE_INFO, 1, "SEC_VOLTAGE_13 POL:V");
 				isl6405_vol_sr1 = 0; //13V
 				b = isl6405_init_sr1 + isl6405_vol_sr1 + isl6405_tone_sr1;
 				ret = i2c_transfer(state->i2c, &msg, 1);
 				if (ret != 1)
 				{
-					dprintk(state->verbose, FE_DEBUG, 1, "SEC_VOLTAGE_13 Error ISL6405");
+					dprintk(state->verbose, FE_ERROR, 1, "SEC_VOLTAGE_13 Error ISL6405");
 				}
 				break;
 			}
 			case SEC_VOLTAGE_18:
 			{
-				dprintk(state->verbose, FE_DEBUG, 1, "SEC_VOLTAGE_18 POL:H");
+				dprintk(state->verbose, FE_INFO, 1, "SEC_VOLTAGE_18 POL:H");
 				isl6405_vol_sr1 = ISL6405_VSEL1; //18V
 				b = isl6405_init_sr1 + isl6405_vol_sr1 + isl6405_tone_sr1;
 				ret = i2c_transfer(state->i2c, &msg, 1);
 				if (ret != 1)
 				{
-					dprintk(state->verbose, FE_DEBUG, 1, "SEC_VOLTAGE_18 Error ISL6405");
+					dprintk(state->verbose, FE_ERROR, 1, "SEC_VOLTAGE_18 Error ISL6405");
 				}
 				break;
 			}
 			case SEC_VOLTAGE_OFF:
 			{
-				dprintk(state->verbose, FE_DEBUG, 1, "SEC_VOLTAGE_OFF");
+				dprintk(state->verbose, FE_INFO, 1, "SEC_VOLTAGE_OFF");
 				isl6405_vol_sr1 = 0;
 				isl6405_tone_sr1 = 0;
 				b = 0 + ISL6405_DCL;
 				ret = i2c_transfer(state->i2c, &msg, 1);
 				if (ret != 1)
 				{
-					dprintk(state->verbose, FE_DEBUG, 1, "SEC_VOLTAGE_OFF Error ISL6405");
+					dprintk(state->verbose, FE_ERROR, 1, "SEC_VOLTAGE_OFF Error ISL6405");
 				}
 				break;
 			}
@@ -2001,38 +2003,38 @@ static int stb0899_set_voltage(struct dvb_frontend *fe, fe_sec_voltage_t voltage
 		{
 			case SEC_VOLTAGE_13:
 			{
-				dprintk(state->verbose, FE_DEBUG, 1, "SEC_VOLTAGE_13 POL:V");
+				dprintk(state->verbose, FE_INFO, 1, "SEC_VOLTAGE_13 POL:V");
 				isl6405_vol_sr2 = 0; //13V
 				b = isl6405_init_sr2 + isl6405_vol_sr2 + isl6405_tone_sr2;
 				ret = i2c_transfer(state->i2c, &msg, 1);
 				if (ret != 1)
 				{
-					dprintk(state->verbose, FE_DEBUG, 1, "SEC_VOLTAGE_13 Error ISL6405");
+					dprintk(state->verbose, FE_ERROR, 1, "SEC_VOLTAGE_13 Error ISL6405");
 				}
 				break;
 			}
 			case SEC_VOLTAGE_18:
 			{
-				dprintk(state->verbose, FE_DEBUG, 1, "SEC_VOLTAGE_18 POL:H");
+				dprintk(state->verbose, FE_INFO, 1, "SEC_VOLTAGE_18 POL:H");
 				isl6405_vol_sr2 = ISL6405_VSEL2; //18V
 				b = isl6405_init_sr2 + isl6405_vol_sr2 + isl6405_tone_sr2;
 				ret = i2c_transfer(state->i2c, &msg, 1);
 				if (ret != 1)
 				{
-					dprintk(state->verbose, FE_DEBUG, 1, "SEC_VOLTAGE_18 Error ISL6405");
+					dprintk(state->verbose, FE_ERROR, 1, "SEC_VOLTAGE_18 Error ISL6405");
 				}
 				break;
 			}
 			case SEC_VOLTAGE_OFF:
 			{
-				dprintk(state->verbose, FE_DEBUG, 1, "SEC_VOLTAGE_OFF");
+				dprintk(state->verbose, FE_INFO, 1, "SEC_VOLTAGE_OFF");
 				isl6405_vol_sr2 = 0;
 				isl6405_tone_sr2 = 0;
 				b = 0 + ISL6405_SR;
 				ret = i2c_transfer(state->i2c, &msg, 1);
 				if (ret != 1)
 				{
-					dprintk(state->verbose, FE_DEBUG, 1, "SEC_VOLTAGE_OFF Error ISL6405");
+					dprintk(state->verbose, FE_ERROR, 1, "SEC_VOLTAGE_OFF Error ISL6405");
 				}
 				break;
 			}
@@ -2055,7 +2057,7 @@ static int stb0899_set_tone(struct dvb_frontend *fe, fe_sec_tone_mode_t tone)
 	int ret;
 	struct i2c_msg msg = { .addr = 0x08, .flags = 0, .buf = &b, .len = 1 };
 
-	dprintk(state->verbose, FE_DEBUG, 1, "i2c_addr:%.2x >> ", state->config->demod_address);
+	dprintk(state->verbose, FE_INFO, 1, "i2c_addr:%.2x >> ", state->config->demod_address);
 
 	/* wait for diseqc idle	*/
 //	if (stb0899_wait_diseqc_txidle(state, 100) < 0)
@@ -2067,7 +2069,7 @@ static int stb0899_set_tone(struct dvb_frontend *fe, fe_sec_tone_mode_t tone)
 	{
 		case SEC_TONE_ON:
 		{
-			dprintk(state->verbose, FE_DEBUG, 1, "SEC_TONE_ON");
+			dprintk(state->verbose, FE_INFO, 1, "SEC_TONE_ON");
 
 			if (state->config->demod_address == I2C_ADDR_STB0899_1)
 			{
@@ -2076,7 +2078,7 @@ static int stb0899_set_tone(struct dvb_frontend *fe, fe_sec_tone_mode_t tone)
 				ret = i2c_transfer(state->i2c, &msg, 1);
 				if (ret != 1)
 				{
-					dprintk(state->verbose, FE_DEBUG, 1, "Error:ISL6405 tone on");
+					dprintk(state->verbose, FE_ERROR, 1, "Error:ISL6405 tone on");
 				}
 			}
 			if (state->config->demod_address == I2C_ADDR_STB0899_2)
@@ -2086,7 +2088,7 @@ static int stb0899_set_tone(struct dvb_frontend *fe, fe_sec_tone_mode_t tone)
 				ret = i2c_transfer(state->i2c, &msg, 1);
 				if (ret != 1)
 				{
-					dprintk(state->verbose, FE_DEBUG, 1, "Error:ISL6405 tone on");
+					dprintk(state->verbose, FE_ERROR, 1, "Error:ISL6405 tone on");
 				}
 			}
 #if 0
@@ -2102,7 +2104,7 @@ static int stb0899_set_tone(struct dvb_frontend *fe, fe_sec_tone_mode_t tone)
 		}
 		case SEC_TONE_OFF:
 		{
-			dprintk(state->verbose, FE_DEBUG, 1, "SEC_TONE_OFF");
+			dprintk(state->verbose, FE_INFO, 1, "SEC_TONE_OFF");
 
 			if (state->config->demod_address == I2C_ADDR_STB0899_1)
 			{
@@ -2111,7 +2113,7 @@ static int stb0899_set_tone(struct dvb_frontend *fe, fe_sec_tone_mode_t tone)
 				ret = i2c_transfer(state->i2c, &msg, 1);
 				if (ret != 1)
 				{
-					dprintk(state->verbose, FE_DEBUG, 1, "Error:ISL6405 tone off");
+					dprintk(state->verbose, FE_ERROR, 1, "Error:ISL6405 tone off");
 				}
 			}
 			if (state->config->demod_address == I2C_ADDR_STB0899_2)
@@ -2121,7 +2123,7 @@ static int stb0899_set_tone(struct dvb_frontend *fe, fe_sec_tone_mode_t tone)
 				ret = i2c_transfer(state->i2c, &msg, 1);
 				if (ret != 1)
 				{
-					dprintk(state->verbose, FE_DEBUG, 1, "Error:ISL6405 tone off");
+					dprintk(state->verbose, FE_ERROR, 1, "Error:ISL6405 tone off");
 				}
 			}
 			//stb0899_write_reg(state, STB0899_DISEQCOCFG, 0x20);
@@ -2140,14 +2142,14 @@ int stb0899_i2c_gate_ctrl(struct dvb_frontend *fe, int enable)
 	int i2c_stat;
 	struct stb0899_state *state = fe->demodulator_priv;
 
-	dprintk(state->verbose, FE_DEBUG, 1, "i2c_addr:%.2x >> ", state->config->demod_address);
+	dprintk(state->verbose, FE_INFO, 1, "i2c_addr:%.2x >> ", state->config->demod_address);
 	if (enable)
 	{
-		dprintk(state->verbose, FE_DEBUG, 1, "Enable");
+		dprintk(state->verbose, FE_INFO, 1, "Enable");
 	}
 	else
 	{
-		dprintk(state->verbose, FE_DEBUG, 1, "Disable");
+		dprintk(state->verbose, FE_INFO, 1, "Disable");
 	}
 // fix for non-functioning tuners with a failed tuning message
 	i2c_stat =  0x48 | 0x80;
@@ -2174,7 +2176,7 @@ int stb0899_i2c_gate_ctrl_old(struct dvb_frontend *fe, int enable)
 	}
 	if (enable)
 	{
-		dprintk(state->verbose, FE_DEBUG, 1, "Enabling I2C Repeater ...");
+		dprintk(state->verbose, FE_INFO, 1, "Enabling I2C Repeater ...");
 		i2c_stat |=  STB0899_I2CTON;
 		if (stb0899_write_reg(state, STB0899_I2CRPT, i2c_stat) < 0)
 		{
@@ -2183,7 +2185,7 @@ int stb0899_i2c_gate_ctrl_old(struct dvb_frontend *fe, int enable)
 	}
 	else
 	{
-		dprintk(state->verbose, FE_DEBUG, 1, "Disabling I2C Repeater ...");
+		dprintk(state->verbose, FE_INFO, 1, "Disabling I2C Repeater ...");
 		i2c_stat &= ~STB0899_I2CTON;
 		if (stb0899_write_reg(state, STB0899_I2CRPT, i2c_stat) < 0)
 		{
@@ -2215,17 +2217,17 @@ int stb0899_get_dev_id(struct stb0899_state *state)
 	char fec_str[5] = { 0 };
 
 	id = stb0899_read_reg(state, STB0899_DEV_ID);
-	dprintk(state->verbose, FE_DEBUG, 1, "ID reg=[0x%02x]", id);
+	dprintk(state->verbose, FE_INFO, 1, "ID reg=[0x%02x]", id);
 	chip_id = STB0899_GETFIELD(CHIP_ID, id);
 	release = STB0899_GETFIELD(CHIP_REL, id);
 
-	dprintk(state->verbose, FE_ERROR, 1, "Device ID=[%d], Release=[%d]", chip_id, release);
+	dprintk(state->verbose, FE_INFO, 1, "Device ID=[%d], Release=[%d]", chip_id, release);
 
 	CONVERT32(STB0899_READ_S2REG(STB0899_S2DEMOD, DMD_CORE_ID), (char *)&demod_str);
 
 	demod_ver = STB0899_READ_S2REG(STB0899_S2DEMOD, DMD_VERSION_ID);
 
-	dprintk(state->verbose, FE_ERROR, 1, "Demodulator Core ID=[%s], Version=[%d]", (char *) &demod_str, demod_ver);
+	dprintk(state->verbose, FE_INFO, 1, "Demodulator Core ID=[%s], Version=[%d]", (char *) &demod_str, demod_ver);
 	CONVERT32(STB0899_READ_S2REG(STB0899_S2FEC, FEC_CORE_ID_REG), (char *)&fec_str);
 
 	fec_ver = STB0899_READ_S2REG(STB0899_S2FEC, FEC_VER_ID_REG);
@@ -2235,7 +2237,7 @@ int stb0899_get_dev_id(struct stb0899_state *state)
 		dprintk(state->verbose, FE_ERROR, 1, "could not find a STB 0899");
 		return -ENODEV;
 	}
-	dprintk(state->verbose, FE_ERROR, 1, "FEC Core ID=[%s], Version=[%d]", (char *) &fec_str, fec_ver);
+	dprintk(state->verbose, FE_INFO, 1, "FEC Core ID=[%s], Version=[%d]", (char *) &fec_str, fec_ver);
 	return 0;
 }
 
@@ -2251,7 +2253,7 @@ static void stb0899_set_delivery(struct stb0899_state *state)
 	{
 		case SYS_DVBS:
 		{
-			dprintk(state->verbose, FE_DEBUG, 1, "Delivery System -- DVB-S");
+			dprintk(state->verbose, FE_INFO, 1, "Delivery System -- DVB-S");
 			/* FECM/Viterbi ON */
 			reg = stb0899_read_reg(state, STB0899_FECM);
 			STB0899_SETFIELD_VAL(FECM_RSVD0, reg, 0);
@@ -2282,6 +2284,7 @@ static void stb0899_set_delivery(struct stb0899_state *state)
 		}
 		case SYS_DVBS2:
 		{
+			dprintk(state->verbose, FE_INFO, 1, "Delivery System -- DVB-S2");
 			/* FECM/Viterbi OFF */
 			reg = stb0899_read_reg(state, STB0899_FECM);
 			STB0899_SETFIELD_VAL(FECM_RSVD0, reg, 0);
@@ -2312,6 +2315,7 @@ static void stb0899_set_delivery(struct stb0899_state *state)
 		}
 		case SYS_DSS:
 		{
+			dprintk(state->verbose, FE_INFO, 1, "Delivery System -- DSS");
 			/* FECM/Viterbi ON */
 			reg = stb0899_read_reg(state, STB0899_FECM);
 			STB0899_SETFIELD_VAL(FECM_RSVD0, reg, 1);
@@ -2424,14 +2428,14 @@ static enum dvbfe_search stb0899_search(struct dvb_frontend *fe, struct dvb_fron
 	i_params->freq	= c->frequency;
 	i_params->srate	= c->symbol_rate;
 	state->delsys = c->delivery_system;
-	dprintk(state->verbose, FE_DEBUG, 1, "delivery system=%d", state->delsys);
+	dprintk(state->verbose, FE_INFO, 1, "delivery system=%d", state->delsys);
 
 	SearchRange = 10000000;
-	dprintk(state->verbose, FE_DEBUG, 1, "Frequency=%d, Srate=%d", i_params->freq, i_params->srate);
+	dprintk(state->verbose, FE_INFO, 1, "Frequency=%d, Srate=%d", i_params->freq, i_params->srate);
 	/* checking Search Range is meaningless for a fixed 3 Mhz			*/
 	if (INRANGE(i_params->srate, 1000000, 45000000))
 	{
-		dprintk(state->verbose, FE_DEBUG, 1, "Parameters IN RANGE");
+		dprintk(state->verbose, FE_INFO, 1, "Parameters IN RANGE");
 		stb0899_set_delivery(state);
 
 		if (state->config->tuner_set_rfsiggain)
@@ -2463,7 +2467,7 @@ static enum dvbfe_search stb0899_search(struct dvb_frontend *fe, struct dvb_fron
 			case SYS_DVBS:
 			case SYS_DSS:
 			{
-				dprintk(state->verbose, FE_DEBUG, 1, "DVB-S delivery system");
+				dprintk(state->verbose, FE_INFO, 1, "DVB-S delivery system");
 				internal->freq	= i_params->freq;
 				internal->srate	= i_params->srate;
 				/*
@@ -2494,11 +2498,11 @@ static enum dvbfe_search stb0899_search(struct dvb_frontend *fe, struct dvb_fron
 				stb0899_write_reg(state, STB0899_AGCRFCFG, 0x11);
 
 				/* Run the search algorithm */
-				dprintk(state->verbose, FE_DEBUG, 1, "running DVB-S search algo ..");
+				dprintk(state->verbose, FE_INFO, 1, "running DVB-S search algo..");
 				if (stb0899_dvbs_algo(state) == RANGEOK)
 				{
 					internal->lock = 1;
-					dprintk(state->verbose, FE_DEBUG, 1, "-------------------------------------> DVB-S LOCK !");
+					dprintk(state->verbose, FE_INFO, 1, "-------------------------------------> DVB-S LOCK !");
 //					stb0899_write_reg(state, STB0899_ERRCTRL1, 0x3d); /* Viterbi Errors	*/
 //					internal->v_status = stb0899_read_reg(state, STB0899_VSTATUS);
 //					internal->err_ctrl = stb0899_read_reg(state, STB0899_ERRCTRL1);
@@ -2543,11 +2547,11 @@ static enum dvbfe_search stb0899_search(struct dvb_frontend *fe, struct dvb_fron
 				stb0899_set_iterations(state);
 
 				/* Run the search algorithm */
-				dprintk(state->verbose, FE_DEBUG, 1, "running DVB-S2 search algo ..");
+				dprintk(state->verbose, FE_INFO, 1, "running DVB-S2 search algo..");
 				if (stb0899_dvbs2_algo(state) == DVBS2_FEC_LOCK)
 				{
 					internal->lock = 1;
-					dprintk(state->verbose, FE_DEBUG, 1, "-------------------------------------> DVB-S2 LOCK !");
+					dprintk(state->verbose, FE_INFO, 1, "-------------------------------------> DVB-S2 LOCK !");
 
 //					stb0899_write_reg(state, STB0899_ERRCTRL1, 0xb6); /* Packet Errors	*/
 //					internal->v_status = stb0899_read_reg(state, STB0899_VSTATUS);
@@ -2953,19 +2957,19 @@ static struct dvb_frontend_ops stb0899_ops_1 =
 {
 	.info =
 	{
-		.name                    = "STB0899 Multistandard A",
-		.type                    = FE_QPSK, /* with old API */
-		.frequency_min           = 950000,
-		.frequency_max           = 2150000,
-		.frequency_stepsize      = 0,
-		.frequency_tolerance     = 0,
-		.symbol_rate_min         =  1000000,
-		.symbol_rate_max         = 45000000,
+		.name                        = "STB0899 Multistandard A",
+		.type                        = FE_QPSK, /* with old API */
+		.frequency_min               = 950000,
+		.frequency_max               = 2150000,
+		.frequency_stepsize          = 0,
+		.frequency_tolerance         = 0,
+		.symbol_rate_min             = 1000000,
+		.symbol_rate_max             = 45000000,
 
-		.caps                    = FE_CAN_INVERSION_AUTO
-	 	                         | FE_CAN_FEC_AUTO
-		                         | FE_CAN_2G_MODULATION
-		                         | FE_CAN_QPSK
+		.caps                        = FE_CAN_INVERSION_AUTO
+	 	                             | FE_CAN_FEC_AUTO
+		                             | FE_CAN_2G_MODULATION
+		                             | FE_CAN_QPSK
 	},
 	.release                         = stb0899_release,
 	.init                            = stb0899_init,
@@ -2997,19 +3001,19 @@ static struct dvb_frontend_ops stb0899_ops_2 =
 {
 	.info =
 	{
-		.name                    = "STB0899 Multistandard B",
-		.type                    = FE_QPSK, /* with old API */
-		.frequency_min           = 950000,
-		.frequency_max           = 2150000,
-		.frequency_stepsize      = 0,
-		.frequency_tolerance     = 0,
-		.symbol_rate_min         =  1000000,
-		.symbol_rate_max         = 45000000,
+		.name                        = "STB0899 Multistandard B",
+		.type                        = FE_QPSK, /* with old API */
+		.frequency_min               = 950000,
+		.frequency_max               = 2150000,
+		.frequency_stepsize          = 0,
+		.frequency_tolerance         = 0,
+		.symbol_rate_min             = 1000000,
+		.symbol_rate_max             = 45000000,
 
-		.caps                    = FE_CAN_INVERSION_AUTO
-	 	                         | FE_CAN_FEC_AUTO
-		                         | FE_CAN_2G_MODULATION
-		                         | FE_CAN_QPSK
+		.caps                        = FE_CAN_INVERSION_AUTO
+	 	                             | FE_CAN_FEC_AUTO
+		                             | FE_CAN_2G_MODULATION
+		                             | FE_CAN_QPSK
 	},
 	.release                         = stb0899_release,
 	.init                            = stb0899_init,
@@ -3068,10 +3072,10 @@ struct dvb_frontend *stb0899_attach(struct stb0899_config *config, struct i2c_ad
 	stb0899_wakeup(&state->frontend);
 	if (stb0899_get_dev_id(state) == -ENODEV)
 	{
-		printk("%s: Exiting.. !\n", __func__);
+		printk("[stb0899] %s: Exiting.. !\n", __func__);
 		goto error;
 	}
-	printk("%s: Attaching STB0899 Tuner A\n", __func__);
+	printk("[stb0899] %s: Attaching STB0899 Tuner %s\n", __func__, (config->demod_address == I2C_ADDR_STB0899_1) ? "A" : "B");
 	return &state->frontend;
 
 error:

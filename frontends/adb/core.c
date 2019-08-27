@@ -106,9 +106,9 @@ static const struct stb0899_s2_reg stb0899_init_s2_demod[] =
 	{ STB0899_OFF0_DMD_CNTRL,          STB0899_BASE_DMD_CNTRL,         0x0000000f },  /* DMDCNTRL       */
 	{ STB0899_OFF0_IF_AGC_CNTRL,       STB0899_BASE_IF_AGC_CNTRL,      0x03fb4a20 },  /* IFAGCCNTRL     */
 
-	//new value 0x00200C17	- the quality of the received HD channels improves
-	//old value 0x00200c97
-	//{ STB0899_OFF0_BB_AGC_CNTRL,       STB0899_BASE_BB_AGC_CNTRL,      0x00200c97 },  /* BBAGCCNTRL     */
+//	new value 0x00200C17	- the quality of the received HD channels improves
+//	old value 0x00200c97
+//	{ STB0899_OFF0_BB_AGC_CNTRL,       STB0899_BASE_BB_AGC_CNTRL,      0x00200c97 },  /* BBAGCCNTRL     */
 	{ STB0899_OFF0_BB_AGC_CNTRL,       STB0899_BASE_BB_AGC_CNTRL,      0x00200C17 },  /* BBAGCCNTRL     */
 
 	{ STB0899_OFF0_CRL_CNTRL,          STB0899_BASE_CRL_CNTRL,         0x00000016 },  /* CRLCNTRL       */
@@ -563,7 +563,7 @@ static const struct stb0899_s1_reg stb0899_init_dev [] =
 	{ 0xF165, 0x82 },
 	{ 0xF166, 0x82 },
 	{ 0xF167, 0x82 },
-	{ 0xF1B3, 0x15 },  //17 does not work
+	{ 0xF1B3, 0x15 },  // 17 does not work
 	{ 0xF1B6, 0x02 },
 	{ 0xF1B7, 0x00 },
 	{ 0xF1B8, 0x01 },
@@ -1044,12 +1044,13 @@ static struct dvb_frontend *frontend_init(struct core_config *cfg, int i)
 {
 	struct dvb_frontend *frontend = NULL;
 
-	printk(KERN_INFO "%s frontend_init >\n", __func__);
+	printk(KERN_INFO "[fe_core] %s frontend_init >\n", __func__);
 
 	if (i > 0)
 	{
 		return NULL;
 	}
+	printk(KERN_INFO "[fe_core] %s Attaching stb0899\n", __func__);
 	frontend = dvb_attach(stb0899_attach, &stb0899_config, cfg->i2c_adap);
 
 	if (frontend)
@@ -1065,7 +1066,7 @@ static struct dvb_frontend *frontend_init(struct core_config *cfg, int i)
 	}
 	else
 	{
-		printk(KERN_INFO "%s: error attaching stb0899\n", __func__);
+		printk(KERN_INFO "[fe_core] %s Error attaching stb0899\n", __func__);
 		goto error_out;
 	}
 	stb0899_config.lnb_enable = cfg->lnb_enable;
@@ -1087,7 +1088,7 @@ static struct dvb_frontend *init_fe_device(struct dvb_adapter *adapter, struct p
 	struct dvb_frontend  *frontend;
 	struct core_config   *cfg;
 
-	printk("> (bus = %d) %s\n", tuner_cfg->i2c_bus, __func__);
+	printk("[fe_core] %s > (bus = %d)\n", __func__, tuner_cfg->i2c_bus);
 
 	cfg = kmalloc(sizeof(struct core_config), GFP_KERNEL);
 	if (cfg == NULL)
@@ -1098,13 +1099,13 @@ static struct dvb_frontend *init_fe_device(struct dvb_adapter *adapter, struct p
 	/* initialize the config data */
 	cfg->i2c_adap = i2c_get_adapter(tuner_cfg->i2c_bus);
 
-	printk("i2c adapter = 0x%0x\n", cfg->i2c_adap);
+	printk("[fe_core] %s i2c adapter = 0x%0x\n", __func__, cfg->i2c_adap);
 
 	cfg->i2c_addr = tuner_cfg->i2c_addr;
 
 	if (cfg->i2c_adap == NULL)
 	{
-		printk("fe-core: failed to allocate resources (%s)\n", (cfg->i2c_adap == NULL) ? "i2c" : "STPIO error");
+		printk("[fe-core] failed to allocate resources (%s)\n", (cfg->i2c_adap == NULL) ? "i2c" : "STPIO error");
 		kfree(cfg);
 		return NULL;
 	}
@@ -1112,14 +1113,14 @@ static struct dvb_frontend *init_fe_device(struct dvb_adapter *adapter, struct p
 
 	if (frontend == NULL)
 	{
-		printk("No frontend found !\n");
+		printk("[fe_core] %s No frontend found !\n", __func__);
 		return NULL;
 	}
-	printk(KERN_INFO "%s: Call dvb_register_frontend (adapter = 0x%x)\n", __func__, (unsigned int) adapter);
+	printk(KERN_INFO "[fe_core] %s Call dvb_register_frontend (adapter = 0x%x)\n", __func__, (unsigned int) adapter);
 
 	if (dvb_register_frontend(adapter, frontend))
 	{
-		printk("%s: Frontend registration failed !\n", __func__);
+		printk("[fe_core] %s Frontend registration failed !\n", __func__);
 		if (frontend->ops.release)
 		{
 			frontend->ops.release(frontend);
