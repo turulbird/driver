@@ -265,10 +265,10 @@ static void button_input_close(struct input_dev *dev)
 static int __init init_fan_module(void)
 {
 	fan_registers = (unsigned long)ioremap(0x18010000, 0x100);
-	dprintk(10, "%s fan_registers = 0x%.8lx\n\t", __func__, fan_registers);
+	dprintk(50, "%s fan_registers = 0x%.8lx\n", __func__, fan_registers);
 
 	fan_pin = stpio_request_pin(4, 7, "fan ctrl", STPIO_ALT_OUT);
-	dprintk(10, "%s fan pin %p\n", __func__, fan_pin);
+	dprintk(50, "%s fan pin %p\n", __func__, fan_pin);
 
 	// not sure if first one is necessary
 	ctrl_outl(0x200, fan_registers + 0x50);
@@ -378,15 +378,15 @@ static int spinner_thread(void *arg)
 	int res = 0;
 	unsigned char icon_char[1];
 
-	if (spinner_state.status == ICON_THREAD_STATUS_RUNNING)
+	if (spinner_state.status == THREAD_STATUS_RUNNING)
 	{
 		return 0;
 	}
 	dprintk(150, "%s: starting\n", __func__);
-	spinner_state.status = ICON_THREAD_STATUS_INIT;
+	spinner_state.status = THREAD_STATUS_INIT;
 
 	dprintk(150, "%s: started\n", __func__);
-	spinner_state.status = ICON_THREAD_STATUS_RUNNING;
+	spinner_state.status = THREAD_STATUS_RUNNING;
 
 	while (!kthread_should_stop())
 	{
@@ -404,7 +404,7 @@ static int spinner_thread(void *arg)
 				res |= pt6302_write_dcram(0, icon_char, 1);
 				while ((spinner_state.state) && !kthread_should_stop())
 				{
-					spinner_state.status = ICON_THREAD_STATUS_RUNNING;
+					spinner_state.status = THREAD_STATUS_RUNNING;
 					for (i = 0; i < 16; i++)
 					{
 						if (i == 0 || i == 8)
@@ -416,7 +416,7 @@ static int spinner_thread(void *arg)
 						msleep(spinner_state.period);
 					}
 				}
-				spinner_state.status = ICON_THREAD_STATUS_HALTED;
+				spinner_state.status = THREAD_STATUS_HALTED;
 			}
 
 stop:
@@ -425,7 +425,7 @@ stop:
 			dprintk(50, "%s: Spinner off\n", __func__);
 		}
 	}
-	spinner_state.status = ICON_THREAD_STATUS_STOPPED;
+	spinner_state.status = THREAD_STATUS_STOPPED;
 	spinner_state.task = 0;
 	dprintk(150, "%s: stopped\n", __func__);
 	return res;
@@ -474,14 +474,14 @@ int icon_thread(void *arg)
 	int res = 0;
 	unsigned char icon_char[1];
 
-	if (icon_state.status == ICON_THREAD_STATUS_RUNNING || lastdata.icon_state[ICON_SPINNER])
+	if (icon_state.status == THREAD_STATUS_RUNNING || lastdata.icon_state[ICON_SPINNER])
 	{
 		return 0;
 	}
 	dprintk(150, "%s: starting\n", __func__);
-	icon_state.status = ICON_THREAD_STATUS_INIT;
+	icon_state.status = THREAD_STATUS_INIT;
 
-	icon_state.status = ICON_THREAD_STATUS_RUNNING;
+	icon_state.status = THREAD_STATUS_RUNNING;
 	dprintk(150, "%s: started\n", __func__);
 
 	while (!kthread_should_stop())
@@ -496,7 +496,7 @@ int icon_thread(void *arg)
 			{
 				while ((icon_state.state) && !kthread_should_stop())
 				{
-					icon_state.status = ICON_THREAD_STATUS_RUNNING;
+					icon_state.status = THREAD_STATUS_RUNNING;
 					if (lastdata.icon_state[ICON_MAX] = 1)
 					{
 						// handle ICON_MAX
@@ -536,13 +536,13 @@ int icon_thread(void *arg)
 						break;
 					}
 				}
-				icon_state.status = ICON_THREAD_STATUS_HALTED;
+				icon_state.status = THREAD_STATUS_HALTED;
 			}
 		}
 	}
 
 stop_icon:
-	icon_state.status = ICON_THREAD_STATUS_STOPPED;
+	icon_state.status = THREAD_STATUS_STOPPED;
 	icon_state.task = 0;
 	dprintk(100, "%s stopped\n", __func__);
 	return res;
@@ -563,18 +563,33 @@ static void fp_module_exit(void)
 	printk(TAGDEBUG"ADB ITI-5800S(X) front processor module unloading\n");
 	remove_proc_fp();
 
-	if (!(spinner_state.status == ICON_THREAD_STATUS_STOPPED) && spinner_state.task)
+	if ((text_thread_status != THREAD_STATUS_STOPPED) && text_task)
+	{
+		dprintk(50, "Stopping text write thread\n");
+		kthread_stop(text_task);
+	}
+
+	if (!(spinner_state.status == THREAD_STATUS_STOPPED) && spinner_state.task)
 	{
 		dprintk(50, "Stopping spinner thread\n");
 		up(&icon_state.sem);
 		kthread_stop(spinner_state.task);
 	}
-	if (!(icon_state.status == ICON_THREAD_STATUS_STOPPED) && icon_state.task)
+
+	if (!(icon_state.status == THREAD_STATUS_STOPPED) && icon_state.task)
 	{
 		dprintk(50, "Stopping icon thread\n");
 		up(&icon_state.sem);
 		kthread_stop(icon_state.task);
 	}
+
+	while (text_thread_status != THREAD_STATUS_STOPPED
+	&&     spinner_state.status != THREAD_STATUS_STOPPED
+	&&     icon_state.status != THREAD_STATUS_STOPPED)
+	{
+		msleep(1);
+	}
+	dprintk(50, "All threads stopped\n");
 
 	// fan driver
 	cleanup_fan_module();
@@ -654,16 +669,18 @@ static int __init fp_module_init(void)
 		goto fp_module_init_fail;
 	}
 
+	sema_init(&text_thread_sem, 1);  // initialize text write semaphore
+
 	if (display_type > 0)  // VFD
 	{
 		spinner_state.state = 0;
 		spinner_state.period = 0;
-		spinner_state.status = ICON_THREAD_STATUS_STOPPED;
+		spinner_state.status = THREAD_STATUS_STOPPED;
 		sema_init(&spinner_state.sem, 0);
 		spinner_state.task = kthread_run(spinner_thread, (void *) ICON_SPINNER, "spinner_thread");
 		icon_state.state = 0;
 		icon_state.period = 0;
-		icon_state.status = ICON_THREAD_STATUS_STOPPED;
+		icon_state.status = THREAD_STATUS_STOPPED;
 		sema_init(&icon_state.sem, 0);
 		icon_state.task = kthread_run(icon_thread, (void *)ICON_MIN, "icon_thread");
 		lastdata.icon_count = 0;

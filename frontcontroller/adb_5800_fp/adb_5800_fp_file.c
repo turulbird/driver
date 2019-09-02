@@ -59,6 +59,8 @@
  * 20190813 Audioniek       Spinner added.
  * 20190813 Audioniek       VFDSETFAN IOCTL added.
  * 20190814 Audioniek       Display all icons on/off added.
+ * 20190902 Audioniek       Text display through /dev/vfd handled in a thread, including
+ *                          scrolling (TODO: restore UFT8 support).
  *
  ****************************************************************************************/
 #include <asm/io.h>
@@ -77,6 +79,7 @@
 #include <linux/interrupt.h>
 #include <linux/reboot.h>
 #include <linux/i2c.h>
+#include <linux/kthread.h>
 
 #include "pt6958_utf.h"
 #include "pt6302_utf.h"
@@ -142,6 +145,10 @@ typedef union
 
 	uint8_t all;
 } pt6302_command_t;
+
+struct semaphore text_thread_sem;
+struct task_struct *text_task = 0;
+int text_thread_status = THREAD_STATUS_STOPPED;
 
 extern int display_led;  // module parameter
 extern int display_vfd;  // module parameter
@@ -871,6 +878,7 @@ int pt6958_ShowBuf(unsigned char *data, unsigned char len)
 	}
 	text[len] = 0x00;  // terminate string
 
+#if 0
 	/* handle UTF-8 characters */
 	i = 0;
 	wlen = 0;
@@ -968,6 +976,11 @@ int pt6958_ShowBuf(unsigned char *data, unsigned char len)
 		i++;
 	}
 	/* end */
+#else
+	memset(kbuf, 0x20, sizeof(kbuf));  // fill output buffer with spaces
+	wlen = (len > LED_DISP_SIZE ? LED_DISP_SIZE : len);
+	memcpy(kbuf, text, wlen);
+#endif
 
 	if (wlen > 8)
 	{
@@ -1423,7 +1436,7 @@ int pt6302_write_adram(unsigned char addr, unsigned char *data, unsigned char le
  *
  * addr = symbol number (0..7)
  * data = symbol data (5 bytes for each column, column 0 (leftmost) first, MSbit ignored)
- * len  = number of symbols to define pixels of (max 8 - addr)
+ * len  = number of symbols to define pixels of (8 - addr max.)
  *
  */
 int pt6302_write_cgram(unsigned char addr, unsigned char *data, unsigned char len)
@@ -1468,6 +1481,7 @@ int pt6302_write_cgram(unsigned char addr, unsigned char *data, unsigned char le
  * NOTE: in order not to inadvertently display icons,
  * the full display width of 15 is always written,
  * padded with spaces if needed.
+ *
  */
 int pt6302_write_text(unsigned char offset, unsigned char *text, unsigned char len)
 {
@@ -1491,7 +1505,7 @@ int pt6302_write_text(unsigned char offset, unsigned char *text, unsigned char l
 	}
 	text[len] = 0x00;  // terminate text
 
-#if 1
+#if 0
 	/* handle UTF-8 chars */
 	wlen = 0;  // input index
 	i = 0;  // output index
@@ -1788,10 +1802,6 @@ int icon_in_list(int icon_nr)
 {
 	int i;
 
-//	if (lastdata.icon_count == 1 && lastdata.icon_list[0] == icon_nr)
-//	{
-//		return 1;
-//	}
 	i = 0;
 	while (lastdata.icon_list[i] != icon_nr && i < lastdata.icon_count)
 	{
@@ -2023,7 +2033,7 @@ void get_box_variant(void)
 			}
 		}
 	}
-	dprintk(150, "%s >\n", __func__);
+	dprintk(150, "%s <\n", __func__);
 	return;	
 }
 
@@ -2221,13 +2231,17 @@ fp_init_fail:
 	return -1;
 }
 
-/***************************************************
+/******************************************************
  *
- * Code for writing to /dev/vfd
+ * Text display thread code.
  *
- * If text to display is longer than the display
- * width, it is scolled once. Maximum text length
- * is 64 characters.
+ * All text display via /dev/vfd is done in this
+ * thread that also handles scrolling.
+ * 
+ * LED display only scrolls if it is the only active
+ * display set.
+ *
+ * Code largely taken from aotom_spark (thnx Martii)
  *
  */
 void clear_display(void)
@@ -2249,8 +2263,285 @@ void clear_display(void)
 	dprintk(100, "%s <\n", __func__);
 }
 
-static ssize_t vfd_write(struct file *filp, const char *buf, size_t len, loff_t *off)
+int utf8charlen(unsigned char c)
 {
+	dprintk(150, "%s >\n", __func__);
+
+	if (!c)
+	{
+		return 0;
+	}
+	if (!(c >> 7))		// 0xxxxxxx
+	{
+		return 1;
+	}
+	if (c >> 5 == 6)	// 110xxxxx 10xxxxxx
+	{
+		return 2;
+	}
+	if (c >> 4 == 14)	// 1110xxxx 10xxxxxx 10xxxxxx
+	{
+		return 3;
+	}
+	if (c >> 3 == 30)	// 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+	{
+		return 4;
+	}
+	return 0;
+}
+
+int utf8strlen(char *s, int len)
+{
+	int i = 0, ulen = 0;
+	int trailing;
+
+	dprintk(150, "%s >\n", __func__);
+
+	while (i < len)
+	{
+		trailing = utf8charlen((unsigned char)s[i]);
+		if (!trailing)
+		{
+			return ulen;
+		}
+		trailing--, i++;
+		if (trailing && (i >= len))
+		{
+			return ulen;
+		}
+
+		while (trailing)
+		{
+			if (i >= len || (unsigned char)s[i] >> 6 != 2)
+			{
+				return ulen;
+			}
+			trailing--;
+			i++;
+		}
+		ulen++;
+	}
+	dprintk(150, "%s < (ulen = %d)\n", __func__, ulen);
+	return ulen;  // can be UTF8 (or pure ASCII, at least no non-UTF-8 8bit characters)
+}
+
+static int text_thread(void *arg)
+{
+	struct vfd_ioctl_data *data = (struct vfd_ioctl_data *)arg;
+	unsigned char buf[sizeof(data->data) + 2 * VFD_DISP_SIZE];
+	int disp_size;
+	int len = data->length;
+	int off = 0;
+	int utf8len;
+	int ret = 0;
+	int delay;
+
+	dprintk(150, "%s >\n", __func__);
+	if (display_type > 0)  // VFD or both
+	{
+		disp_size = VFD_DISP_SIZE;
+		delay = 300;
+	}
+	else  // LED only
+	{
+		disp_size = LED_DISP_SIZE;
+		delay = 500;
+	}
+	// TODO: re-instate UTF8 support
+	utf8len = utf8strlen(data->data, data->length);
+
+	if (utf8len > disp_size)
+	{
+		dprintk(10, "%s Will scroll\n", __func__);
+		memset(buf, ' ', sizeof(buf));
+		off = disp_size - (disp_size == VFD_DISP_SIZE ? 3 : 1);
+		memcpy(buf + off, data->data, len);
+		len += off;
+		utf8len += off;
+		buf[len + disp_size] = 0;
+	}
+	else
+	{
+		dprintk(10, "%s No scroll\n", __func__);
+		memcpy(buf, data->data, len);
+		buf[len] = 0;
+	}
+	text_thread_status = THREAD_STATUS_RUNNING;
+	dprintk(10, "%s Switched to running\n", __func__);
+
+	if (utf8len > disp_size + 1)
+	{
+		unsigned char *b = buf;
+		int pos;
+
+		dprintk(10, "%s Scroll\n", __func__);
+		for (pos = 0; pos < utf8len; pos++)
+		{
+			int i;
+			char dot = 0;
+
+			if (kthread_should_stop())
+			{
+				text_thread_status = text_tHREAD_STATUS_STOPPED;
+				return 0;
+			}
+			if (display_type > 0)  // VFD or both
+			{
+				ret |= pt6302_write_text(0, b, VFD_DISP_SIZE);
+			}
+			else  if (display_type != 1)  // exclude VFD only
+			{
+				ret |= pt6958_ShowBuf(b, LED_DISP_SIZE);
+
+			}
+			// delay between scrolls, also check for stop request
+			for (i = 0; i < (delay / 50); i++)  // note: this loop constitutes the delay
+			{
+				if (kthread_should_stop())
+				{
+					text_thread_status = THREAD_STATUS_STOPPED;
+					return 0;
+				}
+				msleep(50);
+			}
+			// advance to next UTF-8 character
+			b += utf8charlen(*b);
+		}
+	}
+	if (utf8len > 0) // final display, also no scroll
+	{
+		if (display_type > 0)  // VFD or both
+		{
+			ret |= pt6302_write_text(0, buf + off, VFD_DISP_SIZE);
+		}
+		else if (display_type != 1)  // exclude VFD only
+		{
+			ret |= pt6958_ShowBuf(buf + off, LED_DISP_SIZE);
+		}
+	}
+	else
+	{
+		clear_display();
+	}
+	text_thread_status = THREAD_STATUS_STOPPED;
+	return 0;
+}
+
+static struct vfd_ioctl_data last_draw_data;
+
+static int run_text_thread(struct vfd_ioctl_data *draw_data)
+{
+	dprintk(150, "%s >\n", __func__);
+
+	if (down_interruptible(&text_thread_sem))
+	{
+		return -ERESTARTSYS;
+	}
+
+	dprintk(10, "%s Semaphore up\n", __func__);
+	// return if there is already a draw task running for the same text
+	if ((text_thread_status != THREAD_STATUS_STOPPED)
+	&& text_task
+	&& (last_draw_data.length == draw_data->length)
+	&& !memcmp(&last_draw_data.data, draw_data->data, draw_data->length))
+	{
+		up(&text_thread_sem);
+		return 0;
+	}
+	dprintk(10, "%s New text\n", __func__);
+
+	memcpy(&last_draw_data, draw_data, sizeof(struct vfd_ioctl_data));
+
+	// stop existing thread, if any
+	if ((text_thread_status != THREAD_STATUS_STOPPED) && text_task)
+	{
+		kthread_stop(text_task);
+		while ((text_thread_status != THREAD_STATUS_STOPPED))
+		{
+			msleep(1);
+		}
+	}
+	dprintk(10, "%s Old thread stopped\n", __func__);
+
+	text_thread_status = THREAD_STATUS_INIT;
+	text_task = kthread_run(text_thread, draw_data, "text_thread");
+	dprintk(10, "%s New thread started\n", __func__);
+
+	// wait until thread has copied the argument
+	while (text_thread_status == THREAD_STATUS_INIT)
+	{
+		msleep(1);
+	}
+	dprintk(10, "%s New thread running\n", __func__);
+
+	up(&text_thread_sem);
+	return 0;
+}
+
+int fp5800_WriteText(char *buf, size_t len)
+{
+	int res = 0;
+	struct vfd_ioctl_data data;
+
+	dprintk(150, "%s > (len %d)\n", __func__, len);
+	if (len > sizeof(data.data))  // do not display more than 64 characters
+	{
+		data.length = sizeof(data.data);
+	}
+	else
+	{
+		data.length = len;
+	}
+
+	while ((data.length > 0) && (buf[data.length - 1 ] == '\n'))
+	{
+		data.length--;
+	}
+
+	if (data.length > sizeof(data.data))
+	{
+		len = data.length = sizeof(data.data);
+	}
+	memcpy(data.data, buf, data.length);
+	dprintk(150, "%s Start draw thread\n", __func__);
+	res = run_text_thread(&data);
+
+	return res;
+}
+
+/***************************************************
+ *
+ * Code for writing to /dev/vfd
+ *
+ * If text to display is longer than the display
+ * width, it is scolled once. Maximum text length
+ * is 64 characters.
+ *
+ */
+#if 0  // non thread code
+void clear_display(void)
+{
+	char bBuf[16];
+	int ret = 0;
+
+	dprintk(100, "%s >\n", __func__);
+
+	memset(bBuf, ' ', sizeof(bBuf));
+	if (display_type > 0)
+	{
+		ret |= pt6302_write_text(0, bBuf, VFD_DISP_SIZE);
+	}
+	if (display_type != 1)
+	{
+		ret |= pt6958_ShowBuf(bBuf, LED_DISP_SIZE);
+	}
+	dprintk(100, "%s <\n", __func__);
+}
+#endif
+
+static ssize_t vfd_write(struct file *filp, const char *buff, size_t len, loff_t *off)
+{
+#if 0  // non thread code
 	int ret = 0;
 	int i;
 	int llen;
@@ -2272,7 +2563,7 @@ static ssize_t vfd_write(struct file *filp, const char *buf, size_t len, loff_t 
 	}
 
 	llen = len;
-	if (buf[llen - 1] == '\n')
+	if (buff[llen - 1] == '\n')
 	{
 		llen--;
 	}
@@ -2281,14 +2572,14 @@ static ssize_t vfd_write(struct file *filp, const char *buf, size_t len, loff_t 
 	{
 		if (llen <= VFD_DISP_SIZE)  //no scroll
 		{
-			ret |= pt6302_write_text(0, (char *)buf, len);
+			ret |= pt6302_write_text(0, (char *)buff, len);
 		}	
 		else
 		{  // scroll, display string is longer than display length
 			// initial display starting at 3rd position to ease reading
 			memset(sbuf, ' ', sizeof(sbuf));
 			offset = 3;
-			memcpy(sbuf + offset, buf, llen);
+			memcpy(sbuf + offset, buff, llen);
 			llen += offset;
 			sbuf[llen + VFD_DISP_SIZE] = '\0';  // terminate string
 
@@ -2315,14 +2606,14 @@ static ssize_t vfd_write(struct file *filp, const char *buf, size_t len, loff_t 
 	{
 		if (llen <= LED_DISP_SIZE || offset != 0)  // no scroll or VFD scrolled
 		{
-			ret |= pt6958_ShowBuf((unsigned char *)buf, len);
+			ret |= pt6958_ShowBuf((unsigned char *)buff, len);
 		}	
 		else
 		{  // scroll, display string is longer than display length
 			// initial display starting at 2nd position to ease reading
 			memset(sbuf, ' ', sizeof(sbuf));
 			offset = 2;
-			memcpy(sbuf + offset, buf, llen);
+			memcpy(sbuf + offset, buff, llen);
 			llen += offset;
 			sbuf[llen + LED_DISP_SIZE] = '\0';  // terminate string
 
@@ -2337,7 +2628,7 @@ static ssize_t vfd_write(struct file *filp, const char *buf, size_t len, loff_t 
 			clear_display();
 
 			// final display
-			ret |= pt6958_ShowBuf((unsigned char *)buf, LED_DISP_SIZE);
+			ret |= pt6958_ShowBuf((unsigned char *)buff, LED_DISP_SIZE);
 		}
 	}
 	if (ret < 0)
@@ -2347,6 +2638,38 @@ static ssize_t vfd_write(struct file *filp, const char *buf, size_t len, loff_t 
 	}
 	dprintk(150, "%s <\n", __func__);
 	return len;
+#else
+	char *kernel_buf;
+	int res = 0;
+
+	struct vfd_ioctl_data data;
+
+	dprintk(150, "%s > (len %d, offs %d)\n", __func__, len, (int) *off);
+
+	kernel_buf = kmalloc(len + 1, GFP_KERNEL);
+
+	memset(kernel_buf, 0, len + 1);
+	memset(&data, 0, sizeof(struct vfd_ioctl_data));
+
+	if (kernel_buf == NULL)
+	{
+		printk("%s returns no memory <\n", __func__);
+		return -ENOMEM;
+	}
+	copy_from_user(kernel_buf, buff, len);
+
+	fp5800_WriteText(kernel_buf, len);
+
+	kfree(kernel_buf);
+
+	dprintk(10, "%s < res %d len %d\n", __func__, res, len);
+
+	if (res < 0)
+	{
+		return res;
+	}
+	return len;
+#endif
 }
 
 /*******************************************
@@ -2588,7 +2911,7 @@ static int vfd_ioctl(struct inode *inode, struct file *file, unsigned int cmd, u
 								msleep(250);
 								i++;
 							}
-							while (icon_state.status != ICON_THREAD_STATUS_HALTED && i < 5);
+							while (icon_state.status != THREAD_STATUS_HALTED && i < 5);
 							if (i == 5)
 							{
 								dprintk(1, "%s Time out stopping icon thread!\n", __func__);
@@ -2615,7 +2938,7 @@ static int vfd_ioctl(struct inode *inode, struct file *file, unsigned int cmd, u
 								msleep(250);
 								i++;
 							}
-							while (spinner_state.status != ICON_THREAD_STATUS_HALTED && i < 20);
+							while (spinner_state.status != THREAD_STATUS_HALTED && i < 20);
 							if (i == 20)
 							{
 								dprintk(1, "%s Time out stopping spinner thread!\n", __func__);
@@ -2664,7 +2987,7 @@ static int vfd_ioctl(struct inode *inode, struct file *file, unsigned int cmd, u
 							{
 								msleep(250);
 							}
-							while (spinner_state.status != ICON_THREAD_STATUS_HALTED);
+							while (spinner_state.status != THREAD_STATUS_HALTED);
 							dprintk(50, "%s Spinner stopped\n", __func__);
 						}
 						if (icon_state.state != 1)
@@ -2688,7 +3011,7 @@ static int vfd_ioctl(struct inode *inode, struct file *file, unsigned int cmd, u
 								msleep(250);
 								i++;
 							}
-							while (icon_state.status != ICON_THREAD_STATUS_HALTED && i < 128);
+							while (icon_state.status != THREAD_STATUS_HALTED && i < 128);
 							if (i == 128)
 							{
 								dprintk(1, "%s Time out stopping icon thread!\n", __func__);
@@ -2719,7 +3042,7 @@ static int vfd_ioctl(struct inode *inode, struct file *file, unsigned int cmd, u
 								msleep(250);
 								i++;
 							}
-							while (icon_state.status != ICON_THREAD_STATUS_HALTED && i < 128);
+							while (icon_state.status != THREAD_STATUS_HALTED && i < 128);
 							if (i == 128)
 							{
 								dprintk(1, "%s Time out stopping icon thread!\n", __func__);
@@ -2760,7 +3083,7 @@ static int vfd_ioctl(struct inode *inode, struct file *file, unsigned int cmd, u
 							msleep(250);
 							i++;
 						}
-						while (icon_state.status != ICON_THREAD_STATUS_HALTED && i < 120);
+						while (icon_state.status != THREAD_STATUS_HALTED && i < 120);
 						if (i == 120)
 						{
 							dprintk(1, "%s Time out stopping icon thread!\n", __func__);

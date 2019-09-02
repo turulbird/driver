@@ -312,10 +312,10 @@ enum  // spinner numbers and their names
 	SPINNER_15   // 15
 };
 
-#define ICON_THREAD_STATUS_RUNNING 0
-#define ICON_THREAD_STATUS_STOPPED 1
-#define ICON_THREAD_STATUS_INIT    2
-#define ICON_THREAD_STATUS_HALTED  3  // (semaphore down)
+#define THREAD_STATUS_RUNNING 0
+#define THREAD_STATUS_STOPPED 1
+#define THREAD_STATUS_INIT    2
+#define THREAD_STATUS_HALTED  3  // (semaphore down)
 
 typedef struct
 {
@@ -344,7 +344,7 @@ struct saved_data_s
 //	int brightness;
 //	int display_on;
 	int icon_state[ICON_MAX + 2];
-	int icon_count; // number of icons switched on
+	int icon_count;  // number of icons switched on
 	int icon_list[8];  // holds the numbers of the last eight icons set
 };
 
@@ -357,5 +357,9 @@ extern void ReadKey(void);
 extern struct file_operations vfd_fops;
 extern struct saved_data_s lastdata;
 extern struct iconToInternal vfdIcons[];
+extern struct semaphore text_thread_sem;
+extern struct task_struct *text_task;
+extern int text_thread_status;
+
 #endif // ADB_5800_FP_H
 // vim:ts=4

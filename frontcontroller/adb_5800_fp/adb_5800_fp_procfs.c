@@ -185,7 +185,7 @@ static int symbol_circle_write(struct file *file, const char __user *buf, unsign
 		kfree(myString);
 
 		if (symbol_circle != 0)
-		{ // spinner on
+		{  // spinner on
 			if (symbol_circle > 255)
 			{
 				symbol_circle = 255;  // set maximum value
@@ -203,16 +203,16 @@ static int symbol_circle_write(struct file *file, const char __user *buf, unsign
 						msleep(250);
 						i++;
 					}
-					while (icon_state.status != ICON_THREAD_STATUS_HALTED && i < 20);  //time out of 5 seconds
+					while (icon_state.status != THREAD_STATUS_HALTED && i < 20);  //time out of 5 seconds
 //					dprintk(50, "%s Icon thread stopped\n", __func__);
 				}
-				if (symbol_circle == 1) //handle special value 1
+				if (symbol_circle == 1)  // handle special value 1
 				{
-					spinner_state.period = 250; //set standard speed
+					spinner_state.period = 250;  //set standard speed
 				}
 				else
 				{
-					spinner_state.period = symbol_circle * 10; //set user specified speed
+					spinner_state.period = symbol_circle * 10;  //set user specified speed
 				}
 				spinner_state.state = 1;
 				lastdata.icon_state[ICON_SPINNER] = 1;
@@ -232,10 +232,10 @@ static int symbol_circle_write(struct file *file, const char __user *buf, unsign
 					msleep(250);
 					i++;
 				}
-				while (spinner_state.status != ICON_THREAD_STATUS_HALTED && i < 20);  //time out of 20 seconds
+				while (spinner_state.status != THREAD_STATUS_HALTED && i < 20);  //time out of 20 seconds
 //				dprintk(50, "%s Spinner thread stopped\n", __func__);
 			}
-			if (old_icon_state != 0) // restart icon thread when it was active
+			if (old_icon_state != 0)  // restart icon thread when it was active
 			{
 				icon_state.state = old_icon_state;
 				up(&icon_state.sem);
