@@ -60,7 +60,8 @@
  * 20190813 Audioniek       VFDSETFAN IOCTL added.
  * 20190814 Audioniek       Display all icons on/off added.
  * 20190902 Audioniek       Text display through /dev/vfd handled in a thread, including
- *                          scrolling (TODO: restore UFT8 support).
+ *                          scrolling.
+ * 20190903 Audioniek       Seaprate text display threads for VFD and LED.
  *
  ****************************************************************************************/
 #include <asm/io.h>
@@ -146,9 +147,12 @@ typedef union
 	uint8_t all;
 } pt6302_command_t;
 
-struct semaphore text_thread_sem;
-struct task_struct *text_task = 0;
-int text_thread_status = THREAD_STATUS_STOPPED;
+struct semaphore led_text_thread_sem;
+struct semaphore vfd_text_thread_sem;
+struct task_struct *led_text_task = 0;
+struct task_struct *vfd_text_task = 0;
+int led_text_thread_status = THREAD_STATUS_STOPPED;
+int vfd_text_thread_status = THREAD_STATUS_STOPPED;
 
 extern int display_led;  // module parameter
 extern int display_vfd;  // module parameter
@@ -332,146 +336,7 @@ static const unsigned char seven_seg[256] =
 	0x40,  //0x7e, ~
 	0x7f,  //0x7f, <DEL>--> all segments on
 
-	// 0x80 onwards not used
-#if 0
-	0x84,  //0x80, a -umulaut
-	0x94,  //0x81, o -umulaut
-	0x81,  //0x82, u -umulaut
-	0x8e,  //0x83, A -umulaut
-	0x99,  //0x84, O -umulaut
-	0x9a,  //0x85, U -umulaut
-	0xb1,  //0x86, ��- estset
-	0x10,  //0x87, reserved
-	0x10,  //0x88, reserved
-	0x10,  //0x89, reserved
-	0x10,  //0x8a, reserved
-	0x10,  //0x8b, reserved
-	0x10,  //0x8c, reserved
-	0x10,  //0x8d, reserved
-	0x10,  //0x8e, reserved
-	0x10,  //0x8f, reserved
-
-	0x10,  //0x90, reserved
-	0x10,  //0x91, reserved
-	0x10,  //0x92, reserved
-	0x10,  //0x93, reserved
-	0x10,  //0x94, reserved
-	0x10,  //0x95, reserved
-	0x10,  //0x96, reserved
-	0x10,  //0x97, reserved
-	0x10,  //0x98, reserved
-	0x10,  //0x99, reserved
-	0x10,  //0x9a, reserved
-	0x10,  //0x9b, reserved
-	0x10,  //0x9c, reserved
-	0x10,  //0x9d, reserved
-	0x10,  //0x9e, reserved
-	0x10,  //0x9f, reserved
-
-	0x10,  //0xa0, reserved
-	0x10,  //0xa1, reserved
-	0x10,  //0xa2, reserved
-	0x10,  //0xa3, reserved
-	0x10,  //0xa4, reserved
-	0x10,  //0xa5, reserved
-	0x10,  //0xa6, reserved
-	0x10,  //0xa7, reserved
-	0x10,  //0xa8, reserved
-	0x10,  //0xa9, reserved
-	0x10,  //0xaa, reserved
-	0x10,  //0xab, reserved
-	0x10,  //0xac, reserved
-	0x10,  //0xad, reserved
-	0x10,  //0xae, reserved
-	0x10,  //0xaf, reserved
-
-	0x10,  //0xb0, reserved
-	0x10,  //0xb1, reserved
-	0x10,  //0xb2, reserved
-	0x10,  //0xb3, reserved
-	0x10,  //0xb4, reserved
-	0x10,  //0xb5, reserved
-	0x10,  //0xb6, reserved
-	0x10,  //0xb7, reserved
-	0x10,  //0xb8, reserved
-	0x10,  //0xb9, reserved
-	0x10,  //0xba, reserved
-	0x10,  //0xbb, reserved
-	0x10,  //0xbc, reserved
-	0x10,  //0xbd, reserved
-	0x10,  //0xbe, reserved
-	0x10,  //0xbf, reserved
-
-	0x10,  //0xc0, reserved
-	0x10,  //0xc1, reserved
-	0x10,  //0xc2, reserved
-	0x10,  //0xc3, reserved
-	0x10,  //0xc4, reserved
-	0x10,  //0xc5, reserved
-	0x10,  //0xc6, reserved
-	0x10,  //0xc7, reserved
-	0x10,  //0xc8, reserved
-	0x10,  //0xc9, reserved
-	0x10,  //0xca, reserved
-	0x10,  //0xcb, reserved
-	0x10,  //0xcc, reserved
-	0x10,  //0xcd, reserved
-	0x10,  //0xce, reserved
-	0x10,  //0xcf, reserved
-
-	0x10,  //0xd0, reserved
-	0x10,  //0xd1, reserved
-	0x10,  //0xd2, reserved
-	0x10,  //0xd3, reserved
-	0x10,  //0xd4, reserved
-	0x10,  //0xd5, reserved
-	0x10,  //0xd6, reserved
-	0x10,  //0xd7, reserved
-	0x10,  //0xd8, reserved
-	0x10,  //0xd9, reserved
-	0x10,  //0xda, reserved
-	0x10,  //0xdb, reserved
-	0x10,  //0xdc, reserved
-	0x10,  //0xdd, reserved
-	0x10,  //0xde, reserved
-	0x10,  //0xdf, reserved
-
-	0x10,  //0xe0, reserved
-	0x10,  //0xe1, reserved
-	0x10,  //0xe2, reserved
-	0x10,  //0xe3, reserved
-	0x10,  //0xe4, reserved
-	0x10,  //0xe5, reserved
-	0x10,  //0xe6, reserved
-	0x10,  //0xe7, reserved
-	0x10,  //0xe8, reserved
-	0x10,  //0xe9, reserved
-	0x10,  //0xea, reserved
-	0x10,  //0xeb, reserved
-	0x10,  //0xec, reserved
-	0x10,  //0xed, reserved
-	0x10,  //0xee, reserved
-	0x10,  //0xef, reserved
-
-	//individual segments of the display
-	0x01,  //0xf0, reserved
-	0x02,  //0xf1, reserved
-	0x04,  //0xf2, reserved
-	0x08,  //0xf3, reserved
-	0x10,  //0xf4, reserved
-	0x20,  //0xf5, reserved
-	0x40,  //0xf6, reserved
-	0x80,  //0xf7, reserved
-
-	0x10,  //0xf8, reserved
-	0x10,  //0xf9, reserved
-	0x10,  //0xfa, reserved
-	0x10,  //0xfb, reserved
-	0x10,  //0xfc, reserved
-	0x10,  //0xfd, reserved
-	0x10,  //0xfe, reserved
-	0x10,  //0xff, reserved
-#endif
+	// 0x80 onwards not used; taken care of by UTF8 support
 };
 
 /***************************************************************
@@ -601,7 +466,7 @@ static unsigned char pt6xxx_init_pio_pins(void)
 	dprintk(150, "Initialize PT6302 & PT6958 PIO pins\n");
 
 // PT6302 Chip select
-	dprintk(100, "Request STPIO %d,%d for PT6302 CS\n", PORT_CS, PIN_CS);
+	dprintk(50, "Request STPIO %d,%d for PT6302 CS\n", PORT_CS, PIN_CS);
 	pt6302_cs = stpio_request_pin(PORT_CS, PIN_CS, "PT6302_CS", STPIO_OUT);
 	if (pt6302_cs == NULL)
 	{
@@ -609,7 +474,7 @@ static unsigned char pt6xxx_init_pio_pins(void)
 		goto pt_init_fail;
 	}
 // PT6958 Strobe
-	dprintk(100, "Request STPIO %d,%d for PT6958 STB\n", PORT_STB, PIN_STB);
+	dprintk(50, "Request STPIO %d,%d for PT6958 STB\n", PORT_STB, PIN_STB);
 	pt6958_stb = stpio_request_pin(PORT_STB, PIN_STB, "PT6958_STB", STPIO_OUT);
 	if (pt6958_stb == NULL)
 	{
@@ -617,7 +482,7 @@ static unsigned char pt6xxx_init_pio_pins(void)
 		goto pt_init_fail;
 	}
 // PT6302 & PT6958 Clock
-	dprintk(100, "Request STPIO %d,%d for PT6302/PT6958 CLK\n", PORT_CLK, PIN_CLK);
+	dprintk(50, "Request STPIO %d,%d for PT6302/PT6958 CLK\n", PORT_CLK, PIN_CLK);
 	pt6xxx_clk = stpio_request_pin(PORT_CLK, PIN_CLK, "PT6958_CLK", STPIO_OUT);
 	if (pt6xxx_clk == NULL)
 	{
@@ -625,7 +490,7 @@ static unsigned char pt6xxx_init_pio_pins(void)
 		goto pt_init_fail;
 	}
 // PT6302 & PT6958 Data in
-	dprintk(100, "Request STPIO %d,%d for PT6302/PT6958 Din\n", PORT_DIN, PIN_DIN);
+	dprintk(50, "Request STPIO %d,%d for PT6302/PT6958 Din\n", PORT_DIN, PIN_DIN);
 	pt6xxx_din = stpio_request_pin(PORT_DIN, PIN_DIN, "PT6958_DIN", STPIO_BIDIR);
 	if (pt6xxx_din == NULL)
 	{
@@ -684,7 +549,7 @@ static void pt6xxx_WriteCmd(unsigned char Value)
 {
 	unsigned char i;
 
-	dprintk(150, "%s >\n", __func__);
+	dprintk(160, "%s >\n", __func__);
 	for (i = 0; i < 8; i++)  // 8 bits in a byte, LSB first
 	{
 		stpio_set_pin(pt6xxx_din, Value & 0x01);  // write bit
@@ -693,7 +558,7 @@ static void pt6xxx_WriteCmd(unsigned char Value)
 		stpio_set_pin(pt6xxx_clk, 1);  // clock pin
 		udelay(VFD_Delay);
 		Value >>= 1;  // get next bit
-	dprintk(150, "%s >\n", __func__);
+	dprintk(160, "%s <\n", __func__);
 	}
 }
 
@@ -841,47 +706,29 @@ static void PT6958_Show(unsigned char DIG1, unsigned char DIG2, unsigned char DI
 
 /******************************************************
  *
- * Set text string on LED display
+ * Convert UTF8 formatted text to display format for
+ * PT6958.
  *
-// * Accepts ASCII string lengths of 1, 2, 3, 4 & 8 and
-// * displays text right aligned.
-// *
-// * First four bytes are text characters,
-// * in case of length 8, last four are the states for
-// * the corresponding decimal points (1=on,
-// * off otherwise)
-// *
+ * Returns corrected length.
+ *
+ * Note: return format is led segment data, not plain
+ *       text.
+ *
  */
-int pt6958_ShowBuf(unsigned char *data, unsigned char len)
+int pt6958_utf8conv(unsigned char *text, unsigned char len)
 {
-	unsigned char z1, z2, z3, z4, k1, k2, k3, k4;
-	unsigned char text[9];
-	unsigned char kbuf[8] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 	int i;
 	int wlen;
+	unsigned char kbuf[8];
+	unsigned char *UTF_Char_Table = NULL;
 
-	dprintk(150, "%s >\n", __func__);
-	len = (len > 8 ? 8 : len);
+	dprintk(150, "%s > len = %d\n", __func__, len);
 
-	if (len == 0)
-	{
-		return 0;
-	}
-	memset(text, 0x20, sizeof(text));
-	text[8] = 0x00;
-	memcpy(text, data, len);
+	i = 0;  // input index
+	wlen = 0;  // output index
+	memset(kbuf, 0x00, sizeof(kbuf));  // clear output buffer
+	text[len] = 0x00;  // terminate text
 
-	/* Strip possible trailing LF */
-	if (text[len - 1] == '\n')
-	{
-		len--;
-	}
-	text[len] = 0x00;  // terminate string
-
-#if 0
-	/* handle UTF-8 characters */
-	i = 0;
-	wlen = 0;
 	while ((i < len) && (wlen < 8))
 	{
 		if (text[i] == 0)
@@ -890,13 +737,11 @@ int pt6958_ShowBuf(unsigned char *data, unsigned char len)
 		}
 		else if (text[i] < 0x20)
 		{
-//			dprintk(100, "[%s] Non-printable character: '0x%02x'\n", __func__, text[i]);
 			i++;  // skip
 		}
 		else if (text[i] < 0x80)
 		{
-			kbuf[wlen] = text[i];
-			dprintk(100, "[%s] ASCII character: '0x%02x'\n", __func__, text[i]);
+			kbuf[wlen] = seven_seg[text[i]];  // get segment pattern
 			wlen++;
 		}
 		else if (text[i] < 0xE0)
@@ -947,10 +792,10 @@ int pt6958_ShowBuf(unsigned char *data, unsigned char len)
 				}
 			}
 			i++;  // skip UTF lead in
+
 			if (UTF_Char_Table)
 			{
-				dprintk(100, "UTF-8 0x%02x -> display 0x%02x\n", i, UTF_Char_Table[text[i] & 0x3f]);
-				kbuf[wlen] = UTF_Char_Table[text[i] & 0x3f];
+				kbuf[wlen] = UTF_Char_Table[text[i] & 0x3f];  // get segment data
 				wlen++;
 			}
 		}
@@ -975,17 +820,66 @@ int pt6958_ShowBuf(unsigned char *data, unsigned char len)
 		}
 		i++;
 	}
-	/* end */
-#else
-	memset(kbuf, 0x20, sizeof(kbuf));  // fill output buffer with spaces
-	wlen = (len > LED_DISP_SIZE ? LED_DISP_SIZE : len);
-	memcpy(kbuf, text, wlen);
-#endif
-
-	if (wlen > 8)
+	if (wlen > 64)
 	{
-		wlen = 8;
+		wlen = 64;
 	}
+	memset(text, 0x00, sizeof(kbuf) + 1);
+	for (i = 0; i < wlen; i++)
+	{
+		text[i] = kbuf[i];
+	}
+	dprintk(150, "%s < wlen = %d\n", __func__, wlen);
+	return wlen;
+}
+
+/******************************************************
+ *
+ * Set text string on LED display
+ *
+ */
+int pt6958_ShowBuf(unsigned char *data, unsigned char len, int utf8_flag)
+{
+	unsigned char z1, z2, z3, z4, k1, k2, k3, k4;
+	unsigned char text[9];
+	unsigned char kbuf[8];
+	int i;
+	int wlen;
+
+	dprintk(150, "%s >\n", __func__);
+	len = (len > 8 ? 8 : len);
+
+	if (len == 0)
+	{
+		return 0;
+	}
+	memset(text, 0x20, sizeof(text));
+	memcpy(text, data, len);
+
+	/* Strip possible trailing LF */
+	if (text[len - 1] == '\n')
+	{
+		len--;
+	}
+	text[len] = 0x00;  // terminate string
+	memset(kbuf, 0x00, sizeof(kbuf));  // clear segment data buffer
+
+	/* handle UTF-8 characters */
+	if (utf8_flag)
+	{
+		wlen = pt6958_utf8conv(text, len);
+		wlen = (len > LED_DISP_SIZE ? LED_DISP_SIZE : len);
+		memcpy(kbuf, text, wlen);
+	}
+	else
+	{
+		wlen = (len > LED_DISP_SIZE ? LED_DISP_SIZE : len);
+		for (i = 0; i < wlen; i++)
+		{
+			kbuf[i] = seven_seg[text[i]];
+		}
+	}
+
 	k1 = k2 = k3 = k4 = 0;  // clear decimal point flags
 
 	/* save last string written to fp */
@@ -995,7 +889,8 @@ int pt6958_ShowBuf(unsigned char *data, unsigned char len)
 //#define ALIGN_RIGHT 1
 #if defined ALIGN_RIGHT
 	// right align display
-	z1 = z2 = z3 = z4 = 0x20;  // set non used positions to space (blank)
+	z1 = z2 = z3 = z4 = 0x00;  // set non used positions to blank
+	k1 = k2 = k3 = k4 = 0x00;  // clear decimal point flags
 	switch (len)
 	{
 		case 1:
@@ -1023,69 +918,47 @@ int pt6958_ShowBuf(unsigned char *data, unsigned char len)
 			z3 = kbuf[2];
 			z4 = kbuf[3];
 		}
-//		case 8:  // characters five through handle the decimal points
-//		{
-//			z1 = kbuf[0];
-//			z2 = kbuf[1];
-//			z3 = kbuf[2];
-//			z4 = kbuf[3];
-//			if (kbuf[4] == '1')
-//			{
-//				k1 = 1;
-//			}
-//			if (kbuf[5] == '1')
-//			{
-//				k2 = 1;
-//			}
-//			if (kbuf[6] == '1')
-//			{
-//				k3 = 1;
-//			}
-//			if (kbuf[7] == '1')
-//			{
-//				k4 = 1;
-//			}	
-//			break;
-//		}
-//	}
-	PT6958_Show(seven_seg[z1], seven_seg[z2], seven_seg[z3], seven_seg[z4], k1, k2, k3, k4); // display text & decimal points
-#else
-	z1 = z2 = z3 = z4 = 0x00;  // set non used positions to space (blank)
-// determine the decimal points: if character is period, single quote or colon, replace it by a decimal point
-	if ((wlen >= 2) && (kbuf[1] == '.' || kbuf[1] == 0x27 || kbuf[1] == ':'))
-	{
-		k1 = 1;  // flag period at position 1
-	}
-	if ((wlen >= 3) && (kbuf[2] == '.' || kbuf[2] == 0x27 || kbuf[2] == ':'))
-	{
-		k2 = 1;  // flag period at position 2
-	}
-	if ((wlen >= 4) && (kbuf[3] == '.' || kbuf[3] == 0x27 || kbuf[3] == ':'))
-	{
-		k3 = 1;  // flag period at position 3
-	}
-	if ((wlen >= 5) && (kbuf[4] == '.' || kbuf[4] == 0x27 || kbuf[4] == ':'))
-	{
-		k4 = 1;  // flag period at position 4
-	}
-// assigning segment data
-	if (wlen >= 1)
-	{
-		z1 = seven_seg[kbuf[0]];
-	}
-	if (wlen >= 2)
-	{
-		z2 = seven_seg[kbuf[1 + k1]];
-	}
-	if (wlen >= 3)
-	{
-		z3 = seven_seg[kbuf[2 + k1 + k2]];
-	}
-	if (wlen >= 4)
-	{
-		z4 = seven_seg[kbuf[3 + k1 + k2 + k3]];
 	}
 	PT6958_Show(z1, z2, z3, z4, k1, k2, k3, k4); // display text & decimal points
+#else
+	k1 = k2 = k3 = k4 = 0x00;  // clear decimal point flags
+//	z1 = z2 = z3 = z4 = 0x00;  // set non used positions to space (blank)
+// determine the decimal points: if character is period, single quote or colon, replace it by a decimal point
+//	if ((wlen >= 2) && (text[1] == '.' || text[1] == 0x27 || text[1] == ':'))
+//	{
+//		k1 = 1;  // flag period at position 1
+//	}
+//	if ((wlen >= 3) && (text[2] == '.' || text[2] == 0x27 || text[2] == ':'))
+//	{
+//		k2 = 1;  // flag period at position 2
+//	}
+//	if ((wlen >= 4) && (text[3] == '.' || text[3] == 0x27 || text[3] == ':'))
+//	{
+//		k3 = 1;  // flag period at position 3
+//	}
+//	if ((wlen >= 5) && (text[4] == '.' || text[4] == 0x27 || text[4] == ':'))
+//	{
+//		k4 = 1;  // flag period at position 4
+//	}
+// assigning segment data
+//	if (wlen >= 1)
+//	{
+//		z1 = seven_seg[kbuf[0]];
+//	}
+//	if (wlen >= 2)
+//	{
+//		z2 = seven_seg[kbuf[1 + k1]];
+//	}
+//	if (wlen >= 3)
+//	{
+//		z3 = seven_seg[kbuf[2 + k1 + k2]];
+//	}
+//	if (wlen >= 4)
+//	{
+//		z4 = seven_seg[kbuf[3 + k1 + k2 + k3]];
+//	}
+//	PT6958_Show(z1, z2, z3, z4, k1, k2, k3, k4); // display text & decimal points
+	PT6958_Show(kbuf[0], kbuf[1], kbuf[2], kbuf[3], k1, k2, k3, k4); // display text & decimal points
 #endif
 	dprintk(150, "%s <\n", __func__);
 	return 0;
@@ -1108,43 +981,6 @@ static void pt6958_set_icon(unsigned char *kbuf, unsigned char len)
 		pos = kbuf[0];  // 1st character is position 1 = power LED, 
 		ico = kbuf[4];  // last character is state
 
-#if 0
-		if (pos == 1)  // do power LED
-		{
-			ICON1 = ico;  // state
-			pos = ADDR_SETCMD + 1;  // get command
-		}
-		if (pos == 2)
-		{
-			if (ico == 1)
-			{
-				ICON1 = 2;
-				ico = 2;
-			}
-			else
-			{
-				ICON1 = 0;
-				ico = 0;
-			}
-			pos = ADDR_SETCMD + 1;
-		}  // led power, 01-red 02-green 03-orange
-		if (pos == 3)  // handle timer/rec LED
-		{
-			ICON2 = ico;
-			pos = ADDR_SETCMD + 3;
-		}
-		if (pos == 4)  // handle @ LED
-		{
-			ICON3 = ico;
-			pos = ADDR_SETCMD + 5;
-		}
-		if (pos == 5)  // handle alert LED
-		{
-			ICON4 = ico;
-			pos = ADDR_SETCMD + 7;
-		}
-		pt6958_WriteByte(DATA_SETCMD + ADDR_FIX);  // Set command, normal mode, fixed address, write date to display mode 01xx0100b
-#else
 		switch (pos)
 		{
 			case 1:
@@ -1187,7 +1023,6 @@ static void pt6958_set_icon(unsigned char *kbuf, unsigned char len)
 				break;
 			}
 		}
-#endif
 		udelay(VFD_Delay);
 
 		stpio_set_pin(pt6958_stb, 0);  // set strobe low
@@ -1248,7 +1083,6 @@ void pt6958_set_led(int led_nr, int level)
 			break;
 		}
 	}
-//	dprintk(10,	"Set LED %d to %s\n", led_nr, (level == 0 ? "off" : "on"));
 	udelay(LED_Delay);
 	stpio_set_pin(pt6958_stb, 0);  // set strobe low
 	pt6xxx_WriteCmd(ADDR_SETCMD + (led_nr * 2) - 1);  // set position (command 11xx????b)
@@ -1309,7 +1143,6 @@ void pt6958_set_brightness(int level)
 	{
 		level = 7;
 	}
-//	dprintk(10, "Set LED brightness to %d\n", level);
 	pt6958_WriteByte(DISP_CTLCMD + DISPLAY_ON + level);  // Command 3, display control, Display ON, brightness level; 10xx1???b
 	led_brightness = level;
 	spin_unlock(&mr_lock);
@@ -1326,7 +1159,7 @@ static void pt6958_set_light(int onoff)
 	dprintk(150, "%s >\n", __func__);
 	spin_lock(&mr_lock);
 
-	dprintk(10, "Switch LED display %s\n", onoff == 0 ? "off" : "on");
+//	dprintk(10, "Switch LED display %s\n", onoff == 0 ? "off" : "on");
 	pt6958_WriteByte(DISP_CTLCMD + (onoff ? DISPLAY_ON + led_brightness : 0));
 	spin_unlock(&mr_lock);
 	dprintk(150, "%s <\n", __func__);
@@ -1364,7 +1197,7 @@ int pt6302_write_dcram(unsigned char addr, unsigned char *data, unsigned char le
 	if (addr > 15)
 	{
 		dprintk(1, "%s Error: addr too large (max. 15)\n", __func__);
-		return 0; // do nothing
+		return 0;  // do nothing
 	}
 	if (len + addr > VFD_DISP_SIZE + ICON_WIDTH)
 	{
@@ -1399,7 +1232,7 @@ int pt6302_write_dcram(unsigned char addr, unsigned char *data, unsigned char le
  *
  * NOTE: Display tube does have underline segments,
  * but they do not seem to be connected to
- * the PT6302.
+ * the PT6302, although the PCB has a trace.
  *
  */
 int pt6302_write_adram(unsigned char addr, unsigned char *data, unsigned char len)
@@ -1435,8 +1268,10 @@ int pt6302_write_adram(unsigned char addr, unsigned char *data, unsigned char le
  * Write PT6302 CGRAM (set symbol pixel data)
  *
  * addr = symbol number (0..7)
- * data = symbol data (5 bytes for each column, column 0 (leftmost) first, MSbit ignored)
- * len  = number of symbols to define pixels of (8 - addr max.)
+ * data = symbol data (5 bytes for each column,
+ *        column 0 (leftmost) first, MSbit ignored)
+ * len  = number of symbols to define pixels
+ *        of (8 - addr max.)
  *
  */
 int pt6302_write_cgram(unsigned char addr, unsigned char *data, unsigned char len)
@@ -1476,40 +1311,25 @@ int pt6302_write_cgram(unsigned char addr, unsigned char *data, unsigned char le
 
 /******************************************************
  *
- * Write text on VFD display
+ * Convert UTF8 formatted text to display text for
+ * PT6302.
  *
- * NOTE: in order not to inadvertently display icons,
- * the full display width of 15 is always written,
- * padded with spaces if needed.
+ * Returns corrected length.
  *
  */
-int pt6302_write_text(unsigned char offset, unsigned char *text, unsigned char len)
+int pt6302_utf8conv(unsigned char *text, unsigned char len)
 {
-	int ret = -1;
 	int i;
 	int wlen;
-	unsigned char kbuf[16];
-	unsigned char wdata[17];
+	unsigned char kbuf[64];
+	unsigned char *UTF_Char_Table = NULL;
 
 	dprintk(150, "%s >\n", __func__);
-	if (len == 0)  // if length is zero,
-	{
-		dprintk(1, "%s < (len =  0)\n", __func__);
-		return 0; // do nothing
-	}
 
-	// remove possible trailing LF
-	if (text[len -1 ] == 0x0a)
-	{
-		len--;
-	}
-	text[len] = 0x00;  // terminate text
-
-#if 0
-	/* handle UTF-8 chars */
 	wlen = 0;  // input index
 	i = 0;  // output index
 	memset(kbuf, 0x20, sizeof(kbuf));  // fill output buffer with spaces
+	text[len] = 0x00;  // terminate text
 
 	while ((i < len) && (wlen < VFD_DISP_SIZE))
 	{
@@ -1524,7 +1344,6 @@ int pt6302_write_text(unsigned char offset, unsigned char *text, unsigned char l
 		}
 		else if (text[i] < 0xE0)
 		{
-			dprintk(100, "[%s] UTF_Char_Table= 0x%02x", __func__, text[i]);
 			switch (text[i])
 			{
 				case 0xc2:
@@ -1569,10 +1388,9 @@ int pt6302_write_text(unsigned char offset, unsigned char *text, unsigned char l
 					UTF_Char_Table = NULL;
 				}
 			}
-			i++; // skip UTF-8 lead in
+			i++;  // skip UTF-8 lead in
 			if (UTF_Char_Table)
 			{
-				dprintk(10, "Convert 0x%02x -> UTF 0x%02x (index = 0x%02x)\n", text[i], UTF_Char_Table[text[i] & 0x3f], i & 0x3f);
 				kbuf[wlen] = UTF_Char_Table[text[i] & 0x3f];
 				wlen++;
 			}
@@ -1598,13 +1416,55 @@ int pt6302_write_text(unsigned char offset, unsigned char *text, unsigned char l
 		}
 		i++;
 	}
-	wlen = (wlen > VFD_DISP_SIZE ? VFD_DISP_SIZE : wlen);
-#else
+	memset(text, 0x00, sizeof(kbuf) + 1);
+	for (i = 0; i < wlen; i++)
+	{
+		text[i] = kbuf[i];
+	}
+	dprintk(150, "%s <\n", __func__);
+	return wlen;
+
+}
+/******************************************************
+ *
+ * Write text on VFD display
+ *
+ * NOTE: in order not to inadvertently display icons,
+ * the full display width of 15 is always written,
+ * padded with spaces if needed.
+ *
+ */
+int pt6302_write_text(unsigned char offset, unsigned char *text, unsigned char len, int utf8_flag)
+{
+	int ret = -1;
+	int i;
+	int wlen;
+	unsigned char kbuf[16];
+	unsigned char wdata[17];
+
+	dprintk(150, "%s >\n", __func__);
+	if (len == 0)  // if length is zero,
+	{
+		dprintk(1, "%s < (len =  0)\n", __func__);
+		return 0;  // do nothing
+	}
+
+	// remove possible trailing LF
+	if (text[len -1 ] == 0x0a)
+	{
+		len--;
+	}
+	text[len] = 0x00;  // terminate text
+
+	/* handle UTF-8 chars */
+	if (utf8_flag)
+	{
+		len = pt6302_utf8conv(text, len);
+	}
 	memset(kbuf, 0x20, sizeof(kbuf));  // fill output buffer with spaces
 	wlen = (len > VFD_DISP_SIZE ? VFD_DISP_SIZE : len);
-	memcpy(kbuf, text, wlen); // copy text
+	memcpy(kbuf, text, wlen);  // copy text
 
-#endif
 	/* save last string written to fp */
 	memcpy(&lastdata.vfddata, kbuf, wlen);
 	lastdata.length = wlen;
@@ -1616,7 +1476,6 @@ int pt6302_write_text(unsigned char offset, unsigned char *text, unsigned char l
 
 	if (wlen < VFD_DISP_SIZE - 1)  // handle leading spaces
 	{
-		dprintk(10, "%s Handle leading spaces\n", __func__);
 		for (i = 0; i < ((VFD_DISP_SIZE - wlen) / 2); i++)
 		{
 			wdata[i + 1] = 0x20;
@@ -1625,13 +1484,11 @@ int pt6302_write_text(unsigned char offset, unsigned char *text, unsigned char l
 	}
 	for (i = 0; i < wlen; i++)  // handle text
 	{
-		dprintk(10, "%s Handle text\n", __func__);
 		wdata[i + 1 + j] = kbuf[(wlen - 1) - i];
 	}
 
 	if (wlen < VFD_DISP_SIZE)  // handle trailing spaces
 	{
-		dprintk(10, "%s Handle trailing spaces\n", __func__);
 		for (i = j + wlen; i < VFD_DISP_SIZE; i++)
 		{
 			wdata[i + 1] = 0x20;
@@ -1670,7 +1527,6 @@ void pt6302_set_brightness(int level)
 	{
 		level = PT6302_DUTY_MAX;
 	}
-//	dprintk(10, "Set VFD brightness to %d\n", level);
 	cmd.duty.cmd  = PT6302_COMMAND_SET_DUTY;
 	cmd.duty.duty = level;
 
@@ -1729,7 +1585,7 @@ static void pt6302_set_light(int onoff)
 	{
 		onoff = PT6302_LIGHT_NORMAL;
 	}
-	dprintk(10, "Switch VFD display %s\n", onoff == PT6302_LIGHT_NORMAL ? "on" : "off");
+//	dprintk(10, "Switch VFD display %s\n", onoff == PT6302_LIGHT_NORMAL ? "on" : "off");
 	cmd.light.cmd   = PT6302_COMMAND_SET_LIGHT;
 	cmd.light.onoff = onoff;
 	pt6302_WriteByte(cmd.all);
@@ -1767,7 +1623,7 @@ static void pt6302_set_port(int port1, int port2)
  */
 void pt6302_setup(void)
 {
-	unsigned char buf[40] = {0x0};  // init for ADRAM & CGRAM
+	unsigned char buf[40] = {0x00};  // init for ADRAM & CGRAM
 	int ret;
 
 	dprintk(150, "%s >\n", __func__);
@@ -1814,7 +1670,6 @@ int icon_in_list(int icon_nr)
  *
  * (Re)set one icon on VFD
  *
- *
  */
 int pt6302_set_icon(int icon_nr, int on)
 {
@@ -1837,14 +1692,12 @@ int pt6302_set_icon(int icon_nr, int on)
 			i = icon_in_list(icon_nr);
 			if (i)
 			{
-//				dprintk(50, "Icon %d already displayed; do nothing\n", icon_nr);
 				goto exit_set_icon;
 			}
 		}
 		if (lastdata.icon_count == 8)
 		{
 			// 8 icons already displayed, remove oldest icon set in list
-//			dprintk(50, "%s Set icon %d to off\n", __func__, lastdata.icon_list[0]);
 			lastdata.icon_state[lastdata.icon_list[0]] = 0;
 			
 			for (i = 1; i < 8; i++)
@@ -1857,7 +1710,6 @@ int pt6302_set_icon(int icon_nr, int on)
 		{
 			lastdata.icon_list[lastdata.icon_count] = icon_nr;
 			lastdata.icon_count++;
-//			lastdata.icon_state[icon_nr] = 1;
 			if (lastdata.icon_count == 1 && lastdata.icon_state[ICON_SPINNER] == 0)
 			{
 				ret |= pt6302_write_dcram(0, char_zero, 1);  // set icon position to zero
@@ -1894,7 +1746,6 @@ int pt6302_set_icon(int icon_nr, int on)
 			{
 				for (j = i; j < 8; j++)
 				{
-//					dprintk(100, "Clear bit pattern for icon character %02x\n", j);
 					ret |= pt6302_write_cgram(j, vfdIcons[ICON_MIN].pixeldata, 1);
 				}
 			}
@@ -1910,7 +1761,6 @@ int pt6302_set_icon(int icon_nr, int on)
 	{
 		for (i = 0; i < lastdata.icon_count; i++)
 		{
-//			dprintk(100, "%s Reloading pixel data for icon %d\n", __func__, lastdata.icon_list[i]);
 			ret |= pt6302_write_cgram(i, vfdIcons[lastdata.icon_list[i]].pixeldata, 1);
 		}
 	}
@@ -1923,7 +1773,7 @@ exit_set_icon:
 
 /****************************************
  *
- * Determine box variant
+ * Determine box variant code
  *
  * Code largely taken from boxtype.c
  *
@@ -1980,13 +1830,26 @@ int stb0899_read_reg_box_variant(unsigned int reg, unsigned char nr)
 	return result;
 }
 
+/****************************************
+ *
+ * Determine box variant
+ *
+ * Code largely taken from boxtype.c
+ *
+ * Note: although not watertight as the
+ *       tuners are pluggable, relies
+ *       on the correct tuner board to be
+ *       installed, as this is about the
+ *       only distinguishing feature
+ *       between models.
+ */
 void get_box_variant(void)
 {
 	int ret;
 
 	dprintk(150, "%s >\n", __func__);
 
-//	first, check AVS for a STV6412, if not -> BXZB model
+//	first, check AVS for a STV6412
 	ret = stv6412_box_variant();
 	if (ret != 1)
 	{
@@ -2028,7 +1891,7 @@ void get_box_variant(void)
 //				else
 //				{
 					box_variant = 0;
-					dprintk(1, "CAUTION: ADB model variant cannot be determined; is tuner inserted?\n");
+					dprintk(1, "CAUTION: ITI-5800 variant cannot be determined; is tuner installed?\n");
 //				}
 			}
 		}
@@ -2048,9 +1911,9 @@ int adb_5800_fp_init_func(void)
 	unsigned char *dsp_string;
 
 	dprintk(150, "%s >\n", __func__);
-	dprintk(50, "ADB ITI-5800S(X) front panel driver initializing\n");
+	dprintk(10, "ADB ITI-5800S(X) front panel driver initializing\n");
 
-	dprintk(60, "Probe PT6958 + PT6302\n");
+	dprintk(50, "Probe PT6958 + PT6302\n");
 	if (pt6xxx_init_pio_pins() == 0)
 	{
 		dprintk(1, "Unable to initialize PIO pins; abort\n");
@@ -2117,7 +1980,7 @@ int adb_5800_fp_init_func(void)
 			}
 			if (rec_key == 1)
 			{
-				dprintk(1, "CAUTION: non-standard key lay out: EPG/REC/RES!\n");
+				dprintk(1, "CAUTION: non-standard key layout: EPG/REC/RES!\n");
 				key_layout = 1;  // set EPG/REC/RES
 			}
 			else
@@ -2171,7 +2034,7 @@ int adb_5800_fp_init_func(void)
 			}
 			if (rec_key == 0)
 			{
-				dprintk(1, "CAUTION: non-standard key lay out: MENU/EPG/RES!\n");
+				dprintk(1, "CAUTION: non-standard key layout: MENU/EPG/RES!\n");
 				key_layout = 0;  // set MENU/EPG/RES
 			}
 			else
@@ -2238,9 +2101,6 @@ fp_init_fail:
  * All text display via /dev/vfd is done in this
  * thread that also handles scrolling.
  * 
- * LED display only scrolls if it is the only active
- * display set.
- *
  * Code largely taken from aotom_spark (thnx Martii)
  *
  */
@@ -2254,227 +2114,241 @@ void clear_display(void)
 	memset(bBuf, ' ', sizeof(bBuf));
 	if (display_type > 0)
 	{
-		ret |= pt6302_write_text(0, bBuf, VFD_DISP_SIZE);
+		ret |= pt6302_write_text(0, bBuf, VFD_DISP_SIZE, 0);
 	}
 	if (display_type != 1)
 	{
-		ret |= pt6958_ShowBuf(bBuf, LED_DISP_SIZE);
+		ret |= pt6958_ShowBuf(bBuf, LED_DISP_SIZE, 0);
 	}
 	dprintk(100, "%s <\n", __func__);
 }
 
-int utf8charlen(unsigned char c)
+static int led_text_thread(void *arg)
 {
+	struct vfd_ioctl_data *data = (struct vfd_ioctl_data *)arg;
+	unsigned char buf[sizeof(data->data) + 2 * LED_DISP_SIZE];
+	int len = data->length;
+	int off = 0;
+	int ret = 0;
+
 	dprintk(150, "%s >\n", __func__);
 
-	if (!c)
+	if (len > LED_DISP_SIZE)
 	{
-		return 0;
+		memset(buf, ' ', sizeof(buf));
+		off = 1;
+		memcpy(buf + off, data->data, len);
+		len += off;
+		buf[len+ LED_DISP_SIZE] = 0;
 	}
-	if (!(c >> 7))		// 0xxxxxxx
+	else
 	{
-		return 1;
+		memcpy(buf, data->data, len);
+		buf[len] = 0;
 	}
-	if (c >> 5 == 6)	// 110xxxxx 10xxxxxx
+	led_text_thread_status = THREAD_STATUS_RUNNING;
+
+	if (len > LED_DISP_SIZE + 1)
 	{
-		return 2;
+		unsigned char *b = buf;
+		int pos;
+
+		for (pos = 0; pos < len; pos++)
+		{
+			int i;
+
+			if (kthread_should_stop())
+			{
+				led_text_thread_status = THREAD_STATUS_STOPPED;
+				return 0;
+			}
+
+			ret |= pt6958_ShowBuf(b, LED_DISP_SIZE, 1);
+
+			// check for stop request
+			for (i = 0; i < 10; i++)  // note: this loop also constitutes the delay
+			{
+				if (kthread_should_stop())
+				{
+					led_text_thread_status = THREAD_STATUS_STOPPED;
+					return 0;
+				}
+				msleep(50);
+			}
+			// advance to next character
+			b++;
+		}
 	}
-	if (c >> 4 == 14)	// 1110xxxx 10xxxxxx 10xxxxxx
+	if (len > 0)  // final display, also no scroll
 	{
-		return 3;
+		ret |= pt6958_ShowBuf(buf + off, LED_DISP_SIZE, 1);
 	}
-	if (c >> 3 == 30)	// 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+	else
 	{
-		return 4;
+		clear_display();
 	}
+	led_text_thread_status = THREAD_STATUS_STOPPED;
+	dprintk(150, "%s <\n", __func__);
 	return 0;
 }
 
-int utf8strlen(char *s, int len)
-{
-	int i = 0, ulen = 0;
-	int trailing;
-
-	dprintk(150, "%s >\n", __func__);
-
-	while (i < len)
-	{
-		trailing = utf8charlen((unsigned char)s[i]);
-		if (!trailing)
-		{
-			return ulen;
-		}
-		trailing--, i++;
-		if (trailing && (i >= len))
-		{
-			return ulen;
-		}
-
-		while (trailing)
-		{
-			if (i >= len || (unsigned char)s[i] >> 6 != 2)
-			{
-				return ulen;
-			}
-			trailing--;
-			i++;
-		}
-		ulen++;
-	}
-	dprintk(150, "%s < (ulen = %d)\n", __func__, ulen);
-	return ulen;  // can be UTF8 (or pure ASCII, at least no non-UTF-8 8bit characters)
-}
-
-static int text_thread(void *arg)
+static int vfd_text_thread(void *arg)
 {
 	struct vfd_ioctl_data *data = (struct vfd_ioctl_data *)arg;
 	unsigned char buf[sizeof(data->data) + 2 * VFD_DISP_SIZE];
 	int disp_size;
 	int len = data->length;
 	int off = 0;
-	int utf8len;
 	int ret = 0;
-	int delay;
 
 	dprintk(150, "%s >\n", __func__);
-	if (display_type > 0)  // VFD or both
-	{
-		disp_size = VFD_DISP_SIZE;
-		delay = 300;
-	}
-	else  // LED only
-	{
-		disp_size = LED_DISP_SIZE;
-		delay = 500;
-	}
-	// TODO: re-instate UTF8 support
-	utf8len = utf8strlen(data->data, data->length);
 
-	if (utf8len > disp_size)
+	len = pt6302_utf8conv(data->data, data->length);
+
+	if (len > VFD_DISP_SIZE)
 	{
-		dprintk(10, "%s Will scroll\n", __func__);
 		memset(buf, ' ', sizeof(buf));
-		off = disp_size - (disp_size == VFD_DISP_SIZE ? 3 : 1);
+		off = 3;
 		memcpy(buf + off, data->data, len);
 		len += off;
-		utf8len += off;
-		buf[len + disp_size] = 0;
+		buf[len + VFD_DISP_SIZE] = 0;
 	}
 	else
 	{
-		dprintk(10, "%s No scroll\n", __func__);
 		memcpy(buf, data->data, len);
 		buf[len] = 0;
 	}
-	text_thread_status = THREAD_STATUS_RUNNING;
-	dprintk(10, "%s Switched to running\n", __func__);
+	vfd_text_thread_status = THREAD_STATUS_RUNNING;
 
-	if (utf8len > disp_size + 1)
+	if (len > VFD_DISP_SIZE + 1)
 	{
 		unsigned char *b = buf;
 		int pos;
 
-		dprintk(10, "%s Scroll\n", __func__);
-		for (pos = 0; pos < utf8len; pos++)
+		for (pos = 0; pos < len; pos++)
 		{
 			int i;
-			char dot = 0;
 
 			if (kthread_should_stop())
 			{
-				text_thread_status = text_tHREAD_STATUS_STOPPED;
+				vfd_text_thread_status = THREAD_STATUS_STOPPED;
 				return 0;
 			}
-			if (display_type > 0)  // VFD or both
-			{
-				ret |= pt6302_write_text(0, b, VFD_DISP_SIZE);
-			}
-			else  if (display_type != 1)  // exclude VFD only
-			{
-				ret |= pt6958_ShowBuf(b, LED_DISP_SIZE);
 
-			}
-			// delay between scrolls, also check for stop request
-			for (i = 0; i < (delay / 50); i++)  // note: this loop constitutes the delay
+			ret |= pt6302_write_text(0, b, VFD_DISP_SIZE, 0);
+
+			// check for stop request
+			for (i = 0; i < 6; i++)  // note: this loop also constitutes the delay
 			{
 				if (kthread_should_stop())
 				{
-					text_thread_status = THREAD_STATUS_STOPPED;
+					vfd_text_thread_status = THREAD_STATUS_STOPPED;
 					return 0;
 				}
 				msleep(50);
 			}
-			// advance to next UTF-8 character
-			b += utf8charlen(*b);
+			// advance to next character
+			b++;
 		}
 	}
-	if (utf8len > 0) // final display, also no scroll
+	if (len > 0)  // final display, also no scroll
 	{
-		if (display_type > 0)  // VFD or both
-		{
-			ret |= pt6302_write_text(0, buf + off, VFD_DISP_SIZE);
-		}
-		else if (display_type != 1)  // exclude VFD only
-		{
-			ret |= pt6958_ShowBuf(buf + off, LED_DISP_SIZE);
-		}
+		ret |= pt6302_write_text(0, buf + off, VFD_DISP_SIZE, 0);
 	}
 	else
 	{
 		clear_display();
 	}
-	text_thread_status = THREAD_STATUS_STOPPED;
+	vfd_text_thread_status = THREAD_STATUS_STOPPED;
+	dprintk(150, "%s <\n", __func__);
 	return 0;
 }
 
-static struct vfd_ioctl_data last_draw_data;
+static struct vfd_ioctl_data last_led_draw_data;
+static struct vfd_ioctl_data last_vfd_draw_data;
 
 static int run_text_thread(struct vfd_ioctl_data *draw_data)
 {
 	dprintk(150, "%s >\n", __func__);
 
-	if (down_interruptible(&text_thread_sem))
+	if (display_type != 1)
 	{
-		return -ERESTARTSYS;
-	}
+		if (down_interruptible(&led_text_thread_sem))
+		{
+			return -ERESTARTSYS;
+		}
 
-	dprintk(10, "%s Semaphore up\n", __func__);
-	// return if there is already a draw task running for the same text
-	if ((text_thread_status != THREAD_STATUS_STOPPED)
-	&& text_task
-	&& (last_draw_data.length == draw_data->length)
-	&& !memcmp(&last_draw_data.data, draw_data->data, draw_data->length))
-	{
-		up(&text_thread_sem);
-		return 0;
-	}
-	dprintk(10, "%s New text\n", __func__);
+		// return if there is already a draw task running for the same LED text
+		if ((led_text_thread_status != THREAD_STATUS_STOPPED)
+		&& led_text_task
+		&& (last_led_draw_data.length == draw_data->length)
+		&& !memcmp(&last_led_draw_data.data, draw_data->data, draw_data->length))
+		{
+			up(&led_text_thread_sem);
+			return 0;
+		}
+	
+		memcpy(&last_led_draw_data, draw_data, sizeof(struct vfd_ioctl_data));
+	
+		// stop existing thread, if any
+		if ((led_text_thread_status != THREAD_STATUS_STOPPED) && led_text_task)
+		{
+			kthread_stop(led_text_task);
+			while ((led_text_thread_status != THREAD_STATUS_STOPPED))
+			{
+				msleep(1);
+			}
+		}
+		led_text_thread_status = THREAD_STATUS_INIT;
+		led_text_task = kthread_run(led_text_thread, draw_data, "led_text_thread");
 
-	memcpy(&last_draw_data, draw_data, sizeof(struct vfd_ioctl_data));
-
-	// stop existing thread, if any
-	if ((text_thread_status != THREAD_STATUS_STOPPED) && text_task)
-	{
-		kthread_stop(text_task);
-		while ((text_thread_status != THREAD_STATUS_STOPPED))
+		// wait until thread has copied the argument
+		while (led_text_thread_status == THREAD_STATUS_INIT)
 		{
 			msleep(1);
 		}
+		up(&led_text_thread_sem);
 	}
-	dprintk(10, "%s Old thread stopped\n", __func__);
 
-	text_thread_status = THREAD_STATUS_INIT;
-	text_task = kthread_run(text_thread, draw_data, "text_thread");
-	dprintk(10, "%s New thread started\n", __func__);
-
-	// wait until thread has copied the argument
-	while (text_thread_status == THREAD_STATUS_INIT)
+	if (display_type > 0)
 	{
-		msleep(1);
-	}
-	dprintk(10, "%s New thread running\n", __func__);
+		if (down_interruptible(&vfd_text_thread_sem))
+		{
+			return -ERESTARTSYS;
+		}
 
-	up(&text_thread_sem);
+		// return if there is already a draw task running for the same VFD text
+		if ((vfd_text_thread_status != THREAD_STATUS_STOPPED)
+		&& vfd_text_task
+		&& (last_vfd_draw_data.length == draw_data->length)
+		&& !memcmp(&last_vfd_draw_data.data, draw_data->data, draw_data->length))
+		{
+			up(&vfd_text_thread_sem);
+			return 0;
+		}
+	
+		memcpy(&last_vfd_draw_data, draw_data, sizeof(struct vfd_ioctl_data));
+	
+		// stop existing thread, if any
+		if ((vfd_text_thread_status != THREAD_STATUS_STOPPED) && vfd_text_task)
+		{
+			kthread_stop(vfd_text_task);
+			while ((vfd_text_thread_status != THREAD_STATUS_STOPPED))
+			{
+				msleep(1);
+			}
+		}
+		vfd_text_thread_status = THREAD_STATUS_INIT;
+		vfd_text_task = kthread_run(vfd_text_thread, draw_data, "vfd_text_thread");
+
+		// wait until thread has copied the argument
+		while (vfd_text_thread_status == THREAD_STATUS_INIT)
+		{
+			msleep(1);
+		}
+		up(&vfd_text_thread_sem);
+	}
+	dprintk(150, "%s <\n", __func__);
 	return 0;
 }
 
@@ -2503,9 +2377,9 @@ int fp5800_WriteText(char *buf, size_t len)
 		len = data.length = sizeof(data.data);
 	}
 	memcpy(data.data, buf, data.length);
-	dprintk(150, "%s Start draw thread\n", __func__);
 	res = run_text_thread(&data);
 
+	dprintk(150, "%s < res = %d\n", __func__, res);
 	return res;
 }
 
@@ -2518,127 +2392,8 @@ int fp5800_WriteText(char *buf, size_t len)
  * is 64 characters.
  *
  */
-#if 0  // non thread code
-void clear_display(void)
-{
-	char bBuf[16];
-	int ret = 0;
-
-	dprintk(100, "%s >\n", __func__);
-
-	memset(bBuf, ' ', sizeof(bBuf));
-	if (display_type > 0)
-	{
-		ret |= pt6302_write_text(0, bBuf, VFD_DISP_SIZE);
-	}
-	if (display_type != 1)
-	{
-		ret |= pt6958_ShowBuf(bBuf, LED_DISP_SIZE);
-	}
-	dprintk(100, "%s <\n", __func__);
-}
-#endif
-
 static ssize_t vfd_write(struct file *filp, const char *buff, size_t len, loff_t *off)
 {
-#if 0  // non thread code
-	int ret = 0;
-	int i;
-	int llen;
-	int offset = 0;
-	char sbuf[64];
-	char *b;
-
-	dprintk(150, "%s >\n", __func__);
-
-	if ((len == 0) || (VFD_DISP_SIZE == 0) || (LED_DISP_SIZE == 0))
-	{
-		dprintk(1, "%s < (len = 0)\n", __func__);
-		return len;
-	}
-
-	if (len >= 64)  //do not display more than 64 characters
-	{
-		len = 64;
-	}
-
-	llen = len;
-	if (buff[llen - 1] == '\n')
-	{
-		llen--;
-	}
-
-	if (display_type > 0)
-	{
-		if (llen <= VFD_DISP_SIZE)  //no scroll
-		{
-			ret |= pt6302_write_text(0, (char *)buff, len);
-		}	
-		else
-		{  // scroll, display string is longer than display length
-			// initial display starting at 3rd position to ease reading
-			memset(sbuf, ' ', sizeof(sbuf));
-			offset = 3;
-			memcpy(sbuf + offset, buff, llen);
-			llen += offset;
-			sbuf[llen + VFD_DISP_SIZE] = '\0';  // terminate string
-
-			// scroll text
-			b = sbuf;
-			for (i = 0; i < llen; i++)
-			{
-				ret |= pt6302_write_text(0, b + i, VFD_DISP_SIZE);
-				// sleep 300 ms
-				msleep(300);
-			}
-			clear_display();
-
-			// final display
-			ret |= pt6302_write_text(0, sbuf + offset, VFD_DISP_SIZE);
-		}
-	}
-	llen = len;
-	if (buf[llen - 1] == '\n')
-	{
-		llen--;
-	}
-	if (display_type != 1)
-	{
-		if (llen <= LED_DISP_SIZE || offset != 0)  // no scroll or VFD scrolled
-		{
-			ret |= pt6958_ShowBuf((unsigned char *)buff, len);
-		}	
-		else
-		{  // scroll, display string is longer than display length
-			// initial display starting at 2nd position to ease reading
-			memset(sbuf, ' ', sizeof(sbuf));
-			offset = 2;
-			memcpy(sbuf + offset, buff, llen);
-			llen += offset;
-			sbuf[llen + LED_DISP_SIZE] = '\0';  // terminate string
-
-			// scroll text
-			b = sbuf;
-			for (i = 0; i < llen; i++)
-			{
-				ret |= pt6958_ShowBuf(b + i, LED_DISP_SIZE);
-				// sleep 500 ms
-				msleep(500);
-			}
-			clear_display();
-
-			// final display
-			ret |= pt6958_ShowBuf((unsigned char *)buff, LED_DISP_SIZE);
-		}
-	}
-	if (ret < 0)
-	{
-		dprintk(1, "%s < (ret = %d\n", __func__, ret);
-		return ret;
-	}
-	dprintk(150, "%s <\n", __func__);
-	return len;
-#else
 	char *kernel_buf;
 	int res = 0;
 
@@ -2669,7 +2424,6 @@ static ssize_t vfd_write(struct file *filp, const char *buff, size_t len, loff_t
 		return res;
 	}
 	return len;
-#endif
 }
 
 /*******************************************
@@ -2680,14 +2434,12 @@ static ssize_t vfd_write(struct file *filp, const char *buff, size_t len, loff_t
 static ssize_t vfd_read(struct file *filp, char *buf, size_t len, loff_t *off)
 {
 	dprintk(150, "%s >\n", __func__);
-	// TODO: return current display string
 
 	if (len > lastdata.length)
 	{
 		len = lastdata.length;
 	}
 
-	/* fixme: needs revision because of utf8! */
 	if (display_type = 0)
 	{
 		if (len > 8)
@@ -2698,9 +2450,9 @@ static ssize_t vfd_read(struct file *filp, char *buf, size_t len, loff_t *off)
 	}
 	else
 	{
-		if (len > 16)
+		if (len > VFD_DISP_SIZE)
 		{
-			len = 16;
+			len = VFD_DISP_SIZE;
 		}
 		copy_to_user(buf, lastdata.vfddata, len);
 	}
@@ -2755,6 +2507,7 @@ static int vfd_ioctl(struct inode *inode, struct file *file, unsigned int cmd, u
 	unsigned char clear[1] = {0x00};
 
 	dprintk(150, "%s >\n", __func__);
+
 	switch (cmd)
 	{
 		case VFDDISPLAYCHARS:
@@ -2768,6 +2521,7 @@ static int vfd_ioctl(struct inode *inode, struct file *file, unsigned int cmd, u
 			copy_from_user(&vfddata, (void *)arg, sizeof(struct vfd_ioctl_data));
 		}
 	}
+
 	switch (cmd)
 	{
 		case VFDSETMODE:
@@ -2777,7 +2531,6 @@ static int vfd_ioctl(struct inode *inode, struct file *file, unsigned int cmd, u
 		}
 		case VFDSETLED:
 		{
-//			dprintk(100, "Set LED: num = %d, value = %d\n", adb_box_fp->u.led.led_nr, adb_box_fp->u.led.level);
 			pt6958_set_led(adb_box_fp->u.led.led_nr, adb_box_fp->u.led.level);
 			break;
 		}
@@ -2830,7 +2583,8 @@ static int vfd_ioctl(struct inode *inode, struct file *file, unsigned int cmd, u
 			}
 			if (display_type > 0)
 			{
-				pt6958_set_brightness(level); // do not set VFD text display
+				pt6958_set_brightness(level);
+				// do not set VFD text display
 			}
 			else
 			{
@@ -2930,7 +2684,7 @@ static int vfd_ioctl(struct inode *inode, struct file *file, unsigned int cmd, u
 						if (spinner_state.state == 1)
 						{
 							spinner_state.state = 0;
-							dprintk(50, "%s Stop spinner\n", __func__);
+//							dprintk(50, "%s Stop spinner\n", __func__);
 							spinner_state.state = 0;
 							i = 0;
 							do
@@ -2943,7 +2697,7 @@ static int vfd_ioctl(struct inode *inode, struct file *file, unsigned int cmd, u
 							{
 								dprintk(1, "%s Time out stopping spinner thread!\n", __func__);
 							}
-							dprintk(50, "%s Spinner stopped (%d icons to recover)\n", __func__, lastdata.icon_count);
+//							dprintk(50, "%s Spinner stopped (%d icons to recover)\n", __func__, lastdata.icon_count);
 						}
 						lastdata.icon_state[ICON_SPINNER] = 0;  // flag spinner off
 						if (lastdata.icon_count > 1)
@@ -2951,10 +2705,10 @@ static int vfd_ioctl(struct inode *inode, struct file *file, unsigned int cmd, u
 							// reload PT6302 icon patterns
 							for (i = 0; i < lastdata.icon_count; i++)
 							{
-								dprintk(50, "%s Reload pixel data for icon %d\n", __func__, lastdata.icon_list[i]);
+//								dprintk(50, "%s Reload pixel data for icon %d\n", __func__, lastdata.icon_list[i]);
 								ret |= pt6302_write_cgram(i, vfdIcons[lastdata.icon_list[i]].pixeldata, 1);
 							}
-							dprintk(50, "%s Restart icon thread\n", __func__);
+//							dprintk(50, "%s Restart icon thread\n", __func__);
 							icon_state.state = 1;
 							up(&icon_state.sem);
 						}
@@ -2967,7 +2721,7 @@ static int vfd_ioctl(struct inode *inode, struct file *file, unsigned int cmd, u
 								i++;
 							}
 							lastdata.icon_count--;  // pt6302_set_icon will increment it back to 1
-							dprintk(50, "%s Restore icon %d\n", __func__, i);
+//							dprintk(50, "%s Restore icon %d\n", __func__, i);
 							ret |= pt6302_set_icon(i, 1);
 						}
 					}
@@ -2981,60 +2735,27 @@ static int vfd_ioctl(struct inode *inode, struct file *file, unsigned int cmd, u
 						lastdata.icon_state[ICON_MAX] = 1;
 						if (spinner_state.state == 1)  // switch spinner off if on
 						{
-							dprintk(50, "%s Stop spinner\n", __func__);
+//							dprintk(50, "%s Stop spinner\n", __func__);
 							spinner_state.state = 0;
 							do
 							{
 								msleep(250);
 							}
 							while (spinner_state.status != THREAD_STATUS_HALTED);
-							dprintk(50, "%s Spinner stopped\n", __func__);
+//							dprintk(50, "%s Spinner stopped\n", __func__);
 						}
 						if (icon_state.state != 1)
 						{
-							dprintk(50, "%s Start icon thread\n", __func__);
+//							dprintk(50, "%s Start icon thread\n", __func__);
 							icon_state.state = 1;
 							up(&icon_state.sem);
 						}
 
 					}
-					else
+					else  // all icons off
 					{
-#if 0  // restore previous icon set
-						if (lastdata.icon_count < 2)
-						{
-							dprintk(50, "%s Stop icon thread\n", __func__);
-							icon_state.state = 0;
-							i = 0;
-							do
-							{
-								msleep(250);
-								i++;
-							}
-							while (icon_state.status != THREAD_STATUS_HALTED && i < 128);
-							if (i == 128)
-							{
-								dprintk(1, "%s Time out stopping icon thread!\n", __func__);
-							}
-							dprintk(50, "%s Icon thread stopped\n", __func__);
-						}
-						lastdata.icon_state[ICON_MAX] = 0;
-
-						if (lastdata.icon_count = 1)
-						{
-							// get icon number and set icon back on
-							i = 0;
-							while (lastdata.icon_state[i] == 0 && i < ICON_MAX)
-							{
-								i++;
-							}
-							lastdata.icon_count--;  // pt6302_set_icon will increment it back to 1
-							dprintk(50, "%s Restore icon %d\n", __func__, i);
-							ret |= pt6302_set_icon(i, 1);
-						}
-#else  // all icons off
 						{  // stop thread and clear all icons
-							dprintk(50, "%s Stop icon thread\n", __func__);
+//							dprintk(50, "%s Stop icon thread\n", __func__);
 							icon_state.state = 0;
 							i = 0;
 							do
@@ -3047,7 +2768,7 @@ static int vfd_ioctl(struct inode *inode, struct file *file, unsigned int cmd, u
 							{
 								dprintk(1, "%s Time out stopping icon thread!\n", __func__);
 							}
-							dprintk(50, "%s Icon thread stopped\n", __func__);
+//							dprintk(50, "%s Icon thread stopped\n", __func__);
 							
 							lastdata.icon_count = 0;
 							for (i = ICON_MIN + 1; i < ICON_MAX + 2; i++) // include spinner
@@ -3060,7 +2781,6 @@ static int vfd_ioctl(struct inode *inode, struct file *file, unsigned int cmd, u
 								ret |= pt6302_write_cgram(i, vfdIcons[ICON_MIN].pixeldata, 1);
 							}
 						}
-#endif
 					}
 					break;
 				}
@@ -3068,7 +2788,7 @@ static int vfd_ioctl(struct inode *inode, struct file *file, unsigned int cmd, u
 				{
 					if (((icon_state.state == 0) && on) && lastdata.icon_count == 1)  // if no icon thread yet but > 1 icons on
 					{
-						dprintk(1, "%s Start icon thread\n", __func__);
+//						dprintk(1, "%s Start icon thread\n", __func__);
 						icon_state.state = 1;
 						up(&icon_state.sem);
 					}
@@ -3076,7 +2796,7 @@ static int vfd_ioctl(struct inode *inode, struct file *file, unsigned int cmd, u
 					if (lastdata.icon_count < 2 && icon_state.state == 1)
 					{
 						icon_state.state = 0;  // stop icon thread
-						dprintk(50, "%s Stopping icon thread\n", __func__);
+//						dprintk(50, "%s Stopping icon thread\n", __func__);
 						i = 0;
 						do
 						{
@@ -3088,7 +2808,7 @@ static int vfd_ioctl(struct inode *inode, struct file *file, unsigned int cmd, u
 						{
 							dprintk(1, "%s Time out stopping icon thread!\n", __func__);
 						}
-						dprintk(50, "%s Icon thread stopped\n", __func__);
+//						dprintk(50, "%s Icon thread stopped\n", __func__);
 					}
 					break;
 				}
@@ -3116,7 +2836,7 @@ static int vfd_ioctl(struct inode *inode, struct file *file, unsigned int cmd, u
 				}
 				if (display_type != 1)
 				{
-					ret |= pt6958_ShowBuf(vfddata.data, vfddata.length);
+					ret |= pt6958_ShowBuf(vfddata.data, vfddata.length, 0);
 				}
 			}
 			else
@@ -3141,8 +2861,14 @@ static int vfd_ioctl(struct inode *inode, struct file *file, unsigned int cmd, u
 			{
 				adb_box_fp->u.fan.speed = 255;
 			}
-			dprintk(1, "Set fan speed to: %d\n", adb_box_fp->u.fan.speed);
+//			dprintk(10, "Set fan speed to: %d\n", adb_box_fp->u.fan.speed);
 			ctrl_outl(adb_box_fp->u.fan.speed, fan_registers + 0x04);
+			mode = 0;
+			break;
+		}
+		case 0x5305:
+		case 0x5401:
+		{
 			mode = 0;
 			break;
 		}

@@ -48,6 +48,7 @@
  * 20190813 Audioniek       Spinner thread added.
  * 20190813 Audioniek       Fan driver added.
  * 20190814 Audioniek       Display all icons added.
+ * 20190903 Audioniek       Seaprate text display threads for VFD and LED.
  *
  ****************************************************************************************/
 #include <asm/io.h>
@@ -136,13 +137,13 @@ irqreturn_t fpanel_irq_handler(void *dev1, void *dev2)
 
 		/* keygroup1: columns KS1 and KS2, bit 0&4=row K1, bit1&5=row K2, bit2&6=row K3, bit3&7=row K4
 		 * keygroup2: columns KS3 and KS4, bit 0&4=row K1, bit1&5=row K2, bit2&6=row K3, bit3&7=row K4 */
-		if (key_group2 == 0) // no key on KS3 / KS4
+		if (key_group2 == 0)  // no key on KS3 / KS4
 		{
-			switch (key_group1) // get KS1 / KS2
+			switch (key_group1)  // get KS1 / KS2
 			{
 				case 64:  //  KS2 row K3
 				{
-					key_front = KEY_RIGHT;  // RIGHT
+					key_front = KEY_RIGHT;
 					break;
 				}
 				case 32:  // KS2 row K2
@@ -159,7 +160,7 @@ irqreturn_t fpanel_irq_handler(void *dev1, void *dev2)
 				}
 				case 16: // KS2 row K1
 				{
-					key_front = KEY_UP;  // UP
+					key_front = KEY_UP;
 					break;
 				}
 				case 4:  // KS1 row K3
@@ -169,12 +170,12 @@ irqreturn_t fpanel_irq_handler(void *dev1, void *dev2)
 				}
 				case 2:  // KS1 row K2
 				{
-					key_front = KEY_OK;  // OK
+					key_front = KEY_OK;
 					break;
 				}
 				case 1: // KS1 row K1
 				{
-					key_front = KEY_POWER;  // POWER
+					key_front = KEY_POWER;
 					break;
 				}
 			}
@@ -197,12 +198,12 @@ irqreturn_t fpanel_irq_handler(void *dev1, void *dev2)
 				}
 				case 2:  // KS3 row K2
 				{
-					key_front = KEY_LEFT;  // LEFT
+					key_front = KEY_LEFT;
 					break;
 				}
 				case 1:  // KS3 row K1
 				{
-					key_front = KEY_DOWN;  // DOWN
+					key_front = KEY_DOWN;
 					break;
 				}
 			}
@@ -265,10 +266,8 @@ static void button_input_close(struct input_dev *dev)
 static int __init init_fan_module(void)
 {
 	fan_registers = (unsigned long)ioremap(0x18010000, 0x100);
-	dprintk(50, "%s fan_registers = 0x%.8lx\n", __func__, fan_registers);
 
 	fan_pin = stpio_request_pin(4, 7, "fan ctrl", STPIO_ALT_OUT);
-	dprintk(50, "%s fan pin %p\n", __func__, fan_pin);
 
 	// not sure if first one is necessary
 	ctrl_outl(0x200, fan_registers + 0x50);
@@ -356,12 +355,10 @@ int load_spinner_pattern(int offset)
 	int res = 0;
 	int i;
 
-//	dprintk(150, "%s > (offset = %d)\n", __func__, offset);
 	for (i = 0; i < 8; i++)
 	{
-		res |=pt6302_write_cgram(i, spinnerIcons[i + offset].pixeldata, 1);
+		res |= pt6302_write_cgram(i, spinnerIcons[i + offset].pixeldata, 1);
 	}
-//	dprintk(150, "%s < (res = %d)\n", __func__, res);
 	return res;
 }
 
@@ -451,14 +448,12 @@ int load_icon_patterns(int offset)
 	int i, j;
 	extern struct iconToInternal vfdIcons[];
 
-//	dprintk(150, "%s > (offset = %d)\n", __func__, offset);
 	j = (ICON_MAX - offset < 8 ? ICON_MAX - offset : 8);
 
 	for (i = 0; i < j; i++)
 	{
 		res |=pt6302_write_cgram(i, vfdIcons[i + offset].pixeldata, 1);
 	}
-//	dprintk(150, "%s < (res = %d)\n", __func__, res);
 	return res;
 }
 /*********************************************************************
@@ -478,11 +473,9 @@ int icon_thread(void *arg)
 	{
 		return 0;
 	}
-	dprintk(150, "%s: starting\n", __func__);
 	icon_state.status = THREAD_STATUS_INIT;
 
 	icon_state.status = THREAD_STATUS_RUNNING;
-	dprintk(150, "%s: started\n", __func__);
 
 	while (!kthread_should_stop())
 	{
@@ -506,7 +499,6 @@ int icon_thread(void *arg)
 							{
 								load_icon_patterns(i);
 							}
-//							dprintk(50, "%s Display icon #%d\n", __func__, i);
 							icon_char[0] = (i - 1) % 8;
 							res |= pt6302_write_dcram(0, icon_char, 1);  // update character 0 (rightmost position)
 							msleep(1500);
@@ -520,7 +512,6 @@ int icon_thread(void *arg)
 					{
 						for (i = 0; i < lastdata.icon_count; i++)
 						{
-//							dprintk(50, "%s Display icon #%d of %d\n", __func__, i, lastdata.icon_count);
 							icon_char[0] = i;
 							res |= pt6302_write_dcram(0, icon_char, 1);  // update character 0 (rightmost position)
 							msleep(3000);
@@ -563,10 +554,16 @@ static void fp_module_exit(void)
 	printk(TAGDEBUG"ADB ITI-5800S(X) front processor module unloading\n");
 	remove_proc_fp();
 
-	if ((text_thread_status != THREAD_STATUS_STOPPED) && text_task)
+	if ((led_text_thread_status != THREAD_STATUS_STOPPED) && led_text_task)
 	{
-		dprintk(50, "Stopping text write thread\n");
-		kthread_stop(text_task);
+			dprintk(50, "Stopping LED text write thread\n");
+			kthread_stop(led_text_task);
+	}
+
+	if ((vfd_text_thread_status != THREAD_STATUS_STOPPED) && vfd_text_task)
+	{
+		dprintk(50, "Stopping VFD text write thread\n");
+		kthread_stop(vfd_text_task);
 	}
 
 	if (!(spinner_state.status == THREAD_STATUS_STOPPED) && spinner_state.task)
@@ -583,7 +580,8 @@ static void fp_module_exit(void)
 		kthread_stop(icon_state.task);
 	}
 
-	while (text_thread_status != THREAD_STATUS_STOPPED
+	while (led_text_thread_status != THREAD_STATUS_STOPPED
+	&&     vfd_text_thread_status != THREAD_STATUS_STOPPED
 	&&     spinner_state.status != THREAD_STATUS_STOPPED
 	&&     icon_state.status != THREAD_STATUS_STOPPED)
 	{
@@ -626,7 +624,7 @@ static int __init fp_module_init(void)
 	init_fan_module();
 
 	// button driver
-	dprintk(10, "Request STPIO %d,%d for key interrupt\n", PORT_KEY_INT, PIN_KEY_INT);
+	dprintk(50, "Request STPIO %d,%d for key interrupt\n", PORT_KEY_INT, PIN_KEY_INT);
 	key_int = stpio_request_pin(PORT_KEY_INT, PIN_KEY_INT, "Key_int_front", STPIO_IN);
 
 	if (key_int == NULL)
@@ -669,7 +667,8 @@ static int __init fp_module_init(void)
 		goto fp_module_init_fail;
 	}
 
-	sema_init(&text_thread_sem, 1);  // initialize text write semaphore
+	sema_init(&led_text_thread_sem, 1);  // initialize LED text write semaphore
+	sema_init(&vfd_text_thread_sem, 1);  // initialize VFD text write semaphore
 
 	if (display_type > 0)  // VFD
 	{
