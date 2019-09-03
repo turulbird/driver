@@ -53,7 +53,7 @@ static char *TSIS_mode = "parallel";
 module_param(TSIS_mode, charp, 0);
 MODULE_PARM_DESC(TSIS_mode, "TSIS_mode type: serial, parallel (default parallel");
 
-int glowica;
+int tuner;
 static char *NIMS = "single";
 module_param(NIMS, charp, 0);
 MODULE_PARM_DESC(NIMS, "NIMS type: single,twin (default single");
@@ -146,7 +146,7 @@ int stpti_start_feed(struct dvb_demux_feed *dvbdmxfeed, struct DeviceContext_s *
 	   recording). */
 #if defined(ADB_BOX) \
  || defined(SAGEMCOM88) \
- || defined(SPARK7162)
+ || defined(SPARK7162) // 3 tuners plus possible USB DVB-T
 	if (!(((pSession->source >= DMX_SOURCE_FRONT0) &&
 			(pSession->source <= DMX_SOURCE_FRONT3)) ||
 			((pSession->source == DMX_SOURCE_DVR0) && swts)))
@@ -394,7 +394,7 @@ static int convert_source(const dmx_source_t source)
 	int tag = TS_NOTAGS;
 	switch (source)
 	{
-		case DMX_SOURCE_FRONT0:
+		case DMX_SOURCE_FRONT0:  // handle FRONT0
 #if defined(UFS910) \
  || defined(OCTAGON1008) \
  || defined(UFS912) \
@@ -408,13 +408,13 @@ static int convert_source(const dmx_source_t source)
 			tag = TSIN0;
 #endif
 			break;
-		case DMX_SOURCE_FRONT1:
+		case DMX_SOURCE_FRONT1:  // handle FRONT2
 #if defined(ADB_BOX)
-			if (glowica == SINGLE)
+			if (tuner == SINGLE)
 			{
 				tag = SWTS0;
 			}
-			else if (glowica == TWIN)
+			else if (tuner == TWIN)
 			{
 				tag = TSIN0;
 			}
@@ -431,15 +431,15 @@ static int convert_source(const dmx_source_t source)
 #endif
 			break;
 #if defined(SPARK7162)
-		case DMX_SOURCE_FRONT2:
+		case DMX_SOURCE_FRONT2:  // handle FRONT2
 			tag = TSIN2;
 			break;
 		case (dmx_source_t)3: /* for ptiInit() which passes 0,1,2,3 instead of DVR0 */
 			tag = SWTS0;
 			break;
 		case DMX_SOURCE_DVR0:
-			tag = SWTS1; //fake tsin for DVR (DVBT-USB at swts0)
-			//tag = SWTS0;
+			tag = SWTS1;  //fake tsin for DVR (USB DVB-T at swts0)
+			// tag = SWTS0;
 			break;
 #elif defined(SAGEMCOM88)
 		case DMX_SOURCE_FRONT2:
@@ -453,21 +453,21 @@ static int convert_source(const dmx_source_t source)
 			break;
 #elif defined(ADB_BOX)
 		case DMX_SOURCE_FRONT2:
-			if (glowica == SINGLE)
+			if (tuner == SINGLE)
 			{
 				tag = TSIN0;
 			}
-			else if (glowica == TWIN)
+			else if (tuner == TWIN)
 			{
 				tag = SWTS0;
 			}
 			break;
 		case DMX_SOURCE_DVR0:
-			tag = TSIN1; //fake tsin for DVR (DVBT-USB at swts0)
+			tag = TSIN1;  // fake tsin for DVR (DVBT-USB at swts0)
 			break;
 #elif defined(ARIVALINK200)
 		case DMX_SOURCE_DVR0:
-			tag = TSIN1; //fake tsin for DVR (DVBT-USB at swts0)
+			tag = TSIN1;  // fake tsin for DVR (DVBT-USB at swts0)
 			break;
 #else
 		case DMX_SOURCE_DVR0:
@@ -514,23 +514,23 @@ void ptiInit(struct DeviceContext_s *pContext)
 #if defined(ADB_BOX)
 	if ((TSIS_mode[0] == 0) || (strcmp("serial", TSIS_mode) == 0))
 	{
-		printk("TsinMode = SERIAL\n");
+		printk("[st-pti] TsinMode = SERIAL\n");
 		TsinMode = SERIAL;
 	}
 	else if (strcmp("parallel", TSIS_mode) == 0)
 	{
-		printk("TsinMode = PARALLEL\n");
+		printk("[st-pti] TsinMode = PARALLEL\n");
 		TsinMode = PARALLEL;
 	}
 	if ((TSIS_mode[0] == 0) || (strcmp("single", NIMS) == 0))
 	{
-		printk("NIMS = SINGLE\n");
-		glowica = SINGLE;
+		printk("[st-pti] NIMS = SINGLE\n");
+		tuner = SINGLE;
 	}
 	else if (strcmp("twin", NIMS) == 0)
 	{
-		printk("NIMS = TWIN\n");
-		glowica = TWIN;
+		printk("[st-pti] NIMS = TWIN\n");
+		tuner = TWIN;
 	}
 #endif
 	printk("%s context = %p, demux = %p\n", __FUNCTION__,
