@@ -153,6 +153,8 @@ struct task_struct *led_text_task = 0;
 struct task_struct *vfd_text_task = 0;
 int led_text_thread_status = THREAD_STATUS_STOPPED;
 int vfd_text_thread_status = THREAD_STATUS_STOPPED;
+static struct vfd_ioctl_data last_led_draw_data;
+static struct vfd_ioctl_data last_vfd_draw_data;
 
 extern int display_led;  // module parameter
 extern int display_vfd;  // module parameter
@@ -336,7 +338,7 @@ static const unsigned char seven_seg[256] =
 	0x40,  //0x7e, ~
 	0x7f,  //0x7f, <DEL>--> all segments on
 
-	// 0x80 onwards not used; taken care of by UTF8 support
+//	0x80 onwards not used; taken care of by UTF8 support
 };
 
 /***************************************************************
@@ -1442,7 +1444,7 @@ int pt6302_write_text(unsigned char offset, unsigned char *text, unsigned char l
 	unsigned char kbuf[16];
 	unsigned char wdata[17];
 
-	dprintk(150, "%s >\n", __func__);
+	dprintk(150, "%s > len = %d\n", __func__, len);
 	if (len == 0)  // if length is zero,
 	{
 		dprintk(1, "%s < (len =  0)\n", __func__);
@@ -1498,6 +1500,7 @@ int pt6302_write_text(unsigned char offset, unsigned char *text, unsigned char l
 	for (i = 0; i < VFD_DISP_SIZE; i++)
 	{
 		wdata[i] = kbuf[VFD_DISP_SIZE - 1 - i];
+//		dprintk(1, "wdata[%02d] = 0x%02x\n", i, wdata[i]);
 	}
 #endif
 	ret = pt6302_write_dcram(ICON_WIDTH, wdata, VFD_DISP_SIZE);
@@ -1677,7 +1680,7 @@ int pt6302_set_icon(int icon_nr, int on)
 	int ret = 0;
 	unsigned char char_zero[1] = {0x00};
 
-	dprintk(10, "%s >\n", __func__);
+	dprintk(150, "%s >\n", __func__);
 	if (icon_nr < ICON_MIN + 1 || icon_nr > ICON_MAX)
 	{
 		dprintk(1, "Illegal icon number %d (valid %d..%d)\n", icon_nr, ICON_MIN + 1, ICON_MAX - 1);
@@ -2205,9 +2208,10 @@ static int vfd_text_thread(void *arg)
 
 	len = pt6302_utf8conv(data->data, data->length);
 
+	memset(buf, 0x20, sizeof(buf));
+
 	if (len > VFD_DISP_SIZE)
 	{
-		memset(buf, ' ', sizeof(buf));
 		off = 3;
 		memcpy(buf + off, data->data, len);
 		len += off;
@@ -2216,7 +2220,8 @@ static int vfd_text_thread(void *arg)
 	else
 	{
 		memcpy(buf, data->data, len);
-		buf[len] = 0;
+//		buf[len] = 0;
+		buf[len + VFD_DISP_SIZE] = 0;
 	}
 	vfd_text_thread_status = THREAD_STATUS_RUNNING;
 
@@ -2263,9 +2268,6 @@ static int vfd_text_thread(void *arg)
 	dprintk(150, "%s <\n", __func__);
 	return 0;
 }
-
-static struct vfd_ioctl_data last_led_draw_data;
-static struct vfd_ioctl_data last_vfd_draw_data;
 
 static int run_text_thread(struct vfd_ioctl_data *draw_data)
 {
@@ -2326,7 +2328,6 @@ static int run_text_thread(struct vfd_ioctl_data *draw_data)
 			up(&vfd_text_thread_sem);
 			return 0;
 		}
-	
 		memcpy(&last_vfd_draw_data, draw_data, sizeof(struct vfd_ioctl_data));
 	
 		// stop existing thread, if any
@@ -2417,7 +2418,7 @@ static ssize_t vfd_write(struct file *filp, const char *buff, size_t len, loff_t
 
 	kfree(kernel_buf);
 
-	dprintk(10, "%s < res %d len %d\n", __func__, res, len);
+	dprintk(150, "%s < res %d len %d\n", __func__, res, len);
 
 	if (res < 0)
 	{
@@ -2603,7 +2604,7 @@ static int vfd_ioctl(struct inode *inode, struct file *file, unsigned int cmd, u
 			icon_nr = (mode == 0 ? vfddata.address : adb_box_fp->u.icon.icon_nr);
 			on = (mode == 0 ? vfddata.length : adb_box_fp->u.icon.on);
 			on = (on != 0 ? 1 : 0);
-			dprintk(10, "%s Set icon %d to %d (mode %d)\n", __func__, icon_nr, on, mode);
+//			dprintk(150, "%s Set icon %d to %d (mode %d)\n", __func__, icon_nr, on, mode);
 
 			// Part one: translate E2 icon numbers to own icon numbers (vfd mode only)
 			if (mode == 0)  // vfd mode
