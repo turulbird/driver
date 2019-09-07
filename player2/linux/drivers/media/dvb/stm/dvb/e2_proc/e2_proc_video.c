@@ -387,14 +387,17 @@ int proc_video_switch_type_write(struct file *file, const char __user *buf, unsi
 	char *myString;
 	ssize_t ret = -ENOMEM;
 	unsigned long mlen;
-	printk("%s %ld - ", __FUNCTION__, count);
+
+//	printk("[player2] %s > count = %ld\n", __func__, count);
 	mutex_lock(&(ProcDeviceContext->DvbContext->Lock));
 	page = (char *)__get_free_page(GFP_KERNEL);
 	if (page)
 	{
 		ret = -EFAULT;
 		if (copy_from_user(page, buf, count))
+		{
 			goto out;
+		}
 		myString = (char *) kmalloc(count + 1, GFP_KERNEL);
 		strncpy(myString, page, count);
 		myString[count] = '\0';
@@ -404,16 +407,16 @@ int proc_video_switch_type_write(struct file *file, const char __user *buf, unsi
 			myString[count - 1] = '\0';
 			count--;
 		}
-		printk("proc_video_switch_type_write >> %s\n", myString);
+		printk("[player2] %s > %s\n", __func__, myString);
 		if ((strncmp("bska", myString, count) == 0) || (strncmp("bsla", myString, count) == 0))
 		{
 			video_switch_type = 0;
-			printk("!!!! video_switch_type=0 !!!!\n");
+			printk("[player2] %s BSKA or BSLA -> video_switch_type = 0\n", __func__);
 		}
 		else if (strncmp("bxzb", myString, count) == 0)
 		{
 			video_switch_type = 1;
-			printk("!!!! video_switch_type=1 !!!!\n");
+			printk("[player2] %s BXZB -> video_switch_type = 1\n, __func__");
 		}
 		ret = mlen;
 		kfree(myString);
@@ -430,14 +433,16 @@ int proc_video_switch_write(struct file *file, const char __user *buf, unsigned 
 	char *myString;
 	ssize_t ret = -ENOMEM;
 	unsigned long mlen;
-	printk("%s %ld - ", __FUNCTION__, count);
+//	printk("[player2] %s count = %ld\n", __func__, count);
 	mutex_lock(&(ProcDeviceContext->DvbContext->Lock));
 	page = (char *)__get_free_page(GFP_KERNEL);
 	if (page)
 	{
 		ret = -EFAULT;
 		if (copy_from_user(page, buf, count))
+		{
 			goto out;
+		}
 		myString = (char *) kmalloc(count + 1, GFP_KERNEL);
 		strncpy(myString, page, count);
 		myString[count] = '\0';
@@ -447,75 +452,87 @@ int proc_video_switch_write(struct file *file, const char __user *buf, unsigned 
 			myString[count - 1] = '\0';
 			count--;
 		}
-		printk("proc_video_switch_write >> %s\n", myString);
+		printk("[player2] %s > %s\n", __func__, myString);
 		if (video_switch_type == 0)
 		{
 			if (fms6403_in2_sel_pin == NULL)
+			{
 				fms6403_in2_sel_pin = stpio_request_pin(5, 3, "fms6403_in2_sel_pin", STPIO_OUT);
+			}
 			if (fms6403_fsel0_pin == NULL)
+			{
 				fms6403_fsel0_pin = stpio_request_pin(4, 6, "fms6403_fsel0_pin", STPIO_OUT);
+			}
 			if (fms6403_fsel1_pin == NULL)
+			{
 				fms6403_fsel1_pin = stpio_request_pin(3, 5, "fms6403_fsel1_pin", STPIO_OUT);
+			}
 			if (strncmp("scart", myString, count) == 0)
 			{
 				stpio_set_pin(fms6403_in2_sel_pin, 0); //0=rgb 1=yvu
-				printk("!!!!!!!!!!!!! SET PAL !!!!!!!!!!!!!!\n");
+				printk("[player2] %s Set PAL\n", __func__);
 				video_switch = 0;
 			}
 			else if (strncmp("component1080p", myString, count) == 0)
 			{
-				stpio_set_pin(fms6403_in2_sel_pin, 1); //0=rgb 1=yvu
-				stpio_set_pin(fms6403_fsel0_pin, 1); //1080p50
+				stpio_set_pin(fms6403_in2_sel_pin, 1);  // 0 = rgb, 1 = yvu
+				stpio_set_pin(fms6403_fsel0_pin, 1);  // 1080p50
 				stpio_set_pin(fms6403_fsel1_pin, 1);
-				printk("!!!!!!!!!!!!! SET Filter Bypass !!!!!!!!!!!!!!\n");
+				printk("[player2] %s Set Filter Bypass\n", __func__);
 				video_switch = 1;
 			}
 			else if (strncmp("component1080i", myString, count) == 0)
 			{
-				stpio_set_pin(fms6403_in2_sel_pin, 1); //0=rgb 1=yvu
-				stpio_set_pin(fms6403_fsel0_pin, 0); //720p/1080i
+				stpio_set_pin(fms6403_in2_sel_pin, 1);  // 0 = rgb, 1 = yvu
+				stpio_set_pin(fms6403_fsel0_pin, 0);  // 720p/1080i
 				stpio_set_pin(fms6403_fsel1_pin, 1);
-				printk("!!!!!!!!!!!!! SET Filter FMS6403 32Mhz !!!!!!!!!!!!!!\n");
+				printk("[player2] %s Set Filter FMS6403 to 32 Mhz\n, __func__");
 				video_switch = 2;
 			}
 			else if (strncmp("component720p", myString, count) == 0)
 			{
-				stpio_set_pin(fms6403_in2_sel_pin, 1); //0=rgb 1=yvu
-				stpio_set_pin(fms6403_fsel0_pin, 0); //720p/1080i
+				stpio_set_pin(fms6403_in2_sel_pin, 1);  // 0 = rgb, 1 = yvu
+				stpio_set_pin(fms6403_fsel0_pin, 0);  // 720p/1080i
 				stpio_set_pin(fms6403_fsel1_pin, 1);
-				printk("!!!!!!!!!!!!! SET Filter FMS6403 32Mhz !!!!!!!!!!!!!!\n");
+				printk("[player2] %s Set Filter FMS6403 to 32 Mhz\n", __func__);
 				video_switch = 3;
 			}
 			else if (strncmp("component576p", myString, count) == 0)
 			{
-				stpio_set_pin(fms6403_in2_sel_pin, 1); //0=rgb 1=yvu
-				stpio_set_pin(fms6403_fsel0_pin, 1); //576p
+				stpio_set_pin(fms6403_in2_sel_pin, 1); // 0 = rgb, 1 = yvu
+				stpio_set_pin(fms6403_fsel0_pin, 1);  // 576i/p
 				stpio_set_pin(fms6403_fsel1_pin, 0);
-				printk("!!!!!!!!!!!!! SET Filter FMS6403 15Mhz !!!!!!!!!!!!!!\n");
+				printk("[player2] %s Set Filter FMS6403 to 15 Mhz\n", __func__);
 				video_switch = 4;
 			}
 			else if (strncmp("component576i", myString, count) == 0)
 			{
-				stpio_set_pin(fms6403_in2_sel_pin, 1); //0=rgb 1=yvu
-				stpio_set_pin(fms6403_fsel0_pin, 1); //576p
+				stpio_set_pin(fms6403_in2_sel_pin, 1);  //0 = rgb, 1 = yvu
+				stpio_set_pin(fms6403_fsel0_pin, 1);  // 576i/p
 				stpio_set_pin(fms6403_fsel1_pin, 0);
-				printk("!!!!!!!!!!!!! SET Filter FMS6403 15Mhz !!!!!!!!!!!!!!\n");
+				printk("[player2] %s Set Filter FMS6403 to 15 Mhz\n", __func__);
 				video_switch = 5;
 			}
-		} //switch type
-		if (video_switch_type == 1) //bxzb
+		}  // switch type
+		if (video_switch_type == 1)  // bxzb
 		{
 			if (pin02 == NULL)
+			{
 				pin02 = stpio_request_pin(0, 2, "pin02", STPIO_OUT);
+			}
 			if (pin06 == NULL)
+			{
 				pin06 = stpio_request_pin(0, 6, "pin06", STPIO_OUT);
+			}
 			if (pin24 == NULL)
+			{
 				pin24 = stpio_request_pin(2, 4, "pin23", STPIO_OUT);
+			}
 			//0 0 1 - jest rgb
 			//0 0 0 - jest rgb
-			stpio_set_pin(pin02, 0); //pin6 - E
+			stpio_set_pin(pin02, 0);  // pin6 - E
 			stpio_set_pin(pin06, 0);
-			stpio_set_pin(pin24, 1); //1-rgb
+			stpio_set_pin(pin24, 1);  // 1 - rgb
 		}
 		/* always return count to avoid endless loop */
 		//ret = count;
@@ -531,26 +548,39 @@ out:
 int proc_video_switch_read(char *page, char **start, off_t off, int count, int *eof, void *data_unused)
 {
 	int len = 0;
-	printk("%s\n", __FUNCTION__);
+	printk("%s\n", __func__);
 	if (video_switch == 0)
+	{
 		len = sprintf(page, "scart\n");
+	}
 	else if (video_switch == 1)
+	{
 		len = sprintf(page, "component1080p\n");
+	}
 	else if (video_switch == 2)
+	{
 		len = sprintf(page, "component1080i\n");
+	}
 	else if (video_switch == 3)
+	{
 		len = sprintf(page, "component720p\n");
+	}
 	else if (video_switch == 4)
+	{
 		len = sprintf(page, "component576p\n");
+	}
 	else if (video_switch == 5)
+	{
 		len = sprintf(page, "component576i\n");
+	}
 	return len;
 }
 
 int proc_video_switch_choices_read(char *page, char **start, off_t off, int count, int *eof, void *data_unused)
 {
 	int len = 0;
-	printk("%s\n", __FUNCTION__);
+
+	printk("[player2] %s >\n", __func__);
 	len = sprintf(page, "scart component1080p component1080i component720p component576p component576i\n");
 	return len;
 }
@@ -690,7 +720,7 @@ int proc_video_policy_write(struct file *file, const char __user *buf,
 		{
 			policy_e2 = VIDEO_POL_NON_LINEAR;
 		}
-		else if (strncmp("nonlinear", myString, count - 1) == 0) // e2 writes nonlinear
+		else if (strncmp("nonlinear", myString, count - 1) == 0)  // e2 writes nonlinear
 		{
 			policy_e2 = VIDEO_POL_NON_LINEAR;
 		}

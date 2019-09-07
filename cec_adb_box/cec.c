@@ -337,7 +337,7 @@ static int __init init_cec_module(void)
 {
 	int f,t;
 
-	debug_cec("CEC Init>>\n");
+	debug_cec("[cec_adb] ADB ITI-5800S(X) CEC init\n");
 
 	install_e2_procs(e2_procs[0].name, e2_procs[0].read_proc, e2_procs[0].write_proc, NULL);
 
@@ -351,12 +351,12 @@ static int __init init_cec_module(void)
 
 	f=get_pll_freq(CLOCKGEN_PLL1_CFG);
 	f = (f / 4);
-	debug_cec("f_system=%d\n",f);
+	debug_cec("[cec_adb] f_system = %d\n", f);
 
 //	t = BAUDRATE_VAL_M1(100000, f);	//10bit x 10us = 100us
 	t = BAUDRATE_VAL_M1(33333, f);	//10bit x 30us = 300us
 
-	debug_cec("baud=%d\n",t);
+	debug_cec("[cec_adb] baudrate = %d\n", t);
 	writel(t,ASC_BAUDRATE);
 	writel(0x1089,ASC_CTL);//8n1 off_fifo >> //0 1 0 0 0 0 1 0 0 01 001 =0x1089
 
@@ -366,7 +366,7 @@ static int __init init_cec_module(void)
 
 //	if (request_irq(126, asc_irq ,IRQF_DISABLED , "asc_irq", NULL)) {debug_cec("FAIL : request irq asc\n");goto err;}
 
-	debug_cec("CEC Init<<\n");
+	debug_cec("[cec_adb] CEC init complete\n");
 
 err:
   return 0;
