@@ -51,9 +51,10 @@
  *                          steady, not involving any extra processing until the icon is
  *                          switched off. If more than one icon is on, they are displayed
  *                          in a thread, displaying up to eight icons in circular fashion.
- *                          The maximum of eight is a limitation of the PT6302 display
- *                          IC. The thread is stopped as soon as one one icon is
- *                          again for performance reasons.
+ *                          The maximum of eight is a compromise between a limitation of
+ *                          the PT6302 display IC and code complexity. The thread is
+ *                          stopped as soon as one icon is on again for performance
+ *                          reasons.
  *                          As a consequence, text display is now limited to 15
  *                          characters maximum.
  * 20190813 Audioniek       Spinner added.
@@ -61,7 +62,7 @@
  * 20190814 Audioniek       Display all icons on/off added.
  * 20190902 Audioniek       Text display through /dev/vfd handled in a thread, including
  *                          scrolling.
- * 20190903 Audioniek       Seaprate text display threads for VFD and LED.
+ * 20190903 Audioniek       Separate text display threads for VFD and LED.
  *
  ****************************************************************************************/
 #include <asm/io.h>
@@ -104,7 +105,7 @@ struct saved_data_s lastdata;
 
 struct stpio_pin *pt6xxx_din;  // note: PT6302 & PT6958 Din and PT6958 Dout pins are parallel connected
 struct stpio_pin *pt6xxx_clk;  // note: PT6302 & PT6958 CLK pins are parallel connected
-struct stpio_pin *pt6958_stb;  // note: PT6958 only, acts a chip select
+struct stpio_pin *pt6958_stb;  // note: PT6958 only, acts as chip select
 struct stpio_pin *pt6302_cs;   // note: PT6302 only
 
 typedef union
@@ -347,8 +348,8 @@ static const unsigned char seven_seg[256] =
  *
  * These are displayed in the rightmost character position.
  * Basically only one icon can be displayed at a time; if more
- * are on they are displayed successively in circular fashion in
- * a thread.
+ * are on they are displayed successively in circular fashion
+ * in a thread.
  *
  * A character on the VFD display is simply a pixel matrix
  * consisting of five columns of seven pixels high.
@@ -377,12 +378,12 @@ static const unsigned char seven_seg[256] =
  *
  * To display an icon, its bit pattern is written in the first
  * free location in CGRAM. Then the corresponding character at
- * that position is set to the number of the bit pattern
- * position in CGRAM. The icon will then show on the character
+ * the desired position is set to the number of the bit pattern
+ * position in CGRAM. The icon will then show on that character
  * position.
  * Switching an icon off can be achieved in two ways:
  * - rewriting its bit pattern in CGRAM to all zeroes;
- * - setting the character in DCRAM on the display poistion to
+ * - setting the character in DCRAM on the display position to
  *   a space.
  * The code in this driver employs both methods, to minimize
  * the chance of unwanted artifacts appearing in the display.
@@ -676,12 +677,12 @@ static void PT6958_Show(unsigned char DIG1, unsigned char DIG2, unsigned char DI
 	dprintk(150, "%s >\n", __func__);
 	spin_lock(&mr_lock);
 
-	pt6958_WriteByte(DATA_SETCMD + 0); // Set test mode off, increment address and write data display mode (CMD = 01xx0000b)
+	pt6958_WriteByte(DATA_SETCMD + 0);  // Set test mode off, increment address and write data display mode (CMD = 01xx0000b)
 	udelay(LED_Delay);
 
 	stpio_set_pin(pt6958_stb, 0);  // drop strobe (latches command)
 
-	pt6xxx_WriteCmd(ADDR_SETCMD + 0); // Command 2 address set, (start from 0)   11xx0000b
+	pt6xxx_WriteCmd(ADDR_SETCMD + 0);  // Command 2 address set, (start from 0)   11xx0000b
 	// handle decimal point
 	DIG1 += (DOT1 == 1 ? 0x80 : 0);  // add to digit data
 	pt6xxx_WriteCmd(DIG1);
@@ -1044,7 +1045,6 @@ static void pt6958_set_icon(unsigned char *kbuf, unsigned char len)
  */
 void pt6958_set_led(int led_nr, int level)
 {
-
 	dprintk(150, "%s >\n", __func__);
 
 	switch (led_nr)
@@ -1425,8 +1425,8 @@ int pt6302_utf8conv(unsigned char *text, unsigned char len)
 	}
 	dprintk(150, "%s <\n", __func__);
 	return wlen;
-
 }
+
 /******************************************************
  *
  * Write text on VFD display
@@ -1856,7 +1856,7 @@ void get_box_variant(void)
 	ret = stv6412_box_variant();
 	if (ret != 1)
 	{
-		box_variant = 3;	// no STV6412 --> BXZB model
+		box_variant = 3;  // no STV6412 --> BXZB model
 		dprintk(50, "BXZB model detected\n");
 	}
 	else
@@ -1884,7 +1884,7 @@ void get_box_variant(void)
 				dprintk(50, "BZZB model detected\n");
 			}
 			else
-			{
+			{  // TODO
 //				ret = read cable_demod
 //				if (ret...)
 //				{
