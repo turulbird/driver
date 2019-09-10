@@ -19,3 +19,6 @@
 .dirstamp
 Module.symvers
 pti_np
+cpu_frequ/pll0_check_stb7100
+cpu_frequ/pll1_check_stb7100
+cpu_frequ/pll_check_stx7105
