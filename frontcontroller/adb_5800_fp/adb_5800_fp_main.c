@@ -48,7 +48,7 @@
  * 20190813 Audioniek       Spinner thread added.
  * 20190813 Audioniek       Fan driver added.
  * 20190814 Audioniek       Display all icons added.
- * 20190903 Audioniek       Seaprate text display threads for VFD and LED.
+ * 20190903 Audioniek       Separate text display threads for VFD and LED.
  *
  ****************************************************************************************/
 #include <asm/io.h>

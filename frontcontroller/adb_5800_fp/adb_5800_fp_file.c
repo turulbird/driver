@@ -63,6 +63,11 @@
  * 20190902 Audioniek       Text display through /dev/vfd handled in a thread, including
  *                          scrolling.
  * 20190903 Audioniek       Separate text display threads for VFD and LED.
+ * 20190904 Audioniek       Stop icon changed, VFD issues fixed.
+ * 20191028 Audioniek       Fixed: texts displayed through VFDDISPLAYCHARS were backwards
+ *                          on VFD.
+ * 20191028 Audioniek       Icon display in mode 0 did not work.
+ * 20191028 Audioniek       VFDSETLED in mode 0 added.
  *
  ****************************************************************************************/
 #include <asm/io.h>
@@ -378,8 +383,8 @@ static const unsigned char seven_seg[256] =
  *
  * To display an icon, its bit pattern is written in the first
  * free location in CGRAM. Then the corresponding character at
- * the desired position is set to the number of the bit pattern
- * position in CGRAM. The icon will then show on that character
+ * that position is set to the number of the bit pattern
+ * position in CGRAM. The icon will then show on the character
  * position.
  * Switching an icon off can be achieved in two ways:
  * - rewriting its bit pattern in CGRAM to all zeroes;
@@ -406,7 +411,7 @@ struct iconToInternal vfdIcons[] =
 	{ "ICON_MP3"      , ICON_MP3      , {0x77, 0x37, 0x00, 0x49, 0x77}},  // 11
 	{ "ICON_REPEAT"   , ICON_REPEAT   , {0x14, 0x34, 0x14, 0x16, 0x14}},  // 12
 	{ "ICON_PLAY"     , ICON_PLAY     , {0x00, 0x7f, 0x3e, 0x1c, 0x08}},  // 13
-	{ "ICON_STOP"     , ICON_STOP     , {0x3C, 0x3C, 0x3C, 0x3C, 0x3C}},  // 14
+	{ "ICON_STOP"     , ICON_STOP     , {0x3e, 0x3e, 0x3e, 0x3e, 0x3e}},  // 14
 	{ "ICON_PAUSE"    , ICON_PAUSE    , {0x3e, 0x3e, 0x00, 0x3e, 0x3e}},  // 15
 	{ "ICON_REWIND"   , ICON_REWIND   , {0x08, 0x1c, 0x08, 0x1c, 0x00}},  // 16
 	{ "ICON_FF"       , ICON_FF       , {0x00, 0x1c, 0x08, 0x1c, 0x08}},  // 17
@@ -2532,7 +2537,8 @@ static int vfd_ioctl(struct inode *inode, struct file *file, unsigned int cmd, u
 		}
 		case VFDSETLED:
 		{
-			pt6958_set_led(adb_box_fp->u.led.led_nr, adb_box_fp->u.led.level);
+			pt6958_set_led((mode == 0 ? vfddata.address : adb_box_fp->u.led.led_nr), (mode == 0 ? vfddata.data[3] : adb_box_fp->u.led.level));
+			mode = 0;
 			break;
 		}
 		case VFDBRIGHTNESS:
@@ -2601,10 +2607,10 @@ static int vfd_ioctl(struct inode *inode, struct file *file, unsigned int cmd, u
 		}
 		case VFDICONDISPLAYONOFF:
 		{
-			icon_nr = (mode == 0 ? vfddata.address : adb_box_fp->u.icon.icon_nr);
-			on = (mode == 0 ? vfddata.length : adb_box_fp->u.icon.on);
+			icon_nr = (mode == 0 ? vfddata.data[0] : adb_box_fp->u.icon.icon_nr);
+			on = (mode == 0 ? vfddata.data[4] : adb_box_fp->u.icon.on);
 			on = (on != 0 ? 1 : 0);
-//			dprintk(150, "%s Set icon %d to %d (mode %d)\n", __func__, icon_nr, on, mode);
+			dprintk(150, "%s Set icon %s (%d) to %s (mode %d)\n", __func__, vfdIcons[icon_nr].name, icon_nr, (on ? "on" : "off"), mode);
 
 			// Part one: translate E2 icon numbers to own icon numbers (vfd mode only)
 			if (mode == 0)  // vfd mode
@@ -2650,6 +2656,11 @@ static int vfd_ioctl(struct inode *inode, struct file *file, unsigned int cmd, u
 			// Part two: decide wether one icon, all or spinner
 			switch (icon_nr)
 			{
+				case 0:
+				{
+					ret = 0;
+					break;
+				}
 				case ICON_SPINNER:
 				{
 					if (on)
@@ -2830,10 +2841,25 @@ static int vfd_ioctl(struct inode *inode, struct file *file, unsigned int cmd, u
 		{
 			if (mode == 0)
 			{
-				vfddata.data[vfddata.length]= 0;  // terminate string to show
+//				vfddata.data[vfddata.length] = 0;  // terminate string to show
 				if (display_type > 0)
 				{
-					ret |= pt6302_write_dcram(vfddata.address, vfddata.data, vfddata.length);
+					unsigned char out[VFD_DISP_SIZE + 1];
+					int wlen;
+
+					dprintk(10, "Text: [%s] (length = %d, addr = %d)\n", vfddata.data, strlen(vfddata.data), vfddata.address);
+
+					// code to correct reversed position numbering (0 = rightmost!)
+					memset(out, 0x20, sizeof(out));  // fill output buffer with spaces
+					wlen = (vfddata.length > VFD_DISP_SIZE ? VFD_DISP_SIZE : vfddata.length);
+					memcpy(out, vfddata.data, wlen);  // copy text
+					out[VFD_DISP_SIZE] = 0x00;
+					dprintk(10, "Text: [%s] (length = %d)\n", out, strlen(out));
+					for (i = 0; i < VFD_DISP_SIZE; i++)
+					{
+						out[i] = vfddata.data[VFD_DISP_SIZE - 1 - i];
+					}
+					ret |= pt6302_write_dcram(ICON_WIDTH, out, VFD_DISP_SIZE);
 				}
 				if (display_type != 1)
 				{
