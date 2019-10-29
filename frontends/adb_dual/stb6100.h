@@ -80,7 +80,7 @@
 	typeof(divisor) __divisor = divisor;		\
 	(((x) + ((__divisor) / 2)) / (__divisor));	\
 }							\
-				     )
+)
 
 struct stb6100_config
 {

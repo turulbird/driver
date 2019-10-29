@@ -340,6 +340,7 @@ static const struct stb0899_s1_reg stb0899_s1_init_3[] =
 	{ 0xffff,                 0xff },
 };
 #endif
+
 static const struct stb0899_s2_reg stb0899_s2_init_4[] =
 {
 	{ STB0899_OFF0_BLOCK_LNGTH,     STB0899_BASE_BLOCK_LNGTH,     0x00000008 },  /* BLOCKLNGTH */
@@ -418,9 +419,9 @@ static const struct stb0899_s1_reg stb0899_s1_init_5[] =
 #define STB0899_DVBS2_SOF_SEARCH_TIMEOUT    1664100
 
 #define STB0899_DVBS2_BTR_NCO_BITS          28
-#define STB0899_DVBS2_BTR_GAIN_SHIFT_OFFSET	15
-#define STB0899_DVBS2_CRL_NCO_BITS		    30
-#define STB0899_DVBS2_LDPC_MAX_ITER		    70
+#define STB0899_DVBS2_BTR_GAIN_SHIFT_OFFSET 15
+#define STB0899_DVBS2_CRL_NCO_BITS          30
+#define STB0899_DVBS2_LDPC_MAX_ITER         70
 
 #endif //__STB0899_CFG_H
 // vim:ts=4

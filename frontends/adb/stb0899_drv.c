@@ -807,9 +807,8 @@ int stb0899_read_reg(struct stb0899_state *state, unsigned int reg)
 	 * access to 0xf2xx/0xf6xx
 	 * must be followed by read from 0xf2ff/0xf6ff.
 	 */
-	if ((reg != 0xf2ff)
-	&&  (reg != 0xf6ff)
-	&&  (((reg & 0xff00) == 0xf200) || ((reg & 0xff00) == 0xf600)))
+	if ((reg != 0xf2ff) && (reg != 0xf6ff) &&
+	    (((reg & 0xff00) == 0xf200) || ((reg & 0xff00) == 0xf600)))
 	{
 		_stb0899_read_reg(state, (reg | 0x00ff));
 	}
@@ -1055,9 +1054,8 @@ int stb0899_read_regs(struct stb0899_state *state, unsigned int reg, u8 *buf, u3
 	 * access to 0xf2xx/0xf6xx
 	 * must be followed by read from 0xf2ff/0xf6ff.
 	 */
-	if ((reg != 0xf2ff)
-	&&  (reg != 0xf6ff)
-	&&  (((reg & 0xff00) == 0xf200) || ((reg & 0xff00) == 0xf600)))
+	if ((reg != 0xf2ff) && (reg != 0xf6ff) &&
+	    (((reg & 0xff00) == 0xf200) || ((reg & 0xff00) == 0xf600)))
 	{
 		_stb0899_read_reg(state, (reg | 0x00ff));
 	}
@@ -1112,7 +1110,7 @@ int stb0899_write_regs(struct stb0899_state *state, unsigned int reg, u8 *data, 
 	 * access to 0xf2xx/0xf6xx
 	 * must be followed by read from 0xf2ff/0xf6ff.
 	 */
-	if (((reg & 0xff00) == 0xf200) || ((reg & 0xff00) == 0xf600))
+	if ((((reg & 0xff00) == 0xf200) || ((reg & 0xff00) == 0xf600)))
 	{
 		stb0899_read_reg(state, (reg | 0x00ff));
 	}
@@ -2389,8 +2387,8 @@ static enum dvbfe_search stb0899_search(struct dvb_frontend *fe, struct dvb_fron
 //					stb0899_write_reg(state, STB0899_ERRCTRL1, 0x3d); /* Viterbi Errors	*/
 //					internal->v_status = stb0899_read_reg(state, STB0899_VSTATUS);
 //					internal->err_ctrl = stb0899_read_reg(state, STB0899_ERRCTRL1);
-//					dprintk(state->verbose, FE_DEBUG, 1, "VSTATUS=0x%02x", internal->v_status);
-//					dprintk(state->verbose, FE_DEBUG, 1, "ERR_CTRL=0x%02x", internal->err_ctrl);
+//					dprintk(state->verbose, FE_DEBUG, 1, "VSTATUS = 0x%02x", internal->v_status);
+//					dprintk(state->verbose, FE_DEBUG, 1, "ERR_CTRL = 0x%02x", internal->err_ctrl);
 
 					return DVBFE_ALGO_SEARCH_SUCCESS;
 				}
@@ -2403,9 +2401,9 @@ static enum dvbfe_search stb0899_search(struct dvb_frontend *fe, struct dvb_fron
 			}
 			case SYS_DVBS2:
 			{
-				internal->freq			= i_params->freq;
-				internal->srate			= i_params->srate;
-				internal->srch_range		= SearchRange;
+				internal->freq       = i_params->freq;
+				internal->srate      = i_params->srate;
+				internal->srch_range = SearchRange;
 
 				/* enable tuner I/O */
 				stb0899_i2c_gate_ctrl(&state->frontend, 1);
@@ -2557,164 +2555,164 @@ static int stb0899_get_modcod(struct stb0899_internal *internal, struct dvbs2_pa
 		}
 		case STB0899_QPSK_13:
 		{
-			params->modulation	= DVBFE_MOD_QPSK;
-			params->fec		= DVBFE_FEC_1_3;
+			params->modulation = DVBFE_MOD_QPSK;
+			params->fec       = DVBFE_FEC_1_3;
 			break;
 		}
 		case STB0899_QPSK_25:
 		{
-			params->modulation	= DVBFE_MOD_QPSK;
-			params->fec		= DVBFE_FEC_2_5;
+			params->modulation = DVBFE_MOD_QPSK;
+			params->fec        = DVBFE_FEC_2_5;
 			break;
 		}
 		case STB0899_QPSK_12:
 		{
-			params->modulation	= DVBFE_MOD_QPSK;
-			params->fec		= DVBFE_FEC_1_2;
+			params->modulation = DVBFE_MOD_QPSK;
+			params->fec        = DVBFE_FEC_1_2;
 			break;
 		}
 		case STB0899_QPSK_35:
 		{
-			params->modulation	= DVBFE_MOD_QPSK;
-			params->fec		= DVBFE_FEC_3_5;
+			params->modulation = DVBFE_MOD_QPSK;
+			params->fec        = DVBFE_FEC_3_5;
 			break;
 		}
 		case STB0899_QPSK_23:
 		{
-			params->modulation	= DVBFE_MOD_QPSK;
-			params->fec		= DVBFE_FEC_2_3;
+			params->modulation = DVBFE_MOD_QPSK;
+			params->fec        = DVBFE_FEC_2_3;
 			break;
 		}
 		case STB0899_QPSK_34:
 		{
-			params->modulation	= DVBFE_MOD_QPSK;
-			params->fec		= DVBFE_FEC_3_4;
+			params->modulation = DVBFE_MOD_QPSK;
+			params->fec        = DVBFE_FEC_3_4;
 			break;
 		}
 		case STB0899_QPSK_45:
 		{
-			params->modulation	= DVBFE_MOD_QPSK;
-			params->fec		= DVBFE_FEC_4_5;
+			params->modulation = DVBFE_MOD_QPSK;
+			params->fec        = DVBFE_FEC_4_5;
 			break;
 		}
 		case STB0899_QPSK_56:
 		{
-			params->modulation	= DVBFE_MOD_QPSK;
-			params->fec		= DVBFE_FEC_5_6;
+			params->modulation = DVBFE_MOD_QPSK;
+			params->fec        = DVBFE_FEC_5_6;
 			break;
 		}
 		case STB0899_QPSK_89:
 		{
-			params->modulation	= DVBFE_MOD_QPSK;
-			params->fec		= DVBFE_FEC_8_9;
+			params->modulation = DVBFE_MOD_QPSK;
+			params->fec        = DVBFE_FEC_8_9;
 			break;
 		}
 		case STB0899_QPSK_910:
 		{
-			params->modulation	= DVBFE_MOD_QPSK;
-			params->fec		= DVBFE_FEC_9_10;
+			params->modulation = DVBFE_MOD_QPSK;
+			params->fec        = DVBFE_FEC_9_10;
 			break;
 		}
 		case STB0899_8PSK_35:
 		{
-			params->modulation	= DVBFE_MOD_8PSK;
-			params->fec		= DVBFE_FEC_3_5;
+			params->modulation = DVBFE_MOD_8PSK;
+			params->fec        = DVBFE_FEC_3_5;
 			break;
 		}
 		case STB0899_8PSK_23:
 		{
-			params->modulation	= DVBFE_MOD_8PSK;
-			params->fec		= DVBFE_FEC_2_3;
+			params->modulation = DVBFE_MOD_8PSK;
+			params->fec        = DVBFE_FEC_2_3;
 			break;
 		}
 		case STB0899_8PSK_34:
 		{
-			params->modulation	= DVBFE_MOD_8PSK;
-			params->fec		= DVBFE_FEC_3_4;
+			params->modulation = DVBFE_MOD_8PSK;
+			params->fec        = DVBFE_FEC_3_4;
 			break;
 		}
 		case STB0899_8PSK_56:
 		{
-			params->modulation	= DVBFE_MOD_8PSK;
-			params->fec		= DVBFE_FEC_5_6;
+			params->modulation = DVBFE_MOD_8PSK;
+			params->fec        = DVBFE_FEC_5_6;
 			break;
 		}
 		case STB0899_8PSK_89:
 		{
-			params->modulation	= DVBFE_MOD_8PSK;
-			params->fec		= DVBFE_FEC_8_9;
+			params->modulation = DVBFE_MOD_8PSK;
+			params->fec        = DVBFE_FEC_8_9;
 			break;
 		}
 		case STB0899_8PSK_910:
 		{
-			params->modulation	= DVBFE_MOD_8PSK;
-			params->fec		= DVBFE_FEC_9_10;
+			params->modulation = DVBFE_MOD_8PSK;
+			params->fec        = DVBFE_FEC_9_10;
 			break;
 		}
 		case STB0899_16APSK_23:
 		{
-			params->modulation	= DVBFE_MOD_16APSK;
-			params->fec		= DVBFE_FEC_2_3;
+			params->modulation = DVBFE_MOD_16APSK;
+			params->fec        = DVBFE_FEC_2_3;
 			break;
 		}
 		case STB0899_16APSK_34:
 		{
-			params->modulation	= DVBFE_MOD_16APSK;
-			params->fec		= DVBFE_FEC_3_4;
+			params->modulation = DVBFE_MOD_16APSK;
+			params->fec        = DVBFE_FEC_3_4;
 			break;
 		}
 		case STB0899_16APSK_45:
 		{
-			params->modulation	= DVBFE_MOD_16APSK;
-			params->fec		= DVBFE_FEC_4_5;
+			params->modulation = DVBFE_MOD_16APSK;
+			params->fec        = DVBFE_FEC_4_5;
 			break;
 		}
 		case STB0899_16APSK_56:
 		{
-			params->modulation	= DVBFE_MOD_16APSK;
-			params->fec		= DVBFE_FEC_5_6;
+			params->modulation = DVBFE_MOD_16APSK;
+			params->fec        = DVBFE_FEC_5_6;
 			break;
 		}
 		case STB0899_16APSK_89:
 		{
-			params->modulation	= DVBFE_MOD_16APSK;
-			params->fec		= DVBFE_FEC_8_9;
+			params->modulation = DVBFE_MOD_16APSK;
+			params->fec        = DVBFE_FEC_8_9;
 			break;
 		}
 		case STB0899_16APSK_910:
 		{
-			params->modulation	= DVBFE_MOD_16APSK;
-			params->fec		= DVBFE_FEC_9_10;
+			params->modulation = DVBFE_MOD_16APSK;
+			params->fec        = DVBFE_FEC_9_10;
 			break;
 		}
 		case STB0899_32APSK_34:
 		{
-			params->modulation	= DVBFE_MOD_32APSK;
-			params->fec		= DVBFE_FEC_3_4;
+			params->modulation = DVBFE_MOD_32APSK;
+			params->fec        = DVBFE_FEC_3_4;
 			break;
 		}
 		case STB0899_32APSK_45:
 		{
-			params->modulation	= DVBFE_MOD_32APSK;
-			params->fec		= DVBFE_FEC_4_5;
+			params->modulation = DVBFE_MOD_32APSK;
+			params->fec        = DVBFE_FEC_4_5;
 			break;
 		}
 		case STB0899_32APSK_56:
 		{
-			params->modulation	= DVBFE_MOD_32APSK;
-			params->fec		= DVBFE_FEC_5_6;
+			params->modulation = DVBFE_MOD_32APSK;
+			params->fec        = DVBFE_FEC_5_6;
 			break;
 		}
 		case STB0899_32APSK_89:
 		{
-			params->modulation	= DVBFE_MOD_32APSK;
-			params->fec		= DVBFE_FEC_8_9;
+			params->modulation = DVBFE_MOD_32APSK;
+			params->fec        = DVBFE_FEC_8_9;
 			break;
 		}
 		case STB0899_32APSK_910:
 		{
-			params->modulation	= DVBFE_MOD_32APSK;
-			params->fec		= DVBFE_FEC_9_10;
+			params->modulation = DVBFE_MOD_32APSK;
+			params->fec        = DVBFE_FEC_9_10;
 			break;
 		}
 		default:
@@ -2852,30 +2850,30 @@ static struct dvb_frontend_ops stb0899_ops =
 		                             | FE_CAN_2G_MODULATION
 		                             | FE_CAN_QPSK
 	},
-	.release                         = stb0899_release,
-	.init                            = stb0899_init,
-	.sleep                           = stb0899_sleep,
+	.release                             = stb0899_release,
+	.init                                = stb0899_init,
+	.sleep                               = stb0899_sleep,
 
-	.i2c_gate_ctrl                   = stb0899_i2c_gate_ctrl,
+	.i2c_gate_ctrl                       = stb0899_i2c_gate_ctrl,
 
-	.set_property                    = stb0899_set_property,
-	.get_property                    = stb0899_get_property,
-	.get_frontend_algo               = stb0899_frontend_algo,
-	.search                          = stb0899_search,
-	.track                           = stb0899_track,
-	.get_frontend                    = stb0899_get_frontend,
+	.set_property                        = stb0899_set_property,
+	.get_property                        = stb0899_get_property,
+	.get_frontend_algo                   = stb0899_frontend_algo,
+	.search                              = stb0899_search,
+	.track                               = stb0899_track,
+	.get_frontend                        = stb0899_get_frontend,
 
-	.read_status                     = stb0899_read_status,
-	.read_snr                        = stb0899_read_snr,
-	.read_signal_strength            = stb0899_read_signal_strength,
-	.read_ber                        = stb0899_read_ber,
+	.read_status                         = stb0899_read_status,
+	.read_snr                            = stb0899_read_snr,
+	.read_signal_strength                = stb0899_read_signal_strength,
+	.read_ber                            = stb0899_read_ber,
 
-	.set_voltage                     = stb0899_set_voltage,
-	.set_tone                        = stb0899_set_tone,
+	.set_voltage                         = stb0899_set_voltage,
+	.set_tone                            = stb0899_set_tone,
 
-	.diseqc_send_master_cmd          = stb0899_send_diseqc_msg,
-	.diseqc_recv_slave_reply         = stb0899_recv_slave_reply,
-	.diseqc_send_burst               = stb0899_send_diseqc_burst,
+	.diseqc_send_master_cmd              = stb0899_send_diseqc_msg,
+	.diseqc_recv_slave_reply             = stb0899_recv_slave_reply,
+	.diseqc_send_burst                   = stb0899_send_diseqc_burst,
 };
 
 struct dvb_frontend *stb0899_attach(struct stb0899_config *config, struct i2c_adapter *i2c)

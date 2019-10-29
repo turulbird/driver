@@ -4,6 +4,8 @@
  *
  * Copyright (C) ST Microelectronics
  *
+ * Version for ADB ITI-5800SX, BSLA model
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
@@ -31,28 +33,42 @@
 #include "dvb_frontend.h"
 #include "stb6100.h"
 
-static unsigned int verbose = 0;
+static unsigned int verbose = 1;
 
-#define FE_ERROR		0
-#define FE_NOTICE		1
-#define FE_INFO			2
-#define FE_DEBUG		3
+#define FE_ERROR  0
+#define FE_NOTICE 1
+#define FE_INFO   2
+#define FE_DEBUG  3
 
-#define dprintk(x, y, z, format, arg...) do { \
-		if (z) { \
-			if	((x > FE_ERROR) && (x > y)) \
-				printk(KERN_ERR "%s: " format "\n", __func__ , ##arg); \
-			else if	((x > FE_NOTICE) && (x > y)) \
-				printk(KERN_NOTICE "%s: " format "\n", __func__ , ##arg); \
-			else if ((x > FE_INFO) && (x > y)) \
-				printk(KERN_INFO "%s: " format "\n", __func__ , ##arg); \
-			else if ((x > FE_DEBUG) && (x > y)) \
-				printk(KERN_DEBUG "%s: " format "\n", __func__ , ##arg); \
-		} else { \
-			if (x > y) \
-				printk(format, ##arg); \
+#define dprintk(x, y, z, format, arg...) do \
+{ \
+	if (z) \
+	{ \
+		if ((x > FE_ERROR) && (x > y)) \
+		{ \
+			printk(KERN_ERR "[stb6100] %s: " format "\n", __func__ , ##arg); \
 		} \
-	} while(0)
+		else if	((x > FE_NOTICE) && (x > y)) \
+		{ \
+			printk(KERN_NOTICE "[stb6100] %s: " format "\n", __func__ , ##arg); \
+		} \
+		else if ((x > FE_INFO) && (x > y)) \
+		{ \
+			printk(KERN_INFO "[stb6100] %s: " format "\n", __func__ , ##arg); \
+		} \
+		else if ((x > FE_DEBUG) && (x > y)) \
+		{ \
+			printk(KERN_DEBUG "[stb6100] %s: " format "\n", __func__ , ##arg); \
+		} \
+	} \
+	else \
+	{ \
+		if (x > y) \
+		{ \
+			printk(format, ##arg); \
+		} \
+	} \
+} while(0)
 
 struct stb6100_lkup
 {
@@ -171,7 +187,7 @@ static int stb6100_read_reg(struct stb6100_state *state, u8 reg)
 
 	if (unlikely(reg >= STB6100_NUMREGS))
 	{
-		dprintk(verbose, FE_ERROR, 1, "Invalid register offset 0x%x", reg);
+		dprintk(verbose, FE_ERROR, 1, "Invalid register offset 0x%04x", reg);
 		return -EINVAL;
 	}
 	if ((rc = stb6100_read_regs(state, regs)) < 0)
@@ -215,7 +231,7 @@ static int stb6100_write_reg_range(struct stb6100_state *state, u8 buf[], int st
 
 	if (unlikely(rc != 1))
 	{
-		dprintk(verbose, FE_ERROR, 1, "(0x%x) write err [%d:%d], rc=[%d]", (unsigned int)state->config->tuner_address, start, len,	rc);
+		dprintk(verbose, FE_ERROR, 1, "(0x%x) write err [%d:%d], rc = [%d]", (unsigned int)state->config->tuner_address, start, len,	rc);
 		return -EREMOTEIO;
 	}
 	return 0;
@@ -257,12 +273,12 @@ static int stb6100_get_status(struct dvb_frontend *fe, u32 *status)
 	return (rc & STB6100_LD_LOCK) ? TUNER_STATUS_LOCKED : 0;
 }
 
-
 static int stb6100_get_bandwidth(struct dvb_frontend *fe, u32 *bandwidth)
 {
 	int rc;
 	u8 f;
 	struct stb6100_state *state = fe->tuner_priv;
+
 	if (fe->ops.i2c_gate_ctrl)
 	{
 		fe->ops.i2c_gate_ctrl(fe, 1);
@@ -273,7 +289,7 @@ static int stb6100_get_bandwidth(struct dvb_frontend *fe, u32 *bandwidth)
 	}
 	f = rc & STB6100_F_F;
 
-	state->status.bandwidth = (f + 5) * 2000;	/* x2 for ZIF	*/
+	state->status.bandwidth = (f + 5) * 2000;  /* x2 for ZIF */
 
 	*bandwidth = state->bandwidth = state->status.bandwidth * 1000;
 	dprintk(verbose, FE_DEBUG, 1, "bandwidth = %u Hz", state->bandwidth);
@@ -294,7 +310,7 @@ static int stb6100_set_bandwidth(struct dvb_frontend *fe, u32 bandwidth)
 	{
 		fe->ops.i2c_gate_ctrl(fe, 1);
 	}
-	dprintk(verbose, FE_DEBUG, 1, "set bandwidth to %u Hz", bandwidth);
+	dprintk(verbose, FE_DEBUG, 1, "Set bandwidth to %u Hz", bandwidth);
 
 	bandwidth /= 2; /* ZIF */
 
@@ -302,7 +318,7 @@ static int stb6100_set_bandwidth(struct dvb_frontend *fe, u32 bandwidth)
 	{
 		tmp = 31;
 	}
-	else if (bandwidth <= 5000000)	/* bw/2 min = 5Mhz for F=0 */
+	else if (bandwidth <= 5000000)  /* bw/2 min = 5Mhz for F=0 */
 	{
 		tmp = 0;
 	}
@@ -356,8 +372,7 @@ static int stb6100_get_frequency(struct dvb_frontend *fe, u32 *frequency)
 	fvco = (nfrac * state->reference >> (9 - psd2)) + (nint * state->reference << psd2);
 	*frequency = state->frequency = fvco >> (odiv + 1);
 
-	dprintk(verbose, FE_DEBUG, 1, "frequency = %u kHz, odiv = %u, psd2 = %u, fxtal = %u kHz, fvco = %u kHz, N(I) = %u, N(F) = %u",
-		state->frequency, odiv, psd2, state->reference,	fvco, nint, nfrac);
+	dprintk(verbose, FE_DEBUG, 1, "Frequency = %u kHz, odiv = %u, psd2 = %u, fxtal = %u kHz, fvco = %u kHz, N(I) = %u, N(F) = %u", state->frequency, odiv, psd2, state->reference, fvco, nint, nfrac);
 	if (fe->ops.i2c_gate_ctrl)
 	{
 		fe->ops.i2c_gate_ctrl(fe, 0);
@@ -397,6 +412,7 @@ static int stb6100_set_frequency(struct dvb_frontend *fe, u32 frequency)
 		srate = c->symbol_rate;
 	}
 	regs[STB6100_DLB] = 0xDC;
+
 	/** Disable LPEN */
 	regs[STB6100_LPEN] &= ~STB6100_LPEN_LPEN;  /* PLL loop disabled */
 
@@ -418,10 +434,10 @@ static int stb6100_set_frequency(struct dvb_frontend *fe, u32 frequency)
 		g = 14; // +14 dB
 	}
 	regs[STB6100_G] = (regs[STB6100_G] & ~STB6100_G_G) | g;
-	regs[STB6100_G] &= ~STB6100_G_GCT; /* mask GCT */
-	regs[STB6100_G] |= (1 << 5); /* 2Vp-p Mode */
+	regs[STB6100_G] &= ~STB6100_G_GCT;  /* mask GCT */
+	regs[STB6100_G] |= (1 << 5);  /* 2Vp-p Mode */
 
-	/* VCO divide ratio (LO divide ratio, VCO prescaler enable).	*/
+	/* VCO divide ratio (LO divide ratio, VCO prescaler enable). */
 	if (frequency <= 1075000)
 	{
 		odiv = 1;
@@ -431,7 +447,7 @@ static int stb6100_set_frequency(struct dvb_frontend *fe, u32 frequency)
 		odiv = 0;
 	}
 	regs[STB6100_VCO] = (regs[STB6100_VCO] & ~STB6100_VCO_ODIV) | (odiv << STB6100_VCO_ODIV_SHIFT);
-	
+
 	if ((frequency > 1075000) && (frequency <= 1325000))
 	{
 		psd2 = 0;
@@ -466,10 +482,10 @@ static int stb6100_set_frequency(struct dvb_frontend *fe, u32 frequency)
 	regs[STB6100_NI] = nint;
 	regs[STB6100_NF_LSB] = nfrac;
 	regs[STB6100_K] = (regs[STB6100_K] & ~STB6100_K_NF_MSB) | ((nfrac >> 8) & STB6100_K_NF_MSB);
-	regs[STB6100_VCO] |= STB6100_VCO_OSCH;		/* VCO search enabled           */
-	regs[STB6100_VCO] |= STB6100_VCO_OCK;		/* VCO search clock off         */
-	regs[STB6100_FCCK] |= STB6100_FCCK_FCCK;	/* LPF BW setting clock enabled */
-	regs[STB6100_LPEN] &= ~STB6100_LPEN_LPEN;	/* PLL loop disabled            */
+	regs[STB6100_VCO] |= STB6100_VCO_OSCH;     /* VCO search enabled           */
+	regs[STB6100_VCO] |= STB6100_VCO_OCK;      /* VCO search clock off         */
+	regs[STB6100_FCCK] |= STB6100_FCCK_FCCK;   /* LPF BW setting clock enabled */
+	regs[STB6100_LPEN] &= ~STB6100_LPEN_LPEN;  /* PLL loop disabled            */
 	/* Power up */
 	regs[STB6100_LPEN] |= STB6100_LPEN_SYNP	| STB6100_LPEN_OSCP | STB6100_LPEN_BEN;
 
@@ -479,27 +495,28 @@ static int stb6100_set_frequency(struct dvb_frontend *fe, u32 frequency)
 		return rc;
 	}
 	msleep(2);
-	regs[STB6100_LPEN] |= STB6100_LPEN_LPEN;	/* PLL loop enabled */
+	regs[STB6100_LPEN] |= STB6100_LPEN_LPEN;  /* PLL loop enabled */
 	if ((rc = stb6100_write_reg(state, STB6100_LPEN, regs[STB6100_LPEN])) < 0)
 	{
 		return rc;
 	}
-	regs[STB6100_VCO] &= ~STB6100_VCO_OCK;		/* VCO fast search */
+	regs[STB6100_VCO] &= ~STB6100_VCO_OCK;  /* VCO fast search */
 	if ((rc = stb6100_write_reg(state, STB6100_VCO, regs[STB6100_VCO])) < 0)
 	{
 		return rc;
 	}
-	msleep(10);					/* wait for LO to lock */
-	regs[STB6100_VCO] &= ~STB6100_VCO_OSCH;		/* vco search disabled */
-	regs[STB6100_VCO] |= STB6100_VCO_OCK;		/* search clock off    */
+	msleep(10);                              /* wait for LO to lock */
+	regs[STB6100_VCO] &= ~STB6100_VCO_OSCH;  /* vco search disabled */
+	regs[STB6100_VCO] |= STB6100_VCO_OCK;    /* search clock off    */
 	if ((rc = stb6100_write_reg(state, STB6100_VCO, regs[STB6100_VCO])) < 0)
 	{
 		return rc;
 	}
-	regs[STB6100_FCCK] &= ~STB6100_FCCK_FCCK;       /* LPF BW clock disabled */
+	regs[STB6100_FCCK] &= ~STB6100_FCCK_FCCK;  /* LPF BW clock disabled */
 	/* if ((rc = stb6100_write_reg(state, STB6100_FCCK, regs[STB6100_FCCK])) < 0) */
-
-	stb6100_normalise_regs(regs);
+	{
+		stb6100_normalise_regs(regs);
+	}
 	if ((rc = stb6100_write_reg_range(state, &regs[1], 1, STB6100_NUMREGS - 3)) < 0)
 	{
 		return rc;
@@ -514,7 +531,7 @@ static int stb6100_set_frequency(struct dvb_frontend *fe, u32 frequency)
 
 static int stb6100_sleep(struct dvb_frontend *fe)
 {
-	/* TODO: power down	*/
+	/* TODO: power down */
 	return 0;
 }
 
@@ -525,11 +542,11 @@ static int stb6100_init(struct dvb_frontend *fe)
 
 	status->tunerstep = 125000;
 	status->ifreq     = 0;
-	status->refclock  = 27000000;	/* Hz */
+	status->refclock  = 27000000;  /* Hz */
 	status->iqsense   = 1;
-	status->bandwidth = 36000;	/* kHz */
-	state->bandwidth  = status->bandwidth * 1000;	/* Hz */
-	state->reference  = status->refclock / 1000;	/* kHz */
+	status->bandwidth = 36000;  /* kHz */
+	state->bandwidth  = status->bandwidth * 1000;  /* Hz */
+	state->reference  = status->refclock / 1000;  /* kHz */
 
 	/* Set default bandwidth */
 	return stb6100_set_bandwidth(fe, state->bandwidth);
@@ -640,26 +657,27 @@ static int stb6100_set_params(struct dvb_frontend *fe, struct dvb_frontend_param
 
 static struct dvb_tuner_ops stb6100_ops =
 {
-	.info = {
+	.info =
+	{
 		.name           = "STB6100 Silicon Tuner",
 		.frequency_min  = 950000,
 		.frequency_max  = 2150000,
 		.frequency_step = 0,
 	},
 
-	.init                   = stb6100_init,
-	.sleep                  = stb6100_sleep,
-	.get_status             = stb6100_get_status,
+	.init               = stb6100_init,
+	.sleep              = stb6100_sleep,
+	.get_status         = stb6100_get_status,
 #if 0
-	.get_state              = stb6100_get_state,
-	.set_state              = stb6100_set_state,
+	.get_state          = stb6100_get_state,
+	.set_state          = stb6100_set_state,
 #endif
-	.set_frequency          = stb6100_set_frequency,
-	.set_bandwidth          = stb6100_set_bandwidth,
-	.get_frequency          = stb6100_get_frequency,
-	.get_bandwidth          = stb6100_get_bandwidth,
-	.set_params             = stb6100_set_params,
-	.release                = stb6100_release
+	.set_frequency      = stb6100_set_frequency,
+	.set_bandwidth      = stb6100_set_bandwidth,
+	.get_frequency      = stb6100_get_frequency,
+	.get_bandwidth      = stb6100_get_bandwidth,
+	.set_params         = stb6100_set_params,
+	.release            = stb6100_release
 };
 
 struct dvb_frontend *stb6100_attach(struct dvb_frontend *fe, struct stb6100_config *config, struct i2c_adapter *i2c)
@@ -678,13 +696,14 @@ struct dvb_frontend *stb6100_attach(struct dvb_frontend *fe, struct stb6100_conf
 	fe->tuner_priv    = state;
 	fe->ops.tuner_ops = stb6100_ops;
 
-	printk("%s: Attaching STB6100 \n", __func__);
+	printk("[stb6100] %s: Attaching STB6100 \n", __func__);
 	return fe;
 
 error:
 	kfree(state);
 	return NULL;
 }
+EXPORT_SYMBOL(stb6100_attach);
 
 static int stb6100_release(struct dvb_frontend *fe)
 {
@@ -692,8 +711,6 @@ static int stb6100_release(struct dvb_frontend *fe)
 
 	fe->tuner_priv = NULL;
 	kfree(state);
-
 	return 0;
 }
-EXPORT_SYMBOL(stb6100_attach);
 // vim:ts=4

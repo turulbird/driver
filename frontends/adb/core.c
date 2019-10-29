@@ -15,8 +15,8 @@
 #include <linux/proc_fs.h>
 #include <pvr_config.h>
 
-#define I2C_ADDR_STB0899 (0xd0 >> 1)  // d0 = 0x68 d2 = 69
-#define I2C_ADDR_STB6100 (0xc0 >> 1)  // c0  c6
+#define I2C_ADDR_STB0899 (0xd0 >> 1)  // d0 -> 0x68
+#define I2C_ADDR_STB6100 (0xc0 >> 1)  // c0 -> 0x60
 
 static struct core *core[MAX_DVB_ADAPTERS];
 
@@ -104,6 +104,7 @@ static const struct stb0899_s2_reg stb0899_init_s2_demod[] =
 	{ STB0899_OFF0_BB_AGC_GAIN,        STB0899_BASE_BB_AGC_GAIN,       0x000001bc },  /* BBAGCGAIN      */
 	{ STB0899_OFF0_DC_OFFSET,          STB0899_BASE_DC_OFFSET,         0x00000200 },  /* DCOFFSET       */
 	{ STB0899_OFF0_DMD_CNTRL,          STB0899_BASE_DMD_CNTRL,         0x0000000f },  /* DMDCNTRL       */
+
 	{ STB0899_OFF0_IF_AGC_CNTRL,       STB0899_BASE_IF_AGC_CNTRL,      0x03fb4a20 },  /* IFAGCCNTRL     */
 
 //	new value 0x00200C17	- the quality of the received HD channels improves
@@ -998,19 +999,19 @@ static struct stb0899_config stb0899_config =
 	.lnb_enable            = NULL,
 	.lnb_vsel              = NULL,
 
-	.demod_address         = I2C_ADDR_STB0899, /* I2C Address */
-	.block_sync_mode       = STB0899_SYNC_FORCED, /* ? */
+	.demod_address         = I2C_ADDR_STB0899,  /* I2C Address */
+	.block_sync_mode       = STB0899_SYNC_FORCED,  /* ? */
 
-	.xtal_freq             = 27000000,         /* Assume Hz ? */
-	.inversion             = IQ_SWAP_ON,       /* ? */
+	.xtal_freq             = 27000000,  /* Assume Hz ? */
+	.inversion             = IQ_SWAP_ON,  /* ? */
 
 	.lo_clk                = 76500000,
 	.hi_clk                = 99000000,
 
-	.ts_output_mode        = 0,                /* Use parallel mode */
-	.clock_polarity        = 0,                /*  */
-	.data_clk_parity       = 0,                /*  */
-	.fec_mode              = 0,                /*  */
+	.ts_output_mode        = 0,  /* Use parallel mode */
+	.clock_polarity        = 0,  /*  */
+	.data_clk_parity       = 0,  /*  */
+	.fec_mode              = 0,  /*  */
 
 	.esno_ave              = CORE_STB0899_DVBS2_ESNO_AVE,
 	.esno_quant            = CORE_STB0899_DVBS2_ESNO_QUANT,
@@ -1044,29 +1045,29 @@ static struct dvb_frontend *frontend_init(struct core_config *cfg, int i)
 {
 	struct dvb_frontend *frontend = NULL;
 
-	printk(KERN_INFO "[fe_core] %s frontend_init >\n", __func__);
+//	printk(KERN_INFO "[fe_core] %s >\n", __func__);
 
 	if (i > 0)
 	{
 		return NULL;
 	}
-	printk(KERN_INFO "[fe_core] %s Attaching stb0899\n", __func__);
+	printk(KERN_INFO "[fe_core] Attaching STB0899\n");
 	frontend = dvb_attach(stb0899_attach, &stb0899_config, cfg->i2c_adap);
 
 	if (frontend)
 	{
-		printk("[fe_core] stb0899 attached OK\n");
+		printk("[fe_core] STB0899 attached OK\n");
 
 		if (dvb_attach(stb6100_attach, frontend, &stb6100_config, cfg->i2c_adap) == 0)
 		{
-			printk(KERN_INFO "error attaching stb6100\n");
+			printk(KERN_INFO "[fe_core] %s Error attaching STB6100\n", __func__);
 			goto error_out;
 		}
-		printk("[fe_core] stb6100 attached OK\n");
+		printk("[fe_core] STB6100 attached OK\n");
 	}
 	else
 	{
-		printk(KERN_INFO "[fe_core] %s Error attaching stb0899\n", __func__);
+		printk(KERN_INFO "[fe_core] %s Error attaching STB0899\n", __func__);
 		goto error_out;
 	}
 	stb0899_config.lnb_enable = cfg->lnb_enable;
@@ -1074,7 +1075,7 @@ static struct dvb_frontend *frontend_init(struct core_config *cfg, int i)
 	return frontend;
 
 error_out:
-	printk("[fe_core] Frontend registration failed!\n");
+	printk("[fe_core] % sFrontend registration failed!\n", __func__);
 	if (frontend)
 	{
 		dvb_frontend_detach(frontend);
@@ -1088,39 +1089,41 @@ static struct dvb_frontend *init_fe_device(struct dvb_adapter *adapter, struct p
 	struct dvb_frontend  *frontend;
 	struct core_config   *cfg;
 
-	printk("[fe_core] %s > (bus = %d)\n", __func__, tuner_cfg->i2c_bus);
+//	printk("[fe_core] %s > (bus = %d)\n", __func__, tuner_cfg->i2c_bus);
 
 	cfg = kmalloc(sizeof(struct core_config), GFP_KERNEL);
 	if (cfg == NULL)
 	{
-		printk("[fe-core] kmalloc failed\n");
+		printk("[fe-core] %s kmalloc failed\n", __func__);
 		return NULL;
 	}
 	/* initialize the config data */
 	cfg->i2c_adap = i2c_get_adapter(tuner_cfg->i2c_bus);
 
-	printk("[fe_core] %s i2c adapter = 0x%0x\n", __func__, cfg->i2c_adap);
+	printk("[fe_core] %s i2c adapter = 0x%0x, bus = \n", __func__, cfg->i2c_adap, tuner_cfg->i2c_bus);
 
 	cfg->i2c_addr = tuner_cfg->i2c_addr;
 
 	if (cfg->i2c_adap == NULL)
 	{
-		printk("[fe-core] failed to allocate resources (%s)\n", (cfg->i2c_adap == NULL) ? "i2c" : "STPIO error");
+		printk("[fe-core] %s failed to allocate resources (%s)\n", __func__, (cfg->i2c_adap == NULL) ? "i2c" : "STPIO error");
 		kfree(cfg);
 		return NULL;
 	}
 	frontend = frontend_init(cfg, i);
+
+	printk("[fe_core] %s: frontend_init (frontend = 0x%x)\n", __func__, (unsigned int)frontend);
 
 	if (frontend == NULL)
 	{
 		printk("[fe_core] %s No frontend found !\n", __func__);
 		return NULL;
 	}
-	printk(KERN_INFO "[fe_core] %s Call dvb_register_frontend (adapter = 0x%x)\n", __func__, (unsigned int) adapter);
+//	printk("[fe_core] %s: Call dvb_register_frontend (adapter = 0x%x)\n", __func__, (unsigned int) adapter);
 
 	if (dvb_register_frontend(adapter, frontend))
 	{
-		printk("[fe_core] %s Frontend registration failed !\n", __func__);
+		printk("[fe_core] %s: Frontend registration failed !\n", __func__);
 		if (frontend->ops.release)
 		{
 			frontend->ops.release(frontend);
@@ -1133,11 +1136,11 @@ static struct dvb_frontend *init_fe_device(struct dvb_adapter *adapter, struct p
 
 struct plat_tuner_config tuner_resources[] =
 {
-
 	[0] =
 	{
 		.adapter  = 0,
 		.i2c_bus  = 0,
+		.i2c_addr = I2C_ADDR_STB0899,
 	},
 };
 
@@ -1146,9 +1149,9 @@ void fe_core_register_frontend(struct dvb_adapter *dvb_adap)
 	int i = 0;
 	int vLoop = 0;
 
-	printk(KERN_INFO "%s: frontend core\n", __func__);
+//	printk("[fe_core] %s >\n", __func__);
 
-	core[i] = (struct core *) kmalloc(sizeof(struct core), GFP_KERNEL);
+	core[i] = (struct core *)kmalloc(sizeof(struct core), GFP_KERNEL);
 	if (!core[i])
 	{
 		return;
@@ -1158,33 +1161,32 @@ void fe_core_register_frontend(struct dvb_adapter *dvb_adap)
 	core[i]->dvb_adapter = dvb_adap;
 	dvb_adap->priv = core[i];
 
-	printk("tuner = %d\n", ARRAY_SIZE(tuner_resources));
+	printk("[fe_core] # of tuners = %d\n", ARRAY_SIZE(tuner_resources));
 
 	for (vLoop = 0; vLoop < ARRAY_SIZE(tuner_resources); vLoop++)
 	{
 		if (core[i]->frontend[vLoop] == NULL)
 		{
-			printk("%s: init tuner %d\n", __func__, vLoop);
+			printk("[fe_core] Initialize tuner %d i2c_addr: 0x%.2x\n", vLoop, tuner_resources[vLoop].i2c_addr);
 			core[i]->frontend[vLoop] = init_fe_device(core[i]->dvb_adapter, &tuner_resources[vLoop], vLoop);
 		}
 	}
 
-	printk(KERN_INFO "%s: <\n", __func__);
+//	printk("[fe_core] %s <\n", __func__);
 
 	return;
 }
-
 EXPORT_SYMBOL(fe_core_register_frontend);
 
 int __init fe_core_init(void)
 {
-	printk("fe_core_init\n");
+	printk("[fe_core] %s Frontend core loaded\n", __func__);
 	return 0;
 }
 
 static void __exit fe_core_exit(void)
 {
-	printk("frontend core unloaded\n");
+   printk("[fe_core] Frontend core unloaded\n");
 }
 
 module_init(fe_core_init);

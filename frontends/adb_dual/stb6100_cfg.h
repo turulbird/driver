@@ -27,9 +27,13 @@ static int stb6100_get_frequency(struct dvb_frontend *fe, u32 *frequency)
 	int err = 0;
 
 	if (&fe->ops)
+	{
 		frontend_ops = &fe->ops;
+	}
 	if (&frontend_ops->tuner_ops)
+	{
 		tuner_ops = &frontend_ops->tuner_ops;
+	}
 	if (tuner_ops->get_frequency)
 	{
 		if ((err = tuner_ops->get_frequency(fe, frequency)) < 0)
@@ -51,9 +55,13 @@ static int stb6100_set_frequency(struct dvb_frontend *fe, u32 frequency)
 	int err = 0;
 
 	if (&fe->ops)
+	{
 		frontend_ops = &fe->ops;
+	}
 	if (&frontend_ops->tuner_ops)
+	{
 		tuner_ops = &frontend_ops->tuner_ops;
+	}
 	if (tuner_ops->set_frequency)
 	{
 		if ((err = tuner_ops->set_frequency(fe, frequency)) < 0)

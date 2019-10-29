@@ -144,7 +144,7 @@ static void stb0899_first_subrange(struct stb0899_state *state)
 {
 	struct stb0899_internal *internal = &state->internal;
 	struct stb0899_params   *params   = &state->params;
-	struct stb0899_config   *config	  =  state->config;
+	struct stb0899_config   *config   =  state->config;
 
 	int range = 0;
 	u32 bandwidth = 0;
@@ -234,7 +234,7 @@ static enum stb0899_status stb0899_search_tmg(struct stb0899_state *state)
 		derot_freq += index * internal->direction * derot_step;	/* next derot zig zag position */
 
 		dprintk(state->verbose, FE_DEBUG, 1, "index = %d, derot_freq = %d, limit = %d, direction = %d, step = %d",
-			index, derot_freq, derot_limit, internal->direction, derot_step);
+		index, derot_freq, derot_limit, internal->direction, derot_step);
 
 		if (abs(derot_freq) > derot_limit)
 		{
@@ -252,7 +252,7 @@ static enum stb0899_status stb0899_search_tmg(struct stb0899_state *state)
 
 	if (internal->status == TIMINGOK)
 	{
-		stb0899_read_regs(state, STB0899_CFRM, cfr, 2);	 /* get derotator frequency */
+		stb0899_read_regs(state, STB0899_CFRM, cfr, 2);  /* get derotator frequency */
 		internal->derot_freq = state->config->inversion * MAKEWORD16(cfr[0], cfr[1]);
 		dprintk(state->verbose, FE_DEBUG, 1, "------->TIMING OK ! Derot Freq = %d", internal->derot_freq);
 	}
@@ -310,7 +310,8 @@ static enum stb0899_status stb0899_search_carrier(struct stb0899_state *state)
 	last_derot_freq = internal->derot_freq;
 	base_freq = internal->derot_freq;
 
-	dprintk(state->verbose, FE_DEBUG, 1, "freq = %d, limit = %d, step = %d, mclk = %d", derot_freq, derot_limit, derot_step, internal->mclk);
+	dprintk(state->verbose, FE_DEBUG, 1, "freq = %d, limit = %d, step = %d, mclk = %d",
+		derot_freq, derot_limit, derot_step, internal->mclk);
 
 	reg = stb0899_read_reg(state, STB0899_CFD);
 	STB0899_SETFIELD_VAL(CFD_ON, reg, 1);
@@ -339,8 +340,8 @@ static enum stb0899_status stb0899_search_carrier(struct stb0899_state *state)
 				STB0899_SETFIELD_VAL(CFD_ON, reg, 1);
 				stb0899_write_reg(state, STB0899_CFD, reg);
 
-				STB0899_SETFIELD_VAL(CFRM, cfr[0], MSB(state->config->inversion * derot_freq));
-				STB0899_SETFIELD_VAL(CFRL, cfr[1], LSB(state->config->inversion * derot_freq));
+				STB0899_SETFIELD_VAL(CFRM, cfr[0], MSB(state->config->inversion *derot_freq));
+				STB0899_SETFIELD_VAL(CFRL, cfr[1], LSB(state->config->inversion *derot_freq));
 				stb0899_write_regs(state, STB0899_CFRM, cfr, 2);  /* derotator frequency */
 			}
 			index++;
@@ -413,7 +414,7 @@ static enum stb0899_status stb0899_check_data(struct stb0899_state *state)
 		// Alex: added 1 mSec
 		msleep(1);
 
-		/* WARNING! VIT LOCKED has to be tested before VIT_END_LOOOP    */
+		/* WARNING! VIT LOCKED has to be tested before VIT_END_LOOP */
 		reg = stb0899_read_reg(state, STB0899_VSTATUS);
 		lock = STB0899_GETFIELD(VSTATUS_LOCKEDVIT, reg);
 		loop = STB0899_GETFIELD(VSTATUS_END_LOOPVIT, reg);
@@ -452,14 +453,15 @@ static enum stb0899_status stb0899_search_data(struct stb0899_state *state)
 	derot_freq = internal->derot_freq;
 	base_freq = internal->derot_freq;
 
-	dprintk(state->verbose, FE_DEBUG, 1, "limit = %d, step = %d, mclk = %d", derot_limit, derot_step, internal->mclk);
+	dprintk(state->verbose, FE_DEBUG, 1, "limit = %d, step = %d, mclk = %d",
+		derot_limit, derot_step, internal->mclk);
 
 	do
 	{
 		if ((internal->status != CARRIEROK)
 		||  (stb0899_check_data(state) != DATAOK))
 		{
-			derot_freq += index * internal->direction * derot_step;	/* next zig zag derotator position      */
+			derot_freq += index * internal->direction * derot_step;	/* next zig zag derotator position */
 
 			dprintk(state->verbose, FE_DEBUG, 1, "index = %d, derot_freq = %d, limit = %d, direction = %d, step = %d",
 				index, derot_freq, derot_limit, internal->direction, derot_step);
@@ -540,7 +542,7 @@ static void next_sub_range(struct stb0899_state *state)
 	if (internal->sub_dir > 0)
 	{
 		old_sub_range = internal->sub_range;
-		internal->sub_range = min((internal->srch_range / 2) - (internal->tuner_offst +  internal->sub_range / 2), internal->sub_range);
+		internal->sub_range = min((internal->srch_range / 2) - (internal->tuner_offst + internal->sub_range / 2), internal->sub_range);
 
 		if (internal->sub_range < 0)
 		{
@@ -561,7 +563,7 @@ enum stb0899_status stb0899_dvbs_algo(struct stb0899_state *state)
 {
 	struct stb0899_params   *params   = &state->params;
 	struct stb0899_internal *internal = &state->internal;
-	struct stb0899_config  *config    = state->config;
+	struct stb0899_config   *config   = state->config;
 
 	u8 bclc, reg;
 	u8 cfr[2];
@@ -626,10 +628,11 @@ enum stb0899_status stb0899_dvbs_algo(struct stb0899_state *state)
 	 * querying status while acquiring causes the
 	 * acquisition to go bad and hence no locks.
 	 */
-	dprintk(state->verbose, FE_DEBUG, 1, "Derot Percent=%d Srate=%d mclk=%d", internal->derot_percent, params->srate, internal->mclk);
+	dprintk(state->verbose, FE_DEBUG, 1, "Derot Percent=%d Srate=%d mclk=%d",
+		internal->derot_percent, params->srate, internal->mclk);
 
 	/* Initial calculations */
-	internal->derot_step = internal->derot_percent * (params->srate / 1000L) / internal->mclk;	/* DerotStep/1000 * Fsymbol  */
+	internal->derot_step = internal->derot_percent * (params->srate / 1000L) / internal->mclk;  /* DerotStep/1000 * Fsymbol */
 
 	dprintk(state->verbose, FE_DEBUG, 1, "Derot step=%d", internal->derot_step);
 
@@ -741,8 +744,8 @@ enum stb0899_status stb0899_dvbs_algo(struct stb0899_state *state)
 	if (internal->status == RANGEOK)
 	{
 		dprintk(state->verbose, FE_DEBUG, 1, "Locked & Range OK !");
-		stb0899_write_reg(state, STB0899_EQON, 0x41);	/* Equalizer OFF while acquiring        */
-		stb0899_write_reg(state, STB0899_VITSYNC, 0x39);	/* SN to b'11 for acquisition           */
+		stb0899_write_reg(state, STB0899_EQON, 0x41);  /* Equalizer OFF while acquiring */
+		stb0899_write_reg(state, STB0899_VITSYNC, 0x39);  /* SN to b'11 for acquisition */
 
 		/*
 		 * Carrier loop optimization versus
@@ -1019,19 +1022,19 @@ static void stb0899_dvbs2_set_btr_loopbw(struct stb0899_state *state)
 	{
 		K = sym_peak / K;
 		wn = (4 * zeta * zeta) + 1000000;
-		wn = (2 * (loopbw_percent * 1000) * 40 * zeta) / wn;	/*wn =wn 10^-8 */
+		wn = (2 * (loopbw_percent * 1000) * 40 * zeta) / wn;  /* wn =wn 10^-8 */
 
 		k_indirect = (wn * wn) / K;
-		k_indirect = k_indirect;	/*kindirect = kindirect 10^-6 */
-		k_direct = (2 * wn * zeta) / K;	/*kDirect = kDirect 10^-2 */
-		k_direct *= 100;
+		k_indirect = k_indirect;           /* kindirect = kindirect 10^-6 */
+		k_direct   = (2 * wn * zeta) / K;  /* kDirect = kDirect 10^-2 */
+		k_direct  *= 100;
 
 		k_direct_shift = Log2Int(k_direct) - Log2Int(10000) - 2;
 		k_btr1_rshft = (-1 * k_direct_shift) + config->btr_gain_shift_offset;
 		k_btr1 = k_direct / (1 << k_direct_shift);
 		k_btr1 /= 10000;
 
-		k_indirect_shift = Log2Int(k_indirect + 15) - 20 /*- 2*/ ;
+		k_indirect_shift = Log2Int(k_indirect + 15) - 20 /*- 2 */;
 		k_btr0_rshft = (-1 * k_indirect_shift) + config->btr_gain_shift_offset;
 		k_btr0 = k_indirect * (1 << (-k_indirect_shift));
 		k_btr0 /= 1000000;
@@ -1189,7 +1192,7 @@ static void stb0899_dvbs2_reacquire(struct stb0899_state *state)
 	/* equalizer Init */
 	stb0899_write_s2reg(state, STB0899_S2DEMOD, STB0899_BASE_EQUALIZER_INIT, STB0899_OFF0_EQUALIZER_INIT, 1);
 
-	/* Start equilizer */
+	/* Start equalizer */
 	stb0899_write_s2reg(state, STB0899_S2DEMOD, STB0899_BASE_EQUALIZER_INIT, STB0899_OFF0_EQUALIZER_INIT, 0);
 
 	reg = STB0899_READ_S2REG(STB0899_S2DEMOD, EQ_CNTRL);
@@ -1563,7 +1566,7 @@ enum stb0899_status stb0899_dvbs2_algo(struct stb0899_state *state)
 			STB0899_SETFIELD_VAL(SPECTRUM_INVERT, reg, 1);
 			break;
 		}
-		case IQ_SWAP_AUTO:	/* use last successful search first */
+		case IQ_SWAP_AUTO:  /* use last successful search first */
 		{
 			STB0899_SETFIELD_VAL(SPECTRUM_INVERT, reg, 1);
 			break;
@@ -1651,9 +1654,8 @@ enum stb0899_status stb0899_dvbs2_algo(struct stb0899_state *state)
 		&&  (INRANGE(STB0899_QPSK_23, modcod, STB0899_QPSK_910))
 		&&  (pilots == 1))
 		{
-
 			stb0899_dvbs2_init_csm(state, pilots, modcod);
-			/* Wait for UWP,CSM and data LOCK 20ms max  */
+			/* Wait for UWP,CSM and data LOCK 20ms max */
 			internal->status = stb0899_dvbs2_get_fec_status(state, FecLockTime);
 
 			i = 0;
@@ -1679,7 +1681,6 @@ enum stb0899_status stb0899_dvbs2_algo(struct stb0899_state *state)
 			STB0899_SETFIELD_VAL(EQ_DISABLE_UPDATE, reg, 1);
 			stb0899_write_s2reg(state, STB0899_S2DEMOD, STB0899_BASE_EQ_CNTRL, STB0899_OFF0_EQ_CNTRL, reg);
 		}
-
 		/* slow down the Equalizer once locked */
 		reg = STB0899_READ_S2REG(STB0899_S2DEMOD, EQ_CNTRL);
 		STB0899_SETFIELD_VAL(EQ_SHIFT, reg, 0x02);
@@ -1718,7 +1719,6 @@ enum stb0899_status stb0899_dvbs2_algo(struct stb0899_state *state)
 		STB0899_SETFIELD_VAL(IF_AGC_DUMP_PER, reg, 7);
 		stb0899_write_s2reg(state, STB0899_S2DEMOD, STB0899_BASE_IF_AGC_CNTRL2, STB0899_OFF0_IF_AGC_CNTRL2, reg);
 	}
-
 	/* Release Stream Merger Reset */
 	reg = stb0899_read_reg(state, STB0899_TSTRES);
 	STB0899_SETFIELD_VAL(FRESRS, reg, 0);

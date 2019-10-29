@@ -4,7 +4,7 @@
  *
  * Copyright (C) ST Microelectronics
  *
- * Version for ADB_Box BZZB; tuner = STB6100
+ * Version for ADB ITI-5800SX model BZZB; tuner = STB6100
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,6 +29,19 @@
 #  include <linux/stpio.h>
 #else
 #  include <linux/stm/pio.h>
+#endif
+
+#if 1
+extern int paramDebug;
+#define TAGDEBUG "[adb_stv090x] "
+
+#define dprintk(level, x...) do \
+	{ \
+		if ((paramDebug) && (level <= paramDebug)) \
+		{ \
+			printk(TAGDEBUG x); \
+		} \
+	} while (0)
 #endif
 
 #define	TUNER_STB6100

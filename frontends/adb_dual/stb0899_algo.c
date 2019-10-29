@@ -144,7 +144,7 @@ static void stb0899_first_subrange(struct stb0899_state *state)
 {
 	struct stb0899_internal *internal = &state->internal;
 	struct stb0899_params   *params   = &state->params;
-	struct stb0899_config   *config	  =  state->config;
+	struct stb0899_config   *config   =  state->config;
 
 	int range = 0;
 	u32 bandwidth = 0;
@@ -234,7 +234,7 @@ static enum stb0899_status stb0899_search_tmg(struct stb0899_state *state)
 		derot_freq += index * internal->direction * derot_step;	/* next derot zig zag position */
 
 		dprintk(state->verbose, FE_DEBUG, 1, "index = %d, derot_freq = %d, limit = %d, direction = %d, step = %d",
-			index, derot_freq, derot_limit, internal->direction, derot_step);
+		index, derot_freq, derot_limit, internal->direction, derot_step);
 
 		if (abs(derot_freq) > derot_limit)
 		{
@@ -252,7 +252,7 @@ static enum stb0899_status stb0899_search_tmg(struct stb0899_state *state)
 
 	if (internal->status == TIMINGOK)
 	{
-		stb0899_read_regs(state, STB0899_CFRM, cfr, 2);	 /* get derotator frequency */
+		stb0899_read_regs(state, STB0899_CFRM, cfr, 2);  /* get derotator frequency */
 		internal->derot_freq = state->config->inversion * MAKEWORD16(cfr[0], cfr[1]);
 		dprintk(state->verbose, FE_DEBUG, 1, "------->TIMING OK ! Derot Freq = %d", internal->derot_freq);
 	}
@@ -310,7 +310,8 @@ static enum stb0899_status stb0899_search_carrier(struct stb0899_state *state)
 	last_derot_freq = internal->derot_freq;
 	base_freq = internal->derot_freq;
 
-	dprintk(state->verbose, FE_DEBUG, 1, "freq = %d, limit = %d, step = %d, mclk = %d", derot_freq, derot_limit, derot_step, internal->mclk);
+	dprintk(state->verbose, FE_DEBUG, 1, "freq = %d, limit = %d, step = %d, mclk = %d",
+		derot_freq, derot_limit, derot_step, internal->mclk);
 
 	reg = stb0899_read_reg(state, STB0899_CFD);
 	STB0899_SETFIELD_VAL(CFD_ON, reg, 1);
@@ -322,7 +323,7 @@ static enum stb0899_status stb0899_search_carrier(struct stb0899_state *state)
 		if (stb0899_check_carrier(state) == NOCARRIER)
 		{
 			last_derot_freq = derot_freq;
-			derot_freq += index * internal->direction * derot_step;	/* next zig zag derotator position */
+			derot_freq += index * internal->direction * derot_step;  /* next zig zag derotator position */
 
 			dprintk(state->verbose, FE_DEBUG, 1, "index = %d, derot_freq = %d, limit = %d, step = %d",
 				index, derot_freq, derot_limit, derot_step);
@@ -413,7 +414,7 @@ static enum stb0899_status stb0899_check_data(struct stb0899_state *state)
 		// Alex: added 1 mSec
 		msleep(1);
 
-		/* WARNING! VIT LOCKED has to be tested before VIT_END_LOOOP    */
+		/* WARNING! VIT LOCKED has to be tested before VIT_END_LOOP */
 		reg = stb0899_read_reg(state, STB0899_VSTATUS);
 		lock = STB0899_GETFIELD(VSTATUS_LOCKEDVIT, reg);
 		loop = STB0899_GETFIELD(VSTATUS_END_LOOPVIT, reg);
@@ -452,14 +453,15 @@ static enum stb0899_status stb0899_search_data(struct stb0899_state *state)
 	derot_freq = internal->derot_freq;
 	base_freq = internal->derot_freq;
 
-	dprintk(state->verbose, FE_DEBUG, 1, "limit = %d, step = %d, mclk = %d", derot_limit, derot_step, internal->mclk);
+	dprintk(state->verbose, FE_DEBUG, 1, "limit = %d, step = %d, mclk = %d",
+		derot_limit, derot_step, internal->mclk);
 
 	do
 	{
 		if ((internal->status != CARRIEROK)
 		||  (stb0899_check_data(state) != DATAOK))
 		{
-			derot_freq += index * internal->direction * derot_step;	/* next zig zag derotator position      */
+			derot_freq += index * internal->direction * derot_step;	/* next zig zag derotator position */
 
 			dprintk(state->verbose, FE_DEBUG, 1, "index = %d, derot_freq = %d, limit = %d, direction = %d, step = %d",
 				index, derot_freq, derot_limit, internal->direction, derot_step);
@@ -540,7 +542,7 @@ static void next_sub_range(struct stb0899_state *state)
 	if (internal->sub_dir > 0)
 	{
 		old_sub_range = internal->sub_range;
-		internal->sub_range = min((internal->srch_range / 2) - (internal->tuner_offst +  internal->sub_range / 2), internal->sub_range);
+		internal->sub_range = min((internal->srch_range / 2) - (internal->tuner_offst + internal->sub_range / 2), internal->sub_range);
 
 		if (internal->sub_range < 0)
 		{
@@ -561,7 +563,7 @@ enum stb0899_status stb0899_dvbs_algo(struct stb0899_state *state)
 {
 	struct stb0899_params   *params   = &state->params;
 	struct stb0899_internal *internal = &state->internal;
-	struct stb0899_config  *config    = state->config;
+	struct stb0899_config   *config   = state->config;
 
 	u8 bclc, reg;
 	u8 cfr[2];
@@ -626,10 +628,11 @@ enum stb0899_status stb0899_dvbs_algo(struct stb0899_state *state)
 	 * querying status while acquiring causes the
 	 * acquisition to go bad and hence no locks.
 	 */
-	dprintk(state->verbose, FE_DEBUG, 1, "Derot Percent=%d Srate=%d mclk=%d", internal->derot_percent, params->srate, internal->mclk);
+	dprintk(state->verbose, FE_DEBUG, 1, "Derot Percent=%d Srate=%d mclk=%d",
+		internal->derot_percent, params->srate, internal->mclk);
 
 	/* Initial calculations */
-	internal->derot_step = internal->derot_percent * (params->srate / 1000L) / internal->mclk;	/* DerotStep/1000 * Fsymbol  */
+	internal->derot_step = internal->derot_percent * (params->srate / 1000L) / internal->mclk;  /* DerotStep/1000 * Fsymbol */
 
 	dprintk(state->verbose, FE_DEBUG, 1, "Derot step=%d", internal->derot_step);
 
@@ -741,8 +744,8 @@ enum stb0899_status stb0899_dvbs_algo(struct stb0899_state *state)
 	if (internal->status == RANGEOK)
 	{
 		dprintk(state->verbose, FE_DEBUG, 1, "Locked & Range OK !");
-		stb0899_write_reg(state, STB0899_EQON, 0x41);	/* Equalizer OFF while acquiring        */
-		stb0899_write_reg(state, STB0899_VITSYNC, 0x39);	/* SN to b'11 for acquisition           */
+		stb0899_write_reg(state, STB0899_EQON, 0x41);  /* Equalizer OFF while acquiring */
+		stb0899_write_reg(state, STB0899_VITSYNC, 0x39);  /* SN to b'11 for acquisition */
 
 		/*
 		 * Carrier loop optimization versus
@@ -867,11 +870,13 @@ static long Log2Int(int number)
 
 	i = 0;
 	while ((1 << i) <= abs(number))
+	{
 		i++;
-
+	}
 	if (number == 0)
+	{
 		i = 1;
-
+	}
 	return i - 1;
 }
 
@@ -881,8 +886,8 @@ static long Log2Int(int number)
  */
 static u32 stb0899_dvbs2_calc_srate(struct stb0899_state *state)
 {
-	struct stb0899_internal *internal	= &state->internal;
-	struct stb0899_config *config		= state->config;
+	struct stb0899_internal *internal = &state->internal;
+	struct stb0899_config   *config   = state->config;
 
 	u32 dec_ratio, dec_rate, decim, remain, intval, btr_nom_freq;
 	u32 master_clk, srate;
@@ -905,7 +910,6 @@ static u32 stb0899_dvbs2_calc_srate(struct stb0899_state *state)
 		remain = (decim * (1 << (config->btr_nco_bits - 1))) % master_clk;
 	}
 	btr_nom_freq = (intval * srate) + ((remain * srate) / master_clk);
-
 	return btr_nom_freq;
 }
 
@@ -921,11 +925,10 @@ static u32 stb0899_dvbs2_calc_dev(struct stb0899_state *state)
 	dec_ratio = (internal->master_clk * 2) / (5 * internal->srate);
 	dec_ratio = (dec_ratio == 0) ? 1 : dec_ratio;
 
-	master_clk = internal->master_clk / 1000;	/* for integer Caculation*/
-	srate = internal->srate / 1000;	/* for integer Caculation*/
+	master_clk = internal->master_clk / 1000;  /* for integer Caculation */
+	srate = internal->srate / 1000;	 /* for integer Caculation */
 	correction = (512 * master_clk) / (2 * dec_ratio * srate);
-
-	return	correction;
+	return correction;
 }
 
 /*
@@ -940,34 +943,43 @@ static void stb0899_dvbs2_set_srate(struct stb0899_state *state)
 	u32 correction, freq_adj, band_lim, decim_cntrl, reg;
 	u8 anti_alias;
 
-	/*set decimation to 1*/
+	/*set decimation to 1 */
 	dec_ratio = (internal->master_clk * 2) / (5 * internal->srate);
 	dec_ratio = (dec_ratio == 0) ? 1 : dec_ratio;
 	dec_rate = Log2Int(dec_ratio);
 
 	win_sel = 0;
 	if (dec_rate >= 5)
+	{
 		win_sel = dec_rate - 4;
-
+	}
 	decim = (1 << dec_rate);
 	/* (FSamp/Fsymbol *100) for integer Caculation */
 	f_sym = internal->master_clk / ((decim * internal->srate) / 1000);
 
-	if (f_sym <= 2250)	/* don't band limit signal going into btr block*/
+	if (f_sym <= 2250)  /* don't band limit signal going into btr block */
+	{
 		band_lim = 1;
+	}
 	else
-		band_lim = 0;	/* band limit signal going into btr block*/
-
+	{
+		band_lim = 0;	/* band limit signal going into btr block */
+	}
 	decim_cntrl = ((win_sel << 3) & 0x18) + ((band_lim << 5) & 0x20) + (dec_rate & 0x7);
 	stb0899_write_s2reg(state, STB0899_S2DEMOD, STB0899_BASE_DECIM_CNTRL, STB0899_OFF0_DECIM_CNTRL, decim_cntrl);
 
 	if (f_sym <= 3450)
+	{
 		anti_alias = 0;
+	}
 	else if (f_sym <= 4250)
+	{
 		anti_alias = 1;
+	}
 	else
+	{
 		anti_alias = 2;
-
+	}
 	stb0899_write_s2reg(state, STB0899_S2DEMOD, STB0899_BASE_ANTI_ALIAS_SEL, STB0899_OFF0_ANTI_ALIAS_SEL, anti_alias);
 	btr_nom_freq = stb0899_dvbs2_calc_srate(state);
 	stb0899_write_s2reg(state, STB0899_S2DEMOD, STB0899_BASE_BTR_NOM_FREQ, STB0899_OFF0_BTR_NOM_FREQ, btr_nom_freq);
@@ -977,8 +989,8 @@ static void stb0899_dvbs2_set_srate(struct stb0899_state *state)
 	STB0899_SETFIELD_VAL(BTR_FREQ_CORR, reg, correction);
 	stb0899_write_s2reg(state, STB0899_S2DEMOD, STB0899_BASE_BTR_CNTRL, STB0899_OFF0_BTR_CNTRL, reg);
 
-	/* scale UWP+CSM frequency to sample rate*/
-	freq_adj =  internal->srate / (internal->master_clk / 4096);
+	/* scale UWP+CSM frequency to sample rate */
+	freq_adj = internal->srate / (internal->master_clk / 4096);
 	stb0899_write_s2reg(state, STB0899_S2DEMOD, STB0899_BASE_FREQ_ADJ_SCALE, STB0899_OFF0_FREQ_ADJ_SCALE, freq_adj);
 }
 
@@ -988,8 +1000,8 @@ static void stb0899_dvbs2_set_srate(struct stb0899_state *state)
  */
 static void stb0899_dvbs2_set_btr_loopbw(struct stb0899_state *state)
 {
-	struct stb0899_internal *internal	= &state->internal;
-	struct stb0899_config *config		= state->config;
+	struct stb0899_internal *internal = &state->internal;
+	struct stb0899_config   *config   = state->config;
 
 	u32 sym_peak = 23, zeta = 707, loopbw_percent = 60;
 	s32 dec_ratio, dec_rate, k_btr1_rshft, k_btr1, k_btr0_rshft;
@@ -1004,17 +1016,17 @@ static void stb0899_dvbs2_set_btr_loopbw(struct stb0899_state *state)
 
 	sym_peak *= 576000;
 	K = (1 << config->btr_nco_bits) / (internal->master_clk / 1000);
-	K *= (internal->srate / 1000000) * decim; /*k=k 10^-8*/
+	K *= (internal->srate / 1000000) * decim;  /* k=k 10^-8 */
 
 	if (K != 0)
 	{
 		K = sym_peak / K;
 		wn = (4 * zeta * zeta) + 1000000;
-		wn = (2 * (loopbw_percent * 1000) * 40 * zeta) / wn; /*wn =wn 10^-8*/
+		wn = (2 * (loopbw_percent * 1000) * 40 * zeta) / wn;  /* wn =wn 10^-8 */
 
 		k_indirect = (wn * wn) / K;
-		k_indirect = k_indirect;	  /*kindirect = kindirect 10^-6*/
-		k_direct   = (2 * wn * zeta) / K;	/*kDirect = kDirect 10^-2*/
+		k_indirect = k_indirect;           /* kindirect = kindirect 10^-6 */
+		k_direct   = (2 * wn * zeta) / K;  /* kDirect = kDirect 10^-2 */
 		k_direct  *= 100;
 
 		k_direct_shift = Log2Int(k_direct) - Log2Int(10000) - 2;
@@ -1022,7 +1034,7 @@ static void stb0899_dvbs2_set_btr_loopbw(struct stb0899_state *state)
 		k_btr1 = k_direct / (1 << k_direct_shift);
 		k_btr1 /= 10000;
 
-		k_indirect_shift = Log2Int(k_indirect + 15) - 20 /*- 2*/;
+		k_indirect_shift = Log2Int(k_indirect + 15) - 20 /*- 2 */;
 		k_btr0_rshft = (-1 * k_indirect_shift) + config->btr_gain_shift_offset;
 		k_btr0 = k_indirect * (1 << (-k_indirect_shift));
 		k_btr0 /= 1000000;
@@ -1042,7 +1054,9 @@ static void stb0899_dvbs2_set_btr_loopbw(struct stb0899_state *state)
 		stb0899_write_s2reg(state, STB0899_S2DEMOD, STB0899_BASE_BTR_LOOP_GAIN, STB0899_OFF0_BTR_LOOP_GAIN, reg);
 	}
 	else
+	{
 		stb0899_write_s2reg(state, STB0899_S2DEMOD, STB0899_BASE_BTR_LOOP_GAIN, STB0899_OFF0_BTR_LOOP_GAIN, 0xc4c4f);
+	}
 }
 
 /*
@@ -1081,31 +1095,39 @@ static void stb0899_dvbs2_init_calc(struct stb0899_state *state)
 	stb0899_dvbs2_config_uwp(state);
 	stb0899_dvbs2_config_csm_auto(state);
 
-	/* initialize BTR	*/
+	/* initialize BTR */
 	stb0899_dvbs2_set_srate(state);
 	stb0899_dvbs2_set_btr_loopbw(state);
 
 	if (internal->srate / 1000000 >= 15)
+	{
 		step_size = (1 << 17) / 5;
+	}
 	else if (internal->srate / 1000000 >= 10)
+	{
 		step_size = (1 << 17) / 7;
+	}
 	else if (internal->srate / 1000000 >= 5)
+	{
 		step_size = (1 << 17) / 10;
+	}
 	else
+	{
 		step_size = (1 << 17) / 4;
-
+	}
 	range = internal->srch_range / 1000000;
 	steps = (10 * range * (1 << 17)) / (step_size * (internal->srate / 1000000));
 	steps = (steps + 6) / 10;
 	steps = (steps == 0) ? 1 : steps;
 	if (steps % 2 == 0)
-		stb0899_dvbs2_set_carr_freq(state, internal->center_freq -
-					    (internal->step_size * (internal->srate / 20000000)),
-					    (internal->master_clk) / 1000000);
+	{
+		stb0899_dvbs2_set_carr_freq(state, internal->center_freq - (internal->step_size * (internal->srate / 20000000)), (internal->master_clk) / 1000000);
+	}
 	else
+	{
 		stb0899_dvbs2_set_carr_freq(state, internal->center_freq, (internal->master_clk) / 1000000);
-
-	/*Set Carrier Search params (zigzag, num steps and freq step size*/
+	}
+	/* Set Carrier Search params (zigzag, num steps and freq step size */
 	reg = STB0899_READ_S2REG(STB0899_S2DEMOD, ACQ_CNTRL2);
 	STB0899_SETFIELD_VAL(ZIGZAG, reg, 1);
 	STB0899_SETFIELD_VAL(NUM_STEPS, reg, steps);
@@ -1121,17 +1143,17 @@ static void stb0899_dvbs2_btr_init(struct stb0899_state *state)
 {
 	u32 reg;
 
-	/* set enable BTR loopback	*/
+	/* set enable BTR loopback */
 	reg = STB0899_READ_S2REG(STB0899_S2DEMOD, BTR_CNTRL);
 	STB0899_SETFIELD_VAL(INTRP_PHS_SENSE, reg, 1);
 	STB0899_SETFIELD_VAL(BTR_ERR_ENA, reg, 1);
 	stb0899_write_s2reg(state, STB0899_S2DEMOD, STB0899_BASE_BTR_CNTRL, STB0899_OFF0_BTR_CNTRL, reg);
 
-	/* fix btr freq accum at 0	*/
+	/* fix btr freq accum at 0 */
 	stb0899_write_s2reg(state, STB0899_S2DEMOD, STB0899_BASE_BTR_FREQ_INIT, STB0899_OFF0_BTR_FREQ_INIT, 0x10000000);
 	stb0899_write_s2reg(state, STB0899_S2DEMOD, STB0899_BASE_BTR_FREQ_INIT, STB0899_OFF0_BTR_FREQ_INIT, 0x00000000);
 
-	/* fix btr freq accum at 0	*/
+	/* fix btr freq accum at 0 */
 	stb0899_write_s2reg(state, STB0899_S2DEMOD, STB0899_BASE_BTR_PHS_INIT, STB0899_OFF0_BTR_PHS_INIT, 0x10000000);
 	stb0899_write_s2reg(state, STB0899_S2DEMOD, STB0899_BASE_BTR_PHS_INIT, STB0899_OFF0_BTR_PHS_INIT, 0x00000000);
 }
@@ -1144,33 +1166,33 @@ static void stb0899_dvbs2_reacquire(struct stb0899_state *state)
 {
 	u32 reg = 0;
 
-	/* demod soft reset	*/
+	/* demod soft reset */
 	STB0899_SETFIELD_VAL(DVBS2_RESET, reg, 1);
 	stb0899_write_s2reg(state, STB0899_S2DEMOD, STB0899_BASE_RESET_CNTRL, STB0899_OFF0_RESET_CNTRL, reg);
 
-	/*Reset Timing Loop	*/
+	/* Reset Timing Loop */
 	stb0899_dvbs2_btr_init(state);
 
-	/* reset Carrier loop	*/
+	/* reset Carrier loop */
 	stb0899_write_s2reg(state, STB0899_S2DEMOD, STB0899_BASE_CRL_FREQ_INIT, STB0899_OFF0_CRL_FREQ_INIT, (1 << 30));
 	stb0899_write_s2reg(state, STB0899_S2DEMOD, STB0899_BASE_CRL_FREQ_INIT, STB0899_OFF0_CRL_FREQ_INIT, 0);
 	stb0899_write_s2reg(state, STB0899_S2DEMOD, STB0899_BASE_CRL_LOOP_GAIN, STB0899_OFF0_CRL_LOOP_GAIN, 0);
 	stb0899_write_s2reg(state, STB0899_S2DEMOD, STB0899_BASE_CRL_PHS_INIT, STB0899_OFF0_CRL_PHS_INIT, (1 << 30));
 	stb0899_write_s2reg(state, STB0899_S2DEMOD, STB0899_BASE_CRL_PHS_INIT, STB0899_OFF0_CRL_PHS_INIT, 0);
 
-	/*release demod soft reset	*/
+	/* release demod soft reset */
 	reg = 0;
 	STB0899_SETFIELD_VAL(DVBS2_RESET, reg, 0);
 	stb0899_write_s2reg(state, STB0899_S2DEMOD, STB0899_BASE_RESET_CNTRL, STB0899_OFF0_RESET_CNTRL, reg);
 
-	/* start acquisition process	*/
+	/* start acquisition process */
 	stb0899_write_s2reg(state, STB0899_S2DEMOD, STB0899_BASE_ACQUIRE_TRIG, STB0899_OFF0_ACQUIRE_TRIG, 1);
 	stb0899_write_s2reg(state, STB0899_S2DEMOD, STB0899_BASE_LOCK_LOST, STB0899_OFF0_LOCK_LOST, 0);
 
-	/* equalizer Init	*/
+	/* equalizer Init */
 	stb0899_write_s2reg(state, STB0899_S2DEMOD, STB0899_BASE_EQUALIZER_INIT, STB0899_OFF0_EQUALIZER_INIT, 1);
 
-	/*Start equilizer	*/
+	/* Start equalizer */
 	stb0899_write_s2reg(state, STB0899_S2DEMOD, STB0899_BASE_EQUALIZER_INIT, STB0899_OFF0_EQUALIZER_INIT, 0);
 
 	reg = STB0899_READ_S2REG(STB0899_S2DEMOD, EQ_CNTRL);
@@ -1180,7 +1202,7 @@ static void stb0899_dvbs2_reacquire(struct stb0899_state *state)
 	STB0899_SETFIELD_VAL(EQ_ADAPT_MODE, reg, 0x01);
 	stb0899_write_s2reg(state, STB0899_S2DEMOD, STB0899_BASE_EQ_CNTRL, STB0899_OFF0_EQ_CNTRL, reg);
 
-	/* RESET Packet delineator	*/
+	/* RESET Packet delineator */
 	stb0899_write_reg(state, STB0899_PDELCTRL, 0x4a);
 }
 
@@ -1198,17 +1220,19 @@ static enum stb0899_status stb0899_dvbs2_get_dmd_status(struct stb0899_state *st
 		reg = STB0899_READ_S2REG(STB0899_S2DEMOD, DMD_STATUS);
 		dprintk(state->verbose, FE_DEBUG, 1, "DMD_STATUS=[0x%02x]", reg);
 		if (STB0899_GETFIELD(IF_AGC_LOCK, reg))
+		{
 			dprintk(state->verbose, FE_DEBUG, 1, "------------->IF AGC LOCKED !");
+		}
 		reg = STB0899_READ_S2REG(STB0899_S2DEMOD, DMD_STAT2);
 		dprintk(state->verbose, FE_DEBUG, 1, "----------->DMD STAT2=[0x%02x]", reg);
 		uwp = STB0899_GETFIELD(UWP_LOCK, reg);
 		csm = STB0899_GETFIELD(CSM_LOCK, reg);
 		if (uwp && csm)
+		{
 			lock = 1;
-
+		}
 		time += 10;
 		msleep(10);
-
 	}
 	while ((!lock) && (time <= timeout));
 
@@ -1239,7 +1263,6 @@ static int stb0899_dvbs2_get_data_lock(struct stb0899_state *state, int timeout)
 		lock = STB0899_GETFIELD(CFGPDELSTATUS_LOCK, reg);
 		time++;
 	}
-
 	return lock;
 }
 
@@ -1258,7 +1281,6 @@ static enum stb0899_status stb0899_dvbs2_get_fec_status(struct stb0899_state *st
 		Locked = stb0899_dvbs2_get_data_lock(state, 1);
 		time++;
 		msleep(1);
-
 	}
 	while ((!Locked) && (time < timeout));
 
@@ -1299,75 +1321,94 @@ static void stb0899_dvbs2_init_csm(struct stb0899_state *state, int pilots, enum
 	s32 gamma_acq, gamma_rho_acq, gamma_trk, gamma_rho_trk, lock_count_thr;
 	u32 csm1, csm2, csm3, csm4;
 
-	if (((internal->master_clk / internal->srate) <= 4) && (modcod <= 11) && (pilots == 1))
+	if (((internal->master_clk / internal->srate) <= 4)
+	&&  (modcod <= 11)
+	&&  (pilots == 1))
 	{
 		switch (modcod)
 		{
 			case STB0899_QPSK_12:
-				gamma_acq		= 25;
-				gamma_rho_acq		= 2700;
-				gamma_trk		= 12;
-				gamma_rho_trk		= 180;
-				lock_count_thr		= 8;
+			{
+				gamma_acq = 25;
+				gamma_rho_acq = 2700;
+				gamma_trk = 12;
+				gamma_rho_trk = 180;
+				lock_count_thr = 8;
 				break;
+			}
 			case STB0899_QPSK_35:
-				gamma_acq		= 38;
-				gamma_rho_acq		= 7182;
-				gamma_trk		= 14;
-				gamma_rho_trk		= 308;
-				lock_count_thr		= 8;
+			{
+				gamma_acq = 38;
+				gamma_rho_acq = 7182;
+				gamma_trk = 14;
+				gamma_rho_trk = 308;
+				lock_count_thr = 8;
 				break;
+			}
 			case STB0899_QPSK_23:
-				gamma_acq		= 42;
-				gamma_rho_acq		= 9408;
-				gamma_trk		= 17;
-				gamma_rho_trk		= 476;
-				lock_count_thr		= 8;
+			{
+				gamma_acq = 42;
+				gamma_rho_acq = 9408;
+				gamma_trk = 17;
+				gamma_rho_trk = 476;
+				lock_count_thr = 8;
 				break;
+			}
 			case STB0899_QPSK_34:
-				gamma_acq		= 53;
-				gamma_rho_acq		= 16642;
-				gamma_trk		= 19;
-				gamma_rho_trk		= 646;
-				lock_count_thr		= 8;
+			{
+				gamma_acq = 53;
+				gamma_rho_acq = 16642;
+				gamma_trk = 19;
+				gamma_rho_trk = 646;
+				lock_count_thr = 8;
 				break;
+			}
 			case STB0899_QPSK_45:
-				gamma_acq		= 53;
-				gamma_rho_acq		= 17119;
-				gamma_trk		= 22;
-				gamma_rho_trk		= 880;
-				lock_count_thr		= 8;
+			{
+				gamma_acq = 53;
+				gamma_rho_acq = 17119;
+				gamma_trk = 22;
+				gamma_rho_trk = 880;
+				lock_count_thr = 8;
 				break;
+			}
 			case STB0899_QPSK_56:
-				gamma_acq		= 55;
-				gamma_rho_acq		= 19250;
-				gamma_trk		= 23;
-				gamma_rho_trk		= 989;
-				lock_count_thr		= 8;
+			{
+				gamma_acq = 55;
+				gamma_rho_acq = 19250;
+				gamma_trk = 23;
+				gamma_rho_trk = 989;
+				lock_count_thr = 8;
 				break;
+			}
 			case STB0899_QPSK_89:
-				gamma_acq		= 60;
-				gamma_rho_acq		= 24240;
-				gamma_trk		= 24;
-				gamma_rho_trk		= 1176;
-				lock_count_thr		= 8;
+			{
+				gamma_acq = 60;
+				gamma_rho_acq = 24240;
+				gamma_trk = 24;
+				gamma_rho_trk = 1176;
+				lock_count_thr = 8;
 				break;
+			}
 			case STB0899_QPSK_910:
-				gamma_acq		= 66;
-				gamma_rho_acq		= 29634;
-				gamma_trk		= 24;
-				gamma_rho_trk		= 1176;
-				lock_count_thr		= 8;
+			{
+				gamma_acq = 66;
+				gamma_rho_acq = 29634;
+				gamma_trk = 24;
+				gamma_rho_trk = 1176;
+				lock_count_thr = 8;
 				break;
+			}
 			default:
-				gamma_acq		= 66;
-				gamma_rho_acq		= 29634;
-				gamma_trk		= 24;
-				gamma_rho_trk		= 1176;
-				lock_count_thr		= 8;
+			{
+				gamma_acq = 66;
+				gamma_rho_acq = 29634;
+				gamma_trk = 24;
+				gamma_rho_trk = 1176;
+				lock_count_thr = 8;
 				break;
+			}
 		}
-
 		csm1 = STB0899_READ_S2REG(STB0899_S2DEMOD, CSM_CNTRL1);
 		STB0899_SETFIELD_VAL(CSM_AUTO_PARAM, csm1, 0);
 		stb0899_write_s2reg(state, STB0899_S2DEMOD, STB0899_BASE_CSM_CNTRL1, STB0899_OFF0_CSM_CNTRL1, csm1);
@@ -1422,11 +1463,10 @@ static u32 stb0899_dvbs2_get_srate(struct stb0899_state *state)
 
 	rem1 = internal->master_clk % (1 << div1);
 	rem2 = bTrNomFreq % (1 << div2);
-	/* only for integer calculation	*/
+	/* only for integer calculation */
 	srate = (intval1 * intval2) + ((intval1 * rem2) / (1 << div2)) + ((intval2 * rem1) / (1 << div1));
-	srate /= decimRate;	/*symbrate = (btrnomfreq_register_val*MasterClock)/2^(27+decim_rate_field) */
-
-	return	srate;
+	srate /= decimRate;  /* symbrate = (btrnomfreq_register_val*MasterClock)/2^(27+decim_rate_field) */
+	return srate;
 }
 
 /*
@@ -1445,43 +1485,42 @@ enum stb0899_status stb0899_dvbs2_algo(struct stb0899_state *state)
 
 	if (internal->srate <= 2000000)
 	{
-		searchTime	= 5000;	/* 5000 ms max time to lock UWP and CSM, SYMB <= 2Mbs		*/
-		FecLockTime	= 350;	/* 350  ms max time to lock FEC, SYMB <= 2Mbs			*/
+		searchTime = 5000;	/* 5000 ms max time to lock UWP and CSM, SYMB <= 2Mbs */
+		FecLockTime = 350;	/* 350  ms max time to lock FEC, SYMB <= 2Mbs         */
 	}
 	else if (internal->srate <= 5000000)
 	{
-		searchTime	= 2500;	/* 2500 ms max time to lock UWP and CSM, 2Mbs < SYMB <= 5Mbs	*/
-		FecLockTime	= 170;	/* 170  ms max time to lock FEC, 2Mbs< SYMB <= 5Mbs		*/
+		searchTime = 2500;	/* 2500 ms max time to lock UWP and CSM, 2Mbs < SYMB <= 5Mbs */
+		FecLockTime = 170;	/* 170  ms max time to lock FEC, 2Mbs< SYMB <= 5Mbs          */
 	}
 	else if (internal->srate <= 10000000)
 	{
-		searchTime	= 1500;	/* 1500 ms max time to lock UWP and CSM, 5Mbs <SYMB <= 10Mbs	*/
-		FecLockTime	= 80;	/* 80  ms max time to lock FEC, 5Mbs< SYMB <= 10Mbs		*/
+		searchTime = 1500;	/* 1500 ms max time to lock UWP and CSM, 5Mbs <SYMB <= 10Mbs */
+		FecLockTime = 80;	/* 80  ms max time to lock FEC, 5Mbs< SYMB <= 10Mbs          */
 	}
 	else if (internal->srate <= 15000000)
 	{
-		searchTime	= 500;	/* 500 ms max time to lock UWP and CSM, 10Mbs <SYMB <= 15Mbs	*/
-		FecLockTime	= 50;	/* 50  ms max time to lock FEC, 10Mbs< SYMB <= 15Mbs		*/
+		searchTime = 500;	/* 500 ms max time to lock UWP and CSM, 10Mbs <SYMB <= 15Mbs */
+		FecLockTime = 50;	/* 50  ms max time to lock FEC, 10Mbs< SYMB <= 15Mbs         */
 	}
 	else if (internal->srate <= 20000000)
 	{
-		searchTime	= 300;	/* 300 ms max time to lock UWP and CSM, 15Mbs < SYMB <= 20Mbs	*/
-		FecLockTime	= 30;	/* 50  ms max time to lock FEC, 15Mbs< SYMB <= 20Mbs		*/
+		searchTime = 300;	/* 300 ms max time to lock UWP and CSM, 15Mbs < SYMB <= 20Mbs */
+		FecLockTime = 30;	/* 50  ms max time to lock FEC, 15Mbs< SYMB <= 20Mbs          */
 	}
 	else if (internal->srate <= 25000000)
 	{
-		searchTime	= 250;	/* 250 ms max time to lock UWP and CSM, 20 Mbs < SYMB <= 25Mbs	*/
-		FecLockTime	= 25;	/* 25 ms max time to lock FEC, 20Mbs< SYMB <= 25Mbs		*/
+		searchTime = 250;	/* 250 ms max time to lock UWP and CSM, 20 Mbs < SYMB <= 25Mbs */
+		FecLockTime = 25;	/* 25 ms max time to lock FEC, 20Mbs< SYMB <= 25Mbs            */
 	}
 	else
 	{
-		searchTime	= 150;	/* 150 ms max time to lock UWP and CSM, SYMB > 25Mbs		*/
-		FecLockTime	= 20;	/* 20 ms max time to lock FEC, 20Mbs< SYMB <= 25Mbs		*/
+		searchTime = 150;	/* 150 ms max time to lock UWP and CSM, SYMB > 25Mbs */
+		FecLockTime = 20;	/* 20 ms max time to lock FEC, 20Mbs< SYMB <= 25Mbs  */
 	}
-
 	dprintk(state->verbose, FE_DEBUG, 1, "srate = %d, searchTime = %d, FecLockTime = %d", internal->srate, searchTime, FecLockTime);
 
-	/* Maintain Stream Merger in reset during acquisition	*/
+	/* Maintain Stream Merger in reset during acquisition */
 	reg = stb0899_read_reg(state, STB0899_TSTRES);
 	STB0899_SETFIELD_VAL(FRESRS, reg, 1);
 	stb0899_write_reg(state, STB0899_TSTRES, reg);
@@ -1489,18 +1528,21 @@ enum stb0899_status stb0899_dvbs2_algo(struct stb0899_state *state)
 	/* enable tuner I/O */
 	stb0899_i2c_gate_ctrl(&state->frontend, 1);
 
-	/* Move tuner to frequency	*/
+	/* Move tuner to frequency */
 	if (state->config->tuner_set_frequency)
+	{
 		state->config->tuner_set_frequency(&state->frontend, internal->freq);
+	}
 	if (state->config->tuner_get_frequency)
+	{
 		state->config->tuner_get_frequency(&state->frontend, &internal->freq);
-
+	}
 	/* disable tuner I/O */
 	stb0899_i2c_gate_ctrl(&state->frontend, 0);
 
-	/* Set IF AGC to acquisition	*/
+	/* Set IF AGC to acquisition */
 	reg = STB0899_READ_S2REG(STB0899_S2DEMOD, IF_AGC_CNTRL);
-	STB0899_SETFIELD_VAL(IF_LOOP_GAIN, reg,  4);
+	STB0899_SETFIELD_VAL(IF_LOOP_GAIN, reg, 4);
 	STB0899_SETFIELD_VAL(IF_AGC_REF, reg, 32);
 	stb0899_write_s2reg(state, STB0899_S2DEMOD, STB0899_BASE_IF_AGC_CNTRL, STB0899_OFF0_IF_AGC_CNTRL, reg);
 
@@ -1508,42 +1550,48 @@ enum stb0899_status stb0899_dvbs2_algo(struct stb0899_state *state)
 	STB0899_SETFIELD_VAL(IF_AGC_DUMP_PER, reg, 0);
 	stb0899_write_s2reg(state, STB0899_S2DEMOD, STB0899_BASE_IF_AGC_CNTRL2, STB0899_OFF0_IF_AGC_CNTRL2, reg);
 
-	/* Initialisation	*/
+	/* Initialisation */
 	stb0899_dvbs2_init_calc(state);
 
 	reg = STB0899_READ_S2REG(STB0899_S2DEMOD, DMD_CNTRL2);
 	switch (internal->inversion)
 	{
 		case IQ_SWAP_OFF:
+		{
 			STB0899_SETFIELD_VAL(SPECTRUM_INVERT, reg, 0);
 			break;
+		}
 		case IQ_SWAP_ON:
+		{
 			STB0899_SETFIELD_VAL(SPECTRUM_INVERT, reg, 1);
 			break;
-		case IQ_SWAP_AUTO:	/* use last successful search first	*/
+		}
+		case IQ_SWAP_AUTO:  /* use last successful search first */
+		{
 			STB0899_SETFIELD_VAL(SPECTRUM_INVERT, reg, 1);
 			break;
+		}
 	}
 	stb0899_write_s2reg(state, STB0899_S2DEMOD, STB0899_BASE_DMD_CNTRL2, STB0899_OFF0_DMD_CNTRL2, reg);
 	stb0899_dvbs2_reacquire(state);
 
-	/* Wait for demod lock (UWP and CSM)	*/
+	/* Wait for demod lock (UWP and CSM) */
 	internal->status = stb0899_dvbs2_get_dmd_status(state, searchTime);
 
 	if (internal->status == DVBS2_DEMOD_LOCK)
 	{
 		dprintk(state->verbose, FE_DEBUG, 1, "------------> DVB-S2 DEMOD LOCK !");
 		i = 0;
-		/* Demod Locked, check FEC status	*/
+		/* Demod Locked, check FEC status */
 		internal->status = stb0899_dvbs2_get_fec_status(state, FecLockTime);
 
-		/*If false lock (UWP and CSM Locked but no FEC) try 3 time max*/
+		/* If false lock (UWP and CSM Locked but no FEC) try 3 time max */
 		while ((internal->status != DVBS2_FEC_LOCK) && (i < 3))
 		{
-			/*	Read the frequency offset*/
+			/* Read the frequency offset */
 			offsetfreq = STB0899_READ_S2REG(STB0899_S2DEMOD, CRL_FREQ);
 
-			/* Set the Nominal frequency to the found frequency offset for the next reacquire*/
+			/* Set the Nominal frequency to the found frequency offset for the next reacquire */
 			reg = STB0899_READ_S2REG(STB0899_S2DEMOD, CRL_NOM_FREQ);
 			STB0899_SETFIELD_VAL(CRL_NOM_FREQ, reg, offsetfreq);
 			stb0899_write_s2reg(state, STB0899_S2DEMOD, STB0899_BASE_CRL_NOM_FREQ, STB0899_OFF0_CRL_NOM_FREQ, reg);
@@ -1552,33 +1600,32 @@ enum stb0899_status stb0899_dvbs2_algo(struct stb0899_state *state)
 			i++;
 		}
 	}
-
 	if (internal->status != DVBS2_FEC_LOCK)
 	{
 		if (internal->inversion == IQ_SWAP_AUTO)
 		{
 			reg = STB0899_READ_S2REG(STB0899_S2DEMOD, DMD_CNTRL2);
 			iqSpectrum = STB0899_GETFIELD(SPECTRUM_INVERT, reg);
-			/* IQ Spectrum Inversion	*/
+			/* IQ Spectrum Inversion */
 			STB0899_SETFIELD_VAL(SPECTRUM_INVERT, reg, !iqSpectrum);
 			stb0899_write_s2reg(state, STB0899_S2DEMOD, STB0899_BASE_DMD_CNTRL2, STB0899_OFF0_DMD_CNTRL2, reg);
-			/* start acquistion process	*/
+			/* start acquistion process */
 			stb0899_dvbs2_reacquire(state);
 
-			/* Wait for demod lock (UWP and CSM)	*/
+			/* Wait for demod lock (UWP and CSM) */
 			internal->status = stb0899_dvbs2_get_dmd_status(state, searchTime);
 			if (internal->status == DVBS2_DEMOD_LOCK)
 			{
 				i = 0;
-				/* Demod Locked, check FEC	*/
+				/* Demod Locked, check FEC */
 				internal->status = stb0899_dvbs2_get_fec_status(state, FecLockTime);
-				/*try thrice for false locks, (UWP and CSM Locked but no FEC)	*/
+				/* try thrice for false locks, (UWP and CSM Locked but no FEC) */
 				while ((internal->status != DVBS2_FEC_LOCK) && (i < 3))
 				{
-					/*	Read the frequency offset*/
+					/* Read the frequency offset */
 					offsetfreq = STB0899_READ_S2REG(STB0899_S2DEMOD, CRL_FREQ);
 
-					/* Set the Nominal frequency to the found frequency offset for the next reacquire*/
+					/* Set the Nominal frequency to the found frequency offset for the next reacquire */
 					reg = STB0899_READ_S2REG(STB0899_S2DEMOD, CRL_NOM_FREQ);
 					STB0899_SETFIELD_VAL(CRL_NOM_FREQ, reg, offsetfreq);
 					stb0899_write_s2reg(state, STB0899_S2DEMOD, STB0899_BASE_CRL_NOM_FREQ, STB0899_OFF0_CRL_NOM_FREQ, reg);
@@ -1588,10 +1635,12 @@ enum stb0899_status stb0899_dvbs2_algo(struct stb0899_state *state)
 					i++;
 				}
 			}
-			/*
-						if (pParams->DVBS2State == FE_DVBS2_FEC_LOCKED)
-							pParams->IQLocked = !iqSpectrum;
-			*/
+#if 0
+			if (pParams->DVBS2State == FE_DVBS2_FEC_LOCKED)
+			{
+				pParams->IQLocked = !iqSpectrum;
+			}
+#endif
 		}
 	}
 	if (internal->status == DVBS2_FEC_LOCK)
@@ -1601,13 +1650,12 @@ enum stb0899_status stb0899_dvbs2_algo(struct stb0899_state *state)
 		modcod = STB0899_GETFIELD(UWP_DECODE_MOD, reg) >> 2;
 		pilots = STB0899_GETFIELD(UWP_DECODE_MOD, reg) & 0x01;
 
-		if ((((10 * internal->master_clk) / (internal->srate / 10)) <= 410) &&
-				(INRANGE(STB0899_QPSK_23, modcod, STB0899_QPSK_910)) &&
-				(pilots == 1))
+		if ((((10 * internal->master_clk) / (internal->srate / 10)) <= 410)
+		&&  (INRANGE(STB0899_QPSK_23, modcod, STB0899_QPSK_910))
+		&&  (pilots == 1))
 		{
-
 			stb0899_dvbs2_init_csm(state, pilots, modcod);
-			/* Wait for UWP,CSM and data LOCK 20ms max	*/
+			/* Wait for UWP,CSM and data LOCK 20ms max */
 			internal->status = stb0899_dvbs2_get_fec_status(state, FecLockTime);
 
 			i = 0;
@@ -1624,32 +1672,30 @@ enum stb0899_status stb0899_dvbs2_algo(struct stb0899_state *state)
 				i++;
 			}
 		}
-
-		if ((((10 * internal->master_clk) / (internal->srate / 10)) <= 410) &&
-				(INRANGE(STB0899_QPSK_12, modcod, STB0899_QPSK_35)) &&
-				(pilots == 1))
+		if ((((10 * internal->master_clk) / (internal->srate / 10)) <= 410)
+		&&  (INRANGE(STB0899_QPSK_12, modcod, STB0899_QPSK_35))
+		&&  (pilots == 1))
 		{
-
-			/* Equalizer Disable update	 */
+			/* Equalizer Disable update */
 			reg = STB0899_READ_S2REG(STB0899_S2DEMOD, EQ_CNTRL);
 			STB0899_SETFIELD_VAL(EQ_DISABLE_UPDATE, reg, 1);
 			stb0899_write_s2reg(state, STB0899_S2DEMOD, STB0899_BASE_EQ_CNTRL, STB0899_OFF0_EQ_CNTRL, reg);
 		}
-
-		/* slow down the Equalizer once locked	*/
+		/* slow down the Equalizer once locked */
 		reg = STB0899_READ_S2REG(STB0899_S2DEMOD, EQ_CNTRL);
 		STB0899_SETFIELD_VAL(EQ_SHIFT, reg, 0x02);
 		stb0899_write_s2reg(state, STB0899_S2DEMOD, STB0899_BASE_EQ_CNTRL, STB0899_OFF0_EQ_CNTRL, reg);
 
-		/* Store signal parameters	*/
+		/* Store signal parameters */
 		offsetfreq = STB0899_READ_S2REG(STB0899_S2DEMOD, CRL_FREQ);
 
 		offsetfreq = offsetfreq / ((1 << 30) / 1000);
 		offsetfreq *= (internal->master_clk / 1000000);
 		reg = STB0899_READ_S2REG(STB0899_S2DEMOD, DMD_CNTRL2);
 		if (STB0899_GETFIELD(SPECTRUM_INVERT, reg))
+		{
 			offsetfreq *= -1;
-
+		}
 		internal->freq = internal->freq - offsetfreq;
 		internal->srate = stb0899_dvbs2_get_srate(state);
 
@@ -1658,25 +1704,25 @@ enum stb0899_status stb0899_dvbs2_algo(struct stb0899_state *state)
 		internal->pilots = STB0899_GETFIELD(UWP_DECODE_MOD, reg) & 0x01;
 		internal->frame_length = (STB0899_GETFIELD(UWP_DECODE_MOD, reg) >> 1) & 0x01;
 
-		/* Set IF AGC to tracking	*/
+		/* Set IF AGC to tracking */
 		reg = STB0899_READ_S2REG(STB0899_S2DEMOD, IF_AGC_CNTRL);
-		STB0899_SETFIELD_VAL(IF_LOOP_GAIN, reg,  3);
+		STB0899_SETFIELD_VAL(IF_LOOP_GAIN, reg, 3);
 
-		/* if QPSK 1/2,QPSK 3/5 or QPSK 2/3 set IF AGC reference to 16 otherwise 32*/
+		/* if QPSK 1/2,QPSK 3/5 or QPSK 2/3 set IF AGC reference to 16 otherwise 32 */
 		if (INRANGE(STB0899_QPSK_12, internal->modcod, STB0899_QPSK_23))
+		{
 			STB0899_SETFIELD_VAL(IF_AGC_REF, reg, 16);
-
+		}
 		stb0899_write_s2reg(state, STB0899_S2DEMOD, STB0899_BASE_IF_AGC_CNTRL, STB0899_OFF0_IF_AGC_CNTRL, reg);
 
 		reg = STB0899_READ_S2REG(STB0899_S2DEMOD, IF_AGC_CNTRL2);
 		STB0899_SETFIELD_VAL(IF_AGC_DUMP_PER, reg, 7);
 		stb0899_write_s2reg(state, STB0899_S2DEMOD, STB0899_BASE_IF_AGC_CNTRL2, STB0899_OFF0_IF_AGC_CNTRL2, reg);
 	}
-
-	/* Release Stream Merger Reset		*/
+	/* Release Stream Merger Reset */
 	reg = stb0899_read_reg(state, STB0899_TSTRES);
 	STB0899_SETFIELD_VAL(FRESRS, reg, 0);
 	stb0899_write_reg(state, STB0899_TSTRES, reg);
-
 	return internal->status;
 }
+// vim:ts=4
