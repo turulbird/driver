@@ -68,6 +68,8 @@
  *                          on VFD.
  * 20191028 Audioniek       Icon display in mode 0 did not work.
  * 20191028 Audioniek       VFDSETLED in mode 0 added.
+ * 20191103 Audioniek       Debug icon handling and reverse text in VFDSETLED in
+ *                          VFDDISPLAYCHARS.
  *
  ****************************************************************************************/
 #include <asm/io.h>
@@ -397,28 +399,30 @@ static const unsigned char seven_seg[256] =
 struct iconToInternal vfdIcons[] =
 {
 	/*- Name ---------- icon# ---------- data0 data1 data2 data3 data4-----*/
-	{ "ICON_MIN"      , ICON_MIN      , {0x00, 0x00, 0x00, 0x00, 0x00}},  // 00 (also used for clearing)
-	{ "ICON_REC"      , ICON_REC      , {0x1c, 0x3e, 0x3e, 0x3e, 0x1c}},  // 01
+	{ "ICON_MIN",       ICON_MIN,       {0x00, 0x00, 0x00, 0x00, 0x00}},  // 00 (also used for clearing)
+	{ "ICON_REC",       ICON_REC,       {0x1c, 0x3e, 0x3e, 0x3e, 0x1c}},  // 01
 	{ "ICON_TIMESHIFT", ICON_TIMESHIFT, {0x01, 0x3f, 0x01, 0x2c, 0x34}},  // 02
-	{ "ICON_TIMER"    , ICON_TIMER    , {0x3e, 0x49, 0x4f, 0x41, 0x3e}},  // 03
-	{ "ICON_HD"       , ICON_HD       , {0x3e, 0x08, 0x3e, 0x22, 0x1c}},  // 04
-	{ "ICON_USB"      , ICON_USB      , {0x08, 0x0c, 0x1a, 0x2a, 0x28}},  // 05
+	{ "ICON_TIMER",     ICON_TIMER,     {0x3e, 0x49, 0x4f, 0x41, 0x3e}},  // 03
+	{ "ICON_HD",        ICON_HD,        {0x3e, 0x08, 0x3e, 0x22, 0x1c}},  // 04
+	{ "ICON_USB",       ICON_USB,       {0x08, 0x0c, 0x1a, 0x2a, 0x28}},  // 05
 	{ "ICON_SCRAMBLED", ICON_SCRAMBLED, {0x3c, 0x26, 0x25, 0x26, 0x3c}},  // 06
-	{ "ICON_DOLBY"    , ICON_DOLBY    , {0x3e, 0x22, 0x1c, 0x22, 0x3e}},  // 07
-	{ "ICON_MUTE"     , ICON_MUTE     , {0x1e, 0x12, 0x1e, 0x21, 0x3f}},  // 08
-	{ "ICON_TUNER1"   , ICON_TUNER1   , {0x01, 0x3f, 0x01, 0x04, 0x3e}},  // 09
-	{ "ICON_TUNER2"   , ICON_TUNER2   , {0x01, 0x3f, 0x01, 0x34, 0x2c}},  // 10
-	{ "ICON_MP3"      , ICON_MP3      , {0x77, 0x37, 0x00, 0x49, 0x77}},  // 11
-	{ "ICON_REPEAT"   , ICON_REPEAT   , {0x14, 0x34, 0x14, 0x16, 0x14}},  // 12
-	{ "ICON_PLAY"     , ICON_PLAY     , {0x00, 0x7f, 0x3e, 0x1c, 0x08}},  // 13
-	{ "ICON_STOP"     , ICON_STOP     , {0x3e, 0x3e, 0x3e, 0x3e, 0x3e}},  // 14
-	{ "ICON_PAUSE"    , ICON_PAUSE    , {0x3e, 0x3e, 0x00, 0x3e, 0x3e}},  // 15
-	{ "ICON_REWIND"   , ICON_REWIND   , {0x08, 0x1c, 0x08, 0x1c, 0x00}},  // 16
-	{ "ICON_FF"       , ICON_FF       , {0x00, 0x1c, 0x08, 0x1c, 0x08}},  // 17
+	{ "ICON_DOLBY",     ICON_DOLBY,     {0x3e, 0x22, 0x1c, 0x22, 0x3e}},  // 07
+	{ "ICON_MUTE",      ICON_MUTE,      {0x1e, 0x12, 0x1e, 0x21, 0x3f}},  // 08
+	{ "ICON_TUNER1",    ICON_TUNER1,    {0x01, 0x3f, 0x01, 0x04, 0x3e}},  // 09
+	{ "ICON_TUNER2",    ICON_TUNER2,    {0x01, 0x3f, 0x01, 0x34, 0x2c}},  // 10
+	{ "ICON_MP3",       ICON_MP3,       {0x77, 0x37, 0x00, 0x49, 0x77}},  // 11
+	{ "ICON_REPEAT",    ICON_REPEAT,    {0x14, 0x34, 0x14, 0x16, 0x14}},  // 12
+	{ "ICON_PLAY",      ICON_PLAY,      {0x00, 0x7f, 0x3e, 0x1c, 0x08}},  // 13
+	{ "ICON_STOP",      ICON_STOP,      {0x3e, 0x3e, 0x3e, 0x3e, 0x3e}},  // 14
+	{ "ICON_PAUSE",     ICON_PAUSE,     {0x3e, 0x3e, 0x00, 0x3e, 0x3e}},  // 15
+	{ "ICON_REWIND",    ICON_REWIND,    {0x08, 0x1c, 0x08, 0x1c, 0x00}},  // 16
+	{ "ICON_FF",        ICON_FF,        {0x00, 0x1c, 0x08, 0x1c, 0x08}},  // 17
 	{ "ICON_STEP_BACK", ICON_STEP_BACK, {0x08, 0x1c, 0x3e, 0x00, 0x3e}},  // 18
-	{ "ICON_STEP_FWD" , ICON_STEP_FWD , {0x3e, 0x00, 0x3e, 0x1c, 0x08}},  // 19 
-	{ "ICON_TV"       , ICON_TV       , {0x01, 0x3f, 0x1d, 0x20, 0x1c}},  // 20
-	{ "ICON_RADIO"    , ICON_RADIO    , {0x78, 0x4a, 0x4c, 0x4a, 0x79}}   // 21
+	{ "ICON_STEP_FWD",  ICON_STEP_FWD,  {0x3e, 0x00, 0x3e, 0x1c, 0x08}},  // 19 
+	{ "ICON_TV",        ICON_TV,        {0x01, 0x3f, 0x1d, 0x20, 0x1c}},  // 20
+	{ "ICON_RADIO",     ICON_RADIO,     {0x78, 0x4a, 0x4c, 0x4a, 0x79}},  // 21
+	{ "ICON_MAX",       ICON_MAX,       {0x00, 0x00, 0x00, 0x00, 0x00}},  // 22
+	{ "ICON_SPINNER",   ICON_SPINNER,   {0x00, 0x00, 0x00, 0x00, 0x00}}   // 23
 };
 // End of character and icon definitions
 
@@ -1658,8 +1662,7 @@ void pt6302_setup(void)
  *
  * Check if icon icon_nr is displayed
  *
- * Returns 0 if not, else number of
- * displayed icons.
+ * Returns -1 if not, else list index.
  *
  */
 int icon_in_list(int icon_nr)
@@ -1671,7 +1674,7 @@ int icon_in_list(int icon_nr)
 	{
 		i++;
 	}
-	return (i != lastdata.icon_count ? i : 0);
+	return ((i != lastdata.icon_count) ? i : -1);
 }
 
 /****************************************
@@ -1686,26 +1689,21 @@ int pt6302_set_icon(int icon_nr, int on)
 	unsigned char char_zero[1] = {0x00};
 
 	dprintk(150, "%s >\n", __func__);
-	if (icon_nr < ICON_MIN + 1 || icon_nr > ICON_MAX)
-	{
-		dprintk(1, "Illegal icon number %d (valid %d..%d)\n", icon_nr, ICON_MIN + 1, ICON_MAX - 1);
-		ret = -EINVAL;
-		goto exit_set_icon;
-	}
+
 	if (on)
 	{
 		if (lastdata.icon_count)
 		{
 			// check if icon to set is already displayed
 			i = icon_in_list(icon_nr);
-			if (i)
+			if (i > -1)
 			{
 				goto exit_set_icon;
 			}
 		}
 		if (lastdata.icon_count == 8)
 		{
-			// 8 icons already displayed, remove oldest icon set in list
+			// already 8 icons displayed, remove oldest icon in list
 			lastdata.icon_state[lastdata.icon_list[0]] = 0;
 			
 			for (i = 1; i < 8; i++)
@@ -1733,22 +1731,14 @@ int pt6302_set_icon(int icon_nr, int on)
 		}
 		// find icon_nr in icon_list and remove it
 		i = icon_in_list(icon_nr);
-		if (i)
+		if (i > -1)
 		{
 			// icon is in list, remove it
-			for (j = i; j < lastdata.icon_count - 1; j++)
+			for (j = i; j < lastdata.icon_count; j++)
 			{
 				lastdata.icon_list[j] = lastdata.icon_list[j + 1];
 			}
-			lastdata.icon_list[lastdata.icon_count] = 0;
 			lastdata.icon_count--;
-			if (lastdata.icon_count == 0)  // if last icon off
-			{
-				i = 0;
-				lastdata.icon_list[0] = 0;
-				ret |= pt6302_write_dcram(0, " ", 1);  // set icon position to space
-				
-			}
 			// clear remaining icon bit patterns in PT6302
 			if (lastdata.icon_state[ICON_SPINNER] == 0)
 			{
@@ -1757,10 +1747,17 @@ int pt6302_set_icon(int icon_nr, int on)
 					ret |= pt6302_write_cgram(j, vfdIcons[ICON_MIN].pixeldata, 1);
 				}
 			}
+			if (lastdata.icon_count == 0)  // if last icon off
+			{
+				i = 0;
+				lastdata.icon_list[0] = 0;
+				ret |= pt6302_write_dcram(0, " ", 1);  // set icon position to space
+				
+			}
 		}
 		else
 		{
-			dprintk(1, "Icon %d not displayed, do nothing\n", icon_nr);
+//			dprintk(50, "Icon %d not displayed, do nothing\n", icon_nr);
 			goto exit_set_icon;
 		}
 	}
@@ -1849,7 +1846,9 @@ int stb0899_read_reg_box_variant(unsigned int reg, unsigned char nr)
  *       on the correct tuner board to be
  *       installed, as this is about the
  *       only distinguishing feature
- *       between models.
+ *       between models, due to the "A20
+ *       tied to logic 1" patch on the
+ *       mainboard.
  */
 void get_box_variant(void)
 {
@@ -2543,14 +2542,7 @@ static int vfd_ioctl(struct inode *inode, struct file *file, unsigned int cmd, u
 		}
 		case VFDBRIGHTNESS:
 		{
-			if (mode == 0)
-			{
-				level = vfddata.address;
-			}
-			else
-			{
-				level = adb_box_fp->u.brightness.level;
-			}
+			level = (mode == 0 ? vfddata.address : adb_box_fp->u.brightness.level);
 			if (level < 0)
 			{
 				level = 0;
@@ -2572,14 +2564,7 @@ static int vfd_ioctl(struct inode *inode, struct file *file, unsigned int cmd, u
 		}
 		case VFDLEDBRIGHTNESS:
 		{
-			if (mode == 0)
-			{
-				level = vfddata.address;
-			}
-			else
-			{
-				level = adb_box_fp->u.brightness.level;
-			}
+			level = (mode == 0 ? vfddata.address : adb_box_fp->u.brightness.level);
 			if (level < 0)
 			{
 				level = 0;
@@ -2597,6 +2582,7 @@ static int vfd_ioctl(struct inode *inode, struct file *file, unsigned int cmd, u
 			{
 				dprintk(1, "Display is set to LED; use VFDBRIGHTNESS IOCTL\n");
 			}
+			mode = 0;
 			break;
 		}
 		case VFDDRIVERINIT:
@@ -2607,10 +2593,24 @@ static int vfd_ioctl(struct inode *inode, struct file *file, unsigned int cmd, u
 		}
 		case VFDICONDISPLAYONOFF:
 		{
+			int locked = 0;
+
 			icon_nr = (mode == 0 ? vfddata.data[0] : adb_box_fp->u.icon.icon_nr);
 			on = (mode == 0 ? vfddata.data[4] : adb_box_fp->u.icon.on);
-			on = (on != 0 ? 1 : 0);
-			dprintk(150, "%s Set icon %s (%d) to %s (mode %d)\n", __func__, vfdIcons[icon_nr].name, icon_nr, (on ? "on" : "off"), mode);
+
+			if (icon_nr < ICON_MIN + 1 || icon_nr > ICON_SPINNER)
+			{
+				dprintk(1, "Error: illegal icon number %d (mode %d)\n", icon_nr, mode);
+				goto icon_exit;
+			}
+//			dprintk(10, "%s Set icon %s (%d) to %s (mode %d)\n", __func__, vfdIcons[icon_nr].name, icon_nr, (on ? "on" : "off"), mode);
+
+			if (locked)
+			{
+				dprintk(1, "Locked!\n");
+				goto icon_exit;
+			}
+			locked = 1;
 
 			// Part one: translate E2 icon numbers to own icon numbers (vfd mode only)
 			if (mode == 0)  // vfd mode
@@ -2656,20 +2656,16 @@ static int vfd_ioctl(struct inode *inode, struct file *file, unsigned int cmd, u
 			// Part two: decide wether one icon, all or spinner
 			switch (icon_nr)
 			{
-				case 0:
-				{
-					ret = 0;
-					break;
-				}
 				case ICON_SPINNER:
 				{
+					ret = 0;
 					if (on)
 					{
 						lastdata.icon_state[ICON_SPINNER] = 1;
 						spinner_state.state = 1;
 						if (icon_state.state == 1)
 						{
-							dprintk(50, "%s Stop icon thread\n", __func__);
+//							dprintk(50, "%s Stop icon thread\n", __func__);
 							icon_state.state = 0;
 							i = 0;
 							do
@@ -2682,7 +2678,7 @@ static int vfd_ioctl(struct inode *inode, struct file *file, unsigned int cmd, u
 							{
 								dprintk(1, "%s Time out stopping icon thread!\n", __func__);
 							}
-							dprintk(1, "%s Icon thread stopped\n", __func__);
+//							dprintk(1, "%s Icon thread stopped\n", __func__);
 						}
 						if (on == 1)  // handle default
 						{
@@ -2737,11 +2733,14 @@ static int vfd_ioctl(struct inode *inode, struct file *file, unsigned int cmd, u
 							ret |= pt6302_set_icon(i, 1);
 						}
 					}
-					ret = 0;
 					break;
 				}
 				case ICON_MAX:
 				{
+					if (on > 1 || on < 0)
+					{
+						dprintk(1, "Illegal state for icon %d\n", ICON_MAX);
+					}
 					if (on)
 					{
 						lastdata.icon_state[ICON_MAX] = 1;
@@ -2783,14 +2782,15 @@ static int vfd_ioctl(struct inode *inode, struct file *file, unsigned int cmd, u
 //							dprintk(50, "%s Icon thread stopped\n", __func__);
 							
 							lastdata.icon_count = 0;
-							for (i = ICON_MIN + 1; i < ICON_MAX + 2; i++) // include spinner
+							for (i = ICON_MIN + 1; i < ICON_SPINNER; i++) // include spinner
 							{
 								lastdata.icon_state[i] = 0;
 							}
-							// clear PT6302 CGRAM
+							// clear PT6302 CGRAM and icon list
 							for (i = 0; i < 8; i++)
 							{
 								ret |= pt6302_write_cgram(i, vfdIcons[ICON_MIN].pixeldata, 1);
+								lastdata.icon_list[i] = 0;
 							}
 						}
 					}
@@ -2798,13 +2798,17 @@ static int vfd_ioctl(struct inode *inode, struct file *file, unsigned int cmd, u
 				}
 				default:  // (re)set a single icon
 				{
-					if (((icon_state.state == 0) && on) && lastdata.icon_count == 1)  // if no icon thread yet but > 1 icons on
+					if (on > 1 || on < 0)
 					{
-//						dprintk(1, "%s Start icon thread\n", __func__);
+						dprintk(1, "Illegal state for icon %d\n", icon_nr);
+					}
+					ret |= pt6302_set_icon(icon_nr, on);
+					if (((icon_state.state == 0) && on) && lastdata.icon_count > 1)  // if no icon thread yet but > 1 icons on
+					{
+//						dprintk(50, "%s Start icon thread\n", __func__);
 						icon_state.state = 1;
 						up(&icon_state.sem);
 					}
-					ret |= pt6302_set_icon(icon_nr, on);
 					if (lastdata.icon_count < 2 && icon_state.state == 1)
 					{
 						icon_state.state = 0;  // stop icon thread
@@ -2825,6 +2829,9 @@ static int vfd_ioctl(struct inode *inode, struct file *file, unsigned int cmd, u
 					break;
 				}
 			}
+			locked = 0;
+icon_exit:
+			mode = 0;
 			break;
 		}
 #if 0
@@ -2841,23 +2848,17 @@ static int vfd_ioctl(struct inode *inode, struct file *file, unsigned int cmd, u
 		{
 			if (mode == 0)
 			{
-//				vfddata.data[vfddata.length] = 0;  // terminate string to show
 				if (display_type > 0)
 				{
 					unsigned char out[VFD_DISP_SIZE + 1];
 					int wlen;
 
-					dprintk(10, "Text: [%s] (length = %d, addr = %d)\n", vfddata.data, strlen(vfddata.data), vfddata.address);
-
 					// code to correct reversed position numbering (0 = rightmost!)
 					memset(out, 0x20, sizeof(out));  // fill output buffer with spaces
 					wlen = (vfddata.length > VFD_DISP_SIZE ? VFD_DISP_SIZE : vfddata.length);
-					memcpy(out, vfddata.data, wlen);  // copy text
-					out[VFD_DISP_SIZE] = 0x00;
-					dprintk(10, "Text: [%s] (length = %d)\n", out, strlen(out));
-					for (i = 0; i < VFD_DISP_SIZE; i++)
+					for (i = 0; i < wlen - 1; i++)
 					{
-						out[i] = vfddata.data[VFD_DISP_SIZE - 1 - i];
+						out[VFD_DISP_SIZE - 1 - i] = vfddata.data[i];
 					}
 					ret |= pt6302_write_dcram(ICON_WIDTH, out, VFD_DISP_SIZE);
 				}

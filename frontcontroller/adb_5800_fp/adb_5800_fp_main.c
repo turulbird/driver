@@ -49,6 +49,7 @@
  * 20190813 Audioniek       Fan driver added.
  * 20190814 Audioniek       Display all icons added.
  * 20190903 Audioniek       Separate text display threads for VFD and LED.
+ * 20191103 Audioniek       Fix bug in handling ICON_MAX in icon thread.
  *
  ****************************************************************************************/
 #include <asm/io.h>
@@ -437,7 +438,7 @@ stop:
 
 /*********************************************************************
  *
- * Load 8 or ICON_MAX - offset consequtive icon patterns into
+ * Load 8 or (ICON_MAX - offset) consequtive icon patterns into
  * PT6302 CGRAM.
  *
  *
@@ -471,7 +472,7 @@ int icon_thread(void *arg)
 
 	if (icon_state.status == THREAD_STATUS_RUNNING || lastdata.icon_state[ICON_SPINNER])
 	{
-		return 0;
+		return 0;  // if spinner or ourselves running, exit
 	}
 	icon_state.status = THREAD_STATUS_INIT;
 
@@ -490,7 +491,7 @@ int icon_thread(void *arg)
 				while ((icon_state.state) && !kthread_should_stop())
 				{
 					icon_state.status = THREAD_STATUS_RUNNING;
-					if (lastdata.icon_state[ICON_MAX] = 1)
+					if (lastdata.icon_state[ICON_MAX] == 1)
 					{
 						// handle ICON_MAX
 						for (i = ICON_MIN + 1; i < ICON_MAX; i++)
@@ -501,6 +502,10 @@ int icon_thread(void *arg)
 							}
 							icon_char[0] = (i - 1) % 8;
 							res |= pt6302_write_dcram(0, icon_char, 1);  // update character 0 (rightmost position)
+							if (!icon_state.state)
+							{
+								break;
+							}
 							msleep(1500);
 						}
 						if (!icon_state.state)
