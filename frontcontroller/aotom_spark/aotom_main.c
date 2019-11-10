@@ -130,6 +130,7 @@ tLedState led_state[LASTLED + 1];
 
 static struct semaphore write_sem;
 static struct semaphore draw_thread_sem;
+static struct semaphore led_sem;
 
 static struct task_struct *draw_task = 0;
 #define DRAW_THREAD_STATUS_RUNNING 0
@@ -402,13 +403,13 @@ static int led_thread(void *arg)
 
 	while (!kthread_should_stop())
 	{
-		if (!down_interruptible(&led_state[led].led_sem))
+		if (!down_interruptible(&led_sem))
 		{
 			if (kthread_should_stop())
 			{
 				break;
 			}
-			while (!down_trylock(&led_state[led].led_sem));  // make sure semaphore is at 0
+			while (!down_trylock(&led_sem));  // make sure semaphore is at 0
 
 			YWPANEL_FP_SetLed(led, !led_state[led].state); // toggle LED
 
@@ -439,13 +440,13 @@ static int spinner_thread(void *arg)
 
 	while (!kthread_should_stop())
 	{
-		if (!down_interruptible(&led_state[led].led_sem))
+		if (!down_interruptible(&led_sem))
 		{
 			if (kthread_should_stop())
 			{
 				break;
 			}
-			while (!down_trylock(&led_state[led].led_sem));
+			while (!down_trylock(&led_sem));
 
 			aotomSetIcon(ICON_DISK_CIRCLE, LOG_ON);
 			while ((led_state[led].state) && !kthread_should_stop())
@@ -642,7 +643,7 @@ void flashLED(int led, int ms)
 		ms = 20;	// get default speed (1 rotation takes 5 x 10 x 20 ms = 1 second)
 	}
 	led_state[led].period = ms;
-	up(&led_state[led].led_sem);
+	up(&led_sem);
 }
 
 static int AOTOMdev_open(struct inode *inode, struct file *filp)
@@ -1596,7 +1597,7 @@ static int __init aotom_init_module(void)
 		led_state[i].state = LOG_OFF;
 		led_state[i].period = 0;
 		led_state[i].status = DRAW_THREAD_STATUS_STOPPED;
-		sema_init(&led_state[i].led_sem, 0);
+		sema_init(&led_sem, 0);
 		if (i == LED_SPINNER && fp_type == FP_VFD)
 		{
 			led_state[LED_SPINNER].led_task = kthread_run(spinner_thread, (void *) LED_SPINNER, "spinner_thread");
@@ -1664,7 +1665,7 @@ static void __exit aotom_cleanup_module(void)
 	{
 		if (!led_state[i].status && led_state[i].led_task)
 		{
-			up(&led_state[i].led_sem);
+			up(&led_sem);
 			kthread_stop(led_state[i].led_task);
 		}
 	}

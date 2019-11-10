@@ -327,7 +327,7 @@ typedef struct
 	int status;
 	int enable;
 	struct task_struct *led_task;
-	struct semaphore led_sem;
+//	struct semaphore led_sem;
 } tLedState;
 
 typedef enum YWPANEL_DataType_e
