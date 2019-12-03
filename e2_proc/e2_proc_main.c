@@ -208,6 +208,8 @@
  *  ---------- lcd
  *  |           |
  *  |           --------- symbol_circle <- control for spinner (if spinner available)
+ *  |           |
+ *  |           --------- symbol_timeshift <- control for timeshift icon (if present)
  *
  */
 
@@ -698,6 +700,7 @@ struct ProcStructure_s e2Proc[] =
  || defined(TF7700)
 	{cProcDir  , "stb/lcd"                                                          , NULL, NULL, NULL, NULL, ""},
 	{cProcEntry, "stb/lcd/symbol_circle"                                            , NULL, NULL, NULL, NULL, ""},
+	{cProcEntry, "stb/lcd/symbol_timeshift"                                         , NULL, NULL, NULL, NULL, ""},
 #endif
 	{cProcDir  , "stb/video"                                                        , NULL, NULL, NULL, NULL, ""},
 	{cProcEntry, "stb/video/alpha"                                                  , NULL, NULL, NULL, NULL, ""},
