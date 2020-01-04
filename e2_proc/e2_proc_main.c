@@ -106,6 +106,10 @@
  *  |               |
  *  |               ---------
  *  |
+ *  ---------- info
+ *  |           |
+ *  |           --------- model name
+ *  |
  *  ---------- fp (this is wrong used for e2 I think. on dm800 this is frontprocessor and there is another proc entry for frontend)
  *  |           |
  *  |           --------- lnb_sense1
@@ -689,6 +693,17 @@ struct ProcStructure_s e2Proc[] =
 #if defined(ADB_BOX)
 	{cProcEntry, "stb/info/adb_variant",                                             NULL, NULL, NULL, NULL, ""},
 #endif
+#if defined(FORTIS_HDBOX) \
+ || defined(OCTAGON1008) \
+ || defined(ATEVIO7500) \
+ || defined(HS7110) \
+ || defined(HS7119) \
+ || defined(HS7420) \
+ || defined(HS7429) \
+ || defined(HS7810A) \
+ || defined(HS7819)
+	{cProcEntry, "stb/info/model_name",                                              NULL, NULL, NULL, NULL, ""},
+#endif
 
 	{cProcDir,   "stb/ir",                                                           NULL, NULL, NULL, NULL, ""},
 	{cProcDir,   "stb/ir/rc",                                                        NULL, NULL, NULL, NULL, ""},
@@ -907,8 +922,27 @@ struct ProcStructure_s e2Proc[] =
 	{cProcEntry, "stb/cec/event_poll",                                               NULL, NULL, NULL, NULL, ""},
 	{cProcEntry, "stb/cec/send",                                                     NULL, NULL, NULL, NULL, ""},
 #endif
-
-#if defined(UFS922) || defined(UFC960)
+	/* dagobert: the dei settings can be used for all 7109 architectures to affect the de-interlacer */
+#if defined(FORTIS_HDBOX) \
+ || defined(HL101) \
+ || defined(OCTAGON1008) \
+ || defined(TF7700) \
+ || defined(UFS922) \
+ || defined(UFC960) \
+ || defined(VIP1_V2) \
+ || defined(VIP2_V1) \
+ || defined(CUBEREVO) \
+ || defined(CUBEREVO_MINI) \
+ || defined(CUBEREVO_MINI2) \
+ || defined(CUBEREVO_250HD) \
+ || defined(CUBEREVO_MINI_FTA) \
+ || defined(CUBEREVO_2000HD) \
+ || defined(CUBEREVO_9500HD) \
+ || defined(CUBEREVO_3000HD) \
+ || defined(IPBOX9900) \
+ || defined(IPBOX99) \
+ || defined(IPBOX55) \
+ || defined(ARIVALINK200)
 	/* dagobert: the dei settings can be used for all 7109 architectures to affect the de-interlacer */
 	{cProcEntry, "stb/video/plane/dei_fmd",                                          NULL, NULL, NULL, NULL, "dei_fmd"},
 	{cProcEntry, "stb/video/plane/dei_mode",                                         NULL, NULL, NULL, NULL, "dei_mode"},

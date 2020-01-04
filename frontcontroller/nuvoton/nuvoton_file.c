@@ -91,6 +91,8 @@
  * 20170516 Audioniek       Missing character entries for : and ; added for
  *                          HS9510/7420/7429.
  * 20180113 Audioniek       Fix build error with HS7110.
+ * 20200104 Audioniek       Improve nuvotonGetVersion return value
+ *                          determination.
  *
  *****************************************************************************
  *
@@ -1600,9 +1602,20 @@ int nuvotonGetVersion(unsigned int *data)
 		return -1;
 	}
 #if 0
+#if defined(ATEVIO7500) \
+ ||  defined(HS7110) \
+ ||  defined(HS7420) \
+ ||  defined(HS7810A) \
+ ||  defined(HS7119) \
+ ||  defined(HS7429) \
+ ||  defined(HS7819)
+	if (strcmp(mtd_info->name, "boot"))
+#else
 	if (strcmp(mtd_info->name, "Boot_firmware"))
+#endif
 	{
-		printk([nuvoton] "mtd0 is not the Boot_firmware\n");
+		printk("[nuvoton] mtd0 is not the Boot_firmware\n");
+		dprintk(10, "MTD name       : %s\n", mtd_info->name);
 		put_mtd_device(mtd_info);
 		return -1;
 	}
@@ -1618,6 +1631,7 @@ int nuvotonGetVersion(unsigned int *data)
 		printk("[nuvoton] Error reading boot loader info\n");
 		return -1;
 	}
+	res = 0;
 
 	// determine version as (100 * major) + minor
 	data[0] = 0;
@@ -1634,7 +1648,6 @@ int nuvotonGetVersion(unsigned int *data)
 		data[1] <<= 8;
 		data[1] += buf[i];
 	}
-
 	dprintk(100, "%s <\n", __func__);
 	return res;
 }

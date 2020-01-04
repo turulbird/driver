@@ -50,11 +50,16 @@
 #include <linux/delay.h>
 #include <linux/kernel.h>
 #include "nuvoton.h"
+#include "fortis_names.h"
 
 /*
  *  /proc/------
  *             |
  *             +--- progress (rw)           Progress of E2 startup in %
+ *
+ *  /proc/stb/fp
+ *             |
+ *             +--- model_name (r)          Reseller name, based on resellerID
  *
  *  /proc/stb/fp
  *             |
@@ -652,6 +657,7 @@ static int fp_reseller_read(char *page, char **start, off_t off, int count, int 
 
 	if (nuvotonGetVersion(data) == 0)
 	{
+		dprintk(1, "%s resellerID = %08X\n", __func__, data[1]);
 		len = sprintf(page, "%08X\n", (int)data[1]);
 	}
 	else
@@ -801,6 +807,122 @@ static int oled_brightness_write(struct file *file, const char __user *buf, unsi
 }
 #endif
 
+static int model_name_read(char *page, char **start, off_t off, int count, int *eof, void *data_unused)
+{
+	int len = 0;
+	unsigned int data[2];
+	unsigned char reseller1;
+	unsigned char reseller2;
+	unsigned char reseller3;
+	unsigned char reseller4;
+	unsigned char **table = NULL;
+	
+	len = nuvotonGetVersion(data);
+	if (len == 0)
+	{
+		reseller1 = data[1] >> 24;
+		reseller2 = (data[1] >> 16) & 0xff;
+		reseller3 = (data[1] >> 8) & 0xff;
+		reseller4 = (data[1]) & 0xff;
+
+		dprintk(1,"Found resellerID %02x%02x%02x%02x\n", reseller1, reseller2, reseller3, reseller4);
+		switch ((reseller1 << 8) + reseller3)
+		{
+			case 0x2000:  // FS9000
+			{
+				table = FS9000_table;
+				break;
+			}
+			case 0x2001:  // FS9200
+			{
+				table = FS9200_table;
+				break;
+			}
+			case 0x2003:  // HS9510
+			{
+				if (reseller4 == 0x03)  // evaluate 4th reseller byte
+				{
+					table = HS9510_3_table;
+				}
+				else if (reseller4 == 0x02)  // evaluate 4th reseller byte
+				{
+					table = HS9510_2_table;
+				}
+				else if (reseller4 == 0x01)  // evaluate 4th reseller byte
+				{
+					table = HS9510_1_table;
+				}
+				else
+				{
+					table = HS9510_0_table;
+				}
+				break;
+			}
+			case 0x2006:  // ??
+			{
+				table = FS9000_06_table;
+				break;
+			}
+			case 0x2300:  // HS8200
+			default:
+			{
+				table = HS8200_table;
+				break;
+			}
+			case 0x2500:  // HS7420
+			{
+				table = HS7420_table;
+				break;
+			}
+			case 0x2502:  // HS7110
+			{
+				table = HS7110_table;
+				break;
+			}
+			case 0x2503:  // HS7810A
+			{
+				table = HS7810A_table;
+				break;
+			}
+			case 0x2700:  // HS7119
+			{
+				table = HS7119_table;
+				break;
+			}
+			case 0x2701:  // HS7119_01
+			{
+				table = HS7119_01_table;
+				break;
+			}
+			case 0x2710:  // HS7119_10
+			{
+				table = HS7119_10_table;
+				break;
+			}
+			case 0x2720:  // HS7819
+			{
+				table = HS7819_table;
+				break;
+			}
+			case 0x2730:  // HS7429
+			{
+				table = HS7429_table;
+				break;
+			}
+		}
+	}
+	else
+	{
+		dprintk(1, "Get version failed (ret = %d).\n", len);
+		return -1;
+	}
+	if (NULL != page)
+	{
+		len = sprintf(page, "%s\n", table[reseller2]);
+	}
+	return len;
+}
+
 /*
 static int null_write(struct file *file, const char __user *buf, unsigned long count, void *data)
 {
@@ -816,6 +938,7 @@ struct fp_procs
 } fp_procs[] =
 {
 	{ "progress", progress_read, progress_write },
+	{ "stb/info/model_name", model_name_read, NULL },
 	{ "stb/fp/rtc", read_rtc, write_rtc },
 	{ "stb/fp/rtc_offset", read_rtc_offset, write_rtc_offset },
 	{ "stb/fp/led0_pattern", led0_pattern_read, led0_pattern_write },
