@@ -65,7 +65,7 @@ extern short paramDebug;
 #define PIO_PnIN             0x10
 
 // PT6958 PIO pin definitions
-#define	PORT_STB      1  // PT6958 only
+#define PORT_STB      1  // PT6958 only
 #define PIN_STB       6
 
 #define PORT_CLK      4  // shared between PT6958/6302 in case of BSLA/BZZB

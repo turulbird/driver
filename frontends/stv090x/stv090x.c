@@ -934,7 +934,6 @@ static struct stv090x_reg stv090x_defval[] =
 
 static struct stv090x_reg stv0900_initval[] =
 {
-
 	{ STV090x_OUTCFG,         0x00 },
 	{ STV090x_MODECFG,        0xff },
 	{ STV090x_AGCRF1CFG,      0x11 },
@@ -1325,7 +1324,7 @@ static struct stv090x_reg stx7111_initval[] =
 	{ STV090x_P2_CCIR0,       0x2c },
 	{ STV090x_P2_CCIQUANT,    0xac },
 	{ 0xf2c3,                 0x00 },
-	*/ 
+	*/
 	{ STV090x_P1_GAUSSR0,     0xac },
 	{ STV090x_P1_CCIR0,       0x2c },
 	{ STV090x_P1_CCIQUANT,    0xac },
@@ -2879,7 +2878,7 @@ static int stv090x_delivery_search(struct stv090x_state *state)
 			{
 				goto err;
 			}
-			if (STV090x_WRITE_DEMOD(state, CAR2CFG, 0x22) < 0) /* disable DVB-S2 */
+			if (STV090x_WRITE_DEMOD(state, CAR2CFG, 0x22) < 0)  /* disable DVB-S2 */
 			{
 				goto err;
 			}
@@ -3296,12 +3295,15 @@ static int stv090x_start_search(struct stv090x_state *state)
 	STV090x_SETFIELD_Px(reg, SCAN_ENABLE_FIELD, 0);
 	STV090x_SETFIELD_Px(reg, CFR_AUTOSCAN_FIELD, 0);
 	if (STV090x_WRITE_DEMOD(state, DMDCFGMD, reg) < 0)
+	{
 		goto err;
+	}
 	reg = STV090x_READ_DEMOD(state, DMDCFG2);
 	STV090x_SETFIELD_Px(reg, S1S2_SEQUENTIAL_FIELD, 0x0);
 	if (STV090x_WRITE_DEMOD(state, DMDCFG2, reg) < 0)
+	{
 		goto err;
-
+	}
 	if (state->device == STX7111)
 	{
 		if (STV090x_WRITE_DEMOD(state, RTC, 0x88) < 0)
@@ -3311,13 +3313,13 @@ static int stv090x_start_search(struct stv090x_state *state)
 	}
 	if (state->dev_ver >= 0x20)
 	{
-		/*Frequency offset detector setting*/
+		/* Frequency offset detector setting */
 		if (state->srate < 2000000)
 		{
 			/* konfetti comment: hmmmmmmmmmm the above if clause checks for
 			 * >= 0x20 and here we check against <= ... interesting ;)
 			 */
-			if (state->dev_ver <= 0x20) //only true if exactly 20...
+			if (state->dev_ver <= 0x20)  // only true if exactly 20...
 			{
 				/* Cut 2 */
 				if (STV090x_WRITE_DEMOD(state, CARFREQ, 0x39) < 0)
@@ -3334,7 +3336,9 @@ static int stv090x_start_search(struct stv090x_state *state)
 				}
 			}
 			if (STV090x_WRITE_DEMOD(state, CARHDR, 0x40) < 0)
+			{
 				goto err;
+			}
 		}
 		if (state->srate < 10000000)
 		{
@@ -3391,9 +3395,13 @@ static int stv090x_start_search(struct stv090x_state *state)
 			 * carrier Frequency are known
 			 */
 			if (STV090x_WRITE_DEMOD(state, DMDISTATE, 0x1f) < 0)
+			{
 				goto err;
+			}
 			if (STV090x_WRITE_DEMOD(state, DMDISTATE, 0x18) < 0)
+			{
 				goto err;
+			}
 			break;
 		}
 		case STV090x_COLD_SEARCH:
@@ -5933,7 +5941,7 @@ static enum stv090x_signal_state stv090x_algo(struct stv090x_state *state)
 	if (state->device != STX7111)
 	{
 		reg = STV090x_READ_DEMOD(state, TSCFGH);
-		STV090x_SETFIELD_Px(reg, RST_HWARE_FIELD, 1); /* Stop path 1 stream merger */
+		STV090x_SETFIELD_Px(reg, RST_HWARE_FIELD, 1);  /* Stop path 1 stream merger */
 		if (STV090x_WRITE_DEMOD(state, TSCFGH, reg) < 0)
 		{
 			goto err;
@@ -6284,13 +6292,13 @@ static enum stv090x_signal_state stv090x_algo(struct stv090x_state *state)
 			 * demod lock and optimized Tracking
 			 */
 			reg = STV090x_READ_DEMOD(state, TSCFGH);
-			STV090x_SETFIELD_Px(reg, RST_HWARE_FIELD, 0); /* release merger reset */
+			STV090x_SETFIELD_Px(reg, RST_HWARE_FIELD, 0);  /* release merger reset */
 			if (STV090x_WRITE_DEMOD(state, TSCFGH, reg) < 0)
 			{
 				goto err;
 			}
 			msleep(1);
-			STV090x_SETFIELD_Px(reg, RST_HWARE_FIELD, 1); /* merger reset */
+			STV090x_SETFIELD_Px(reg, RST_HWARE_FIELD, 1);  /* merger reset */
 			if (STV090x_WRITE_DEMOD(state, TSCFGH, reg) < 0)
 			{
 				goto err;
@@ -6404,11 +6412,13 @@ static enum dvbfe_search stv090x_search(struct dvb_frontend *fe, struct dvbfe_pa
 		p->delsys.dvbs.modulation, p->delsys.dvbs.fec,
 		p->delivery);
 
-	if ((p->frequency == 0) && (p->delsys.dvbs.symbol_rate == 0)
-	&& (p->inversion == 0)
-	&& (p->delsys.dvbs.rolloff == 0)
-	&& (p->delsys.dvbs.modulation == 0)
-	&& (p->delsys.dvbs.fec == 0) && (p->delivery == 0))
+	if ((p->frequency == 0)
+	&&  (p->delsys.dvbs.symbol_rate == 0)
+	&&  (p->inversion == 0)
+	&&  (p->delsys.dvbs.rolloff == 0)
+	&&  (p->delsys.dvbs.modulation == 0)
+	&&  (p->delsys.dvbs.fec == 0)
+	&&  (p->delivery == 0))
 	{
 		dprintk(1, "%s exit: -EINVAL\n", __func__);
 		return DVBFE_ALGO_SEARCH_FAILED;
@@ -7184,7 +7194,9 @@ static int stv090x_ldpc_mode(struct stv090x_state *state, enum stv090x_mode ldpc
 			else
 			{
 				if (stv090x_write_reg(state, STV090x_GENCFG, 0x04) < 0) /* path 1 */
+				{
 					goto err;
+				}
 			}
 			reg = stv090x_read_reg(state, STV090x_TSTRES0);
 			STV090x_SETFIELD(reg, FRESFEC_FIELD, 0x1);
@@ -7313,7 +7325,7 @@ static int stv090x_set_mclk(struct stv090x_state *state, u32 mclk, u32 clk)
 
 		dprintk(10, "%s: reading the masterclock = %d\n", __func__, state->mclk);
 
-		/*Set the DiSEqC frequency to 22KHz */
+		/* Set the DiSEqC frequency to 22KHz */
 
 		div = state->mclk / 704000;
 
@@ -7984,15 +7996,15 @@ static struct dvbfe_info dvbs_info =
 	.delivery                 = DVBFE_DELSYS_DVBS,
 	.delsys                   =
 	{
-		.dvbs.modulation      = DVBFE_MOD_QPSK,
-		.dvbs.fec             = DVBFE_FEC_1_2
-		                      | DVBFE_FEC_2_3
-		                      | DVBFE_FEC_3_4
-		                      | DVBFE_FEC_4_5
-		                      | DVBFE_FEC_5_6
-		                      | DVBFE_FEC_6_7
-		                      | DVBFE_FEC_7_8
-		                      | DVBFE_FEC_AUTO,
+		.dvbs.modulation  = DVBFE_MOD_QPSK,
+		.dvbs.fec         = DVBFE_FEC_1_2
+		                  | DVBFE_FEC_2_3
+		                  | DVBFE_FEC_3_4
+		                  | DVBFE_FEC_4_5
+		                  | DVBFE_FEC_5_6
+		                  | DVBFE_FEC_6_7
+		                  | DVBFE_FEC_7_8
+		                  | DVBFE_FEC_AUTO,
 	},
 	.frequency_min            = 950000,
 	.frequency_max            = 2150000,
@@ -8196,7 +8208,7 @@ static int lnb_set_voltage(struct dvb_frontend *fe, enum fe_sec_voltage voltage)
 	dprintk(10, "%s <\n", __func__);
 	return 0;
 }
-#elif defined(UFS912) // TODO move to lnb driver
+#elif defined(UFS912)  // TODO move to lnb driver
 /* Dagi: maybe we should make a directory for lnb supplies;
  * we have three different ones until now ... and lnbh23
  * is also used for newer ufs922
@@ -8220,11 +8232,11 @@ int writereg_lnb_supply(struct stv090x_state *state, char data)
 	msg.buf = &buf;
 	msg.len = 1;
 
-	dprintk(100, "write LNB: %s:  write 0x%02x to 0x0a\n", __FUNCTION__, data);
+	dprintk(100, "write LNB: %s:  write 0x%02x to 0x0a\n", __func__, data);
 
 	if ((ret = i2c_transfer(adapter, &msg, 1)) != 1)
 	{
-		printk("%s: writereg error(err == %i)\n", __FUNCTION__, ret);
+		printk("%s: writereg error(err == %i)\n", __func__, ret);
 		ret = -EREMOTEIO;
 	}
 	return ret;

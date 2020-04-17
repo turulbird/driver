@@ -141,6 +141,9 @@ endif
 ifdef ARIVALINK200
 CCFLAGSY += -DARIVALINK200
 endif
+ifdef PACE7241
+CCFLAGSY += -DPACE7241
+endif
 
 ifneq (,$(findstring 2.6.3,$(KERNELVERSION)))
 ccflags-y += $(CCFLAGSY)
@@ -182,7 +185,7 @@ endif
 
 ifdef ADB_BOX
 obj-y += smartcard/
-obj-y += adb_box_fan/
+obj-y += fan_adb_box/
 obj-y += cec_adb_box/
 obj-y += dvbt/as102/
 obj-y += dvbt/siano/
@@ -203,7 +206,7 @@ obj-y += led/
 endif
 
 ifdef UFS922
-obj-y += ufs922_fan/
+obj-y += fan_ufs922/
 endif
 
 ifdef UFC960
@@ -293,13 +296,13 @@ endif
 ifdef IPBOX9900
 obj-y += siinfo/
 obj-y += rmu/
-obj-y += ipbox99xx_fan/
+obj-y += fan_ipbox99xx/
 obj-y += smartcard/
 endif
 
 ifdef IPBOX99
 obj-y += siinfo/
-obj-y += ipbox99xx_fan/
+obj-y += fan_ipbox99xx/
 obj-y += smartcard/
 endif
 
@@ -350,6 +353,11 @@ obj-y += smartcard/
 obj-y += cec_adb_box/
 obj-y += dvbt/as102/
 obj-y += dvbt/siano/
+endif
+
+ifdef PACE7241
+obj-y += smartcard/
+obj-y += fan_pace7241/
 endif
 
 endif

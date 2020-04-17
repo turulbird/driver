@@ -4,7 +4,8 @@
  *
  * Copyright (C) ST Microelectronics
  *
- * Version for ADB ITI-5800SX BZZB; tuners = STB6100
+ * Version for:
+ * ADB ITI-5800SX BZZB; tuner = STB6100
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -308,7 +309,7 @@ static struct stv090x_reg stv0900_initval[] =
 	{ STV090x_P2_FBERCPT4,    0x00 },
 	{ STV090x_P2_FSPYBER,     0x10 },
 	{ STV090x_P2_ERRCTRL1,    0x35 },
-	{ STV090x_P2_ERRCTRL2,    0x12 },  //0xc1 },
+	{ STV090x_P2_ERRCTRL2,    0x12 },  // 0xc1
 	{ STV090x_P2_CFRICFG,     0xf8 },
 	{ STV090x_P2_NOSCFG,      0x1c },
 	{ STV090x_P2_DMDTOM,      0x20 },
@@ -379,7 +380,7 @@ static struct stv090x_reg stv0900_initval[] =
 	{ STV090x_P1_FBERCPT4,    0x00 },
 	{ STV090x_P1_FSPYBER,     0x10 },
 	{ STV090x_P1_ERRCTRL1,    0x35 },
-	{ STV090x_P1_ERRCTRL2,    0x12 },  //0xc1 },
+	{ STV090x_P1_ERRCTRL2,    0x12 }, // 0xc1
 	{ STV090x_P1_CFRICFG,     0xf8 },
 	{ STV090x_P1_NOSCFG,      0x1c },
 	{ STV090x_P1_CORRELMANT,  0x70 },
@@ -496,13 +497,13 @@ static struct stv090x_reg stv0900_initval[] =
 
 static struct stv090x_reg stv0903_initval[] =
 {
-	{ STV090x_OUTCFG,           0x00 },
+	{ STV090x_OUTCFG,         0x00 },
 #if defined(TUNER_IX7306)
-	{ STV090x_AGCRF1CFG,        0x10 },  // 0x10 for sharp7306
+	{ STV090x_AGCRF1CFG,      0x10 },  // 0x10 for sharp7306
 #elif defined(TUNER_STB6110)
-	{ STV090x_AGCRF1CFG,        0x11 },  // 0x11 for stb6110
+	{ STV090x_AGCRF1CFG,      0x11 },  // 0x11 for stb6110
 #elif defined(TUNER_STB6100)
-	{ STV090x_AGCRF1CFG,        0x11 },  // 0x11 for stb6100
+	{ STV090x_AGCRF1CFG,      0x11 },  // 0x11 for stb6100
 #else
 #error "You must define a tuner type..."
 #endif

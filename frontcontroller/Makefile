@@ -156,3 +156,8 @@ ifneq (,$(wildcard $(DRIVER_TOPDIR)/frontcontroller/front_ArivaLink200 ))
 obj-y += front_ArivaLink200/
 endif
 endif
+
+ifdef PACE7241
+obj-y += pace_7241_fp/
+endif
+
