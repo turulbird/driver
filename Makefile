@@ -121,6 +121,9 @@ endif
 ifdef ADB_BOX
 CCFLAGSY += -DADB_BOX
 endif
+ifdef ADB_2850
+CCFLAGSY += -DADB_2850
+endif
 
 ifdef IPBOX9900
 CCFLAGSY += -DIPBOX9900
@@ -189,6 +192,17 @@ obj-y += fan_adb_box/
 obj-y += cec_adb_box/
 obj-y += dvbt/as102/
 obj-y += dvbt/siano/
+endif
+
+ifdef ADB_2850
+obj-y += smartcard/
+obj-y += cec_adb_box/
+#obj-y += dvbt/as102/
+#obj-y += dvbt/siano/
+endif
+
+ifdef PACE7241
+obj-y += smartcard/
 endif
 
 ifndef VIP2_V1
