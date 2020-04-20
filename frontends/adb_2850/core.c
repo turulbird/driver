@@ -1,3 +1,40 @@
+/****************************************************************************************
+ *
+ * core.c
+ *
+ * (c) 20?? ??
+ *
+ * Version for ADB ITI-2849/2850/2851S(T) with:
+ *  - STM STV0903 DVB-S(2) demodulator
+ *  - STM STV6110 DVB-S(2) tuner
+ *  - MaxLinear MxL111SF DVB-T tuner/demodulator (ITI-2849ST only)
+ *  = DiBcom DiB0070 DVB-T tuner (ITI-2850ST only)
+ *  = DiBcom DiB7000 DVB-T demodulator (ITI-2850ST only)
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+ *
+ ****************************************************************************************
+ *
+ * Changes
+ *
+ * Date     By              Description
+ * --------------------------------------------------------------------------------------
+ * 20?????? ???             Initial version       
+ *
+ ****************************************************************************************/
 #include "core.h"
 #include "stv6110x.h"
 #include "stv090x.h"
@@ -44,8 +81,8 @@ static struct stv090x_config tt1600_stv090x_config =
 	.ref_clk              = 16000000,
 	.ts1_mode             = STV090x_TSMODE_DVBCI,
 	.ts2_mode             = STV090x_TSMODE_SERIAL_CONTINUOUS,
-	.ts1_clk              = 0, /* diese regs werden in orig nicht gesetzt */
-	.ts2_clk              = 0, /* diese regs werden in orig nicht gesetzt */
+	.ts1_clk              = 0,  /* diese regs werden in orig nicht gesetzt */
+	.ts2_clk              = 0,  /* diese regs werden in orig nicht gesetzt */
 	.repeater_level       = STV090x_RPTLEVEL_64,
 	.tuner_bbgain         = 10,
 	.adc1_range           = STV090x_ADC_1Vpp,
@@ -65,8 +102,7 @@ static struct stv090x_config tt1600_stv090x_config =
 
 static struct stv6110x_config stv6110x_config =
 {
-	.addr                 = 0x63,//0x60,
-//	.refclk               = 16000000,
+	.addr                 = 0x63,  // 0x60,
 	.refclk               = 30000000,
 };
 
@@ -194,7 +230,7 @@ static struct dibx000_bandwidth_config dib7070_bw_config_12_mhz_ =
 
 static struct dib7000p_config cxusb_dualdig4_rev2_config =
 {
-	.output_mode = OUTMODE_MPEG2_SERIAL,//OUTMODE_MPEG2_PAR_GATED_CLK,
+	.output_mode = OUTMODE_MPEG2_SERIAL, // OUTMODE_MPEG2_PAR_GATED_CLK,
 	.output_mpeg2_in_188_bytes = 1,
 
 	.agc_config_count = 1,
@@ -228,7 +264,7 @@ static int dib7070_tuner_sleep(struct dvb_frontend *fe, int onoff)
 
 static struct dib0070_config dib7070p_dib0070_config =
 {
-	.i2c_address     = 0x60,//DEFAULT_DIB0070_I2C_ADDRESS,
+	.i2c_address     = 0x60,  // DEFAULT_DIB0070_I2C_ADDRESS,
 	.reset           = dib7070_tuner_reset,
 	.sleep           = dib7070_tuner_sleep,
 	.clock_khz       = 12000,
@@ -246,7 +282,7 @@ static int dib7070_set_param_override(struct dvb_frontend *fe, struct dvb_fronte
 	struct dib0700_adapter_state *state = fe->demodulator_priv;
 	
 	u16 offset;
-	u8 band = BAND_OF_FREQUENCY(fep->frequency/1000);
+	u8 band = BAND_OF_FREQUENCY(fep->frequency / 1000);
 	switch (band)
 	{
 		case BAND_VHF:
@@ -387,11 +423,11 @@ static struct dvb_frontend * frontend_init(struct core_config *cfg, int i)
 		frontend = stv090x_attach(&tt1600_stv090x_config, cfg->i2c_adap, STV090x_DEMODULATOR_0, STV090x_TUNER1);
 		if (frontend)
 		{
-			printk("%s: attached stv090x\n", __FUNCTION__);
+			printk("%s: attached stv090x demodulator\n", __FUNCTION__);
 			ctl = dvb_attach(stv6110x_attach, frontend, &stv6110x_config, cfg->i2c_adap);
-			if(ctl)
+			if (ctl)
 			{
-				printk("%s: attached stv6110x\n", __FUNCTION__);
+				printk("%s: attached stv6110x tuner\n", __FUNCTION__);
 				tt1600_stv090x_config.tuner_init	  	  = ctl->tuner_init;
 				tt1600_stv090x_config.tuner_set_mode	  = ctl->tuner_set_mode;
 				tt1600_stv090x_config.tuner_set_frequency = ctl->tuner_set_frequency;
@@ -422,7 +458,7 @@ static struct dvb_frontend * frontend_init(struct core_config *cfg, int i)
 		frontend = dvb_attach(dib7000p_attach, cfg->i2c_adap, 18,&cxusb_dualdig4_rev2_config);
 		if (frontend)
 		{
-			printk("%s: demod attached dib7000p\n", __FUNCTION__);
+			printk("%s: attached dib7000p demodulator\n", __FUNCTION__);
 			if (dvb_attach(dib0070_attach, frontend, cfg->i2c_adap,&dib7070p_dib0070_config)== NULL)
 			{
 				printk ("%s: error attaching dib0070\n", __FUNCTION__);
@@ -430,7 +466,7 @@ static struct dvb_frontend * frontend_init(struct core_config *cfg, int i)
 			}
 			else
 			{
-				printk("%s: dib0070 attached\n", __FUNCTION__);
+				printk("%s: attached dib0070 tuner\n", __FUNCTION__);
 				struct dib0700_adapter_state *st = frontend->demodulator_priv;
 				st->set_param_save = frontend->ops.tuner_ops.set_params;
 				frontend->ops.tuner_ops.set_params = dib7070_set_param_override;
@@ -465,15 +501,15 @@ static struct dvb_frontend * frontend_init(struct core_config *cfg, int i)
 		frontend = dvb_attach(mxl111sf_demod_attach,state,&mxl_demod_config);
 		if (frontend)
 		{
-			printk("%s: demod attached mxl101sf\n", __FUNCTION__);
+			printk("%s: attached mxl101sf demodulator\n", __FUNCTION__);
 			if (dvb_attach(mxl111sf_tuner_attach, frontend, state,&mxl_tuner_config)== NULL)
 			{
-				printk ("%s: error attaching mxl101sf\n", __FUNCTION__);
+				printk ("%s: error attaching mxl101sf tuner\n", __FUNCTION__);
 				goto error_out;
 			}
 			else
 			{
-				printk("%s: mxl101sf attached\n", __FUNCTION__);
+				printk("%s: attached mxl101sf tuner\n", __FUNCTION__);
 			}
 		}
 		else
@@ -537,7 +573,7 @@ static struct dvb_frontend *init_stv090x_device (struct dvb_adapter *adapter, st
 		goto error;
 	}
 
-	printk (KERN_INFO "%s: Call dvb_register_frontend (adapter = 0x%x)\n", __FUNCTION__, (unsigned int) adapter);
+	printk(KERN_INFO "%s: Call dvb_register_frontend (adapter = 0x%x)\n", __FUNCTION__, (unsigned int) adapter);
 
 	if (dvb_register_frontend (adapter, frontend))
 	{
@@ -573,7 +609,7 @@ struct plat_tuner_config tuner_resources[] =
 	{
 		.adapter = 0,
 		.i2c_bus = 1,
-		.i2c_addr = 0x00,  //fake addres
+		.i2c_addr = 0x00,  // fake address
 	},
 #endif
 };
@@ -583,7 +619,7 @@ void stv090x_register_frontend(struct dvb_adapter *dvb_adap)
 	int i = 0;
 	int vLoop = 0;
 
-	printk (KERN_INFO "%s: stv090x DVB: 0.11 \n", __FUNCTION__);
+	printk(KERN_INFO "%s: stv090x DVB: 0.11 \n", __FUNCTION__);
 
 	core[i] = (struct core*) kmalloc(sizeof(struct core),GFP_KERNEL);
 	if (!core[i])
@@ -648,7 +684,7 @@ MODULE_PARM_DESC(bbgain, "default=-1 (use default config = 10");
 module_param(box_type, int, 0444);
 MODULE_PARM_DESC(box_type, "boxtype 0=adb2850(default) 1=adb2849");
 
-MODULE_DESCRIPTION ("Tunerdriver");
+MODULE_DESCRIPTION ("ADB ITI-2849/2850/2851S(T) frontend driver");
 MODULE_AUTHOR      ("TDT (mod plfreebox@gmail.com)");
 MODULE_LICENSE     ("GPL");
 // vim:ts=4
