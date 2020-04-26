@@ -77,6 +77,7 @@ static int mxl111sf_set_gpo_state(struct mxl111sf_state *state, u8 pin, u8 val)
 	{
 		ret = -EINVAL;
 	}
+
 fail:
 	return ret;
 }

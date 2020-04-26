@@ -38,8 +38,10 @@ MODULE_PARM_DESC(debug, "turn on debugging (default: 0)");
 
 
 #if 0
-#define dprintk(args...) do { \
-	if (debug) { \
+#define dprintk(args...) do \
+{ \
+	if (debug) \
+	{ \
 		printk(KERN_DEBUG "DiB0070: "); \
 		printk(args); \
 		printk("\n"); \

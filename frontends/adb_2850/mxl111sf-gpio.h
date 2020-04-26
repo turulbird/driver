@@ -31,7 +31,8 @@ int mxl111sf_init_port_expander(struct mxl111sf_state *state);
 #define MXL111SF_GPIO_MOD_ATSC	2
 int mxl111sf_gpio_mode_switch(struct mxl111sf_state *state, unsigned int mode);
 
-enum mxl111sf_mux_config {
+enum mxl111sf_mux_config
+{
 	PIN_MUX_DEFAULT = 0,
 	PIN_MUX_TS_OUT_PARALLEL,
 	PIN_MUX_TS_OUT_SERIAL,
@@ -44,8 +45,7 @@ enum mxl111sf_mux_config {
 	PIN_MUX_BT656_I2S_MODE,
 };
 
-int mxl111sf_config_pin_mux_modes(struct mxl111sf_state *state,
-				  enum mxl111sf_mux_config pin_mux_config);
+int mxl111sf_config_pin_mux_modes(struct mxl111sf_state *state, enum mxl111sf_mux_config pin_mux_config);
 
 #endif /* _DVB_USB_MXL111SF_GPIO_H_ */
 
@@ -54,3 +54,4 @@ int mxl111sf_config_pin_mux_modes(struct mxl111sf_state *state,
  * c-basic-offset: 8
  * End:
  */
+// vim:ts=4
