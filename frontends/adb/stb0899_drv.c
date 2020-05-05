@@ -39,37 +39,12 @@
 #include "stb0899_priv.h"
 #include "stb0899_reg.h"
 
-#if 0
-#define ISL6405_SR      0x80
-
-/* SR = 0 */
-#define ISL6405_OLF1    0x01
-#define ISL6405_EN1     0x02
-#define ISL6405_VSEL1   0x04
-#define ISL6405_LLC1    0x08
-#define ISL6405_ENT1    0x10
-#define ISL6405_ISEL1   0x20
-#define ISL6405_DCL     0x40
-
-/* SR = 1 */
-#define ISL6405_OLF2	0x01
-#define ISL6405_OTF     0x02
-#define ISL6405_EN2     0x04
-#define ISL6405_VSEL2   0x08
-#define ISL6405_LLC2    0x10
-#define ISL6405_ENT2    0x20
-#define ISL6405_ISEL2   0x40
-#endif
-
 // PWM DiSEqC
 static struct stpio_pin *pin_tx_diseq;
 static struct stpio_pin *pin_rx_diseq;
 
 static unsigned int verbose = 1;
 
-//static unsigned char isl6405_init_sr1 = 0;
-//static unsigned char isl6405_vol_sr1 = 0;
-//static unsigned char isl6405_tone_sr1 = 0;
 static unsigned char bska_init = 0;
 
 /* C/N in dB/10, NIRM/NIRL */
@@ -290,26 +265,34 @@ static volatile unsigned char pwm_diseqc_buf1[200];
 static volatile unsigned char pwm_diseqc_buf1_len = 0;
 static volatile unsigned char pwm_diseqc_buf1_pos = 0;
 
+#if 0  // We do not have a 2nd tuner
 static volatile unsigned char pwm_diseqc_buf2[200];
 static volatile unsigned char pwm_diseqc_buf2_len = 0;
 static volatile unsigned char pwm_diseqc_buf2_pos = 0;
+#endif
 
 static irqreturn_t pwm_diseqc_irq(int irq, void *dev_id)
 {
-	writel(0x001, PWM_INT_ACK);
+	writel(0x01, PWM_INT_ACK);
 
 	if (pwm_diseqc_buf1_len == 0)
 	{
 		stpio_set_pin(pin_tx_diseqc1, 0);
 	}
+#if 0
 	if (pwm_diseqc_buf2_len == 0)
 	{
 		stpio_set_pin(pin_tx_diseqc2, 0);
 	}
+#endif
+#if 0
 	if ((pwm_diseqc_buf1_len == 0)
 	&&  (pwm_diseqc_buf2_len == 0))
+#else
+	if (pwm_diseqc_buf1_len == 0)
+#endif
 	{
-		writel(0x000, PWM_INT_EN);
+		writel(0x00, PWM_INT_EN);
 		return IRQ_HANDLED;
 	}
 	if (pwm_diseqc_buf1_len > 0)
@@ -325,6 +308,7 @@ static irqreturn_t pwm_diseqc_irq(int irq, void *dev_id)
 		pwm_diseqc_buf1_pos++;
 		pwm_diseqc_buf1_len--;
 	}
+#if 0
 	if (pwm_diseqc_buf2_len > 0)
 	{
 		if (pwm_diseqc_buf2[pwm_diseqc_buf2_pos] == 1)
@@ -338,6 +322,7 @@ static irqreturn_t pwm_diseqc_irq(int irq, void *dev_id)
 		pwm_diseqc_buf2_pos++;
 		pwm_diseqc_buf2_len--;
 	}
+#endif
 	return IRQ_HANDLED;
 }
 
@@ -493,7 +478,7 @@ static int pwm_diseqc1_send_msg(struct dvb_frontend *fe, struct dvb_diseqc_maste
 	}
 	pwm_diseqc_buf1_len++;
 	pwm_diseqc_buf1[pwm_diseqc_buf1_len] = 0;
-	writel(0x001, PWM_INT_EN);
+	writel(0x01, PWM_INT_EN);
 
 	if (pwm_wait_diseqc1_idle(100) < 0)
 	{
@@ -545,8 +530,10 @@ int pwm_diseqc_init(void)
 	pwm_diseqc_buf1_pos = 1;
 	pwm_diseqc_buf1_len = 0;
 
+#if 0
 	pwm_diseqc_buf2_pos = 1;
 	pwm_diseqc_buf2_len = 0;
+#endif
 
 	dprintk(20, "PWM DiSEqC Init completed succesfully\n");
 	return 0;
