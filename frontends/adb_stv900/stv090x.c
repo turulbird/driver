@@ -830,7 +830,9 @@ static struct stv090x_short_frame_crloop stv090x_s2_short_crl_cut30[] =
 
 /****************************************************
  *
- * diseqc pwm by freebox@lamerek.com
+ * DiSEqC PWM by freebox@lamerek.com
+ *
+ * CAUTION:
  *
  */
 unsigned long pwm_registers;
@@ -865,7 +867,7 @@ static volatile unsigned char pwm_diseqc_buf2_pos = 0;
 
 static irqreturn_t pwm_diseqc_irq(int irq, void *dev_id)
 {
-	writel(0x001, PWM_INT_ACK);
+	writel(0x01, PWM_INT_ACK);
 
 	if (pwm_diseqc_buf1_len == 0)
 	{
@@ -7314,7 +7316,7 @@ static struct dvb_frontend_ops stv090x_ops_1 =
 {
 	.info =
 	{
-		.name                = "STV090x Multistandard A",
+		.name                = "STV0900/STB6100 A",
 		.type                = FE_QPSK,
 		.frequency_min       = 950000,
 		.frequency_max       = 2150000,
@@ -7354,7 +7356,7 @@ static struct dvb_frontend_ops stv090x_ops_2 =
 {
 	.info =
 	{
-		.name                = "STV090x Multistandard B",
+		.name                = "STV0900/STB6100 B",
 		.type                = FE_QPSK,
 		.frequency_min       = 950000,
 		.frequency_max       = 2150000,
