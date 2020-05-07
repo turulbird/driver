@@ -1,3 +1,25 @@
+/*****************************************************************************************
+ *
+ * Frontend core driver
+ *
+ * Customized for adb_box, bska & bxzb models
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ *
+ ****************************************************************************************/
+
 #include "core.h"
 /* Demodulators */
 #include "stb0899_drv.h"
@@ -553,19 +575,18 @@ static struct dvb_frontend *frontend_init(struct core_config *cfg, int i)
 {
 	struct dvb_frontend *frontend = NULL;
 
-	dprintk(50, "%s >\n", __func__);
+//	dprintk(50, "%s >\n", __func__);
 
 	if (i > 0)
 	{
 		return NULL;
 	}
-	dprintk(20,"Attaching STB0899\n");
+//	dprintk(20,"Attaching STB0899\n");
 	frontend = dvb_attach(stb0899_attach, &stb0899_config, cfg->i2c_adap);
 
 	if (frontend)
 	{
 		dprintk(20, "STB0899 attached OK\n");
-//		dprintk(20, "Attaching STB6100\n");
 
 		if (dvb_attach(stb6100_attach, frontend, &stb6100_config, cfg->i2c_adap) == 0)
 		{
@@ -579,6 +600,8 @@ static struct dvb_frontend *frontend_init(struct core_config *cfg, int i)
 		dprintk(1, "%s: Error attaching STB0899\n", __func__);
 		goto error_out;
 	}
+	stb0899_config.lnb_enable = cfg->lnb_enable;
+	stb0899_config.lnb_vsel   = cfg->lnb_vsel;
 	return frontend;
 
 error_out:
@@ -596,7 +619,7 @@ static struct dvb_frontend *init_fe_device(struct dvb_adapter *adapter, struct p
 	struct dvb_frontend  *frontend;
 	struct core_config   *cfg;
 
-	dprintk(50, "%s > (bus = %d)\n", __func__, tuner_cfg->i2c_bus);
+//	dprintk(50, "%s > (I2C bus = %d)\n", __func__, tuner_cfg->i2c_bus);
 
 	cfg = kmalloc(sizeof(struct core_config), GFP_KERNEL);
 	if (cfg == NULL)
@@ -607,7 +630,7 @@ static struct dvb_frontend *init_fe_device(struct dvb_adapter *adapter, struct p
 	/* initialize the config data */
 	cfg->i2c_adap = i2c_get_adapter(tuner_cfg->i2c_bus);
 
-	dprintk(50, "%s i2c adapter = 0x%0x, bus = 0x%0x\n", __func__, cfg->i2c_adap, tuner_cfg->i2c_bus);
+//	dprintk(50, "%s i2c adapter = 0x%0x, bus = 0x%0x\n", __func__, cfg->i2c_adap, tuner_cfg->i2c_bus);
 
 	cfg->i2c_addr = tuner_cfg->i2c_addr;
 
@@ -626,7 +649,7 @@ static struct dvb_frontend *init_fe_device(struct dvb_adapter *adapter, struct p
 		dprintk(1, "No frontend found !\n");
 		return NULL;
 	}
-	dprintk(50, "%s: Call dvb_register_frontend (adapter = 0x%x)\n", __func__, (unsigned int) adapter);
+//	dprintk(50, "%s: Call dvb_register_frontend (adapter = 0x%x)\n", __func__, (unsigned int) adapter);
 
 	if (dvb_register_frontend(adapter, frontend))
 	{
@@ -656,7 +679,7 @@ void fe_core_register_frontend(struct dvb_adapter *dvb_adap)
 	int i = 0;
 	int vLoop = 0;
 
-	dprintk(50, "%s: > adb_box frontend core\n", __func__);
+//	dprintk(50, "%s: > adb_box frontend core\n", __func__);
 
 	core[i] = (struct core *)kmalloc(sizeof(struct core), GFP_KERNEL);
 	if (!core[i])
@@ -674,24 +697,24 @@ void fe_core_register_frontend(struct dvb_adapter *dvb_adap)
 	{
 		if (core[i]->frontend[vLoop] == NULL)
 		{
-			dprintk(10, "%s: Initialize tuner %d i2c_addr: 0x%.2x\n", __func__, vLoop, tuner_resources[vLoop].i2c_addr);
+//			dprintk(10, "%s: Initialize tuner %d i2c_addr: 0x%.2x\n", __func__, vLoop, tuner_resources[vLoop].i2c_addr);
 			core[i]->frontend[vLoop] = init_fe_device(core[i]->dvb_adapter, &tuner_resources[vLoop], vLoop);
 		}
 	}
-	dprintk(50, "%s: <\n", __func__);
+//	dprintk(50, "%s: <\n", __func__);
 	return;
 }
 EXPORT_SYMBOL(fe_core_register_frontend);
 
 int __init fe_core_init(void)
 {
-	dprintk(20, "%s Frontend core loaded\n", __func__);
+//	dprintk(20, "%s Frontend core loaded\n", __func__);
 	return 0;
 }
 
 static void __exit fe_core_exit(void)
 {
-	dprintk(20, "Frontend core unloaded\n");
+//	dprintk(20, "Frontend core unloaded\n");
 }
 
 module_init(fe_core_init);

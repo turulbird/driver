@@ -261,14 +261,6 @@ obj-m += avl2108_platform.o
 endif
 
 ifdef ATEVIO7500
-#avl2108-objs += avl2108/avl2108.o
-#avl2108-objs += avl2108/stv6110a.o
-#avl2108-objs += avl2108/stv6306.o
-#avl2108-objs += avl2108/lnb_pio.o
-#avl2108-objs += avl2108/lnbh221.o
-#obj-m += avl2108.o
-#avl2108_platform-objs += avl2108/avl2108_platform.o
-#obj-m += avl2108_platform.o
 obj-y += multituner/
 endif
 
@@ -334,10 +326,10 @@ endif
 ifdef ADB_BOX
 # Single ----------------------------------
 # stb0899
-fe-core-objs += adb/stb0899_algo.o
-fe-core-objs += adb/stb0899_drv.o
-fe-core-objs += adb/stb6100.o
-fe-core-objs += adb/core.o
+fe-core-objs += adb_single/stb0899_algo.o
+fe-core-objs += adb_single/stb0899_drv.o
+fe-core-objs += adb_single/stb6100.o
+fe-core-objs += adb_single/core.o
 obj-m += fe-core.o
 
 # Dual -------------------------------------
