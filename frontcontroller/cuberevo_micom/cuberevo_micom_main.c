@@ -121,7 +121,7 @@ int date2days(int year, int mon, int day, int *yday);
 #define cMinimumSize             2
 
 #define BUFFERSIZE               512 // must be 2 ^ n
-
+ 
 static unsigned char RCVBuffer [BUFFERSIZE];
 static int RCVBufferStart = 0, RCVBufferEnd = 0;
 
@@ -261,7 +261,7 @@ void handleCopyData(int len)
 	{
 		dprintk(50, "%d. = 0x%02x\n", j,  RCVBuffer[j]);
 		data[i] = RCVBuffer[j];
-		j += 2; // filter answer tag
+		j += 2;  // filter answer tag
 		j %= BUFFERSIZE;
 		i++;
 
@@ -866,7 +866,7 @@ MODULE_DESCRIPTION("MICOM frontcontroller module (CubeRevo 2000HD)");
 #elif defined(CUBEREVO_3000HD)
 MODULE_DESCRIPTION("MICOM frontcontroller module (CubeRevo 3000HD)");
 #else
-MODULE_DESCRIPTION("MICOM frontcontroller module (Unknown)");
+MODULE_DESCRIPTION("MICOM frontcontroller module");
 #endif
 
 MODULE_AUTHOR("Konfetti, Audioniek");
