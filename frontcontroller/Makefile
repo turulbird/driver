@@ -56,8 +56,8 @@ endif
 
 ifdef ADB_BOX
 obj-y += adb_5800_fp/
-#obj-y += adb_box_fp/front_bska/
-#obj-y += adb_box_fp/front_bsla/
+obj-y += adb_box_fp/front_bska/
+obj-y += adb_box_fp/front_bsla/
 endif
 
 ifdef ADB_2850
@@ -129,7 +129,7 @@ obj-y += ipbox55/
 endif
 
 ifdef CUBEREVO
-obj-y += ipbox/
+obj-y += cuberevo_micom/
 else ifdef CUBEREVO_MINI
 obj-y += cuberevo_micom/
 else ifdef CUBEREVO_MINI2
