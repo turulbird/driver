@@ -3,9 +3,9 @@
 #include "stv090x.h"
 #include "ix7306.h"
 #include "zl10353.h"
-#include "../spark7162/base/sharp6465.h"
-#include "../spark7162/base/tda1002x.h"
-#include "../spark7162/base/lg031.h"
+#include "sharp6465.h"
+#include "tda1002x.h"
+#include "lg031.h"
 
 #include <linux/platform_device.h>
 #include <asm/system.h>
@@ -23,12 +23,12 @@
 #define I2C_ADDR_TDA10023	(0x18 >> 1)
 #define I2C_ADDR_LG031		(0xc6 >> 1)
 
-/* On this framework, We can't support dual tuner,
+/* On this framework, We cannot support dual tuner,
  * so we can only use one. In order to support dual tuner,
  * we need add tuner type option to stx090x_config,
  * when this done, just remove the define TUNER_IX7306 in stv090x.h*/
 
-#if   defined(TUNER_IX7306)
+#if defined(TUNER_IX7306)
 #define CLK_EXT_IX7306 		4000000
 #define CLK_EXT_STV6110 	16000000
 #elif defined(TUNER_STB6110)
@@ -50,15 +50,6 @@ static int tunerType2;
 
 static struct core *core[MAX_DVB_ADAPTERS];
 
-module_param(demod1, charp, 0);
-module_param(demod2, charp, 0);
-MODULE_PARM_DESC(demod1, "demodelator1 stv090x, ce6353, tda10023(default stv090x");// DVB-S2
-MODULE_PARM_DESC(demod1, "demodelator2 stv090x, ce6353, tda10023(default ce6353"); // DVB-T
-
-module_param(tuner1, charp, 0);
-module_param(tuner2, charp, 0);
-MODULE_PARM_DESC(tuner1, "tuner1 sharp7306, stv6110x, sharp6465, lg031(default sharp7306"); // DVB-S2
-MODULE_PARM_DESC(tuner2, "tuner2 sharp7306, stv6110x, sharp6465, lg031(default sharp6465"); // DVB-T
 
 enum
 {
@@ -104,9 +95,9 @@ enum fe_ctl
 
 static unsigned char fctl = 0;
 
-struct stpio_pin	*srclk; // shift clock
-struct stpio_pin	*rclk;  // latch clock
-struct stpio_pin	*sda;   // serial data
+struct stpio_pin *srclk; // shift clock
+struct stpio_pin *rclk;  // latch clock
+struct stpio_pin *sda;   // serial data
 
 #define SRCLK_CLR() {stpio_set_pin(srclk, 0);}
 #define SRCLK_SET() {stpio_set_pin(srclk, 1);}
@@ -122,10 +113,13 @@ void hc595_out(unsigned char ctls, int state)
 	int i;
 
 	if (state)
+	{
 		fctl |= 1 << ctls;
+	}
 	else
+	{
 		fctl &= ~(1 << ctls);
-
+	}
 	/*
 	 * clear everything out just in case to
 	 * prepare shift register for bit shifting
@@ -150,85 +144,83 @@ void hc595_out(unsigned char ctls, int state)
 		SRCLK_SET();
 		udelay(1);
 	}
-
 	RCLK_CLR();
 	udelay(1);
 	RCLK_SET();
 }
-
 EXPORT_SYMBOL(hc595_out);
 
 static struct stv090x_config stv090x_config =
 {
-	.device			= STV0903,
-	.demod_mode		= STV090x_DUAL/*STV090x_SINGLE*/,
-	.clk_mode		= STV090x_CLK_EXT,
+	.device         = STV0903,
+	.demod_mode     = STV090x_DUAL /* STV090x_SINGLE */,
+	.clk_mode       = STV090x_CLK_EXT,
 
-	.xtal			= CLK_EXT_IX7306,
-	.address		= I2C_ADDR_STV090X,
+	.xtal           = CLK_EXT_IX7306,
+	.address        = I2C_ADDR_STV090X,
 
-	.ts1_mode		= STV090x_TSMODE_DVBCI/*STV090x_TSMODE_PARALLEL_PUNCTURED*//*STV090x_TSMODE_SERIAL_CONTINUOUS*/,
-	.ts2_mode		= STV090x_TSMODE_DVBCI/*STV090x_TSMODE_PARALLEL_PUNCTURED*//*STV090x_TSMODE_SERIAL_CONTINUOUS*/,
-	.ts1_clk		= 0,
-	.ts2_clk		= 0,
+	.ts1_mode       = STV090x_TSMODE_DVBCI  /* STV090x_TSMODE_PARALLEL_PUNCTURED *//* STV090x_TSMODE_SERIAL_CONTINUOUS */,
+	.ts2_mode       = STV090x_TSMODE_DVBCI  /* STV090x_TSMODE_PARALLEL_PUNCTURED *//* STV090x_TSMODE_SERIAL_CONTINUOUS */,
+	.ts1_clk        = 0,
+	.ts2_clk        = 0,
 
-	.fe_rst			= 0,
-	.fe_lnb_en		= 0,
-	.fe_1419		= 0,
-	.fe_1318		= 0,
+	.fe_rst         = 0,
+	.fe_lnb_en      = 0,
+	.fe_1419        = 0,
+	.fe_1318        = 0,
 
-	.repeater_level	= STV090x_RPTLEVEL_16,
+	.repeater_level = STV090x_RPTLEVEL_16,
 
-	.tuner_init				= NULL,
-	.tuner_set_mode			= NULL,
-	.tuner_set_frequency	= NULL,
-	.tuner_get_frequency	= NULL,
-	.tuner_set_bandwidth	= NULL,
-	.tuner_get_bandwidth	= NULL,
-	.tuner_set_bbgain		= NULL,
-	.tuner_get_bbgain		= NULL,
-	.tuner_set_refclk		= NULL,
-	.tuner_get_status		= NULL,
+	.tuner_init          = NULL,
+	.tuner_set_mode      = NULL,
+	.tuner_set_frequency = NULL,
+	.tuner_get_frequency = NULL,
+	.tuner_set_bandwidth = NULL,
+	.tuner_get_bandwidth = NULL,
+	.tuner_set_bbgain    = NULL,
+	.tuner_get_bbgain    = NULL,
+	.tuner_set_refclk    = NULL,
+	.tuner_get_status    = NULL,
 };
 
 static struct stv6110x_config stv6110x_config =
 {
-	.addr			= I2C_ADDR_STV6110X,
-	.refclk			= CLK_EXT_STV6110,
-	.clk_div		= 2,
+	.addr    = I2C_ADDR_STV6110X,
+	.refclk  = CLK_EXT_STV6110,
+	.clk_div = 2,
 };
 
 static const struct ix7306_config bs2s7hz7306a_config =
 {
-	.name		= "Sharp BS2S7HZ7306A",
-	.addr		= I2C_ADDR_IX7306,
-	.step_size 	= IX7306_STEP_1000,
-	.bb_lpf		= IX7306_LPF_12,
-	.bb_gain	= IX7306_GAIN_2dB,
+	.name      = "Sharp BS2S7HZ7306A",
+	.addr      = I2C_ADDR_IX7306,
+	.step_size = IX7306_STEP_1000,
+	.bb_lpf    = IX7306_LPF_12,
+	.bb_gain   = IX7306_GAIN_2dB,
 };
 
 static struct zl10353_config ce6353_config =
 {
 	.demod_address = I2C_ADDR_CE6353,
-	.no_tuner = 1,
-	.parallel_ts = 1,
+	.no_tuner      = 1,
+	.parallel_ts   = 1,
 };
 
 static const struct sharp6465_config s6465_config =
 {
-	.name		= "Sharp 6465",
-	.addr		= I2C_ADDR_SHARP6465,
-	.bandwidth		= BANDWIDTH_8_MHZ,
+	.name      = "Sharp 6465",
+	.addr      = I2C_ADDR_SHARP6465,
+	.bandwidth = BANDWIDTH_8_MHZ,
 
-	.Frequency	= 500000,
-	.IF			= 36167,
-	.TunerStep	= 16667,
+	.Frequency = 500000,
+	.IF        = 36167,
+	.TunerStep = 16667,
 };
 
 static struct tda10023_config philips_tda10023_config =
 {
 	.demod_address = I2C_ADDR_TDA10023,
-	.invert = 1,
+	.invert        = 1,
 };
 
 static struct lg031_config lg_lg031_config =
@@ -236,9 +228,7 @@ static struct lg031_config lg_lg031_config =
 	.addr = I2C_ADDR_LG031,
 };
 
-static struct dvb_frontend *frontend_get_by_type(struct core_config *cfg,
-						 int iDemodType,
-						 int iTunerType)
+static struct dvb_frontend *frontend_get_by_type(struct core_config *cfg, int iDemodType, int iTunerType)
 {
 	struct stv6110x_devctl *ctl = NULL;
 	struct dvb_frontend *frontend = NULL;
@@ -246,8 +236,7 @@ static struct dvb_frontend *frontend_get_by_type(struct core_config *cfg,
 	{
 		case STV090X:
 		{
-			frontend = dvb_attach(stv090x_attach, &stv090x_config,
-					      cfg->i2c_adap, STV090x_DEMODULATOR_0);
+			frontend = dvb_attach(stv090x_attach, &stv090x_config, cfg->i2c_adap, STV090x_DEMODULATOR_0);
 			if (frontend)
 			{
 				printk("%s: stv090x attached\n", __FUNCTION__);
@@ -321,6 +310,7 @@ static struct dvb_frontend *frontend_get_by_type(struct core_config *cfg,
 				{
 					case SHARP6465:
 					{
+#if 1
 						if (dvb_attach(sharp6465_attach, frontend, &s6465_config, cfg->i2c_adap))
 						{
 							printk("%s: SHARP6465 attached\n", __FUNCTION__);
@@ -332,6 +322,7 @@ static struct dvb_frontend *frontend_get_by_type(struct core_config *cfg,
 						}
 						break;
 					}
+#endif
 					default:
 					{
 						printk(KERN_INFO "%s: error unknown tuner\n", __FUNCTION__);
@@ -346,15 +337,16 @@ static struct dvb_frontend *frontend_get_by_type(struct core_config *cfg,
 			}
 			break;
 		}
+#if 1
 		case TDA10023:
 		{
-			frontend = dvb_attach(tda10023_attach, &philips_tda10023_config,
-					      cfg->i2c_adap, 0x48);
+			frontend = dvb_attach(tda10023_attach, &philips_tda10023_config, cfg->i2c_adap, 0x48);
 			if (frontend)
 			{
 				printk("%s: tda10023 attached\n", __FUNCTION__);
 				switch (iTunerType)
 				{
+#if 1
 					case LG031:
 					{
 						if (dvb_attach(lg031_attach, frontend, &lg_lg031_config, cfg->i2c_adap))
@@ -368,6 +360,7 @@ static struct dvb_frontend *frontend_get_by_type(struct core_config *cfg,
 						}
 						break;
 					}
+#endif
 					default:
 					{
 						printk(KERN_INFO "%s: error unknown tuner\n", __FUNCTION__);
@@ -382,6 +375,7 @@ static struct dvb_frontend *frontend_get_by_type(struct core_config *cfg,
 			}
 			break;
 		}
+#endif
 		default:
 		{
 			printk(KERN_INFO "%s: error unknown demod\n", __FUNCTION__);
@@ -389,10 +383,13 @@ static struct dvb_frontend *frontend_get_by_type(struct core_config *cfg,
 		}
 	}
 	return frontend;
+
 error_out:
 	printk("core: Frontend registration failed!\n");
 	if (frontend)
+	{
 		dvb_frontend_detach(frontend);
+	}
 	return NULL;
 }
 
@@ -410,12 +407,10 @@ static struct dvb_frontend *frontend_init(struct core_config *cfg, int i)
 	{
 		frontend = frontend_get_by_type(cfg, demodType2, tunerType2);
 	}
-
 	return frontend;
 }
 
-static struct dvb_frontend *init_fe_device(struct dvb_adapter *adapter,
-					   struct tuner_config *tuner_cfg, int i)
+static struct dvb_frontend *init_fe_device(struct dvb_adapter *adapter, struct tuner_config *tuner_cfg, int i)
 {
 	struct fe_core_state *state;
 	struct dvb_frontend *frontend;
@@ -429,7 +424,6 @@ static struct dvb_frontend *init_fe_device(struct dvb_adapter *adapter,
 		printk("fe-core: kmalloc failed\n");
 		return NULL;
 	}
-
 	/* initialize the config data */
 	cfg->tuner = tuner_cfg;
 	cfg->i2c_adap = i2c_get_adapter(tuner_cfg->i2c_bus);
@@ -438,11 +432,9 @@ static struct dvb_frontend *init_fe_device(struct dvb_adapter *adapter,
 	if (cfg->i2c_adap == NULL)
 	{
 		printk("stv090x: failed to allocate i2c resources\n");
-
 		kfree(cfg);
 		return NULL;
 	}
-
 	/* set to low */
 	hc595_out(tuner_cfg->fe_rst, 0);
 	/* Wait for everything to die */
@@ -462,42 +454,41 @@ static struct dvb_frontend *init_fe_device(struct dvb_adapter *adapter,
 		printk("No frontend found !\n");
 		return NULL;
 	}
-
-	printk(KERN_INFO "%s: Call dvb_register_frontend (adapter = 0x%x)\n",
-	       __FUNCTION__, (unsigned int) adapter);
+	printk(KERN_INFO "%s: Call dvb_register_frontend (adapter = 0x%x)\n", __FUNCTION__, (unsigned int) adapter);
 
 	frontend->id = i;
 	if (dvb_register_frontend(adapter, frontend))
 	{
 		printk("%s: Frontend registration failed !\n", __FUNCTION__);
 		if (frontend->ops.release)
+		{
 			frontend->ops.release(frontend);
+		}
 		return NULL;
 	}
-
 	state = frontend->demodulator_priv;
-
 	return frontend;
 }
 
 struct tuner_config tuner_resources[] =
 {
-
-	[0] = {
-		.adapter 	= 0,
-		.i2c_bus 	= 0,
-		.fe_rst 	= FE0_RST,
-		.fe_1318 	= FE0_1318,
-		.fe_1419 	= FE0_1419,
-		.fe_lnb_en  = FE0_LNB_EN,
+	[0] =
+	{
+		.adapter   = 0,
+		.i2c_bus   = 0,
+		.fe_rst    = FE0_RST,
+		.fe_1318   = FE0_1318,
+		.fe_1419   = FE0_1419,
+		.fe_lnb_en = FE0_LNB_EN,
 	},
-	[1] = {
-		.adapter 	= 0,
-		.i2c_bus 	= 1,
-		.fe_rst 	= FE1_RST,
-		.fe_1318 	= FE1_1318,
-		.fe_1419 	= FE1_1419,
-		.fe_lnb_en  = FE1_LNB_EN,
+	[1] =
+	{
+		.adapter   = 0,
+		.i2c_bus   = 1,
+		.fe_rst    = FE1_RST,
+		.fe_1318   = FE1_1318,
+		.fe_1419   = FE1_1419,
+		.fe_lnb_en = FE1_LNB_EN,
 	},
 };
 
@@ -508,34 +499,38 @@ void fe_core_register_frontend(struct dvb_adapter *dvb_adap)
 
 	printk(KERN_INFO "%s: Spider-Team plug and play frontend core\n", __FUNCTION__);
 
-	core[i] = (struct core *) kmalloc(sizeof(struct core), GFP_KERNEL);
+	core[i] = (struct core *)kmalloc(sizeof(struct core), GFP_KERNEL);
 	if (!core[i])
+	{
 		return;
-
+	}
 	memset(core[i], 0, sizeof(struct core));
 
 	core[i]->dvb_adapter = dvb_adap;
 	dvb_adap->priv = core[i];
 
-	printk("tuner = %d\n", ARRAY_SIZE(tuner_resources));
+	printk("# of tuner(s): %d\n", ARRAY_SIZE(tuner_resources));
 
 	srclk = stpio_request_pin(2, 2, "HC595_SRCLK", STPIO_OUT);
-	rclk = stpio_request_pin(2, 3, "HC595_RCLK", STPIO_OUT);
-	sda  = stpio_request_pin(2, 4, "HC595_SDA", STPIO_OUT);
+	rclk  = stpio_request_pin(2, 3, "HC595_RCLK", STPIO_OUT);
+	sda   = stpio_request_pin(2, 4, "HC595_SDA", STPIO_OUT);
 
 	if ((srclk == NULL) || (rclk == NULL) || (sda == NULL))
 	{
 		printk("stv090x: failed to allocate IO resources\n");
 
 		if (srclk != NULL)
+		{
 			stpio_free_pin(srclk);
-
+		}
 		if (rclk != NULL)
+		{
 			stpio_free_pin(rclk);
-
+		}
 		if (sda != NULL)
+		{
 			stpio_free_pin(sda);
-
+		}
 		return;
 	}
 
@@ -544,13 +539,10 @@ void fe_core_register_frontend(struct dvb_adapter *dvb_adap)
 		if (core[i]->frontend[vLoop] == NULL)
 		{
 			printk("%s: init tuner %d\n", __FUNCTION__, vLoop);
-			core[i]->frontend[vLoop] =
-				init_fe_device(core[i]->dvb_adapter, &tuner_resources[vLoop], vLoop);
+			core[i]->frontend[vLoop] = init_fe_device(core[i]->dvb_adapter, &tuner_resources[vLoop], vLoop);
 		}
 	}
-
 	printk(KERN_INFO "%s: <\n", __FUNCTION__);
-
 	return;
 }
 
@@ -607,34 +599,39 @@ static void printk_demod_name_and_type(int iDemodType)
 	switch (iDemodType)
 	{
 		case STV090X:
+		{
 			printk("stv090x dvb-s2    ");
 			break;
+		}
 		case CE6353:
+		{
 			printk("ce6353 dvb-t    ");
 			break;
+		}
 		case TDA10023:
+		{
 			printk("tda10023 dvb-c    ");
 			break;
+		}
 	}
 }
-
 EXPORT_SYMBOL(fe_core_register_frontend);
 
 int __init fe_core_init(void)
 {
-	/****** FRONT 0 ********/
+	/****** FRONT END 0 ********/
 	demodType1 = fe_get_demod_type(demod1);
 	tunerType1 = fe_get_tuner_type(tuner1);
 
-	printk("demodelator1: ");
+	printk("demodulator1: ");
 	printk_demod_name_and_type(demodType1);
 	printk("tuner1: %s\n", tuner_name[tunerType1]);
 
-	/****** FRONT 1 ********/
+	/****** FRONT END 1 ********/
 	demodType2 = fe_get_demod_type(demod2);
 	tunerType2 = fe_get_tuner_type(tuner2);
 
-	printk("demodelator2: ");
+	printk("demodulator2: ");
 	printk_demod_name_and_type(demodType2);
 	printk("tuner2: %s\n", tuner_name[tunerType2]);
 
@@ -650,6 +647,17 @@ static void __exit fe_core_exit(void)
 module_init(fe_core_init);
 module_exit(fe_core_exit);
 
-MODULE_DESCRIPTION("Tunerdriver");
+module_param(demod1, charp, 0);
+module_param(demod2, charp, 0);
+MODULE_PARM_DESC(demod1, "demodulator1 stv090x(default), ce6353, tda10023");  // DVB-S2
+MODULE_PARM_DESC(demod2, "demodulator2 stv090x, ce6353(default), tda10023");   // DVB-T
+
+module_param(tuner1, charp, 0);
+module_param(tuner2, charp, 0);
+MODULE_PARM_DESC(tuner1, "tuner1 sharp7306(default), stv6110x, sharp6465, lg031"); // DVB-S2
+MODULE_PARM_DESC(tuner2, "tuner2 sharp7306, stv6110x, sharp6465(default), lg031"); // DVB-T
+
+MODULE_DESCRIPTION("Front end driver");
 MODULE_AUTHOR("Spider-Team");
 MODULE_LICENSE("GPL");
+// vim:ts=4
