@@ -719,7 +719,8 @@ struct ProcStructure_s e2Proc[] =
  || defined(CUBEREVO_3000HD) \
  || defined(SPARK7162) \
  || defined(TF7700) \
- || defined(VITAMIN_HD5000)
+ || defined(VITAMIN_HD5000) \
+ || defined(VIP2_V1)
 	{cProcDir,   "stb/lcd",                                                          NULL, NULL, NULL, NULL, ""},
 #endif
 #if defined(ADB_BOX) \
@@ -727,7 +728,8 @@ struct ProcStructure_s e2Proc[] =
  || defined(ATEVIO7500) \
  || defined(SPARK7162) \
  || defined(TF7700) \
- || defined(VITAMIN_HD5000)
+ || defined(VITAMIN_HD5000) \
+ || defined(VIP2_V1)
 	{cProcEntry, "stb/lcd/symbol_circle",                                            NULL, NULL, NULL, NULL, ""},
 #endif
 #if defined(ADB_BOX) \
@@ -739,7 +741,8 @@ struct ProcStructure_s e2Proc[] =
  || defined(CUBEREVO_2000HD) \
  || defined(CUBEREVO_3000HD) \
  || defined(SPARK7162) \
- || defined(TF7700)
+ || defined(TF7700) \
+ || defined(VIP2_V1)
 	{cProcEntry, "stb/lcd/symbol_timeshift",                                         NULL, NULL, NULL, NULL, ""},
 #endif
 
@@ -815,7 +818,8 @@ struct ProcStructure_s e2Proc[] =
 #endif
 
 #if defined(SPARK) \
- || defined(SPARK7162)
+ || defined(SPARK7162) \
+ || defined(VIP2_V1)
 	{cProcEntry, "stb/fp/aotom",                                                     NULL, NULL, NULL, NULL, ""},
 	{cProcEntry, "stb/fp/displaytype",                                               NULL, NULL, NULL, NULL, ""},
 	{cProcEntry, "stb/fp/timemode",                                                  NULL, NULL, NULL, NULL, ""},

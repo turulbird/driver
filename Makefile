@@ -187,6 +187,7 @@ obj-y += smartcard/
 endif
 
 ifdef ADB_BOX
+#obj-y += boxtype/
 obj-y += smartcard/
 obj-y += fan_adb_box/
 obj-y += cec_adb_box/
