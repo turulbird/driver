@@ -50,3 +50,4 @@ int YWTRACE_Print(const unsigned int level, const char *format, ...)
 	}
 	return r;
 }
+// vim:ts=4
