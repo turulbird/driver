@@ -30,8 +30,8 @@ struct zl10353_config
 	u8 demod_address;
 
 	/* frequencies in units of 0.1kHz */
-	int adc_clock;	/* default: 450560 (45.056  MHz) */
-	int if2;	/* default: 361667 (36.1667 MHz) */
+	int adc_clock;  /* default: 450560 (45.056  MHz) */
+	int if2;  /* default: 361667 (36.1667 MHz) */
 
 	/* set if no pll is connected to the secondary i2c bus */
 	int no_tuner;
@@ -47,7 +47,7 @@ struct zl10353_config
 	u8 pll_0;        /* default: 0x15 */
 };
 
-extern struct dvb_frontend *zl10353_attach(const struct zl10353_config *config,
-					   struct i2c_adapter *i2c);
+extern struct dvb_frontend *zl10353_attach(const struct zl10353_config *config, struct i2c_adapter *i2c);
 
 #endif /* ZL10353_H */
+// vim:ts=4

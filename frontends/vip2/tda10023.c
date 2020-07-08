@@ -1,29 +1,29 @@
 /*
-  TDA10023  - DVB-C decoder
-  (as used in Philips CU1216-3 NIM and the Reelbox DVB-C tuner card)
-
-  Copyright (C) 2005 Georg Acher, BayCom GmbH (acher at baycom dot de)
-  Copyright (c) 2006 Hartmut Birr (e9hack at gmail dot com)
-
-  Remotely based on tda10021.c
-  Copyright (C) 1999 Convergence Integrated Media GmbH <ralph@convergence.de>
-  Copyright (C) 2004 Markus Schulz <msc@antzsystem.de>
-	                 Support for TDA10021
-
-  This program is free software; you can redistribute it and/or modify
-  it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
-
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-  GNU General Public License for more details.
-
-  You should have received a copy of the GNU General Public License
-  along with this program; if not, write to the Free Software
-  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-*/
+ * TDA10023  - DVB-C decoder
+ * (as used in Philips CU1216-3 NIM and the Reelbox DVB-C tuner card)
+ *
+ * Copyright (C) 2005 Georg Acher, BayCom GmbH (acher at baycom dot de)
+ * Copyright (c) 2006 Hartmut Birr (e9hack at gmail dot com)
+ *
+ * Remotely based on tda10021.c
+ * Copyright (C) 1999 Convergence Integrated Media GmbH <ralph@convergence.de>
+ * Copyright (C) 2004 Markus Schulz <msc@antzsystem.de>
+ *                    Support for TDA10021
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ */
 
 #include <linux/delay.h>
 #include <linux/errno.h>
@@ -43,31 +43,41 @@
 
 #define REG0_INIT_VAL 0x23
 
+extern short paramDebug;  // debug print level is zero as default (0=nothing, 1= errors, 10=some detail, 20=more detail, 50=open/close functions, 100=all)
+#if defined TAGDEBUG
+#undef TAGDEBUG
+#endif
+#define TAGDEBUG "[tda10023] "
+#if !defined dprintk
+//#undef dprintk
+//#endif
+#define dprintk(level, x...) \
+do \
+{ \
+	if ((paramDebug) && (paramDebug >= level) || level == 0) \
+	printk(TAGDEBUG x); \
+} while (0)
+#endif
+
 struct tda10023_state
 {
-	struct i2c_adapter* i2c;
+	struct i2c_adapter           *i2c;
 	/* configuration settings */
 	const struct tda10023_config *config;
-	struct dvb_frontend frontend;
+	struct dvb_frontend          frontend;
 
-	u8  pwm;
-	u8  reg0;
+	u8                           pwm;
+	u8                           reg0;
 
 	/* clock settings */
-	u32 xtal;
-	u8  pll_m;
-	u8  pll_p;
-	u8  pll_n;
-	u32 sysclk;
+	u32                          xtal;
+	u8                           pll_m;
+	u8                           pll_p;
+	u8                           pll_n;
+	u32                          sysclk;
 };
 
-int debug;
-#define dprintk(args...) \
-	do { \
-		if (debug) printk(KERN_ERR "[tda10023] " args); \
-	} while (0)
-
-static int verbose=1;
+//static int verbose=1;
 
 static int tda10023_read_status(struct dvb_frontend *fe, fe_status_t *status);
 
@@ -79,7 +89,7 @@ static u8 tda10023_readreg(struct tda10023_state *state, u8 reg)
 				  { .addr = state->config->demod_address, .flags = I2C_M_RD, .buf = b1, .len = 1 } };
 	int ret;
 
-	dprintk("%s config->address = 0x%x \n",__func__, state->config->demod_address);
+	dprintk(50, "%s config->address = 0x%x \n",__func__, state->config->demod_address);
 
 	ret = i2c_transfer (state->i2c, msg, 2);
 	if (ret != 2)
@@ -89,7 +99,7 @@ static u8 tda10023_readreg(struct tda10023_state *state, u8 reg)
 			"(reg == 0x%02x, ret == %i)\n",
 			num, __func__, reg, ret);
 	}
-	dprintk("%s: reg=0x%02x , result=0x%02x\n",__func__, reg, b1[0]);
+	dprintk(50,"%s: reg=0x%02x , result=0x%02x\n",__func__, reg, b1[0]);
 	return b1[0];
 }
 
@@ -99,15 +109,13 @@ static int tda10023_writereg(struct tda10023_state *state, u8 reg, u8 data)
 	struct i2c_msg msg = { .addr = state->config->demod_address, .flags = 0, .buf = buf, .len = 2 };
 	int ret;
 
-	dprintk("w: addr = 0x%02x : reg = 0x%02x val = 0x%02x\n", state->config->demod_address, reg, data);
+	dprintk(50, "w: addr = 0x%02x : reg = 0x%02x val = 0x%02x\n", state->config->demod_address, reg, data);
 
 	ret = i2c_transfer (state->i2c, &msg, 1);
 	if (ret != 1)
 	{
 		int num = state->frontend.dvb ? state->frontend.dvb->num : -1;
-		printk(KERN_ERR "DVB: TDA10023(%d): %s, writereg error "
-			"(reg == 0x%02x, val == 0x%02x, ret == %i)\n",
-			num, __func__, reg, data, ret);
+		dprintk(1, "DVB: TDA10023(%d): %s, writereg error (reg == 0x%02x, val == 0x%02x, ret == %i)\n", num, __func__, reg, data, ret);
 	}
 	return (ret != 1) ? -EREMOTEIO : 0;
 }
@@ -163,7 +171,7 @@ static int lock_tuner(struct tda10023_state *state)
 
 	if (i2c_transfer(state->i2c, &msg, 1) != 1)
 	{
-		printk("tda10023: lock tuner fails\n");
+		dprintk(1, "Lock tuner failed\n");
 		return -EREMOTEIO;
 	}
 	return 0;
@@ -177,7 +185,7 @@ static int unlock_tuner(struct tda10023_state *state)
 
 	if (i2c_transfer(state->i2c, &msg_post, 1) != 1)
 	{
-		printk("tda10023: unlock tuner fails\n");
+		dprintk(1, "Uunlock tuner failed\n");
 		return -EREMOTEIO;
 	}
 	return 0;
@@ -197,26 +205,28 @@ static int tda10023_tuner_write(struct tda10023_state *state, u8 addr, char *buf
 	    printk("error opening gate\n");
 		return -1;
 	}
+	if (paramDebug >= 100)
 	{
 		int i;
 
+		dprintk(1, "Message =");
 		for (i = 0; i < size; i++)
 		{
-			dprintk(" 0x%02x", buff[i]);
+			printk(" 0x%02x", buff[i]);
 		}
-		dprintk("\n");
+		printk("\n");
 	}
 	msleep(50);
 
 	if (i2c_transfer (state->i2c, &msg, 1) != 1)
 	{
-		printk("failed to write to pll on 0x%0x\n", addr);
+		dprintk(1, "Failed to write to pll on 0x%0x\n", addr);
 	}
 	msleep(50);
 /* fixme: use gate off here */
 	if (tda10023_writebit(state, 0x0f, 0x80, 0x00) < 0)
 	{
-		printk("error closing gate\n");
+		dprintk(1, "Error closing gate\n");
 		return -1;
 	}
 	return ret;
@@ -303,7 +313,7 @@ static int tda10023_pll_set_freq(struct tda10023_state *state, unsigned int freq
 	}
 	if (a == (sizeof(cptlb)/sizeof(cptlb[0])))
 	{
-		printk("unknown frequency.(%d)\n", freq_khz);
+		dprintk(1, "Unknown frequency: %d\n", freq_khz);
 		return -1;
 	}
 #endif
@@ -507,7 +517,7 @@ static int tda10023_write_init(struct tda10023_state* state, unsigned int f_RF_f
 	tda10023_writereg(state, 0x02, 0x93);
 
 	msleep(100);
-	//printk("write_init out\n");
+	//dprintk(100, "write_init out\n");
 	return 0;
 }
 
@@ -532,7 +542,7 @@ static int tda10023_set_symbolrate (struct tda10023_state* state, u32 sr)
 	u16 NDEC = 0;
 
 	u32 sysclk_x_10;
-	dprintk("%s > sr %d\n", __func__, sr);
+	dprintk(100, "%s > sr %d\n", __func__, sr);
 
 	/* avoid floating point operations multiplying syscloc and divider
 	   by 10 */
@@ -591,7 +601,7 @@ static int tda10023_set_symbolrate (struct tda10023_state* state, u32 sr)
 
 		BDR = (s32)BDRX;
 	}
-	dprintk("Symbolrate %i, BDR %i BDRI %i, NDEC %i\n", sr, BDR, BDRI, NDEC);
+	dprintk(20, "Symbolrate %i, BDR %i BDRI %i, NDEC %i\n", sr, BDR, BDRI, NDEC);
 /* see below
 	tda10023_writebit(state, 0x03, 0xc0, NDEC << 6);
 	tda10023_writereg(state, 0x0a, BDR & 255);
@@ -609,7 +619,7 @@ static int tda10023_set_symbolrate (struct tda10023_state* state, u32 sr)
 	tda10023_writereg(state, 0x0d, BDRI);
 /* *** orig app path */
 
-	dprintk("%s <\n", __func__);
+	dprintk(100, "%s <\n", __func__);
 	return 0;
 }
 
@@ -668,7 +678,7 @@ static int tda10023_init (struct dvb_frontend *fe)
 		/* 120 */ 0xff, 0x64, 0x00,  /* Sleep 100ms */
 		/* 123 */ 0xff, 0xff, 0xff
 	};
-	dprintk("DVB: TDA10023(%d): init chip\n", fe->dvb->num);
+	dprintk(20, "DVB: TDA10023(%d): init chip\n", fe->dvb->num);
 
 	/* override default values if set in config */
 	if (state->config->deltaf)
@@ -701,7 +711,7 @@ static int tda10023_set_parameters (struct dvb_frontend *fe, struct dvb_frontend
 	};
 	int qam = p->u.qam.modulation;
 
-	dprintk("%s > qam %d, sr %d, inv %d\n", __func__, qam, p->u.qam.symbol_rate, p->inversion);
+	dprintk(50, "%s > qam %d, sr %d, inv %d\n", __func__, qam, p->u.qam.symbol_rate, p->inversion);
 
 	/* fixme: orig app path */
 	tda10023_reset_all(state);
@@ -791,7 +801,7 @@ static int tda10023_set_parameters (struct dvb_frontend *fe, struct dvb_frontend
 		msleep(20);  /* fixme: think on this */
 		printk("%s: waiting for lock %d ...\n", __func__, cnt);
 	} while (--cnt);
-	dprintk("%s <\n", __func__);
+	dprintk(100, "%s <\n", __func__);
 	return 0;
 }
 
@@ -800,7 +810,7 @@ static int tda10023_read_status(struct dvb_frontend *fe, fe_status_t *status)
 	struct tda10023_state *state = fe->demodulator_priv;
 	int sync;
 
-	dprintk("%s >\n", __func__);
+	dprintk(100, "%s >\n", __func__);
 
 	*status = 0;
 
@@ -822,7 +832,7 @@ static int tda10023_read_status(struct dvb_frontend *fe, fe_status_t *status)
 	{
 		*status |= FE_HAS_LOCK;
 	}
-	dprintk("%s < status %d\n", __func__, *status);
+	dprintk(100, "%s < status %d\n", __func__, *status);
 	return 0;
 }
 
@@ -846,7 +856,7 @@ static int tda10023_read_signal_strength(struct dvb_frontend *fe, u16 *strength)
 	u8 ifgain = tda10023_readreg(state, 0x2f);
 	u16 gain = ((255 - tda10023_readreg(state, 0x17))) + (255 - ifgain) / 16;
 
-	dprintk("%s >\n", __func__);
+	dprintk(100, "%s >\n", __func__);
 
 	// Max raw value is about 0xb0 -> Normalize to >0xf0 after 0x90
 	if (gain > 0x90)
@@ -859,7 +869,7 @@ static int tda10023_read_signal_strength(struct dvb_frontend *fe, u16 *strength)
 	}
 	*strength = (gain << 8) | gain;
 
-	dprintk("%s < strength %d\n", __func__, *strength);
+	dprintk(100, "%s < strength %d\n", __func__, *strength);
 	return 0;
 }
 
@@ -868,11 +878,11 @@ static int tda10023_read_snr(struct dvb_frontend *fe, u16 *snr)
 	struct tda10023_state *state = fe->demodulator_priv;
 	u8                    quality;
 
-	dprintk("%s >\n", __func__);
+	dprintk(100, "%s >\n", __func__);
 	quality = ~tda10023_readreg(state, 0x18);
 	*snr = (quality << 8) | quality;
 
-	dprintk("%s < snr %d\n", __func__, *snr);
+	dprintk(100, "%s < snr %d\n", __func__, *snr);
 	return 0;
 }
 
@@ -903,13 +913,17 @@ static int tda10023_get_frontend(struct dvb_frontend *fe, struct dvb_frontend_pa
 	afc = tda10023_readreg(state, 0x19);
 	inv = tda10023_readreg(state, 0x04);
 
-	if (verbose)
+	if (paramDebug >=100)
 	{
 		/* AFC only valid when carrier has been recovered */
-		printk(sync & 2 ? "DVB: TDA10023(%d): AFC (%d) %dHz\n" :
-				  "DVB: TDA10023(%d): [AFC (%d) %dHz]\n",
-			state->frontend.dvb->num, afc,
-		       -((s32)p->u.qam.symbol_rate * afc) >> 10);
+		if (sync & 2)
+		{
+			dprintk(1,"DVB: TDA10023(%d): AFC (%d) %dHz\n", state->frontend.dvb->num, afc, -((s32)p->u.qam.symbol_rate * afc) >> 10);
+		}
+		else
+ 		{
+			dprintk(1, "DVB: TDA10023(%d): [AFC (%d) %dHz]\n", state->frontend.dvb->num, afc, -((s32)p->u.qam.symbol_rate * afc) >> 10);
+		}
 	}
 	p->inversion = (inv & 0x20 ? 0 : 1);
 	p->u.qam.modulation = ((state->reg0 >> 2) & 7) + QAM_16;
@@ -939,12 +953,12 @@ static int tda10023_i2c_gate_ctrl(struct dvb_frontend *fe, int enable)
 
 	if (enable)
 	{
-		dprintk("enable gate\n");
+		dprintk(50, "Enable gate\n");
 		lock_tuner(state);
 	}
 	else
 	{
-		dprintk("disable gate\n");
+		dprintk(50, "Disable gate\n");
 		unlock_tuner(state);
 	}
 	return 0;
@@ -962,7 +976,7 @@ struct dvb_frontend *tda10023_attach(const struct tda10023_config *config, struc
 {
 	struct tda10023_state* state = NULL;
 
-	dprintk("%s >\n", __func__);
+	dprintk(100, "%s >\n", __func__);
 
 	/* allocate memory for the internal state */
 	state = kzalloc(sizeof(struct tda10023_state), GFP_KERNEL);
@@ -1005,17 +1019,15 @@ struct dvb_frontend *tda10023_attach(const struct tda10023_config *config, struc
 	state->frontend.ops.info.symbol_rate_min = (state->sysclk / 2) / 64;
 	state->frontend.ops.info.symbol_rate_max = (state->sysclk / 2) / 4;
 
-	dprintk("DVB: TDA10023 %s: xtal:%d pll_m:%d pll_p:%d pll_n:%d\n",
-		__func__, state->xtal, state->pll_m, state->pll_p,
-		state->pll_n);
+	dprintk(20, "DVB: TDA10023 %s: xtal:%d pll_m:%d pll_p:%d pll_n:%d\n", __func__, state->xtal, state->pll_m, state->pll_p, state->pll_n);
 
 	state->frontend.demodulator_priv = state;
-	dprintk("%s < ok\n", __func__);
+	dprintk(100, "%s < ok\n", __func__);
 	return &state->frontend;
 
 error:
 	kfree(state);
-	dprintk("%s < failed\n", __func__);
+	dprintk(1, "%s < failed\n", __func__);
 	return NULL;
 }
 EXPORT_SYMBOL(tda10023_attach);
@@ -1039,7 +1051,7 @@ static int tda10023_get_property(struct dvb_frontend *fe, struct dtv_property* t
 			}
 		}
 	}
-	dprintk("%s()\n", __func__);
+	dprintk(100, "%s <\n", __func__);
 	return 0;
 }
 #endif
@@ -1084,8 +1096,8 @@ static struct dvb_frontend_ops tda10023_ops =
 #endif
 };
 
-module_param(debug, int, 0644);
-MODULE_PARM_DESC(debug, "Turn on/off frontend debugging (default:off).");
+//module_param(debug, int, 0644);
+//MODULE_PARM_DESC(debug, "Turn on/off frontend debugging (default:off).");
 
 MODULE_DESCRIPTION("Philips TDA10023 DVB-C demodulator driver");
 MODULE_AUTHOR("Georg Acher, Hartmut Birr");
