@@ -720,6 +720,7 @@ struct ProcStructure_s e2Proc[] =
  || defined(SPARK7162) \
  || defined(TF7700) \
  || defined(VITAMIN_HD5000) \
+ || defined(HL101) \
  || defined(VIP2_V1)
 	{cProcDir,   "stb/lcd",                                                          NULL, NULL, NULL, NULL, ""},
 #endif
@@ -729,6 +730,7 @@ struct ProcStructure_s e2Proc[] =
  || defined(SPARK7162) \
  || defined(TF7700) \
  || defined(VITAMIN_HD5000) \
+ || defined(HL101) \
  || defined(VIP2_V1)
 	{cProcEntry, "stb/lcd/symbol_circle",                                            NULL, NULL, NULL, NULL, ""},
 #endif
@@ -742,6 +744,7 @@ struct ProcStructure_s e2Proc[] =
  || defined(CUBEREVO_3000HD) \
  || defined(SPARK7162) \
  || defined(TF7700) \
+ || defined(HL101) \
  || defined(VIP2_V1)
 	{cProcEntry, "stb/lcd/symbol_timeshift",                                         NULL, NULL, NULL, NULL, ""},
 #endif
@@ -839,7 +842,8 @@ struct ProcStructure_s e2Proc[] =
 	{cProcEntry, "stb/tsmux/lnb_b_input",                                            NULL, NULL, NULL, NULL, ""},
 
 	{cProcDir, "stb/misc",                                                           NULL, NULL, NULL, NULL, ""},
-#if defined(IPBOX9900)
+#if defined(IPBOX9900) \
+ || defined(VIP2_V1)
 	{cProcEntry, "stb/misc/12V_output",                                              NULL, proc_misc_12V_output_read, proc_misc_12V_output_write, NULL, ""},
 #endif
 
