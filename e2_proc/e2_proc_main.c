@@ -591,7 +591,9 @@ out:
 	return ret;
 }
 
-#if defined(IPBOX9900)
+#if defined(IPBOX9900) \
+|| defined(VIP1_V2) \
+|| defined(VIP2_V1)
 int _12v_isON = 0;
 
 int proc_misc_12V_output_write(struct file *file, const char __user *buf, unsigned long count, void *data)
@@ -843,6 +845,7 @@ struct ProcStructure_s e2Proc[] =
 
 	{cProcDir, "stb/misc",                                                           NULL, NULL, NULL, NULL, ""},
 #if defined(IPBOX9900) \
+ || defined(VIP1_V2) \
  || defined(VIP2_V1)
 	{cProcEntry, "stb/misc/12V_output",                                              NULL, proc_misc_12V_output_read, proc_misc_12V_output_write, NULL, ""},
 #endif
