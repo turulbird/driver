@@ -805,7 +805,7 @@ static int AOTOMdev_ioctl(struct inode *Inode, struct file *File, unsigned int c
 					spinner_state.state = aotom_data.u.icon.on;
 					if (aotom_data.u.icon.on == 1)
 					{
-						res = show_spinner(80);  // start spinner thread, default speed
+						res = show_spinner(40);  // start spinner thread, default speed
 					}
 					else 
 					{
@@ -1462,7 +1462,7 @@ MODULE_PARM_DESC(paramDebug, "Debug Output 0=disabled >0=enabled(debuglevel)");
 module_param(gmt, charp, 0);
 MODULE_PARM_DESC(gmt, "GMT offset (default +3600");
 
-MODULE_DESCRIPTION("VFD module for Edision Argus VIP receivers");
+MODULE_DESCRIPTION("VFD module for Edision argus VIP receivers");
 MODULE_AUTHOR("Spider-Team, oSaoYa, Audioniek");
 MODULE_LICENSE("GPL");
 // vim:ts=4

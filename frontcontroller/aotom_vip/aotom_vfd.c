@@ -4,7 +4,7 @@
  * (c) 2010 Spider-Team
  * (c) 2011 oSaoYa
  * (c) 2012-2013 martii
- * (c) 2013-2015 Audioniek
+ * (c) 2013-2020 Audioniek
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -3646,10 +3646,10 @@ int YWPANEL_FP_Init(void)
 				break;
 			}
 		}
-		dprintk(0, "FP CPU type   : %s\n", FP_cpu_name[panel_version.CpuType]);
-		dprintk(0, "FP type       : %s\n", FP_mode_name[YWFP_INFO.fp_type]);
+		dprintk(20, "FP CPU type   : %s\n", FP_cpu_name[panel_version.CpuType]);
+		dprintk(20, "FP type       : %s\n", FP_mode_name[YWFP_INFO.fp_type]);
 		dprintk(0, "Display type  : %s\n", FP_name[panel_version.DisplayInfo]);
-		dprintk(0, "# of FP keys  : %d\n", panel_version.scankeyNum);
+		dprintk(20, "# of FP keys  : %d\n", panel_version.scankeyNum);
 		dprintk(0, "FP SW Version : %d.%d\n", panel_version.swMajorVersion, panel_version.swSubVersion);
 #if 0
 		for (i = 0; i < 5; i++)

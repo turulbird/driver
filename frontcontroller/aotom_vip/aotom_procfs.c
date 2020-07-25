@@ -215,7 +215,7 @@ static int symbol_circle_write(struct file *file, const char __user *buf, unsign
 		{
 			if (symbol_circle == 1)
 			{
-				ret = show_spinner(80);  // start spinner thread (dfault value)
+				ret = show_spinner(40);  // start spinner thread (default value)
 			}
 			else
 			{
@@ -540,7 +540,6 @@ static int fp_version_read(char *page, char **start, off_t off, int count, int *
 	return len;
 }
 
-#if defined(FP_LEDS)
 static int led_pattern_write(struct file *file, const char __user *buf, unsigned long count, void *data, int which)
 {
 	char *page;
@@ -601,6 +600,7 @@ static int led0_pattern_write(struct file *file, const char __user *buf, unsigne
 	return led_pattern_write(file, buf, count, data, 0);
 }
 
+#if defined(FP_LEDS)
 static int led1_pattern_read(char *page, char **start, off_t off, int count, int *eof, void *data_unused)
 {
 	int len = 0;
@@ -615,6 +615,7 @@ static int led1_pattern_write(struct file *file, const char __user *buf, unsigne
 {
 	return led_pattern_write(file, buf, count, data, 1);
 }
+#endif
 
 static int led_pattern_speed_write(struct file *file, const char __user *buf, unsigned long count, void *data)
 {
@@ -649,7 +650,6 @@ static int led_pattern_speed_read(char *page, char **start, off_t off, int count
 	}
 	return len;
 }
-#endif
 
 static int oled_brightness_write(struct file *file, const char __user *buf, unsigned long count, void *data)
 {
@@ -676,7 +676,7 @@ static int oled_brightness_write(struct file *file, const char __user *buf, unsi
 	return ret;
 }
 
-#if defined(FP_LEDS)
+//#if defined(FP_LEDS)
 static int power_standbyled_write(struct file *file, const char __user *buf, unsigned long count, void *data)
 {
 	char *page;
@@ -706,7 +706,7 @@ static int power_standbyled_write(struct file *file, const char __user *buf, uns
 	}
 	return ret;
 }
-#endif
+//#endif
 
 static int displaytype_read(char *page, char **start, off_t off, int count, int *eof, void *data)
 {
@@ -743,7 +743,7 @@ static int timemode_read(char *page, char **start, off_t off, int count, int *eo
 	return len;
 }
 
-#if 0
+#if defined(FP_DVFD)
 static int timemode_write(struct file *file, const char __user *buf, unsigned long count, void *data)
 {
 	char *page;
@@ -760,7 +760,6 @@ static int timemode_write(struct file *file, const char __user *buf, unsigned lo
 		{
 			page[count - 1] = '\0';
 
-#if defined(FP_DVFD)
 			if (fp_type == FP_DVFD)
 			{
 				if (simple_strtol(page, NULL, 10) != 0)
@@ -773,7 +772,6 @@ static int timemode_write(struct file *file, const char __user *buf, unsigned lo
 				}
 				YWPANEL_FP_DvfdSetTimeMode(Mode);
 			}
-#endif
 			ret = count;
 		}
 		free_page((unsigned long)page);
@@ -796,14 +794,14 @@ struct fp_procs
 	write_proc_t *write_proc;
 } fp_procs[] =
 {
-	{ "progress", progress_read, progress_write },
-//	{ "stb/fp/aotom", NULL, aotom_write },
+//	{ "progress", progress_read, progress_write },
+	{ "stb/fp/aotom", NULL, aotom_write },
 	{ "stb/fp/displaytype", displaytype_read, NULL },
-#if defined(FP_LEDS)
 	{ "stb/fp/led0_pattern", led0_pattern_read, led0_pattern_write },
+#if defined(FP_LEDS)
 	{ "stb/fp/led1_pattern", led1_pattern_read, led1_pattern_write },
-	{ "stb/fp/led_pattern_speed", led_pattern_speed_read, led_pattern_speed_write },
 #endif
+	{ "stb/fp/led_pattern_speed", led_pattern_speed_read, led_pattern_speed_write },
 	{ "stb/fp/oled_brightness", NULL, oled_brightness_write },
 	{ "stb/fp/rtc", rtc_read, rtc_write },
 	{ "stb/fp/rtc_offset", rtc_offset_read, rtc_offset_write },
@@ -818,9 +816,9 @@ struct fp_procs
 	{ "stb/fp/version", fp_version_read, NULL },
 	{ "stb/lcd/symbol_circle", symbol_circle_read, symbol_circle_write },
 	{ "stb/lcd/symbol_timeshift", symbol_timeshift_read, symbol_timeshift_write },
-#if defined(FP_LEDS)
+//#if defined(FP_LEDS)
 	{ "stb/power/standbyled", NULL, power_standbyled_write },
-#endif
+//#endif
 };
 
 void create_proc_fp(void)
