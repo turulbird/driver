@@ -223,12 +223,27 @@
 #include <linux/version.h>
 #include <linux/string.h>
 #include <linux/module.h>
+#if defined(VIP1_V2) \
+ || defined(VIP2_V1)
+#include <linux/version.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,23)
+#  include <linux/stpio.h>
+#else
+#  include <linux/stm/pio.h>
+#endif  // kernel version
+#endif  // vip1_v2
 
 typedef int (*proc_read_t)(char *page, char **start, off_t off, int count, int *eof, void *data_unused);
 typedef int (*proc_write_t)(struct file *file, const char __user *buf, unsigned long count, void *data);
 
 #define cProcDir	1
 #define cProcEntry	2
+
+// For 12V output
+#if defined(VIP1_V2) \
+ || defined(VIP2_V1)
+struct stpio_pin *_12v_pin;
+#endif
 
 struct ProcStructure_s
 {
@@ -592,9 +607,24 @@ out:
 }
 
 #if defined(IPBOX9900) \
-|| defined(VIP1_V2) \
-|| defined(VIP2_V1)
+ || defined(VIP1_V2) \
+ || defined(VIP2_V1)
 int _12v_isON = 0;
+
+void set_12v(int onoff)
+{
+#if defined(VIP1_V2) \
+ || defined(VIP2_V1)
+	if (onoff)
+	{
+		stpio_set_pin(_12v_pin, 1);
+	}
+	else
+	{
+		stpio_set_pin(_12v_pin, 0);
+	}
+#endif
+}
 
 int proc_misc_12V_output_write(struct file *file, const char __user *buf, unsigned long count, void *data)
 {
@@ -630,15 +660,15 @@ int proc_misc_12V_output_write(struct file *file, const char __user *buf, unsign
 			_12v_isON = 0;
 		}
 		kfree(myString);
-
 		ret = count;
 	}
+	set_12v(_12v_isON);  // set 12V output
 	ret = count;
+
 out:
 	free_page((unsigned long)page);
 	return ret;
 }
-
 EXPORT_SYMBOL(_12v_isON);
 
 int proc_misc_12V_output_read(char *page, char **start, off_t off, int count, int *eof, void *data_unused)
@@ -658,7 +688,7 @@ int proc_misc_12V_output_read(char *page, char **start, off_t off, int count, in
 	}
 	return len;
 }
-#endif
+#endif  // IPBOX9900, VIP
 
 static int zero_read(char *page, char **start, off_t off, int count, int *eof, void *data)
 {
@@ -723,6 +753,7 @@ struct ProcStructure_s e2Proc[] =
  || defined(TF7700) \
  || defined(VITAMIN_HD5000) \
  || defined(HL101) \
+ || defined(VIP1_V2) \
  || defined(VIP2_V1)
 	{cProcDir,   "stb/lcd",                                                          NULL, NULL, NULL, NULL, ""},
 #endif
@@ -733,6 +764,7 @@ struct ProcStructure_s e2Proc[] =
  || defined(TF7700) \
  || defined(VITAMIN_HD5000) \
  || defined(HL101) \
+ || defined(VIP1_V2) \
  || defined(VIP2_V1)
 	{cProcEntry, "stb/lcd/symbol_circle",                                            NULL, NULL, NULL, NULL, ""},
 #endif
@@ -747,6 +779,7 @@ struct ProcStructure_s e2Proc[] =
  || defined(SPARK7162) \
  || defined(TF7700) \
  || defined(HL101) \
+ || defined(VIP1_V2) \
  || defined(VIP2_V1)
 	{cProcEntry, "stb/lcd/symbol_timeshift",                                         NULL, NULL, NULL, NULL, ""},
 #endif
@@ -824,6 +857,7 @@ struct ProcStructure_s e2Proc[] =
 
 #if defined(SPARK) \
  || defined(SPARK7162) \
+ || defined(VIP1_V2) \
  || defined(VIP2_V1)
 	{cProcEntry, "stb/fp/aotom",                                                     NULL, NULL, NULL, NULL, ""},
 	{cProcEntry, "stb/fp/displaytype",                                               NULL, NULL, NULL, NULL, ""},
@@ -844,6 +878,7 @@ struct ProcStructure_s e2Proc[] =
 	{cProcEntry, "stb/tsmux/lnb_b_input",                                            NULL, NULL, NULL, NULL, ""},
 
 	{cProcDir, "stb/misc",                                                           NULL, NULL, NULL, NULL, ""},
+	// VIP1_V2: // PIO4.6 is on/off
 #if defined(IPBOX9900) \
  || defined(VIP1_V2) \
  || defined(VIP2_V1)
@@ -1278,7 +1313,6 @@ int cpp_remove_e2_procs(const char *path, read_proc_t *read_func, write_proc_t *
 	}
 	return 0;
 }
-
 EXPORT_SYMBOL(cpp_remove_e2_procs);
 
 static int __init e2_proc_init_module(void)
@@ -1336,6 +1370,18 @@ static int __init e2_proc_init_module(void)
 			}
 		}
 	}
+#if defined(VIP1_V2) \
+ || defined(VIP2_V1)
+	_12v_pin = stpio_request_pin(4, 6, "12V_CTL", STPIO_OUT);
+	if (_12v_pin == NULL)
+	{
+		printk("Allocating PIO 4.6 for 12V output failed\n");
+	}
+	else
+	{
+		set_12v(0);  // switch 12V output off
+	}
+#endif
 	return 0;
 }
 
