@@ -1,3 +1,28 @@
+/****************************************************************************
+ *
+ * Sharp 6465 tuner driver
+ * Copyright (C) ?
+ *
+ * Version for:
+ * Edision argus VIP (1 pluggable tuner)
+ * Edision argus VIP2 (2 pluggable tuners)
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ *
+ ***************************************************************************/
+
 #include <linux/init.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
@@ -6,6 +31,20 @@
 
 #include "dvb_frontend.h"
 #include "sharp6465.h"
+
+extern short paramDebug;  // debug print level is zero as default (0=nothing, 1= errors, 10=some detail, 20=more detail, 50=open/close functions, 100=all)
+#if defined TAGDEBUG
+#undef TAGDEBUG
+#endif
+#define TAGDEBUG "[sharp6465] "
+#if !defined dprintk
+#define dprintk(level, x...) \
+do \
+{ \
+	if ((paramDebug) && (paramDebug >= level) || level == 0) \
+	printk(TAGDEBUG x); \
+} while (0)
+#endif
 
 struct sharp6465_state
 {
@@ -21,7 +60,6 @@ static long calculate_mop_xtal(void);
 static void calculate_mop_ic(u32 freq, u32 baud, int *byte);  // [kHz]
 static void calculate_mop_divider(u32 freq, int *byte);
 static void calculate_mop_uv_cp(u32 freq, int *cp, int *uv);
-//static long calculate_mop_if(void);
 static long calculate_mop_step(int *byte);
 static void calculate_mop_bw(u32 baud, int *byte);
 
@@ -39,7 +77,7 @@ static int sharp6465_read(struct sharp6465_state *state, u8 *buf)
 	return err;
 
 exit:
-	printk(KERN_ERR "%s: I/O Error err=<%d>\n", __func__, err);
+	dprintk(1, "%s: I/O Error err=<%d>\n", __func__, err);
 	return err;
 }
 
@@ -49,7 +87,7 @@ static int sharp6465_write(struct sharp6465_state *state, u8 *buf, u8 length)
 	int err = 0;
 	struct i2c_msg msg = { .addr = config->addr, .flags = 0, .buf = buf, .len = length };
 
-	printk(KERN_ERR "%s: state->i2c=<%d>, config->addr = %d\n", __func__, (int)state->i2c, config->addr);
+	dprintk(50, "%s: state->i2c=<%d>, config->addr = %d\n", __func__, (int)state->i2c, config->addr);
 
 	err = i2c_transfer(state->i2c, &msg, 1);
 	if (err != 1)
@@ -59,7 +97,7 @@ static int sharp6465_write(struct sharp6465_state *state, u8 *buf, u8 length)
 	return err;
 
 exit:
-	printk(KERN_ERR "%s: I/O Error err=<%d>\n", __func__, err);
+	dprintk(1, "%s: I/O Error err=<%d>\n", __func__, err);
 	return err;
 }
 
@@ -78,17 +116,16 @@ static int sharp6465_get_status(struct dvb_frontend *fe, u32 *status)
 	}
 	if (result[0] & 0x40)
 	{
-		printk(KERN_DEBUG "%s: Tuner Phase Locked\n", __func__);
+		dprintk(20, "%s: Tuner Phase Locked\n", __func__);
 		*status = 1;
 	}
 	return err;
 
 exit:
-	printk(KERN_ERR "%s: I/O Error\n", __func__);
+	dprintk(1, "%s: I/O Error\n", __func__);
 	return err;
 }
 
-#if 1
 static long calculate_mop_xtal()
 {
 	return 4000;  // khz
@@ -122,7 +159,7 @@ static void calculate_mop_divider(u32 freq, int *byte)
 	i64Freq += 5;
 	i64Freq /= 10;
 	data = (long)i64Freq;
-	printk(KERN_ERR "%s: data = %ld\n", __func__, data);
+	dprintk(50, "%s: data = %ld\n", __func__, data);
 //	data = (long)((freq + calculate_mop_if() )/ calculate_mop_step(byte) + 0.5);
 	*(byte + 1) = (int)((data >> 8) & 0x7F);  // byte2
 	*(byte + 2) = (int)(data & 0xFF);  // byte3
@@ -170,16 +207,6 @@ static void calculate_mop_uv_cp(u32 freq, int *cp, int *uv)
 	kfree(CP_DATA);
 }
 
-#if 0
-static long calculate_mop_if()
-{
-	long if_freq;
-
-	if_freq = (long)36166667 / 1000;
-	return if_freq;
-}
-#endif  /* 0 */
-
 static long calculate_mop_step(int *byte)
 {
 	int  byte4;
@@ -188,30 +215,8 @@ static long calculate_mop_step(int *byte)
 
 	byte4 = byte[3];
 	R210 = (byte4 & 0x07);
-//	if (R210 == 0)
-//	{
-		mop_step_ratio = 24;
-//	}
-//	else if (R210 == 1)
-//	{
-//		mop_step_ratio = 28.;
-//	}
-//	else if (R210 == 2)
-//	{
-//		mop_step_ratio = 50.;
-//	}
-//	else if (R210 == 3)
-//	{
-//		mop_step_ratio = 64.;
-//	}
-//	else if (R210 == 4)
-//	{
-//		mop_step_ratio = 128.;
-//	}
-//	else if (R210 == 5)
-//	{
-//		mop_step_ratio = 80.;
-//	}
+
+	mop_step_ratio = 24;
 	mop_freq_step = ((long)(calculate_mop_xtal() * 10000) / mop_step_ratio + 5);  // kHz
 	return mop_freq_step;
 }
@@ -241,13 +246,12 @@ static void tuner_SHARP6465_CalWrBuffer(u32 Frequency, u32 BandWidth, unsigned c
 	memset(buffer, 0, sizeof(buffer));
 	calculate_mop_ic(Frequency,BandWidth * 1000, buffer);
 
-	*pcIOBuffer = (unsigned char)buffer[1];
+	*pcIOBuffer       = (unsigned char)buffer[1];
 	*(pcIOBuffer + 1) = (unsigned char)buffer[2];
 	*(pcIOBuffer + 2) = 0x80;  // (unsigned char)buffer[3];
 	*(pcIOBuffer + 3) = (unsigned char)buffer[4];
 	*(pcIOBuffer + 4) = 0xE1;  // set 5th byte
 }
-#endif
 
 static int sharp6465_set_params(struct dvb_frontend* fe, struct dvb_frontend_parameters *params)
 {
@@ -258,7 +262,7 @@ static int sharp6465_set_params(struct dvb_frontend* fe, struct dvb_frontend_par
 	u32           f = params->frequency;
 	struct dvb_ofdm_parameters *op = &params->u.ofdm;
 
-	printk(KERN_ERR "%s: f = %d, bandwidth = %d\n", __func__, f, op->bandwidth);
+	dprintk(50, "%s: f = %d, bandwidth = %d\n", __func__, f, op->bandwidth);
 
 	tuner_SHARP6465_CalWrBuffer(f / 1000, 8 - op->bandwidth - BANDWIDTH_8_MHZ, ucIOBuffer);
 
@@ -298,11 +302,11 @@ static int sharp6465_set_params(struct dvb_frontend* fe, struct dvb_frontend_par
 		goto exit;
 	}
 	sharp6465_get_status(fe, &status);
-	printk(KERN_ERR "%s: status = %d\n", __func__, status);
+	dprintk(1, "%s: status = %d\n", __func__, status);
 	return 0;
 
 exit:
-	printk(KERN_ERR "%s: I/O Error\n", __func__);
+	dprintk(1, "%s: I/O Error\n", __func__);
 	return err;
 }
 
@@ -334,7 +338,7 @@ static int sharp6465_set_state(struct dvb_frontend *fe, enum tuner_param param, 
 			goto exit;
 		}
 		/* sleep for some time */
-		printk(KERN_DEBUG "%s: Waiting to Phase LOCK\n", __func__);
+		dprintk(20, "%s: Waiting to Phase LOCK\n", __func__);
 		msleep(20);
 		/* check status */
 		err = sharp6465_get_status(fe, &status);
@@ -344,23 +348,23 @@ static int sharp6465_set_state(struct dvb_frontend *fe, enum tuner_param param, 
 		}
 		if (status == 1)
 		{
-			printk(KERN_DEBUG "%s: Tuner Phase locked: status=%d\n", __func__, status);
+			dprintk(20, "%s: Tuner Phase locked: status=%d\n", __func__, status);
 			state->frequency = frequency; /* cache successful state */
 		}
 		else
 		{
-			printk(KERN_ERR "%s: No Phase lock: status=%d\n", __func__, status);
+			dprintk(1, "%s: No Phase lock: status=%d\n", __func__, status);
 		}
 	}
 	else
 	{
-		printk(KERN_ERR "%s: Unknown parameter (param=%d)\n", __func__, param);
+		dprintk(1, "%s: Unknown parameter (param=%d)\n", __func__, param);
 		return -EINVAL;
 	}
 	return 0;
 
 exit:
-	printk(KERN_ERR "%s: I/O Error\n", __func__);
+	dprintk(1, "%s: I/O Error\n", __func__);
 	return err;
 }
 #endif
@@ -398,7 +402,7 @@ struct dvb_frontend *sharp6465_attach(struct dvb_frontend *fe, const struct shar
 	info              = &fe->ops.tuner_ops.info;
 
 	memcpy(info->name, config->name, sizeof(config->name));
-	printk("%s: Attaching sharp6465 (%s) tuner\n", __func__, info->name);
+	dprintk(20, "%s: Attaching Sharp 6465 (%s) tuner\n", __func__, info->name);
 	return fe;
 
 exit:

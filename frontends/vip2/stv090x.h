@@ -4,6 +4,14 @@
  *
  * Copyright (C) ST Microelectronics
  *
+ * Version for:
+ *  Edision argus VIP (1 pluggable tuner)
+ *  Edision argus VIP2 (2 pluggable tuners)
+ *
+ * STV0903 with Sharp 7306 or STM STV6110x tuner,
+ * customized LNB power control built around a 74HC595;
+ * tuner controlled through I2C repeater of STV0903.
+ * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
@@ -18,6 +26,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
+
 #ifndef __STV090x_H
 #define __STV090x_H
 

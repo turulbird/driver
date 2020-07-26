@@ -4,10 +4,13 @@
  *
  * Copyright (C) ST Microelectronics
  *
- * Version for edision Argus VIP2
- * STV0903 with Sharp 7306 tuner, customized LNB power control
- * built around a 74HC595; tuner controlled through I2C
- * repeater of STV0903.
+ * Version for:
+ *  Edision argus VIP (1 pluggable tuner)
+ *  Edision argus VIP2 (2 pluggable tuners)
+ *
+ * STV0903 with Sharp 7306 or STM STV6110x tuner,
+ * customized LNB power control built around a 74HC595;
+ * tuner controlled through I2C repeater of STV0903.
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,8 +27,9 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#if !defined(VIP2_V1)
-#warning: Wrong receiver model!
+#if !defined(VIP1_V2) \
+ && !defined(VIP2_V1)
+#error: Wrong receiver model!
 #endif
 
 #include <linux/module.h>

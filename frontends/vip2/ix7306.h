@@ -1,8 +1,11 @@
-/*
+/****************************************************************************
+ *
  * IX7306 8PSK/QPSK tuner driver
  * Copyright (C) Manu Abraham <abraham.manu@gmail.com>
  *
- * Version for Edision Argus VIP2
+ * Version for:
+ * Edision argus VIP (1 pluggable tuner)
+ * Edision argus VIP2 (2 pluggable tuners)
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -11,13 +14,14 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- */
+ *
+ ***************************************************************************/
 
 #ifndef __IX7306_H
 #define __IX7306_H
@@ -47,7 +51,7 @@ enum ix7306_bblpf
 
 enum ix7306_bbgain
 {
-	IX7306_GAIN_0dB = 1,  /* 0dB Att */
+	IX7306_GAIN_0dB = 1,  /*  0dB Att */
 	IX7306_GAIN_2dB,      /* -2dB Att */
 	IX7306_GAIN_4dB       /* -4dB Att */
 };
@@ -68,5 +72,5 @@ int ix7306_get_bandwidth(struct dvb_frontend *fe, u32 *bandwidth);
 static int ix7306_init(struct dvb_frontend *fe);
 
 extern struct dvb_frontend *ix7306_attach(struct dvb_frontend *fe, const struct ix7306_config *config, struct i2c_adapter *i2c);
-#endif /* __IX7306_H */
+#endif  /* __IX7306_H */
 // vim:ts=4

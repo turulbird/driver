@@ -1,3 +1,28 @@
+/****************************************************************************
+ *
+ * LG 031 tuner driver
+ * Copyright (C) ?
+ *
+ * Version for:
+ * Edision argus VIP (1 pluggable tuner)
+ * Edision argus VIP2 (2 pluggable tuners)
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ *
+ ***************************************************************************/
+
 #include <linux/init.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
@@ -13,8 +38,6 @@ extern short paramDebug;  // debug print level is zero as default (0=nothing, 1=
 #endif
 #define TAGDEBUG "[lg031] "
 #if !defined dprintk
-//#undef dprintk
-//#endif
 #define dprintk(level, x...) \
 do \
 { \
@@ -117,19 +140,19 @@ void tuner_lg031_CalWrBuffer(struct lg031_state *TunerConfig, u32  Frequency, u3
 	*NewFrequency = (uFreqPll * TunerConfig->TunerStep) - TunerConfig->IF * 1000;
 
 	//-------------
-	// byte 0 and 1	//DB1,DB2
+	// byte 0 and 1	 // DB1, DB2
 	//-------------
 	// divider ratio
 	TunerConfig->IOBuffer[0] = (u8)(uFreqPll >> 8);
 	TunerConfig->IOBuffer[1] = (u8)uFreqPll;
 
 	//-------
-	// byte 2	//CB1
+	// byte 2	// CB1
 	//-------
 	TunerConfig->IOBuffer[2] = 0x93;
 
 	//-------
-	// byte 3	//CB2
+	// byte 3	// CB2
 	//-------
 	if( Frequency <= 143000 )  // 148
     {

@@ -1,8 +1,11 @@
-/*
+/****************************************************************************
+ *
  * IX7306 8PSK/QPSK tuner driver
  * Copyright (C) Manu Abraham <abraham.manu@gmail.com>
  *
- * Version for Edision Argus VIP2
+ * Version for:
+ * Edision argus VIP (1 pluggable tuner)
+ * Edision argus VIP2 (2 pluggable tuners)
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,7 +20,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- */
+ *
+ ***************************************************************************/
 
 #include <linux/init.h>
 #include <linux/kernel.h>
@@ -528,8 +532,8 @@ err:
 static void tuner_set_freq(struct dvb_frontend *fe, long freq, long tuner_bw, int *byte_)
 {
 	/* set byte5 BA2 BA1 BA0 PSC DIV/TS1 */
-	dprintk(50, "%s: Frequency to tune to: %u MHz (tuner)\n", __func__, freq / 1000);
-	dprintk(50, "%s: Bandwidth to set    : %u kHz (tuner)\n", __func__, tuner_bw /1000);
+	dprintk(50, "%s - Frequency to tune to: %u MHz (tuner)\n", __func__, freq / 1000);
+	dprintk(50, "%s - Bandwidth to set    : %u kHz (tuner)\n", __func__, tuner_bw / 1000);
 	calculate_pll_vco(freq, byte_);
 	calculate_pll_divider(freq, byte_);
 	calculate_pll_lpf_bw(tuner_bw, byte_);
@@ -890,7 +894,7 @@ int ix7306_get_frequency(struct dvb_frontend *fe, u32 *frequency)
 			return err;
 		}
 		*frequency = t_state.frequency;
-		dprintk(20, "%s: Frequency = %d MHz\n", __func__, t_state.frequency / 1000);
+		dprintk(20, "Frequency = %d MHz\n", t_state.frequency / 1000);
 	}
 	return 0;
 }
@@ -921,7 +925,7 @@ int ix7306_set_frequency(struct dvb_frontend *fe, u32 frequency)
 			return err;
 		}
 	}
-	dprintk(20, "%s: Frequency %u MHz\n", __func__, t_state.frequency / 1000);
+	dprintk(20, "Frequency set: %u MHz\n", t_state.frequency / 1000);
 	return 0;
 }
 
@@ -976,7 +980,7 @@ struct dvb_frontend *ix7306_attach(struct dvb_frontend *fe, const struct ix7306_
 	state->bandwidth  = 125000;  // dummy value, bandwidth is calculated
 	fe->tuner_priv    = state;
 	fe->ops.tuner_ops = ix7306_ops;
-	printk("%s: Attaching %s IX7306 8PSK/QPSK tuner\n", __func__, config->name);
+	dprintk(20, "Attaching %s 8PSK/QPSK tuner\n", config->name);
 	return fe;
 exit:
 	kfree(state);
