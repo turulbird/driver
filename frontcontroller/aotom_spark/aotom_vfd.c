@@ -1826,7 +1826,7 @@ u8 YWPANEL_FP_RD(void)
 	return val;
 }
 
-int YWPANEL_VFD_SegDigSeg(u8 dignum, SegNum_T segnum, u8 val)
+int YWPANEL_VFD_SegDigSeg(u8 dignum, SegNum_t segnum, u8 val)
 {
 	int ST_ErrCode = 0;
 	u8 addr = 0;
@@ -1853,7 +1853,7 @@ int YWPANEL_VFD_SegDigSeg(u8 dignum, SegNum_T segnum, u8 val)
 	return ST_ErrCode;
 }
 
-int YWPANEL_FP_SetMode(FPMode_T mode)
+int YWPANEL_FP_SetMode(FPMode_t mode)
 {
 	int ST_ErrCode = 0;
 	u8 data = 0;
@@ -2918,7 +2918,7 @@ static int YWPANEL_VFD_ShowIcon_StandBy(int which, int on)
 {
 	int ST_ErrCode = 0;
 	int dig_num = 0, seg_num = 0;
-	SegNum_T seg_part = 0;
+	SegNum_t seg_part = 0;
 	u8 seg_offset = 0;
 	YWPANEL_FPData_t data;
 
@@ -2984,7 +2984,7 @@ static int YWPANEL_VFD_ShowIcon_Common(int which, int on)
 {
 	int ST_ErrCode = 0;
 	int dig_num = 0, seg_num = 0;
-	SegNum_T seg_part = 0;
+	SegNum_t seg_part = 0;
 	u8 seg_offset = 0;
 	u8 addr = 0, val = 0;
 

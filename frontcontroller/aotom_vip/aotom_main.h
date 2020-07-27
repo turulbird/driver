@@ -801,9 +801,7 @@ extern int YWPANEL_width;
 #define THREAD_STATUS_RUNNING 0
 #define THREAD_STATUS_STOPPED 1
 #define THREAD_STATUS_INIT 2
-#if defined(FP_LEDS)
 extern tThreadState led_state[LASTLED + 1];
-#endif
 extern tThreadState spinner_state;
 
 //int YWPANEL_FP_GetRevision(char * version);

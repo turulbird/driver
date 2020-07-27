@@ -97,13 +97,12 @@ static u32 wakeup_time;
 static int progress = 0;
 static int symbol_circle = 0;
 static int symbol_timeshift = 0;
-#if defined(FP_LEDS)
 static u32 led0_pattern = 0;
-static u32 led1_pattern = 0;
-static int led_pattern_speed = 20;
-#endif
-
 #if defined(FP_LEDS)
+static u32 led1_pattern = 0;
+#endif
+static int led_pattern_speed = 20;
+
 int aotomEnableLed(int which, int on)
 {
 	int res = 0;
@@ -116,7 +115,6 @@ int aotomEnableLed(int which, int on)
 	led_state[which].enable = on;
 	return res;
 }
-#endif
 
 static int text_write(struct file *file, const char __user *buf, unsigned long count, void *data)
 {
@@ -304,7 +302,6 @@ static int symbol_timeshift_read(char *page, char **start, off_t off, int count,
 // f is "i" (for icons)
 // x is 0/1 and indicates if the icon must be off or on
 // y is the icon number (between 1 and 46, for icons, with y==46, all the icons are set)
-#if 0
 static int aotom_write(struct file *file, const char __user *buf, unsigned long count, void *data)
 {
 	char *page;
@@ -355,7 +352,6 @@ static int aotom_write(struct file *file, const char __user *buf, unsigned long 
 	}
 	return ret;
 }
-#endif
 
 static int rtc_read(char *page, char **start, off_t off, int count, int *eof, void *data)
 {
@@ -557,6 +553,7 @@ static int led_pattern_write(struct file *file, const char __user *buf, unsigned
 			page[count - 1] = '\0';
 			pattern = simple_strtol(page, NULL, 16);
 
+#if defined(FP_LEDS)
 			if (which == 1)
 			{
 				led1_pattern = pattern;
@@ -565,6 +562,9 @@ static int led_pattern_write(struct file *file, const char __user *buf, unsigned
 			{
 				led0_pattern = pattern;
 			}
+#else
+			led0_pattern = pattern;
+#endif
 
 //TODO: Not implemented completely; only the cases 0 and 0xffffffff (ever off/on) are handled
 //Other patterns are blink patternd in time, so handling those should be done in a timer
@@ -676,7 +676,6 @@ static int oled_brightness_write(struct file *file, const char __user *buf, unsi
 	return ret;
 }
 
-//#if defined(FP_LEDS)
 static int power_standbyled_write(struct file *file, const char __user *buf, unsigned long count, void *data)
 {
 	char *page;
@@ -706,7 +705,6 @@ static int power_standbyled_write(struct file *file, const char __user *buf, uns
 	}
 	return ret;
 }
-//#endif
 
 static int displaytype_read(char *page, char **start, off_t off, int count, int *eof, void *data)
 {
@@ -714,7 +712,7 @@ static int displaytype_read(char *page, char **start, off_t off, int count, int 
 
 	if (NULL != page)
 	{
-		len = sprintf(page,"%d\n", 2);  // always return VFD
+		len = sprintf(page,"%d\n", 1);  // always return VFD
 	}
 	return len;
 }
@@ -733,10 +731,10 @@ static int timemode_read(char *page, char **start, off_t off, int count, int *eo
 		}
 		else
 		{
-#endif
 			Mode = 1;
-#if defined(FP_DVFD)
 		}
+#else
+		Mode = 1;
 #endif
 		len = sprintf(page,"%d\n", Mode);
 	}
@@ -816,9 +814,7 @@ struct fp_procs
 	{ "stb/fp/version", fp_version_read, NULL },
 	{ "stb/lcd/symbol_circle", symbol_circle_read, symbol_circle_write },
 	{ "stb/lcd/symbol_timeshift", symbol_timeshift_read, symbol_timeshift_write },
-//#if defined(FP_LEDS)
 	{ "stb/power/standbyled", NULL, power_standbyled_write },
-//#endif
 };
 
 void create_proc_fp(void)

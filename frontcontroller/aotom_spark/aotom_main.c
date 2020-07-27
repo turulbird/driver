@@ -1634,7 +1634,7 @@ static int led_thread_active(void)
 
 	for (i = 0; i < LASTLED; i++)
 	{
-		if (!led_state[i].status && led_state[i].led_task
+		if (!led_state[i].status && led_state[i].led_task)
 		{
 			return -1;
 		}
