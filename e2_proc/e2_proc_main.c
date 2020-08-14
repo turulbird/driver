@@ -211,6 +211,14 @@
  *  |                      --------- type <- Type number of remote control in use
  *  ---------- lcd
  *  |           |
+ *  |           --------- scroll_repeats <- number of scrolls
+ *  |           |
+ *  |           --------- scroll_delay <- pause time between scrolls
+ *  |           |
+ *  |           --------- initial_scroll_delay <- wait time after initial display
+ *  |           |
+ *  |           --------- final_scroll_delay <- wait time before final display
+ *  |           |
  *  |           --------- symbol_circle <- control for spinner (if spinner available)
  *  |           |
  *  |           --------- symbol_timeshift <- control for timeshift icon (if present)
@@ -223,7 +231,8 @@
 #include <linux/version.h>
 #include <linux/string.h>
 #include <linux/module.h>
-#if defined(VIP1_V2) \
+#if defined(HL101) \
+ || defined(VIP1_V2) \
  || defined(VIP2_V1)
 #include <linux/version.h>
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,23)
@@ -240,7 +249,8 @@ typedef int (*proc_write_t)(struct file *file, const char __user *buf, unsigned 
 #define cProcEntry	2
 
 // For 12V output
-#if defined(VIP1_V2) \
+#if defined(HL101) \
+ || defined(VIP1_V2) \
  || defined(VIP2_V1)
 struct stpio_pin *_12v_pin;
 #endif
@@ -354,6 +364,247 @@ static int info_model_read(char *page, char **start, off_t off, int count, int *
 	int len = sprintf(page, "unknown\n");
 #endif
 	return len;
+}
+
+static char *scroll_repeats = NULL;
+static char *scroll_delay = NULL;
+static char *initial_scroll_delay = NULL;
+static char *final_scroll_delay = NULL;
+
+static int info_scroll_repeats_read (char *page, char **start, off_t off, int count, int *eof, void *data)
+{
+	int len = 0;
+
+	if (scroll_repeats == NULL)
+	{
+		len = sprintf(page, "0\n");
+	}
+	else
+	{
+		len = sprintf(page, scroll_repeats);
+	}
+	return len;
+}
+
+int info_scroll_repeats_write(struct file *file, const char __user *buf, unsigned long count, void *data)
+{
+	char *page;
+	ssize_t ret = -ENOMEM;
+
+	char *myString = kmalloc(count + 1, GFP_KERNEL);
+#ifdef VERY_VERBOSE
+	printk("%s %ld - ", __FUNCTION__, count);
+#endif
+	page = (char *)__get_free_page(GFP_KERNEL);
+
+	if (page)
+	{
+		ret = -EFAULT;
+
+		if (copy_from_user(page, buf, count))
+		{
+			goto out;
+		}
+		strncpy(myString, page, count);
+		myString[count] = '\0';
+#ifdef VERY_VERBOSE
+		printk("%s\n", myString);
+#endif
+		if (scroll_repeats != NULL)
+		{
+			kfree(scroll_repeats);
+		}
+		scroll_repeats = myString;
+		printk("scroll_repeats = %s\n", scroll_repeats);
+
+		/* always return count to avoid endless loop */
+		ret = count;
+	}
+out:
+	free_page((unsigned long)page);
+
+	if (scroll_repeats != myString)
+	{
+		kfree(myString);
+	}
+	return ret;
+}
+
+static int info_scroll_delay_read (char *page, char **start, off_t off, int count, int *eof, void *data)
+{
+	int len = 0;
+
+	if (scroll_delay == NULL)
+	{
+		len = sprintf(page, "0\n");
+	}
+	else
+	{
+		len = sprintf(page, scroll_delay);
+	}
+	return len;
+}
+
+int info_scroll_delay_write(struct file *file, const char __user *buf, unsigned long count, void *data)
+{
+	char *page;
+	ssize_t ret = -ENOMEM;
+
+	char *myString = kmalloc(count + 1, GFP_KERNEL);
+#ifdef VERY_VERBOSE
+	printk("%s %ld - ", __FUNCTION__, count);
+#endif
+	page = (char *)__get_free_page(GFP_KERNEL);
+
+	if (page)
+	{
+		ret = -EFAULT;
+
+		if (copy_from_user(page, buf, count))
+		{
+			goto out;
+		}
+		strncpy(myString, page, count);
+		myString[count] = '\0';
+#ifdef VERY_VERBOSE
+		printk("%s\n", myString);
+#endif
+		if (scroll_delay != NULL)
+		{
+			kfree(scroll_delay);
+		}
+		scroll_delay = myString;
+		printk("scroll_delay = %s\n", scroll_delay);
+
+		/* always return count to avoid endless loop */
+		ret = count;
+	}
+out:
+	free_page((unsigned long)page);
+
+	if (scroll_delay != myString)
+	{
+		kfree(myString);
+	}
+	return ret;
+}
+
+static int info_initial_scroll_delay_read (char *page, char **start, off_t off, int count, int *eof, void *data)
+{
+	int len = 0;
+
+	if (initial_scroll_delay == NULL)
+	{
+		len = sprintf(page, "0\n");
+	}
+	else
+	{
+		len = sprintf(page, initial_scroll_delay);
+	}
+	return len;
+}
+
+int info_initial_scroll_delay_write(struct file *file, const char __user *buf, unsigned long count, void *data)
+{
+	char *page;
+	ssize_t ret = -ENOMEM;
+
+	char *myString = kmalloc(count + 1, GFP_KERNEL);
+#ifdef VERY_VERBOSE
+	printk("%s %ld - ", __FUNCTION__, count);
+#endif
+	page = (char *)__get_free_page(GFP_KERNEL);
+
+	if (page)
+	{
+		ret = -EFAULT;
+
+		if (copy_from_user(page, buf, count))
+		{
+			goto out;
+		}
+		strncpy(myString, page, count);
+		myString[count] = '\0';
+#ifdef VERY_VERBOSE
+		printk("%s\n", myString);
+#endif
+		if (initial_scroll_delay != NULL)
+		{
+			kfree(initial_scroll_delay);
+		}
+		initial_scroll_delay = myString;
+		printk("initial_scroll_delay = %s\n", initial_scroll_delay);
+
+		/* always return count to avoid endless loop */
+		ret = count;
+	}
+out:
+	free_page((unsigned long)page);
+
+	if (initial_scroll_delay != myString)
+	{
+		kfree(myString);
+	}
+	return ret;
+}
+
+static int info_final_scroll_delay_read (char *page, char **start, off_t off, int count, int *eof, void *data)
+{
+	int len = 0;
+
+	if (final_scroll_delay == NULL)
+	{
+		len = sprintf(page, "0\n");
+	}
+	else
+	{
+		len = sprintf(page, final_scroll_delay);
+	}
+	return len;
+}
+
+int info_final_scroll_delay_write(struct file *file, const char __user *buf, unsigned long count, void *data)
+{
+	char *page;
+	ssize_t ret = -ENOMEM;
+
+	char *myString = kmalloc(count + 1, GFP_KERNEL);
+#ifdef VERY_VERBOSE
+	printk("%s %ld - ", __FUNCTION__, count);
+#endif
+	page = (char *)__get_free_page(GFP_KERNEL);
+
+	if (page)
+	{
+		ret = -EFAULT;
+
+		if (copy_from_user(page, buf, count))
+		{
+			goto out;
+		}
+		strncpy(myString, page, count);
+		myString[count] = '\0';
+#ifdef VERY_VERBOSE
+		printk("%s\n", myString);
+#endif
+		if (final_scroll_delay != NULL)
+		{
+			kfree(final_scroll_delay);
+		}
+		final_scroll_delay = myString;
+		printk("final_scroll_delay = %s\n", final_scroll_delay);
+
+		/* always return count to avoid endless loop */
+		ret = count;
+	}
+out:
+	free_page((unsigned long)page);
+
+	if (final_scroll_delay != myString)
+	{
+		kfree(myString);
+	}
+	return ret;
 }
 
 static char *rc_type = NULL;
@@ -607,13 +858,15 @@ out:
 }
 
 #if defined(IPBOX9900) \
+ || defined(HL101) \
  || defined(VIP1_V2) \
  || defined(VIP2_V1)
 int _12v_isON = 0;
 
 void set_12v(int onoff)
 {
-#if defined(VIP1_V2) \
+#if defined(HL101) \
+ || defined(VIP1_V2) \
  || defined(VIP2_V1)
 	if (onoff)
 	{
@@ -662,7 +915,11 @@ int proc_misc_12V_output_write(struct file *file, const char __user *buf, unsign
 		kfree(myString);
 		ret = count;
 	}
-	set_12v(_12v_isON);  // set 12V output
+#if defined(HL101) \
+ || defined(VIP1_V2) \
+ || defined(VIP2_V1)
+//	set_12v(_12v_isON);  // set 12V output
+#endif
 	ret = count;
 
 out:
@@ -688,7 +945,7 @@ int proc_misc_12V_output_read(char *page, char **start, off_t off, int count, in
 	}
 	return len;
 }
-#endif  // IPBOX9900, VIP
+#endif  // IPBOX9900, VIP, HL101
 
 static int zero_read(char *page, char **start, off_t off, int count, int *eof, void *data)
 {
@@ -741,22 +998,12 @@ struct ProcStructure_s e2Proc[] =
 	{cProcDir,   "stb/ir/rc",                                                        NULL, NULL, NULL, NULL, ""},
 	{cProcEntry, "stb/ir/rc/type",                                                   NULL, info_rctype_read, info_rctype_write, NULL, ""},
 
-#if defined(ADB_BOX) \
- || defined(FORTIS_HDBOX) \
- || defined(ATEVIO7500) \
- || defined(CUBEREVO) \
- || defined(CUBEREVO_MINI) \
- || defined(CUBEREVO_MINI2) \
- || defined(CUBEREVO_2000HD) \
- || defined(CUBEREVO_3000HD) \
- || defined(SPARK7162) \
- || defined(TF7700) \
- || defined(VITAMIN_HD5000) \
- || defined(HL101) \
- || defined(VIP1_V2) \
- || defined(VIP2_V1)
 	{cProcDir,   "stb/lcd",                                                          NULL, NULL, NULL, NULL, ""},
-#endif
+	{cProcEntry, "stb/lcd/scroll_repeats",                                           NULL, info_scroll_repeats_read, info_scroll_repeats_write, NULL, ""},
+	{cProcEntry, "stb/lcd/scroll_delay",                                             NULL, info_scroll_delay_read, info_scroll_delay_write, NULL, ""},
+	{cProcEntry, "stb/lcd/initial_scroll_delay",                                     NULL, info_initial_scroll_delay_read, info_initial_scroll_delay_write, NULL, ""},
+	{cProcEntry, "stb/lcd/final_scroll_delay",                                       NULL, info_final_scroll_delay_read, info_final_scroll_delay_write, NULL, ""},
+
 #if defined(ADB_BOX) \
  || defined(FORTIS_HDBOX) \
  || defined(ATEVIO7500) \
@@ -880,6 +1127,7 @@ struct ProcStructure_s e2Proc[] =
 	{cProcDir, "stb/misc",                                                           NULL, NULL, NULL, NULL, ""},
 	// VIP1_V2: // PIO4.6 is on/off
 #if defined(IPBOX9900) \
+ || defined(HL101) \
  || defined(VIP1_V2) \
  || defined(VIP2_V1)
 	{cProcEntry, "stb/misc/12V_output",                                              NULL, proc_misc_12V_output_read, proc_misc_12V_output_write, NULL, ""},
