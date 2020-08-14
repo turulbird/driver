@@ -27,7 +27,7 @@
  *	- /dev/rc  (reading of key events)
  *
  *****************************************************************************/
-//extern static short paramDebug;
+//extern static short paramDebug = 0;
 #define TAGDEBUG "[proton] "
 #define dprintk(level, x...) \
 do \
@@ -40,8 +40,6 @@ do \
 #define VFD_MAJOR             147
 #define FRONTPANEL_MINOR_RC   1
 #define LASTMINOR             2
-
-#define DISP_SIZE             8  // VFD
 
 /**************************************************
  *
@@ -63,8 +61,6 @@ do \
 #define VFDSETLED             0xc0425afe
 #define VFDSETMODE            0xc0425aff
 #define VFDDISPLAYCLR         0xc0425b00
-#define VFDSETDISPLAYTIME     0xc0425b04  // added by Audioniek (Cuberevo uses 0xc0425b02)
-#define VFDGETDISPLAYTIME     0xc0425b05  // added by Audioniek
 
 /**************************************************
  *
@@ -94,7 +90,7 @@ do \
 #define PT6311_WRITERAM  0x00
 
 #define PT6311_DISP_CTL  0x80
-// options for PT6311 display control command
+// options for PT6311 address set command
 #define PT6311_DISP_ON   0x08
 // bit 0 -2 set display brightness
 #define PT6311_DISPBR00  0x00
@@ -106,7 +102,7 @@ do \
 #define PT6311_DISPBR05  0x05
 #define PT6311_DISPBR06  0x06
 #define PT6311_DISPBR07  0x07
-#define PT6311_DISPBRMAX PT6311_DISPBR07
+#define PT6311_DISPBRMXX PT6311_DISPBR07
 
 #define PT6311_ADDR_SET  0xC0
 // options for PT6311 address set command
@@ -117,11 +113,11 @@ do \
  * Macro's for PT6311
  *
  */
-#define VFD_CS_CLR()     {stpio_set_pin(cfg.cs, 0); udelay(10);}
-#define VFD_CS_SET()     {stpio_set_pin(cfg.cs, 1); udelay(10);}
+#define VFD_CS_CLR()     {udelay(10); stpio_set_pin(cfg.cs, 0);}
+#define VFD_CS_SET()     {udelay(10); stpio_set_pin(cfg.cs, 1);}
 
-#define VFD_CLK_CLR()    {stpio_set_pin(cfg.clk, 0); udelay(4);}
-#define VFD_CLK_SET()    {stpio_set_pin(cfg.clk, 1); udelay(4);}
+#define VFD_CLK_CLR()    {stpio_set_pin(cfg.clk, 0);udelay(4);}
+#define VFD_CLK_SET()    {stpio_set_pin(cfg.clk, 1);udelay(4);}
 
 #define VFD_DATA_CLR()   {stpio_set_pin(cfg.data, 0);}
 #define VFD_DATA_SET()   {stpio_set_pin(cfg.data, 1);}
@@ -166,8 +162,8 @@ typedef enum VFDMode_e
 
 typedef enum SegNum_e
 {
-	SEGNUM1 = 0,  // first byte of segment data
-	SEGNUM2  // second byte of segment data
+	SEGNUM1 = 0,
+	SEGNUM2
 } SegNum_t;
 
 typedef struct SegAddrVal_s
@@ -230,8 +226,8 @@ struct receive_s
  */
 struct saved_data_s
 {
-	int  length;
-	char data[BUFFERSIZE];
+	int   length;
+	char  data[BUFFERSIZE];
 };
 
 struct set_brightness_s
@@ -248,16 +244,6 @@ struct set_icon_s
 struct set_led_s
 {
 	int led_nr;
-	int on;
-};
-
-struct set_light_s
-{
-	int onoff;
-};
-
-struct set_display_time_s
-{
 	int on;
 };
 
@@ -293,8 +279,6 @@ struct proton_ioctl_data
 		struct set_icon_s icon;
 		struct set_led_s led;
 		struct set_brightness_s brightness;
-		struct set_light_s light;
-		struct set_display_time_s display_time;
 		struct set_mode_s mode;
 		struct set_standby_s standby;
 		struct set_time_s time;
@@ -325,7 +309,6 @@ typedef struct VFD_Time_s
  * Remote control definitions
  *
  */
-#if 0
 typedef enum
 {
 	REMOTE_OLD = 0,
@@ -400,9 +383,6 @@ enum
 	KEY_DIGIT8 = 9,
 	KEY_DIGIT9 = 10
 };
-#else
-#define EXIT_KEY 48
-#endif
 
 /**************************************************
  *
@@ -411,23 +391,23 @@ enum
  */
 typedef enum LogNum_e
 {
-	/*---------------------------------- Grid 11 -------------------------------------*/
-	REWIND = 11 * 16 + 1,  // grid times bit count 16 plus segment number 
-	PLAY_STEPBACK,  // 2
-	PLAY,  // 3
-	PLAY_STEPFORWARD,  // 4
-	FASTFORWARD,  //5
-	PAUSE,  // 6
-	REC1,  //7
-	MUTE,  // 8
-	REPEAT,  // 9 
-	DOLBY,  // 10
-	CA,  // 11
-	CI,  // 12
-	USB,  // 13
-	DOUBLESCREEN,  // 14
-	REC2,  // 15
-	/*---------------------------------- Grid 12 -------------------------------------*/
+	/*----------------------------------11G-------------------------------------*/
+	PLAY_FASTBACKWARD = 11 * 16 + 1,
+	PLAY_HEAD,
+	PLAY_LOG,
+	PLAY_TAIL,
+	PLAY_FASTFORWARD,
+	PLAY_PAUSE,
+	REC1,
+	MUTE,
+	CYCLE,
+	DUBI,
+	CA,
+	CI,
+	USB,
+	DOUBLESCREEN,
+	REC2,
+	/*----------------------------------12G-------------------------------------*/
 	HDD_A8 = 12 * 16 + 1,
 	HDD_A7,
 	HDD_A6,
@@ -439,15 +419,15 @@ typedef enum LogNum_e
 	HDD_A1,
 	MP3,
 	AC3,
-	TVMODE,
+	TVMODE_LOG,
 	AUDIO,
 	ALERT,
-	HDD_GRID,  // + 15
+	HDD_A9,
 	/*----------------------------------13G-------------------------------------*/
 	CLOCK_PM = 13 * 16 + 1,
 	CLOCK_AM,
-	TIMER,
-	TIME_COLON,
+	CLOCK,
+	TIME_SECOND,
 	DOT2,
 	STANDBY,
 	TER,
@@ -458,64 +438,10 @@ typedef enum LogNum_e
 	SAT,
 	TIMESHIFT,
 	DOT1,
-	CABLE,  // +15
+	CAB,
 	/*----------------------------------end-------------------------------------*/
 	LogNum_Max
 } LogNum_c;
-
-/*------------------------------- Simple numbering -------------------------*/
-enum
-{
-	ICON_FIRST = 1,  // Icon 1
-	ICON_REWIND = ICON_FIRST,
-	ICON_PLAY_STEPBACK,
-	ICON_PLAY,
-	ICON_PLAY_STEP,
-	ICON_FASTFORWARD,
-	ICON_PAUSE,
-	ICON_REC1,
-	ICON_MUTE,
-	ICON_REPEAT,
-	ICON_DOLBY,
-	ICON_CA,
-	ICON_CI,
-	ICON_USB,
-	ICON_DOUBLESCREEN,
-	ICON_REC2,
-	ICON_HDD_A8, // Icon 16
-	ICON_HDD_A7,
-	ICON_HDD_A6,
-	ICON_HDD_A5,
-	ICON_HDD_A4,
-	ICON_HDD_A3,
-	ICON_HDD_FULL,
-	ICON_HDD_A2,
-	ICON_HDD_A1,
-	ICON_MP3,
-	ICON_AC3,
-	ICON_TVMODE,
-	ICON_AUDIO,
-	ICON_ALERT,
-	ICON_HDD_GRID,
-	ICON_CLOCK_PM, // Icon 31
-	ICON_CLOCK_AM,
-	ICON_TIMER,
-	ICON_TIME_COLON,
-	ICON_DOT2,
-	ICON_STANDBY,
-	ICON_TER,
-	ICON_DISK_S3,
-	ICON_DISK_S2,
-	ICON_DISK_S1,
-	ICON_DISK_CIRCLE,
-	ICON_SAT,
-	ICON_TIMESHIFT,
-	ICON_DOT1,
-	ICON_CABLE,
-	ICON_LAST = ICON_CABLE,  // Icon 45
-	ICON_ALL,
-	ICON_SPINNER, // 47
-};
 
 #define BASE_VFD_PRIVATE 0x00
 

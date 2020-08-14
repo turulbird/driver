@@ -45,8 +45,8 @@
  *
  * As the controller is to be regarded as non-intelligent and has no time
  * capabilities, the receiver cannot be woken up from deep standby by it. As
- * As a result, the HL101 cannot make timed recordings from deep standby in
- * the normal Enigma2/Neutrino configuration.
+ * As a result, the HL101 cannot make timed recordings from standby in the
+ * normal Enigma2/Neutrino configuration.
  *
  *****************************************************************************
  *
@@ -56,10 +56,6 @@
  * --------------------------------------------------------------------------
  * 201????? Spider Team?    Initial version.
  * 20200731 Audioniek       Default GMT offset changed to plus one hour.
- * 20200804 Audioniek       Brightness control fixed.
- * 20200805 Audioniek       Display on/off fixed.
- * 20200805 Audioniek       Icons working.
- * 20200814 Audioniek       Fix issues with ICON_ALL.
  *
  *****************************************************************************/
 
@@ -93,7 +89,7 @@
 // Default module parameters
 static short paramDebug = 0;
 static int gmt_offset = 3600;
-static char *gmt = "+3600";  // GMT offset is plus one hour (Europe) as default
+static char *gmt = "+3600";
 
 static tFrontPanelOpen FrontPanelOpen [LASTMINOR];
 
@@ -131,7 +127,6 @@ static SegAddrVal_t VfdSegAddr[15];
 
 int vfd_brightness;  // current display brightness
 int vfd_show;  // light on/off state
-int scroll_flag = 0;
 
 struct rw_semaphore vfd_rws;
 
@@ -148,7 +143,7 @@ static struct semaphore display_sem;
 #define THREAD_STATUS_STOPPED 1
 #define THREAD_STATUS_INIT 2
 static struct task_struct *draw_task;
-static int draw_thread_status = THREAD_STATUS_STOPPED;
+static int draw_thread_status  = THREAD_STATUS_STOPPED;
 
 /**************************************************
  *
@@ -393,7 +388,7 @@ static int VFD_Seg_Dig_Seg(unsigned char dignum, SegNum_t segnum, unsigned char 
 		return -1;
 	}
 	VFD_CS_CLR();
-	if (segnum == SEGNUM1)
+	if (segnum == SEGNUM1)  // if segment off
 	{
 		addr = VfdSegAddr[dignum].Segaddr1;
 		VfdSegAddr[dignum].CurrValue1 = val;
@@ -438,12 +433,12 @@ static int VFD_Set_Mode(VFDMode_t mode)
  */
 static int VFD_Show_Content(void)
 {
-	dprintk(15, "%s > state is on\n", __func__);
+	dprintk(150, "%s > state is on\n", __func__);
 	down_interruptible(&display_sem);  // maybe no need. need more testing
 
 	vfd_show = 1;
 	VFD_CS_CLR();
-	VFD_WR(PT6311_DISP_CTL + PT6311_DISP_ON + (vfd_brightness & 0x07));  // 1000 1bbb
+	VFD_WR(PT6311_DISP_CTL + PT6311_DISP_ON + (vfd_brightness & 0x07));  // 1000 1bbb 
 	VFD_CS_SET();
 
 	up(&display_sem);
@@ -454,7 +449,7 @@ static int VFD_Show_Content(void)
 
 static int VFD_Show_Content_Off(void)
 {
-	dprintk(15, "%s > state is off\n", __func__);
+	dprintk(150, "%s > state is off\n", __func__);
 
 	vfd_show = 0;
 	VFD_CS_CLR();
@@ -482,10 +477,10 @@ void VFD_Clear_All(void)
 	for (i = 0; i < 13; i++)
 	{
 		VFD_Seg_Dig_Seg(i + 1, SEGNUM1, 0x00);
-//		VFD_Show_Content();
+		VFD_Show_Content();
 		VfdSegAddr[i + 1].CurrValue1 = 0x00;
 		VFD_Seg_Dig_Seg(i + 1, SEGNUM2, 0x00);
-//		VFD_Show_Content();
+		VFD_Show_Content();
 		VfdSegAddr[i + 1].CurrValue2 = 0;
 	}
 }
@@ -507,7 +502,7 @@ void VFD_Draw_ASCII_Char(char c, unsigned char position)
 		c = c - 'a';  // convert table offset (upper case)
 	}
 	else if (c >= '*' && c <= '9')  // if digit
-	{
+	{  // * -> 0x2a - 0x0b = 0x1f 
 		c = c - OFFSET_ASCII1; // convert to digit offset
 	}
 	else
@@ -517,7 +512,7 @@ void VFD_Draw_ASCII_Char(char c, unsigned char position)
 	}
 	VFD_Seg_Dig_Seg(position, SEGNUM1, ASCII[(unsigned char)c][0]);
 	VFD_Seg_Dig_Seg(position, SEGNUM2, ASCII[(unsigned char)c][1]);
-//	VFD_Show_Content();
+	VFD_Show_Content();
 }
 
 // Write digit in clock section on specified position
@@ -543,15 +538,15 @@ void VFD_Draw_Num(unsigned char c, unsigned char position)
 */
 	if (position % 2 == 1)
 	{
-		if (NumLib[c][1] & 0x01)
+		if (NumLib[c][1] & 0x01)  // get segment bit
 		{
-			VFD_Seg_Dig_Seg(dignum, SEGNUM1, VfdSegAddr[dignum].CurrValue1 | 0x80);
+			VFD_Seg_Dig_Seg(dignum, SEGNUM1, VfdSegAddr[dignum].CurrValue1 | 0x80);  // if set, set MSB
 		}
 		else
 		{
-			VFD_Seg_Dig_Seg(dignum, SEGNUM1, VfdSegAddr[dignum].CurrValue1 & 0x7F);
+			VFD_Seg_Dig_Seg(dignum, SEGNUM1, VfdSegAddr[dignum].CurrValue1 & 0x7F);  // else clear MSB
 		}
-		VfdSegAddr[dignum].CurrValue2 = VfdSegAddr[dignum].CurrValue2 & 0x40;  //sz
+		VfdSegAddr[dignum].CurrValue2 = VfdSegAddr[dignum].CurrValue2 & 0x40;  // sz
 		VFD_Seg_Dig_Seg(dignum, SEGNUM2, (NumLib[c][1] >> 1) | VfdSegAddr[dignum].CurrValue2);
 	}
 	else if (position % 2 == 0)
@@ -583,7 +578,7 @@ static int VFD_Show_Time(int hh, int mm)
 	VFD_Draw_Num((hh % 10), 2);
 	VFD_Draw_Num((mm / 10), 3);
 	VFD_Draw_Num((mm % 10), 4);
-//	VFD_Show_Content();
+	VFD_Show_Content();
 	return 0;
 }
 
@@ -595,7 +590,7 @@ static int VFD_Show_Icon(LogNum_c log_num, int log_stat)
 	u8  seg_offset = 0;
 	u8  addr = 0, val = 0;
 
-	dprintk(150, "%s  > Log_num = 0x%02x, state = 0x%02x\n", __func__, log_num, log_stat);
+	dprintk(150, "%s Log_num = 0x%02x, state = 0x%02x\n", __func__, log_num, log_stat);
 
 	if (log_num >= LogNum_Max)
 	{
@@ -609,7 +604,7 @@ static int VFD_Show_Icon(LogNum_c log_num, int log_stat)
 	VFD_CS_CLR();
 	if (seg_part == SEGNUM1)  // if segment number 8 or lower, handle lower byte
 	{
-		seg_offset = 0x01 << ((seg_num % 9) - 1);  // shift bit into place
+		seg_offset = 0x01 << ((seg_num % 9) - 1); // shift bit into place
 		addr = VfdSegAddr[dig_num].Segaddr1;  // get address
 		if (log_stat == LOG_ON)  // if icon on
 		{
@@ -617,11 +612,11 @@ static int VFD_Show_Icon(LogNum_c log_num, int log_stat)
 		}
 		else
 		{
-			VfdSegAddr[dig_num].CurrValue1 &= (0xff - seg_offset);  // else clear it
+			VfdSegAddr[dig_num].CurrValue1 &= (0xFF - seg_offset);  // else clear it
 		}
 		val = VfdSegAddr[dig_num].CurrValue1;  // get new value for lower 8 bits
 	}
-	else if (seg_part == SEGNUM2)  // else if segment number > 8
+	else  //if (seg_part == SEGNUM2)  // else if segment number > 8
 	{
 		seg_offset = 0x01 << ((seg_num % 8) - 1);  // shift icon bit into place
 		addr = VfdSegAddr[dig_num].Segaddr2;  // get address
@@ -631,15 +626,15 @@ static int VFD_Show_Icon(LogNum_c log_num, int log_stat)
 		}
 		else
 		{
-			VfdSegAddr[dig_num].CurrValue2 &= (0xff - seg_offset);
+			VfdSegAddr[dig_num].CurrValue2 &= (0xFF - seg_offset);
 		}
 		val = VfdSegAddr[dig_num].CurrValue2;
 	}
 	VFD_WR(addr);  // set address
 	udelay(5);
 	VFD_WR(val);  // write value
-//	udelay(5);
 	VFD_CS_SET();
+	VFD_Show_Content();
 	return 0;
 }
 
@@ -652,6 +647,7 @@ void clear_display(void)
 		VFD_Seg_Dig_Seg(j + 1, SEGNUM1, 0x00);
 		VFD_Seg_Dig_Seg(j + 1, SEGNUM2, 0x00);
 	}
+	VFD_Show_Content();
 }
 
 int draw_thread(void *arg)
@@ -660,14 +656,14 @@ int draw_thread(void *arg)
 	struct vfd_ioctl_data draw_data;
 	int count = 0;
 	int pos = 0;
-	int j = 0;
 	int k = 0;
+	int j = 0;
 	unsigned char c0;
 	unsigned char c1;
 	unsigned char temp;
 	unsigned char draw_buf[64][2];
 
-	data = (struct vfd_ioctl_data *)arg;
+	data = (struct vfd_ioctl_data *)arg;  // data.length, data.data[64], data.start.address
 
 	draw_data.length = data->length;
 	memcpy(draw_data.data, data->data, data->length);
@@ -685,6 +681,19 @@ int draw_thread(void *arg)
 		}
 		c0 = c1 = temp = 0;
 
+//		if (draw_data.data[pos] == ' ')
+//		{
+//			k++;
+//			if (k == 3)
+//			{
+//				count = count - 2;
+//				break;
+//			}
+//		}
+//		else
+//		{
+//			k = 0;
+//		}
 		if (draw_data.data[pos] < 0x80)
 		{
 			temp = draw_data.data[pos];
@@ -788,8 +797,8 @@ int draw_thread(void *arg)
 		count++;
 		pos++;
 	}
-//#ifdef ENABLE_SCROLL // j00zek: disabled by default, interferes with GUI's
-	if (count > DISP_SIZE && scroll_flag)
+#ifdef ENABLE_SCROLL // j00zek: disabled by default, interferes with GUI's
+	if (count > 8)
 	{
 		pos  = 0;
 		while (pos < count)
@@ -799,8 +808,8 @@ int draw_thread(void *arg)
 				draw_thread_status = THREAD_STATUS_STOPPED;
 				return 0;
 			}
-			k = DISP_SIZE;
-			if (count - pos < DISP_SIZE)
+			k = 8;
+			if (count - pos < 8)
 			{
 				k = count - pos;
 			}
@@ -811,16 +820,16 @@ int draw_thread(void *arg)
 				VFD_Seg_Dig_Seg(j + 1, SEGNUM1, draw_buf[pos + j][0]);
 				VFD_Seg_Dig_Seg(j + 1, SEGNUM2, draw_buf[pos + j][1]);
 			}
-			msleep(300);
+			VFD_Show_Content();
+			msleep(200);
 			pos++;
 		}
-		scroll_flag = 0;
 	}
-//#endif
+#endif
 	if (count > 0)
 	{
-		k = DISP_SIZE;
-		if (count < DISP_SIZE)
+		k = 8;
+		if (count < 8)
 		{
 			k = count;
 		}
@@ -836,7 +845,7 @@ int draw_thread(void *arg)
 			VFD_Seg_Dig_Seg(j + 1, SEGNUM1, draw_buf[j][0]);
 			VFD_Seg_Dig_Seg(j + 1, SEGNUM2, draw_buf[j][1]);
 		}
-//		VFD_Show_Content();
+		VFD_Show_Content();
 	}
 
 	if (count == 0)
@@ -986,11 +995,13 @@ int protonSetTime(int hour, int minute)
 	char buffer[8];
 	int  res = 0;
 
-//	dprintk(150, "%s >\n", __func__);
+	dprintk(150, "%s >\n", __func__);
 
 	dprintk(20, "%s time: %02d:%02d\n", __func__, hour, minute);
+//	memset(buffer, 0, 8);
+//	memcpy(buffer, time, 5);
 	VFD_Show_Time(hour, minute);
-//	dprintk(150, "%s <\n", __func__);
+	dprintk(150, "%s <\n", __func__);
 	return res;
 }
 
@@ -1031,7 +1042,7 @@ int vfd_init_func(void)
 	VFD_Set_Mode(VFDWRITEMODE);  // Set write to PT6311 RAM
 	VFD_Seg_Addr_Init();
 	VFD_Clear_All();
-//	VFD_Show_Content();
+	VFD_Show_Content();
 	return 0;
 }
 
@@ -1060,10 +1071,10 @@ int protonSetIcon(int which, int on)
 
 	if (which < 1 || which > ICON_LAST)
 	{
-		dprintk(1, "%s Icon number %d out of range\n", __func__, which);
+		dprintk(1, "%s Icon number %d out of range (1-%d)\n", which, ICON_LAST);
 		return -EINVAL;
 	}
-//	dprintk(20, "%s Icon %d %s\n", __func__, which, (on == 0 ? "off" : "on"));
+	dprintk(20, "%s Icon %d %s\n", which, (on == 0 ? "off" : "on"));
 	which -= 1;
 	res = VFD_Show_Icon(((which / 15) + 11) * 16 + (which % 15) + 1, on);
 	dprintk(150, "%s <\n", __func__);
@@ -1071,42 +1082,19 @@ int protonSetIcon(int which, int on)
 }
 EXPORT_SYMBOL(protonSetIcon);
 
-/****************************************
+/**************************************************
  *
- * Code for writing to /dev/vfd
+ * Write to /dev/vfd.
  *
  */
-void clear_vfd(void)
-{
-	struct vfd_ioctl_data bBuf;
-	int res = 0;
-
-	dprintk(100, "%s >\n", __func__);
-
-	memset(bBuf.data, ' ', sizeof(bBuf.data));
-//	bBuf.data[DISP_SIZE] = '\0';  // terminate string
-	bBuf.length = DISP_SIZE;
-	res = run_draw_thread(&bBuf);
-	dprintk(100, "%s <\n", __func__);
-}
-
 static ssize_t PROTONdev_write(struct file *filp, const unsigned char *buff, size_t len, loff_t *off)
 {
 	char *kernel_buf;
-	int  minor, vLoop, res = 0;
-	int  pos = 0;
-	int  offset = 0;
-	struct vfd_ioctl_data buf;  // scroll buffer
-	char *b;
+	int minor, vLoop, res = 0;
 
 	struct vfd_ioctl_data data;
 
 	dprintk(150, "%s >\n", __func__);
-
-	if (len == 0)
-	{
-		return len;
-	}
 
 	minor = -1;
 	for (vLoop = 0; vLoop < LASTMINOR; vLoop++)
@@ -1119,22 +1107,20 @@ static ssize_t PROTONdev_write(struct file *filp, const unsigned char *buff, siz
 
 	if (minor == -1)
 	{
-		dprintk(1, "%s Error: Bad Minor\n", __func__);
+		printk("Error Bad Minor\n");
 		return -1; //FIXME
 	}
-	dprintk(70, "minor = %d\n", minor);
+	dprintk(50, "minor = %d\n", minor);
 
-	/* do not write to the remote control */
 	if (minor == FRONTPANEL_MINOR_RC)
 	{
 		return -EOPNOTSUPP;
 	}
-
 	kernel_buf = kmalloc(len, GFP_KERNEL);
 
 	if (kernel_buf == NULL)
 	{
-		dprintk(1, "%s < No memory.\n", __func__);
+		dprintk(1, "%s < returns no memory\n", __func__);
 		return -ENOMEM;
 	}
 	copy_from_user(kernel_buf, buff, len);
@@ -1144,12 +1130,6 @@ static ssize_t PROTONdev_write(struct file *filp, const unsigned char *buff, siz
 		return -ERESTARTSYS;
 	}
 	data.length = len;
-
-	if (data.length >= 64)  // do not display more than 64 characters
-	{
-		data.length = 64;
-	}
-
 	if (kernel_buf[data.length - 1] == '\n')  // strip trailing LF
 	{
 		data.length--;
@@ -1160,44 +1140,13 @@ static ssize_t PROTONdev_write(struct file *filp, const unsigned char *buff, siz
 	{
 		res = -1;
 		dprintk(1, "%s Empty string!\n", __func__);
-		return res;
 	}
-	dprintk(20, "%s Text [%s] (len %d)\n", __func__, kernel_buf, data.length);
-
-#if 0
-	if (data.length > DISP_SIZE)  // scroll text, display string is longer than display length
+	else
 	{
-		// initial display starting at 3rd position to ease reading
-		memset(buf.data, ' ', sizeof(buf.data));
-		offset = 3;
-		memcpy(buf.data + offset, kernel_buf, data.length);  // get display text in buffer
-		buf.start_address = 0;
-		buf.length + data.length + offset;
-
-		b = buf.data;
-		for (pos = 0; pos < data.length; pos++)
-		{
-			memcpy(buf.data, b + pos, DISP_SIZE);
-			buf.length = DISP_SIZE;
-//			dprintk(5, "%s Text [%s] (len %d)\n", __func__, buf.data, DISP_SIZE);
-			res = run_draw_thread(&buf);
-			// wait thread stop
-			while (!draw_thread_status)
-			{
-				msleep(5);
-			}
-			// sleep 300 ms
-			msleep(300);
-		}
-		clear_vfd();
+		memcpy(data.data, kernel_buf, data.length);
+		dprintk(5, "%s Text [%s] (len %d, offs %d)\n", __func__, kernel_buf, data.length, (int)*off);
+		res = run_draw_thread(&data);
 	}
-#else
-	scroll_flag = 1;
-#endif
-	// final display, or no scroll
-	memcpy(data.data, kernel_buf, DISP_SIZE);
-	res = run_draw_thread(&data);
-
 	kfree(kernel_buf);
 	up(&write_sem);
 	dprintk(150, "%s < res %d len %d\n", __func__, res, len);
@@ -1369,10 +1318,8 @@ static int PROTONdev_ioctl(struct inode *Inode, struct file *File, unsigned int 
 	{
 		case VFDSETMODE:
 		case VFDICONDISPLAYONOFF:
-		case VFDSETTIME:
 		case VFDBRIGHTNESS:
 		case VFDDISPLAYWRITEONOFF:
-		case VFDSETDISPLAYTIME:
 		{
 			if (copy_from_user(&proton_data, (void *)arg, sizeof(proton_data)))
 			{
@@ -1400,7 +1347,7 @@ static int PROTONdev_ioctl(struct inode *Inode, struct file *File, unsigned int 
 				res = -1;
 				break;
 			}
-//			dprintk(20, "%s Brightness = %d\n", __func__, proton_data.u.brightness.level);
+			dprintk(20, "%s Brightness = %d\n", __func__, proton_data.u.brightness.level);
 			res = VFD_Set_Brightness(proton_data.u.brightness.level);
 			break;
 		}
@@ -1408,81 +1355,13 @@ static int PROTONdev_ioctl(struct inode *Inode, struct file *File, unsigned int 
 		{
 			int icon_nr = proton_data.u.icon.icon_nr;
 
-			if (icon_nr >= 256)  // Convert icon numbers sent by Enigma2
-			{
-				icon_nr >>= 8;
-				switch (icon_nr)
-				{
-					case 17:
-					{
-						icon_nr = ICON_DOUBLESCREEN; // widescreen
-						break;
-					}
-					case 19:
-					{
-						icon_nr = ICON_CA;
-						break;
-					}
-					case 21:
-					{
-						icon_nr = ICON_MP3;
-						break;
-					}
-					case 23:
-					{
-						icon_nr = ICON_AC3;
-						break;
-					}
-					case 26:
-					{
-						icon_nr = ICON_PLAY; // Play
-						break;
-					}
-					case 30:
-					{
-						icon_nr = ICON_REC1;
-						break;
-					}
-					case 38: // CD segments & circle
-					case 39:
-					case 40:
-					case 41:
-					{
-						break;
-					}
-//					case 47:
-//					{
-//						icon_nr = ICON_SPINNER;
-//						break;
-//					}
-					default:
-					{
-						dprintk(0, "Tried to set unknown E2 icon number %d.\n", icon_nr);
-						res = -1;
-						break;
-					}
-				}
-			}
-//			dprintk(20, "%s Icon number = %d, state = %d\n", __func__, icon_nr, proton_data.u.icon.on);
-			if (icon_nr == ICON_ALL)
-			{
-				int i;
-
-				for (i = 1; i <= ICON_LAST; i++)
-				{
-					res |= protonSetIcon(i, proton_data.u.icon.on);
-				}
-				mode = 0;
-				break;
-			}
-			else if (icon_nr < 0 || icon_nr > ICON_LAST)
+			if (icon_nr < 0 || icon_nr > ICON_LAST)
 			{
 				dprintk(1, "Illegal icon number %d (range 1-%d)\n", icon_nr, ICON_LAST);
 				res = -1;
-				mode = 0;
 				break;
 			}
-//			dprintk(20, "%s Icon number = %d, state = %d\n", __func__, icon_nr, proton_data.u.icon.on);
+			dprintk(20, "%s Icon number = %d, state = %d\n", __func__, icon_nr, proton_data.u.icon.on);
 			res = protonSetIcon(icon_nr, proton_data.u.icon.on);
 			mode = 0;
 			break;
@@ -1494,7 +1373,9 @@ static int PROTONdev_ioctl(struct inode *Inode, struct file *File, unsigned int 
 		case VFDSETTIME:
 		{
 			dprintk(20, "%s Time to show: = %02d:%02d\n", __func__, proton_data.u.time.time[2], proton_data.u.time.time[3]);
-			res = protonSetTime(proton_data.u.time.time[2], proton_data.u.time.time[3]);
+//#ifdef ENABLE_CLOCK_SECTION
+//			res = protonSetTime(proton_data.u.time.time[2], proton_data.u.time.time[3]);
+//#endif
 			break;
 		}
 		case VFDGETTIME:
@@ -1538,20 +1419,21 @@ static int PROTONdev_ioctl(struct inode *Inode, struct file *File, unsigned int 
 			}
 			else
 			{
-				mode = 0;
+				// mode 1 not supported
 			}
+			mode = 0;
 			break;
 		}
 		case VFDDISPLAYWRITEONOFF:
 		{
 			dprintk(20, "%s Display state %s\n", __func__, proton_data.u.light.onoff == 0 ? "off" : "on");
-			if (proton_data.u.light.onoff == 0)  // 1 = show, 0 = off
+			if (proton_data.u.light.onoff != 0)  // 1 = show, 0 = off
 			{
-				VFD_Show_Content_Off();
+				VFD_Show_Content();
 			}
 			else
 			{
-				VFD_Show_Content();
+				VFD_Show_Content_Off();
 			}
 			break;
 		}
@@ -1567,12 +1449,6 @@ static int PROTONdev_ioctl(struct inode *Inode, struct file *File, unsigned int 
 				msleep(5);
 			}
 			VFD_CLR();
-			break;
-		}
-		case 0x5305:
-		case 0x5401:
-		{
-			mode = 0;
 			break;
 		}
 		default:
@@ -1656,6 +1532,56 @@ void button_bad_polling(void)
 			btn_pressed = 1;
 			switch (button_value)
 			{
+#if 0
+				case KEY_LEFT:
+				{
+					input_report_key(button_dev, KEY_LEFT, 1);
+					input_sync(button_dev);
+					break;
+				}
+				case KEY_RIGHT:
+				{
+					input_report_key(button_dev, KEY_RIGHT, 1);
+					input_sync(button_dev);
+					break;
+				}
+				case KEY_UP:
+				{
+					input_report_key(button_dev, KEY_UP, 1);
+					input_sync(button_dev);
+					break;
+				}
+				case KEY_DOWN:
+				{
+					input_report_key(button_dev, KEY_DOWN, 1);
+					input_sync(button_dev);
+					break;
+				}
+				case KEY_OK:
+				{
+					input_report_key(button_dev, KEY_OK, 1);
+					input_sync(button_dev);
+					break;
+				}
+				case KEY_MENU:
+				{
+					input_report_key(button_dev, KEY_MENU, 1);
+					input_sync(button_dev);
+					break;
+				}
+				case KEY_EXIT:
+				{
+					input_report_key(button_dev, KEY_EXIT, 1);
+					input_sync(button_dev);
+					break;
+				}
+				case KEY_POWER:
+				{
+					input_report_key(button_dev, KEY_POWER, 1);
+					input_sync(button_dev);
+					break;
+				}
+#else
 				case KEY_LEFT:
 				case KEY_RIGHT:
 				case KEY_UP:
@@ -1669,6 +1595,7 @@ void button_bad_polling(void)
 					input_sync(button_dev);
 					break;
 				}
+#endif
 				default:
 				{
 					dprintk(1, "[BTN] Unknown button_value 0x%02x\n", button_value);
@@ -1710,14 +1637,7 @@ static int button_input_open(struct input_dev *dev)
 static void button_input_close(struct input_dev *dev)
 {
 	bad_polling = 0;
-#if 0
-	while (bad_polling != 2)
-	{
-		msleep(1);
-	}
-#else
 	msleep(55);
-#endif
 	bad_polling = 1;
 
 	if (fpwq)
@@ -1757,8 +1677,9 @@ int button_dev_init(void)
 	if (error)
 	{
 		input_free_device(button_dev);
+		return error;
 	}
-	return error;
+	return 0;
 }
 
 void button_dev_exit(void)
