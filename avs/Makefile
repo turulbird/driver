@@ -11,7 +11,6 @@ avs-objs += \
 	ak4708.o \
 	avs_core.o \
 	stv6412.o \
-	cxa2161.o \
 	fake_avs.o \
 	stv6417.o \
 	stv6418.o \

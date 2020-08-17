@@ -115,9 +115,6 @@ endif
 ifdef ATEMIO530
 CCFLAGSY += -DATEMIO530
 endif
-ifdef HOMECAST5101
-CCFLAGSY += -DHOMECAST5101
-endif
 ifdef ADB_BOX
 CCFLAGSY += -DADB_BOX
 endif
@@ -226,11 +223,6 @@ endif
 
 ifdef UFC960
 obj-y += smartcard/
-endif
-
-ifdef HOMECAST5101
-obj-y += button_hs5101/
-obj-y += player2/linux/drivers/media/dvb/stm/dvb
 endif
 
 ifdef UFS912

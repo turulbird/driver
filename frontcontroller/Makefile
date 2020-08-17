@@ -18,10 +18,6 @@ ifdef UFS910
 obj-y += vfd/
 endif
 
-ifdef HOMECAST5101
-obj-y += vfd_hs5101/
-endif
-
 ifdef UFS912
 obj-y += kathrein_micom/
 endif

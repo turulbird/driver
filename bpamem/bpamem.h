@@ -26,8 +26,8 @@ typedef struct
 
 #define BPAMEM_DEBUG
 
-#ifdef  BPAMEM_DEBUG
-#define DEBUG_PRINTK(format, ...) printk("(%s): " format "\n", __func__, ## __VA_ARGS__) 
+#ifdef BPAMEM_DEBUG
+#define DEBUG_PRINTK(format, ...) printk("[bpamem] %s: " format "\n", __func__, ## __VA_ARGS__) 
 #else 
 #define DEBUG_PRINTK(format,...)
 #endif
