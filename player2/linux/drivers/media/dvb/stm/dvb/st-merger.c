@@ -233,7 +233,8 @@ static const char *fdma_cap_hb[] = { STM_DMA_CAP_HIGH_BW, NULL };
  || defined(IPBOX9900) \
  || defined(IPBOX99) \
  || defined(IPBOX55) \
- || defined(HL101)
+ || defined(HL101) \
+ || defined(VIP1_V1)
 //injecting stream from DVB-T USB driver to SWTS
 void extern_inject_data(u32 *data, off_t size)
 {
@@ -626,7 +627,7 @@ void stm_tsm_init(int use_cimax)
 	return;
 #endif
 #endif
-#if defined(VIP2_V1) \
+#if defined(VIP2) \
  || defined(SPARK) \
  || defined(SPARK7162) \
  || defined(IPBOX99) \
@@ -853,6 +854,7 @@ void stm_tsm_init(int use_cimax)
  || defined(UFC960) \
  || defined(TF7700) \
  || defined(HL101) \
+ || defined(VIP1_V1) \
  || defined(VIP1_V2) \
  || defined(UFS912) \
  || defined(UFS913) \
@@ -887,6 +889,7 @@ void stm_tsm_init(int use_cimax)
  || defined(UFS922) \
  || defined(UFC960) \
  || defined(HL101) \
+ || defined(VIP1_V1) \
  || defined(VIP1_V2)
 		ctrl_outl(0x0, tsm_io + TSM_STREAM0_CFG); //320kb (5*64)
 		ctrl_outl(0x500, tsm_io + TSM_STREAM1_CFG); //320kb (5*64)
@@ -1142,6 +1145,7 @@ void stm_tsm_init(int use_cimax)
  && !defined(UFC960) \
  && !defined(FORTIS_HDBOX) \
  && !defined(HL101) \
+ && !defined(VIP1_V1) \
  && !defined(VIP1_V2) \
  && !defined(UFS912) \
  && !defined(UFS913) \
@@ -1219,6 +1223,7 @@ void stm_tsm_init(int use_cimax)
  || defined(UFS922) \
  || defined(UFC960) \
  || defined(HL101) \
+ || defined(VIP1_V1) \
  || defined(VIP1_V2)
 		/* TF7700 stream configuration */
 		/* route stream 1 to PTI */
@@ -1524,7 +1529,8 @@ void stm_tsm_init(int use_cimax)
  || defined(IPBOX9900) \
  || defined(IPBOX99) \
  || defined(IPBOX55) \
- || defined(HL101)
+ || defined(HL101) \
+ || defined(VIP1_V1)
 		printk(">>Init DVBT-USB\n");
 		tsm_handle.tsm_io = ioremap(TSMergerBaseAddress, 0x0900);
 		tsm_handle.swts_channel = 3;

@@ -50,6 +50,17 @@ fe-core-objs += hl101/core.o
 obj-m += fe-core.o
 endif
 
+ifdef VIP1_V1
+fe-core-objs += hl101/stb0899_algo.o
+fe-core-objs += hl101/stb0899_drv.o
+fe-core-objs += hl101/stb6100.o
+fe-core-objs += hl101/stv090x.o
+fe-core-objs += hl101/stv6110x.o
+fe-core-objs += hl101/ix7306.o
+fe-core-objs += hl101/core.o
+obj-m += fe-core.o
+endif
+
 ifdef VIP1_V2
 fe-core-objs += vip2/stv090x.o
 fe-core-objs += vip2/stv6110x.o
@@ -62,7 +73,7 @@ fe-core-objs += vip2/core.o
 obj-m += fe-core.o
 endif
 
-ifdef VIP2_V1
+ifdef VIP2
 fe-core-objs += vip2/stv090x.o
 fe-core-objs += vip2/stv6110x.o
 fe-core-objs += vip2/ix7306.o

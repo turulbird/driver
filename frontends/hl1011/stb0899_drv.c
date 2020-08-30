@@ -247,16 +247,12 @@ static int _stb0899_read_reg(struct stb0899_state *state, unsigned int reg)
 	if (ret != 2)
 	{
 		if (ret != -ERESTARTSYS)
-			dprintk(state->verbose, FE_ERROR, 1,
-				"Read error, Reg=[0x%02x], Status=%d",
-				reg, ret);
-
+		{
+			dprintk(1, "Read error, Reg = [0x%02x], Status = %d\n", reg, ret);
+		}
 		return ret < 0 ? ret : -EREMOTEIO;
 	}
-	if (unlikely(*state->verbose >= FE_DEBUGREG))
-		dprintk(state->verbose, FE_ERROR, 1, "Reg=[0x%02x], data=%02x",
-			reg, buf);
-
+	dprintk(50, "Reg = [0x%02x], data = %02x\n", reg, buf);
 	return (unsigned int)buf;
 }
 
@@ -328,57 +324,66 @@ u32 _stb0899_read_s2reg(struct stb0899_state *state,
 
 	tmpaddr = stb0899_reg_offset & 0xff00;
 	if (!(stb0899_reg_offset & 0x8))
+	{
 		tmpaddr = stb0899_reg_offset | 0x20;
-
+	}
 	buf_1[0] = GETBYTE(tmpaddr, BYTE1);
 	buf_1[1] = GETBYTE(tmpaddr, BYTE0);
 
 	status = i2c_transfer(state->i2c, &msg_0, 1);
+
 	if (status < 1)
 	{
 		if (status != -ERESTARTSYS)
-			printk(KERN_ERR "%s ERR(1), Device=[0x%04x], Base address=[0x%08x], Offset=[0x%04x], Status=%d\n",
-			       __func__, stb0899_i2cdev, stb0899_base_addr, stb0899_reg_offset, status);
-
+		{
+			dprintk(1, "%s ERR(1), Device = [0x%04x], Base address = [0x%08x], Offset = [0x%04x], Status = %d\n", __func__, stb0899_i2cdev, stb0899_base_addr, stb0899_reg_offset, status);
+		}
 		goto err;
 	}
 
-	/* Dummy	*/
+	/* Dummy */
 	status = i2c_transfer(state->i2c, &msg_1, 1);
-	if (status < 1)
-		goto err;
 
+	if (status < 1)
+	{
+		goto err;
+	}
 	status = i2c_transfer(state->i2c, &msg_r, 1);
 	if (status < 1)
+	{
 		goto err;
-
+	}
 	buf_1[0] = GETBYTE(stb0899_reg_offset, BYTE1);
 	buf_1[1] = GETBYTE(stb0899_reg_offset, BYTE0);
 
-	/* Actual	*/
+	/* Actual */
 	status = i2c_transfer(state->i2c, &msg_1, 1);
 	if (status < 1)
 	{
 		if (status != -ERESTARTSYS)
-			printk(KERN_ERR "%s ERR(2), Device=[0x%04x], Base address=[0x%08x], Offset=[0x%04x], Status=%d\n",
-			       __func__, stb0899_i2cdev, stb0899_base_addr, stb0899_reg_offset, status);
+		{
+			dprintk(1, "%s ERR(2), Device = [0x%04x], Base address = [0x%08x], Offset = [0x%04x], Status = %d\n", __func__, stb0899_i2cdev, stb0899_base_addr, stb0899_reg_offset, status);
+		}
 		goto err;
 	}
 
 	status = i2c_transfer(state->i2c, &msg_r, 1);
+
 	if (status < 1)
 	{
 		if (status != -ERESTARTSYS)
-			printk(KERN_ERR "%s ERR(3), Device=[0x%04x], Base address=[0x%08x], Offset=[0x%04x], Status=%d\n",
-			       __func__, stb0899_i2cdev, stb0899_base_addr, stb0899_reg_offset, status);
+		{
+			dprintk(1, "%s ERR(3), Device = [0x%04x], Base address = [0x%08x], Offset = [0x%04x], Status = %d\n", __func__, stb0899_i2cdev, stb0899_base_addr, stb0899_reg_offset, status);
+		}
 		return status < 0 ? status : -EREMOTEIO;
 	}
 
 	data = MAKEWORD32(buf[3], buf[2], buf[1], buf[0]);
-	if (unlikely(*state->verbose >= FE_DEBUGREG))
-		printk(KERN_DEBUG "%s Device=[0x%04x], Base address=[0x%08x], Offset=[0x%04x], Data=[0x%08x]\n",
+	if (unlikely(paramDebug > 99))
+	{
+		dprintk(0, "%s Device = [0x%04x], Base address = [0x%08x], Offset = [0x%04x], Data = [0x%08x]\n",
 		       __func__, stb0899_i2cdev, stb0899_base_addr, stb0899_reg_offset, data);
-
+	}
 	return data;
 
 err:
@@ -393,7 +398,7 @@ int stb0899_write_s2reg(struct stb0899_state *state,
 {
 	int status;
 
-	/* Base Address Setup	*/
+	/* Base Address Setup */
 	u8 buf_0[] =
 	{
 		GETBYTE(stb0899_i2cdev, BYTE1),		/* 0xf3	S2 Base Address (MSB)	*/
@@ -405,12 +410,12 @@ int stb0899_write_s2reg(struct stb0899_state *state,
 	};
 	u8 buf_1[] =
 	{
-		0x00,	/* 0xf3	Reg Offset	*/
-		0x00,	/* 0x44	Reg Offset	*/
-		0x00,	/* data			*/
-		0x00,	/* data			*/
-		0x00,	/* data			*/
-		0x00,	/* data			*/
+		0x00,  /* 0xf3	Reg Offset */
+		0x00,  /* 0x44	Reg Offset */
+		0x00,  /* data             */
+		0x00,  /* data             */
+		0x00,  /* data             */
+		0x00,  /* data             */
 	};
 
 	struct i2c_msg msg_0 =
@@ -436,28 +441,29 @@ int stb0899_write_s2reg(struct stb0899_state *state,
 	buf_1[4] = GETBYTE(stb0899_data, BYTE2);
 	buf_1[5] = GETBYTE(stb0899_data, BYTE3);
 
-	if (unlikely(*state->verbose >= FE_DEBUGREG))
-		printk(KERN_DEBUG "%s Device=[0x%04x], Base Address=[0x%08x], Offset=[0x%04x], Data=[0x%08x]\n",
-		       __func__, stb0899_i2cdev, stb0899_base_addr, stb0899_reg_offset, stb0899_data);
+//	dprintk(50, "%s Device = [0x%04x], Base Address = [0x%08x], Offset = [0x%04x], Data = [0x%08x]\n", __func__, stb0899_i2cdev, stb0899_base_addr, stb0899_reg_offset, stb0899_data);
+	status = i2c_transfer(state->i2c, &msg_0, 1);
 
 	status = i2c_transfer(state->i2c, &msg_0, 1);
 	if (unlikely(status < 1))
 	{
 		if (status != -ERESTARTSYS)
-			printk(KERN_ERR "%s ERR (1), Device=[0x%04x], Base Address=[0x%08x], Offset=[0x%04x], Data=[0x%08x], status=%d\n",
-			       __func__, stb0899_i2cdev, stb0899_base_addr, stb0899_reg_offset, stb0899_data, status);
+		{
+			dprintk(1, "%s ERR (1), Device = [0x%04x], Base Address = [0x%08x], Offset = [0x%04x], Data = [0x%08x], status = %d\n", __func__, stb0899_i2cdev, stb0899_base_addr, stb0899_reg_offset, stb0899_data, status);
+		}
 		goto err;
 	}
+
 	status = i2c_transfer(state->i2c, &msg_1, 1);
+
 	if (unlikely(status < 1))
 	{
 		if (status != -ERESTARTSYS)
-			printk(KERN_ERR "%s ERR (2), Device=[0x%04x], Base Address=[0x%08x], Offset=[0x%04x], Data=[0x%08x], status=%d\n",
-			       __func__, stb0899_i2cdev, stb0899_base_addr, stb0899_reg_offset, stb0899_data, status);
-
+		{
+			dprintk(1, "%s ERR (2), Device = [0x%04x], Base Address = [0x%08x], Offset = [0x%04x], Data = [0x%08x], status = %d\n", __func__, stb0899_i2cdev, stb0899_base_addr, stb0899_reg_offset, stb0899_data, status);
+		}
 		return status < 0 ? status : -EREMOTEIO;
 	}
-
 	return 0;
 
 err:
@@ -477,7 +483,8 @@ int stb0899_read_regs(struct stb0899_state *state, unsigned int reg, u8 *buf, u3
 			.flags	= 0,
 			.buf	= b0,
 			.len	= 2
-		}, {
+		},
+		{
 			.addr	= state->config->demod_address,
 			.flags	= I2C_M_RD,
 			.buf	= buf,
@@ -486,11 +493,13 @@ int stb0899_read_regs(struct stb0899_state *state, unsigned int reg, u8 *buf, u3
 	};
 
 	status = i2c_transfer(state->i2c, msg, 2);
+
 	if (status != 2)
 	{
 		if (status != -ERESTARTSYS)
-			printk(KERN_ERR "%s Read error, Reg=[0x%04x], Count=%u, Status=%d\n",
-			       __func__, reg, (u32)count, status);
+		{
+			dprintk(1, "%s Read error, Reg = [0x%04x], Count = %u, Status = %d\n", __func__, reg, (u32)count, status);
+		}
 		goto err;
 	}
 	/*
@@ -498,23 +507,25 @@ int stb0899_read_regs(struct stb0899_state *state, unsigned int reg, u8 *buf, u3
 	 * access to 0xf2xx/0xf6xx
 	 * must be followed by read from 0xf2ff/0xf6ff.
 	 */
-	if ((reg != 0xf2ff) && (reg != 0xf6ff) &&
-			(((reg & 0xff00) == 0xf200) || ((reg & 0xff00) == 0xf600)))
+	if ((reg != 0xf2ff)
+	&&  (reg != 0xf6ff)
+	&&  (((reg & 0xff00) == 0xf200) || ((reg & 0xff00) == 0xf600)))
+	{
 		_stb0899_read_reg(state, (reg | 0x00ff));
-
-	if (unlikely(*state->verbose >= FE_DEBUGREG))
+	}
+	if (paramDebug > 49)
 	{
 		int i;
 
-		printk(KERN_DEBUG "%s [0x%04x]:", __func__, reg);
+		printk(TAGDEBUG"%s [0x%04x]:", __func__, reg);
 		for (i = 0; i < count; i++)
 		{
 			printk(" %02x", buf[i]);
 		}
 		printk("\n");
 	}
-
 	return 0;
+
 err:
 	return status < 0 ? status : -EREMOTEIO;
 }
@@ -535,13 +546,15 @@ int stb0899_write_regs(struct stb0899_state *state, unsigned int reg, u8 *data, 
 	buf[1] = reg & 0xff;
 	memcpy(&buf[2], data, count);
 
-	if (unlikely(*state->verbose >= FE_DEBUGREG))
+	if (paramDebug > 49)
 	{
 		int i;
 
-		printk(KERN_DEBUG "%s [0x%04x]:", __func__, reg);
+		printk(TAGDEBUG"%s [0x%04x]:", __func__, reg);
 		for (i = 0; i < count; i++)
+		{
 			printk(" %02x", data[i]);
+		}
 		printk("\n");
 	}
 	ret = i2c_transfer(state->i2c, &i2c_msg, 1);
@@ -552,16 +565,17 @@ int stb0899_write_regs(struct stb0899_state *state, unsigned int reg, u8 *data, 
 	 * must be followed by read from 0xf2ff/0xf6ff.
 	 */
 	if ((((reg & 0xff00) == 0xf200) || ((reg & 0xff00) == 0xf600)))
+	{
 		stb0899_read_reg(state, (reg | 0x00ff));
-
+	}
 	if (ret != 1)
 	{
 		if (ret != -ERESTARTSYS)
-			dprintk(state->verbose, FE_ERROR, 1, "Reg=[0x%04x], Data=[0x%02x ...], Count=%u, Status=%d",
-				reg, data[0], count, ret);
+		{
+			dprintk(1, "Reg = [0x%04x], Data = [0x%02x ...], Count = %u, Status = %d\n", reg, data[0], count, ret);
+		}
 		return ret < 0 ? ret : -EREMOTEIO;
 	}
-
 	return 0;
 }
 
@@ -581,8 +595,7 @@ static u32 stb0899_get_mclk(struct stb0899_state *state)
 
 	div = stb0899_read_reg(state, STB0899_NCOARSE);
 	mclk = (div + 1) * state->config->xtal_freq / 6;
-	dprintk(state->verbose, FE_DEBUG, 1, "div=%d, mclk=%d", div, mclk);
-
+//	dprintk(20, "div = %d, mclk = %d\n", div, mclk);
 	return mclk;
 }
 
@@ -597,14 +610,14 @@ static void stb0899_set_mclk(struct stb0899_state *state, u32 Mclk)
 	struct stb0899_internal *internal = &state->internal;
 	u8 mdiv = 0;
 
-	dprintk(state->verbose, FE_DEBUG, 1, "state->config=%p", state->config);
+//	dprintk(100, "state->config = %p\n", state->config);
 	mdiv = ((6 * Mclk) / state->config->xtal_freq) - 1;
-	dprintk(state->verbose, FE_DEBUG, 1, "mdiv=%d", mdiv);
+//	dprintk(100, "mdiv = %d\n", mdiv);
 
 	stb0899_write_reg(state, STB0899_NCOARSE, mdiv);
 	internal->master_clk = stb0899_get_mclk(state);
 
-	dprintk(state->verbose, FE_DEBUG, 1, "MasterCLOCK=%d", internal->master_clk);
+//	dprintk(100, "MasterCLOCK = %d\n", internal->master_clk);
 }
 
 static int stb0899_postproc(struct stb0899_state *state, u8 ctl, int enable)
@@ -622,16 +635,24 @@ static int stb0899_postproc(struct stb0899_state *state, u8 ctl, int enable)
 		if (enable)
 		{
 			if (postproc[ctl].level == STB0899_GPIOPULLUP)
+			{
 				stb0899_write_reg(state, postproc[ctl].gpio, 0x02);
+			}
 			else
+			{
 				stb0899_write_reg(state, postproc[ctl].gpio, 0x82);
+			}
 		}
 		else
 		{
 			if (postproc[ctl].level == STB0899_GPIOPULLUP)
+			{
 				stb0899_write_reg(state, postproc[ctl].gpio, 0x82);
+			}
 			else
+			{
 				stb0899_write_reg(state, postproc[ctl].gpio, 0x02);
+			}
 		}
 	}
 	return 0;
@@ -641,7 +662,7 @@ static void stb0899_release(struct dvb_frontend *fe)
 {
 	struct stb0899_state *state = fe->demodulator_priv;
 
-	dprintk(state->verbose, FE_DEBUG, 1, "Release Frontend");
+//	dprintk(20, "Release Frontend\n");
 	/* post process event */
 	stb0899_postproc(state, STB0899_POSTPROC_GPIO_POWER, 0);
 	kfree(state);
@@ -658,9 +679,13 @@ static int stb0899_get_alpha(struct stb0899_state *state)
 	mode_coeff = stb0899_read_reg(state, STB0899_DEMOD);
 
 	if (STB0899_GETFIELD(MODECOEFF, mode_coeff) == 1)
+	{
 		return 20;
+	}
 	else
+	{
 		return 35;
+	}
 }
 
 /*
@@ -674,37 +699,42 @@ static void stb0899_init_calc(struct stb0899_state *state)
 	u8 agc1cn;
 	u32 reg;
 
-	/* Read registers (in burst mode)	*/
+	/* Read registers (in burst mode) */
 	agc1cn = stb0899_read_reg(state, STB0899_AGC1CN);
-	stb0899_read_regs(state, STB0899_AGC1REF, agc, 2); /* AGC1R and AGC2O	*/
+	stb0899_read_regs(state, STB0899_AGC1REF, agc, 2); /* AGC1R and AGC2O */
 
 	/* Initial calculations	*/
-	master_clk			= stb0899_get_mclk(state);
-	internal->t_agc1		= 0;
-	internal->t_agc2		= 0;
-	internal->master_clk		= master_clk;
-	internal->mclk			= master_clk / 65536L;
-	internal->rolloff		= stb0899_get_alpha(state);
+	master_clk           = stb0899_get_mclk(state);
+	internal->t_agc1     = 0;
+	internal->t_agc2     = 0;
+	internal->master_clk = master_clk;
+	internal->mclk       = master_clk / 65536L;
+	internal->rolloff    = stb0899_get_alpha(state);
 
-	/* DVBS2 Initial calculations	*/
-	/* Set AGC value to the middle	*/
-	internal->agc_gain		= 8154;
+	/* DVBS2 Initial calculations  */
+	/* Set AGC value to the middle */
+	internal->agc_gain        = 8154;
 	reg = STB0899_READ_S2REG(STB0899_S2DEMOD, IF_AGC_CNTRL);
 	STB0899_SETFIELD_VAL(IF_GAIN_INIT, reg, internal->agc_gain);
 	stb0899_write_s2reg(state, STB0899_S2DEMOD, STB0899_BASE_IF_AGC_CNTRL, STB0899_OFF0_IF_AGC_CNTRL, reg);
 
 	reg = STB0899_READ_S2REG(STB0899_S2DEMOD, RRC_ALPHA);
-	internal->rrc_alpha		= STB0899_GETFIELD(RRC_ALPHA, reg);
+	internal->rrc_alpha       = STB0899_GETFIELD(RRC_ALPHA, reg);
 
-	internal->center_freq		= 0;
-	internal->av_frame_coarse	= 10;
-	internal->av_frame_fine		= 20;
-	internal->step_size		= 2;
+	internal->center_freq     = 0;
+	internal->av_frame_coarse = 10;
+	internal->av_frame_fine   = 20;
+	internal->step_size       = 2;
 	/*
-		if ((pParams->SpectralInv == FE_IQ_NORMAL) || (pParams->SpectralInv == FE_IQ_AUTO))
-			pParams->IQLocked = 0;
-		else
-			pParams->IQLocked = 1;
+	if ((pParams->SpectralInv == FE_IQ_NORMAL)
+	||  (pParams->SpectralInv == FE_IQ_AUTO))
+	{
+		pParams->IQLocked = 0;
+	}
+	else
+	{
+		pParams->IQLocked = 1;
+	}
 	*/
 }
 
@@ -717,14 +747,15 @@ static int stb0899_wait_diseqc_fifo_empty(struct stb0899_state *state, int timeo
 	{
 		reg = stb0899_read_reg(state, STB0899_DISSTATUS);
 		if (!STB0899_GETFIELD(FIFOFULL, reg))
+		{
 			break;
+		}
 		if ((jiffies - start) > timeout)
 		{
-			dprintk(state->verbose, FE_ERROR, 1, "timed out !!");
+			dprintk(1, "%s Timed out!\n", __func__);
 			return -ETIMEDOUT;
 		}
 	}
-
 	return 0;
 }
 
@@ -734,8 +765,9 @@ static int stb0899_send_diseqc_msg(struct dvb_frontend *fe, struct dvb_diseqc_ma
 	u8 reg, i;
 
 	if (cmd->msg_len > 8)
+	{
 		return -EINVAL;
-
+	}
 	/* enable FIFO precharge	*/
 	reg = stb0899_read_reg(state, STB0899_DISCNTRL1);
 	STB0899_SETFIELD_VAL(DISPRECHARGE, reg, 1);
@@ -744,8 +776,9 @@ static int stb0899_send_diseqc_msg(struct dvb_frontend *fe, struct dvb_diseqc_ma
 	{
 		/* wait for FIFO empty	*/
 		if (stb0899_wait_diseqc_fifo_empty(state, 10) < 0)
+		{
 			return -ETIMEDOUT;
-
+		}
 		stb0899_write_reg(state, STB0899_DISFIFO, cmd->msg[i]);
 	}
 	reg = stb0899_read_reg(state, STB0899_DISCNTRL1);
@@ -765,12 +798,11 @@ static int stb0899_wait_diseqc_rxidle(struct stb0899_state *state, int timeout)
 		reg = stb0899_read_reg(state, STB0899_DISRX_ST0);
 		if (jiffies - start > timeout)
 		{
-			dprintk(state->verbose, FE_ERROR, 1, "timed out!!");
+			dprintk(1, "%s Timed out!\n", __func__);
 			return -ETIMEDOUT;
 		}
 		msleep(10);
 	}
-
 	return 0;
 }
 
@@ -781,12 +813,12 @@ static int stb0899_recv_slave_reply(struct dvb_frontend *fe, struct dvb_diseqc_s
 	int result;
 
 	if (stb0899_wait_diseqc_rxidle(state, 100) < 0)
+	{
 		return -ETIMEDOUT;
-
+	}
 	reg = stb0899_read_reg(state, STB0899_DISRX_ST0);
 	if (STB0899_GETFIELD(RXEND, reg))
 	{
-
 		reg = stb0899_read_reg(state, STB0899_DISRX_ST1);
 		length = STB0899_GETFIELD(FIFOBYTENBR, reg);
 
@@ -799,12 +831,13 @@ static int stb0899_recv_slave_reply(struct dvb_frontend *fe, struct dvb_diseqc_s
 
 		/* extract data */
 		for (i = 0; i < length; i++)
+		{
 			reply->msg[i] = stb0899_read_reg(state, STB0899_DISFIFO);
+		}
 	}
-
 	return 0;
-exit:
 
+exit:
 	return result;
 }
 
@@ -818,7 +851,7 @@ static int stb0899_wait_diseqc_txidle(struct stb0899_state *state, int timeout)
 		reg = stb0899_read_reg(state, STB0899_DISSTATUS);
 		if (jiffies - start > timeout)
 		{
-			dprintk(state->verbose, FE_ERROR, 1, "timed out!!");
+			dprintk(1, "%s < Timed out!\n", __func__);
 			return -ETIMEDOUT;
 		}
 		msleep(10);
@@ -831,37 +864,43 @@ static int stb0899_send_diseqc_burst(struct dvb_frontend *fe, fe_sec_mini_cmd_t 
 	struct stb0899_state *state = fe->demodulator_priv;
 	u8 reg, old_state;
 
-	/* wait for diseqc idle	*/
+	/* wait for diseqc idle */
 	if (stb0899_wait_diseqc_txidle(state, 100) < 0)
+	{
 		return -ETIMEDOUT;
-
+	}
 	reg = stb0899_read_reg(state, STB0899_DISCNTRL1);
 	old_state = reg;
-	/* set to burst mode	*/
+	/* set to burst mode */
 	STB0899_SETFIELD_VAL(DISEQCMODE, reg, 0x03);
 	STB0899_SETFIELD_VAL(DISPRECHARGE, reg, 0x01);
 	stb0899_write_reg(state, STB0899_DISCNTRL1, reg);
+
 	switch (burst)
 	{
 		case SEC_MINI_A:
-			/* unmodulated	*/
+		{
+			/* unmodulated */
 			stb0899_write_reg(state, STB0899_DISFIFO, 0x00);
 			break;
+		}
 		case SEC_MINI_B:
-			/* modulated	*/
+		{
+			/* modulated */
 			stb0899_write_reg(state, STB0899_DISFIFO, 0xff);
 			break;
+		}
 	}
 	reg = stb0899_read_reg(state, STB0899_DISCNTRL1);
 	STB0899_SETFIELD_VAL(DISPRECHARGE, reg, 0x00);
 	stb0899_write_reg(state, STB0899_DISCNTRL1, reg);
-	/* wait for diseqc idle	*/
+	/* wait for DiSEqC idle */
 	if (stb0899_wait_diseqc_txidle(state, 100) < 0)
+	{
 		return -ETIMEDOUT;
-
-	/* restore state	*/
+	}
+	/* restore state */
 	stb0899_write_reg(state, STB0899_DISCNTRL1, old_state);
-
 	return 0;
 }
 
@@ -870,7 +909,6 @@ static int stb0899_diseqc_init(struct stb0899_state *state)
 	struct dvb_diseqc_master_cmd tx_data;
 
 	u8 f22_tx, f22_rx, reg;
-
 	u32 mclk, tx_freq = 22000;
 
 	tx_data.msg[0] = 0xe2;
@@ -879,7 +917,7 @@ static int stb0899_diseqc_init(struct stb0899_state *state)
 	STB0899_SETFIELD_VAL(ONECHIP_TRX, reg, 0);
 	stb0899_write_reg(state, STB0899_DISCNTRL2, reg);
 
-	/* disable Tx spy	*/
+	/* disable Tx spy */
 	reg = stb0899_read_reg(state, STB0899_DISCNTRL1);
 	STB0899_SETFIELD_VAL(DISEQCRESET, reg, 1);
 	stb0899_write_reg(state, STB0899_DISCNTRL1, reg);
@@ -890,10 +928,9 @@ static int stb0899_diseqc_init(struct stb0899_state *state)
 
 	mclk = stb0899_get_mclk(state);
 	f22_tx = mclk / (tx_freq * 32);
-	stb0899_write_reg(state, STB0899_DISF22, f22_tx); /* DiSEqC Tx freq	*/
+	stb0899_write_reg(state, STB0899_DISF22, f22_tx); /* DiSEqC Tx freq */
 	state->rx_freq = 20000;
 	f22_rx = mclk / (state->rx_freq * 32);
-
 	return 0;
 }
 
@@ -901,11 +938,10 @@ static int stb0899_sleep(struct dvb_frontend *fe)
 {
 	struct stb0899_state *state = fe->demodulator_priv;
 
-	dprintk(state->verbose, FE_DEBUG, 1, "Going to Sleep .. (Really tired .. :-))");
+//	dprintk(20, "Going to Sleep... (Really tired... :-))\n");
 
 	/* post process event */
 	stb0899_postproc(state, STB0899_POSTPROC_GPIO_POWER, 0);
-
 	return 0;
 }
 
@@ -915,16 +951,20 @@ static int stb0899_wakeup(struct dvb_frontend *fe)
 	struct stb0899_state *state = fe->demodulator_priv;
 
 	if ((rc = stb0899_write_reg(state, STB0899_SYNTCTRL, STB0899_SELOSCI)))
+	{
 		return rc;
+	}
 	/* Activate all clocks; DVB-S2 registers are inaccessible otherwise. */
 	if ((rc = stb0899_write_reg(state, STB0899_STOPCLK1, 0x00)))
+	{
 		return rc;
+	}
 	if ((rc = stb0899_write_reg(state, STB0899_STOPCLK2, 0x00)))
+	{
 		return rc;
-
+	}
 	/* post process event */
 	stb0899_postproc(state, STB0899_POSTPROC_GPIO_POWER, 1);
-
 	return 0;
 }
 
@@ -934,46 +974,48 @@ static int stb0899_init(struct dvb_frontend *fe)
 	struct stb0899_state *state = fe->demodulator_priv;
 	struct stb0899_config *config = state->config;
 
-	dprintk(state->verbose, FE_DEBUG, 1, "Initializing STB0899 ... ");
+	dprintk(50, "Initializing STB0899...\n");
 //	mutex_init(&state->search_lock);
 
-	/* init device		*/
-	dprintk(state->verbose, FE_DEBUG, 1, "init device");
+	/* init device */
+	dprintk(50, "Init STB0899 demodulator\n");
 	for (i = 0; config->init_dev[i].address != 0xffff; i++)
+	{
 		stb0899_write_reg(state, config->init_dev[i].address, config->init_dev[i].data);
-
-	dprintk(state->verbose, FE_DEBUG, 1, "init S2 demod");
-	/* init S2 demod	*/
+	}
+//	dprintk(60, "Init S2 demod\n");
+	/* init S2 demod */
 	for (i = 0; config->init_s2_demod[i].offset != 0xffff; i++)
-		stb0899_write_s2reg(state, STB0899_S2DEMOD,
-				    config->init_s2_demod[i].base_address,
-				    config->init_s2_demod[i].offset,
-				    config->init_s2_demod[i].data);
-
-	dprintk(state->verbose, FE_DEBUG, 1, "init S1 demod");
-	/* init S1 demod	*/
+	{
+		stb0899_write_s2reg(state, STB0899_S2DEMOD, config->init_s2_demod[i].base_address,
+			config->init_s2_demod[i].offset, config->init_s2_demod[i].data);
+	}
+//	dprintk(60, "Init S1 demod\n");
+	/* init S1 demod */
 	for (i = 0; config->init_s1_demod[i].address != 0xffff; i++)
+	{
 		stb0899_write_reg(state, config->init_s1_demod[i].address, config->init_s1_demod[i].data);
-
-	dprintk(state->verbose, FE_DEBUG, 1, "init S2 FEC");
-	/* init S2 fec		*/
+	}
+//	dprintk(60, "Init S2 FEC\n");
+	/* init S2 fec */
 	for (i = 0; config->init_s2_fec[i].offset != 0xffff; i++)
+	{
 		stb0899_write_s2reg(state, STB0899_S2FEC,
 				    config->init_s2_fec[i].base_address,
 				    config->init_s2_fec[i].offset,
 				    config->init_s2_fec[i].data);
-
-	dprintk(state->verbose, FE_DEBUG, 1, "init TST");
-	/* init test		*/
+	}
+//	dprintk(60, "Init TST\n");
+	/* init test */
 	for (i = 0; config->init_tst[i].address != 0xffff; i++)
+	{
 		stb0899_write_reg(state, config->init_tst[i].address, config->init_tst[i].data);
-
+	}
 	stb0899_init_calc(state);
 	stb0899_diseqc_init(state);
 
 	/* post process event */
 	stb0899_postproc(state, STB0899_POSTPROC_GPIO_POWER, 1);
-
 	return 0;
 }
 
@@ -983,64 +1025,77 @@ static int stb0899_table_lookup(const struct stb0899_tab *tab, int max, int val)
 	int min = 0, med;
 
 	if (val < tab[min].read)
+	{
 		res = tab[min].real;
+	}
 	else if (val >= tab[max].read)
+	{
 		res = tab[max].real;
+	}
 	else
 	{
 		while ((max - min) > 1)
 		{
 			med = (max + min) / 2;
 			if (val >= tab[min].read && val < tab[med].read)
+			{
 				max = med;
+			}
 			else
+			{
 				min = med;
+			}
 		}
-		res = ((val - tab[min].read) *
-		       (tab[max].real - tab[min].real) /
-		       (tab[max].read - tab[min].read)) +
-		      tab[min].real;
+		res = ((val - tab[min].read) * (tab[max].real - tab[min].real) / (tab[max].read - tab[min].read)) + tab[min].real;
 	}
-
 	return res;
 }
 
 static int stb0899_read_signal_strength(struct dvb_frontend *fe, u16 *strength)
 {
-	struct stb0899_state *state		= fe->demodulator_priv;
-	struct stb0899_internal *internal	= &state->internal;
+	struct stb0899_state    *state    = fe->demodulator_priv;
+	struct stb0899_internal *internal = &state->internal;
 
 	int val;
 	u32 reg;
+	const int MIN_STRENGTH_DVBS = 0;
+	const int MAX_STRENGTH_DVBS = 680;
+
 	switch (state->delsys)
 	{
 		case SYS_DVBS:
 		case SYS_DSS:
+		{
 			if (internal->lock)
 			{
 				reg  = stb0899_read_reg(state, STB0899_VSTATUS);
 				if (STB0899_GETFIELD(VSTATUS_LOCKEDVIT, reg))
 				{
-					const int MIN_STRENGTH_DVBS = 0;
-					const int MAX_STRENGTH_DVBS = 680;
-
 					reg = stb0899_read_reg(state, STB0899_AGCIQIN);
 					val = (s32)(s8)STB0899_GETFIELD(AGCIQVALUE, reg);
 
 					*strength = stb0899_table_lookup(stb0899_dvbsrf_tab, ARRAY_SIZE(stb0899_dvbsrf_tab) - 1, val);
 					*strength += 750;
+
 					if (*strength < MIN_STRENGTH_DVBS)
+					{
 						*strength = 0;
+					}
 					else if (*strength > MAX_STRENGTH_DVBS)
+					{
 						*strength = 0xFFFF;
+					}
 					else
+					{
 						*strength = (*strength - MIN_STRENGTH_DVBS) * 0xFFFF / (MAX_STRENGTH_DVBS - MIN_STRENGTH_DVBS);
-					dprintk(state->verbose, FE_DEBUG, 1, "AGCIQVALUE = 0x%02x, C = %d * 0.1 dBm",
-						val & 0xff, *strength);
+					}
+//					dprintk(20, "AGCIQVALUE = 0x%02x, C = %d * 0.1 dBm\n", val & 0xff, *strength);
 				}
 			}
 			break;
+		}
 		case SYS_DVBS2:
+		{
 			if (internal->lock)
 			{
 				reg = STB0899_READ_S2REG(STB0899_DEMOD, IF_AGC_GAIN);
@@ -1049,66 +1104,82 @@ static int stb0899_read_signal_strength(struct dvb_frontend *fe, u16 *strength)
 				*strength = stb0899_table_lookup(stb0899_dvbs2rf_tab, ARRAY_SIZE(stb0899_dvbs2rf_tab) - 1, val);
 				*strength += 750;
 				*strength = *strength << 4;
-				dprintk(state->verbose, FE_DEBUG, 1, "IF_AGC_GAIN = 0x%04x, C = %d * 0.1 dBm",
-					val & 0x3fff, *strength);
+				dprintk(20, "IF_AGC_GAIN = 0x%04x, C = %d * 0.1 dBm\n", val & 0x3fff, *strength);
 			}
 			break;
+		}
 		default:
-			dprintk(state->verbose, FE_DEBUG, 1, "Unsupported delivery system");
+		{
+			dprintk(1, "Unsupported delivery system\n");
 			return -EINVAL;
+		}
 	}
-
 	return 0;
 }
 
 static int stb0899_read_snr(struct dvb_frontend *fe, u16 *snr)
 {
-	struct stb0899_state *state		= fe->demodulator_priv;
-	struct stb0899_internal *internal	= &state->internal;
+	struct stb0899_state    *state    = fe->demodulator_priv;
+	struct stb0899_internal *internal = &state->internal;
 
 	unsigned int val, quant, quantn = -1, est, estn = -1;
 	u8 buf[2];
 	u32 reg;
+
+	const int MIN_SNR_DVBS = 0;
+	const int MAX_SNR_DVBS = 200;
+	const int MIN_SNR_DVBS2 = 10;
+	const int MAX_SNR_DVBS2 = 70;
 
 	reg  = stb0899_read_reg(state, STB0899_VSTATUS);
 	switch (state->delsys)
 	{
 		case SYS_DVBS:
 		case SYS_DSS:
+		{
 			if (internal->lock)
 			{
 				if (STB0899_GETFIELD(VSTATUS_LOCKEDVIT, reg))
 				{
-					const int MIN_SNR_DVBS = 0;
-					const int MAX_SNR_DVBS = 200;
 					stb0899_read_regs(state, STB0899_NIRM, buf, 2);
 					val = MAKEWORD16(buf[0], buf[1]);
 
 					*snr = stb0899_table_lookup(stb0899_cn_tab, ARRAY_SIZE(stb0899_cn_tab) - 1, val);
 					if (*snr < MIN_SNR_DVBS)
+					{
 						*snr = 0;
+					}
 					else if (*snr > MAX_SNR_DVBS)
+					{
 						*snr = 0xFFFF;
+					}
 					else
+					{
 						*snr = (*snr - MIN_SNR_DVBS) * 0xFFFF / (MAX_SNR_DVBS - MIN_SNR_DVBS);
-					dprintk(state->verbose, FE_DEBUG, 1, "NIR = 0x%02x%02x = %u, C/N = %d * 0.1 dBm\n",
-						buf[0], buf[1], val, *snr);
+					}
+//					dprintk(20, "NIR = 0x%02x%02x = %u, C/N = %d * 0.1 dBm\n", buf[0], buf[1], val, *snr);
 				}
 			}
 			break;
+		}
 		case SYS_DVBS2:
+		{
 			if (internal->lock)
 			{
-				const int MIN_SNR_DVBS2 = 10;
-				const int MAX_SNR_DVBS2 = 70;
 				reg = STB0899_READ_S2REG(STB0899_S2DEMOD, UWP_CNTRL1);
 				quant = STB0899_GETFIELD(UWP_ESN0_QUANT, reg);
+
 				reg = STB0899_READ_S2REG(STB0899_S2DEMOD, UWP_STAT2);
 				est = STB0899_GETFIELD(ESN0_EST, reg);
+
 				if (est == 1)
+				{
 					val = 301; /* C/N = 30.1 dB */
+				}
 				else if (est == 2)
+				{
 					val = 270; /* C/N = 27.0 dB */
+				}
 				else
 				{
 					/* quantn = 100 * log(quant^2) */
@@ -1119,28 +1190,36 @@ static int stb0899_read_snr(struct dvb_frontend *fe, u16 *snr)
 					val = (quantn - estn) / 10;
 				}
 				*snr = val;
+
 				if (*snr < MIN_SNR_DVBS2)
+				{
 					*snr = 0;
+				}
 				else if (*snr > MAX_SNR_DVBS2)
+				{
 					*snr = 0xFFFF;
+				}
 				else
+				{
 					*snr = (*snr - MIN_SNR_DVBS2) * 0xFFFF / (MAX_SNR_DVBS2 - MIN_SNR_DVBS2);
-				dprintk(state->verbose, FE_DEBUG, 1, "Es/N0 quant = %d (%d) estimate = %u (%d), C/N = %d * 0.1 dBm",
-					quant, quantn, est, estn, val);
+				}
+//				dprintk(20, "Es/N0 quant = %d (%d) estimate = %u (%d), C/N = %d * 0.1 dBm\n", quant, quantn, est, estn, val);
 			}
 			break;
+		}
 		default:
-			dprintk(state->verbose, FE_DEBUG, 1, "Unsupported delivery system");
+		{
+			dprintk(1, "Unsupported delivery system\n");
 			return -EINVAL;
+		}
 	}
-
 	return 0;
 }
 
 static int stb0899_read_status(struct dvb_frontend *fe, enum fe_status *status)
 {
-	struct stb0899_state *state		= fe->demodulator_priv;
-	struct stb0899_internal *internal	= &state->internal;
+	struct stb0899_state    *state    = fe->demodulator_priv;
+	struct stb0899_internal *internal = &state->internal;
 	u8 reg;
 	*status = 0;
 
@@ -1148,19 +1227,20 @@ static int stb0899_read_status(struct dvb_frontend *fe, enum fe_status *status)
 	{
 		case SYS_DVBS:
 		case SYS_DSS:
-			dprintk(state->verbose, FE_DEBUG, 1, "Delivery system DVB-S/DSS");
+		{
+//			dprintk(20, "Delivery system DVB-S/DSS\n");
 			if (internal->lock)
 			{
 				reg  = stb0899_read_reg(state, STB0899_VSTATUS);
 				if (STB0899_GETFIELD(VSTATUS_LOCKEDVIT, reg))
 				{
-					dprintk(state->verbose, FE_DEBUG, 1, "--------> FE_HAS_CARRIER | FE_HAS_LOCK");
+//					dprintk(20, "--------> FE_HAS_CARRIER | FE_HAS_LOCK\n");
 					*status |= FE_HAS_SIGNAL | FE_HAS_CARRIER | FE_HAS_LOCK;
 
 					reg = stb0899_read_reg(state, STB0899_PLPARM);
 					if (STB0899_GETFIELD(VITCURPUN, reg))
 					{
-						dprintk(state->verbose, FE_DEBUG, 1, "--------> FE_HAS_VITERBI | FE_HAS_SYNC");
+//						dprintk(20, "--------> FE_HAS_VITERBI | FE_HAS_SYNC\n");
 						*status |= FE_HAS_VITERBI | FE_HAS_SYNC;
 						/* post process event */
 						stb0899_postproc(state, STB0899_POSTPROC_GPIO_LOCK, 1);
@@ -1168,45 +1248,45 @@ static int stb0899_read_status(struct dvb_frontend *fe, enum fe_status *status)
 				}
 			}
 			break;
+		}
 		case SYS_DVBS2:
-			dprintk(state->verbose, FE_DEBUG, 1, "Delivery system DVB-S2");
+		{
+//			dprintk(10, "Delivery system DVB-S2\n");
 			if (internal->lock)
 			{
 				reg = STB0899_READ_S2REG(STB0899_S2DEMOD, DMD_STAT2);
 				if (STB0899_GETFIELD(UWP_LOCK, reg) && STB0899_GETFIELD(CSM_LOCK, reg))
 				{
 					*status |= FE_HAS_SIGNAL | FE_HAS_CARRIER;
-					dprintk(state->verbose, FE_DEBUG, 1,
-						"UWP & CSM Lock ! ---> DVB-S2 FE_HAS_CARRIER");
+//					dprintk(30, "UWP & CSM Lock ----> DVB-S2 FE_HAS_CARRIER\n");
 
 					reg = stb0899_read_reg(state, STB0899_CFGPDELSTATUS1);
 					if (STB0899_GETFIELD(CFGPDELSTATUS_LOCK, reg))
 					{
 						*status |= FE_HAS_LOCK;
-						dprintk(state->verbose, FE_DEBUG, 1,
-							"Packet Delineator Locked ! -----> DVB-S2 FE_HAS_LOCK");
-
+//						dprintk(30, "Packet Delineator Locked ----> DVB-S2 FE_HAS_LOCK\n");
 					}
 					if (STB0899_GETFIELD(CONTINUOUS_STREAM, reg))
 					{
 						*status |= FE_HAS_VITERBI;
-						dprintk(state->verbose, FE_DEBUG, 1,
-							"Packet Delineator found VITERBI ! -----> DVB-S2 FE_HAS_VITERBI");
+//						dprintk(30, "Packet Delineator found VITERBI ----> DVB-S2 FE_HAS_VITERBI\n");
 					}
 					if (STB0899_GETFIELD(ACCEPTED_STREAM, reg))
 					{
 						*status |= FE_HAS_SYNC;
-						dprintk(state->verbose, FE_DEBUG, 1,
-							"Packet Delineator found SYNC ! -----> DVB-S2 FE_HAS_SYNC");
+//						dprintk(30, "Packet Delineator found SYNC ----> DVB-S2 FE_HAS_SYNC\n");
 						/* post process event */
 						stb0899_postproc(state, STB0899_POSTPROC_GPIO_LOCK, 1);
 					}
 				}
 			}
 			break;
+		}
 		default:
-			dprintk(state->verbose, FE_DEBUG, 1, "Unsupported delivery system");
+		{
+			dprintk(1, "Unsupported delivery system\n");
 			return -EINVAL;
+		}
 	}
 	return 0;
 }
@@ -1219,8 +1299,8 @@ static int stb0899_read_status(struct dvb_frontend *fe, enum fe_status *status)
  */
 static int stb0899_read_ber(struct dvb_frontend *fe, u32 *ber)
 {
-	struct stb0899_state *state		= fe->demodulator_priv;
-	struct stb0899_internal *internal	= &state->internal;
+	struct stb0899_state    *state    = fe->demodulator_priv;
+	struct stb0899_internal *internal = &state->internal;
 
 	u8  lsb, msb;
 	u32 i;
@@ -1231,6 +1311,7 @@ static int stb0899_read_ber(struct dvb_frontend *fe, u32 *ber)
 	{
 		case SYS_DVBS:
 		case SYS_DSS:
+		{
 			if (internal->lock)
 			{
 				/* average 5 BER values	*/
@@ -1240,6 +1321,7 @@ static int stb0899_read_ber(struct dvb_frontend *fe, u32 *ber)
 					lsb = stb0899_read_reg(state, STB0899_ECNT1L);
 					msb = stb0899_read_reg(state, STB0899_ECNT1M);
 					*ber += MAKEWORD16(msb, lsb);
+//					dprintk(30, "BER: %d\n", *ber);
 				}
 				*ber /= 5;
 				/* Viterbi Check	*/
@@ -1253,7 +1335,9 @@ static int stb0899_read_ber(struct dvb_frontend *fe, u32 *ber)
 				}
 			}
 			break;
+		}
 		case SYS_DVBS2:
+		{
 			if (internal->lock)
 			{
 				/* Average 5 PER values	*/
@@ -1269,11 +1353,13 @@ static int stb0899_read_ber(struct dvb_frontend *fe, u32 *ber)
 				*ber /= (-1 + (1 << (4 + 2 * STB0899_GETFIELD(NOE, internal->err_ctrl))));
 			}
 			break;
+		}
 		default:
-			dprintk(state->verbose, FE_DEBUG, 1, "Unsupported delivery system");
+		{
+			dprintk(1, "Unsupported delivery system\n");
 			return -EINVAL;
+		}
 	}
-
 	return 0;
 }
 
@@ -1287,7 +1373,8 @@ static int stb0899_set_voltage(struct dvb_frontend *fe, fe_sec_voltage_t voltage
 	switch (voltage)
 	{
 		case SEC_VOLTAGE_13:
-			printk("frontend: set_voltage_vertical \n");
+		{
+			dprintk(50, "Set voltage 13V (Vertical)\n");
 			stpio_set_pin(state->config->lnb_enable, VOLTAGE_ON);
 			stpio_set_pin(state->config->lnb_vsel, VOLTAGE_13);
 
@@ -1295,8 +1382,10 @@ static int stb0899_set_voltage(struct dvb_frontend *fe, fe_sec_voltage_t voltage
 			stb0899_write_reg(state, STB0899_GPIO01CFG, 0x02);
 			stb0899_write_reg(state, STB0899_GPIO02CFG, 0x00);
 			break;
+		}
 		case SEC_VOLTAGE_18:
-			printk("frontend: set_voltage_horizontal\n");
+		{
+			dprintk(50,"Set voltage 18V (Horizontal)\n");
 			stpio_set_pin(state->config->lnb_enable, VOLTAGE_ON);
 			stpio_set_pin(state->config->lnb_vsel, VOLTAGE_18);
 
@@ -1304,24 +1393,29 @@ static int stb0899_set_voltage(struct dvb_frontend *fe, fe_sec_voltage_t voltage
 			stb0899_write_reg(state, STB0899_GPIO01CFG, 0x02);
 			stb0899_write_reg(state, STB0899_GPIO02CFG, 0x82);
 			break;
+		}
 		case SEC_VOLTAGE_OFF:
-			printk("frontend: set_voltage_off\n");
+		{
+			dprintk(50, "Set voltage off\n");
 			stpio_set_pin(state->config->lnb_enable, VOLTAGE_OFF);
 
 			stb0899_write_reg(state, STB0899_GPIO00CFG, 0x82);
 			stb0899_write_reg(state, STB0899_GPIO01CFG, 0x82);
 			stb0899_write_reg(state, STB0899_GPIO02CFG, 0x82);
 			break;
+		}
 		default:
+		{
+			dprintk(1, "%s < (EINVAL)\n", __func__);
 			return -EINVAL;
+		}
 	}
-
 	return 0;
 }
 
 static int stb0899_set_tone(struct dvb_frontend *fe, fe_sec_tone_mode_t tone)
 {
-	struct stb0899_state *state = fe->demodulator_priv;
+	struct stb0899_state    *state    = fe->demodulator_priv;
 	struct stb0899_internal *internal = &state->internal;
 
 	u8 div, reg;
@@ -1333,6 +1427,7 @@ static int stb0899_set_tone(struct dvb_frontend *fe, fe_sec_tone_mode_t tone)
 	switch (tone)
 	{
 		case SEC_TONE_ON:
+		{
 			div = (internal->master_clk / 100) / 5632;
 			div = (div + 5) / 10;
 			stb0899_write_reg(state, STB0899_DISEQCOCFG, 0x66);
@@ -1341,11 +1436,16 @@ static int stb0899_set_tone(struct dvb_frontend *fe, fe_sec_tone_mode_t tone)
 			stb0899_write_reg(state, STB0899_ACRPRESC, reg);
 			stb0899_write_reg(state, STB0899_ACRDIV1, div);
 			break;
+		}
 		case SEC_TONE_OFF:
+		{
 			stb0899_write_reg(state, STB0899_DISEQCOCFG, 0x20);
 			break;
+		}
 		default:
+		{
 			return -EINVAL;
+		}
 	}
 	return 0;
 }
@@ -1357,28 +1457,33 @@ int stb0899_i2c_gate_ctrl(struct dvb_frontend *fe, int enable)
 
 	i2c_stat = stb0899_read_reg(state, STB0899_I2CRPT);
 	if (i2c_stat < 0)
+	{
 		goto err;
-
+	}
 	if (enable)
 	{
-		dprintk(state->verbose, FE_DEBUG, 1, "Enabling I2C Repeater ...");
+		dprintk(30, "Enabling I2C Repeater...\n");
 		i2c_stat |=  STB0899_I2CTON;
 		if (stb0899_write_reg(state, STB0899_I2CRPT, i2c_stat) < 0)
+		{
 			goto err;
+		}
 	}
 	else
 	{
-		dprintk(state->verbose, FE_DEBUG, 1, "Disabling I2C Repeater ...");
+		dprintk(30, "Disabling I2C Repeater...\n");
 		i2c_stat &= ~STB0899_I2CTON;
 		if (stb0899_write_reg(state, STB0899_I2CRPT, i2c_stat) < 0)
+		{
 			goto err;
+		}
 	}
 	return 0;
+
 err:
-	dprintk(state->verbose, FE_ERROR, 1, "I2C Repeater control failed");
+	dprintk(1, "I2C Repeater control failed\n");
 	return -EREMOTEIO;
 }
-
 
 static inline void CONVERT32(u32 x, char *str)
 {
@@ -1398,27 +1503,24 @@ int stb0899_get_dev_id(struct stb0899_state *state)
 	char fec_str[5] = { 0 };
 
 	id = stb0899_read_reg(state, STB0899_DEV_ID);
-	dprintk(state->verbose, FE_DEBUG, 1, "ID reg=[0x%02x]", id);
+	dprintk(100, "ID reg = 0x%02x", id);
 	chip_id = STB0899_GETFIELD(CHIP_ID, id);
 	release = STB0899_GETFIELD(CHIP_REL, id);
 
-	dprintk(state->verbose, FE_ERROR, 1, "Device ID=[%d], Release=[%d]",
-		chip_id, release);
+	dprintk(100, "Device ID = %d, Release = %d\n", chip_id, release);
 
 	CONVERT32(STB0899_READ_S2REG(STB0899_S2DEMOD, DMD_CORE_ID), (char *)&demod_str);
 
 	demod_ver = STB0899_READ_S2REG(STB0899_S2DEMOD, DMD_VERSION_ID);
-	dprintk(state->verbose, FE_ERROR, 1, "Demodulator Core ID=[%s], Version=[%d]", (char *) &demod_str, demod_ver);
+	dprintk(100, "Demodulator Core ID = %s, Version = %d\n", (char *)&demod_str, demod_ver);
 	CONVERT32(STB0899_READ_S2REG(STB0899_S2FEC, FEC_CORE_ID_REG), (char *)&fec_str);
 	fec_ver = STB0899_READ_S2REG(STB0899_S2FEC, FEC_VER_ID_REG);
 	if (!(chip_id > 0))
 	{
-		dprintk(state->verbose, FE_ERROR, 1, "couldn't find a STB 0899");
-
+		dprintk(1, "Could not find an STB0899 demodulator\n");
 		return -ENODEV;
 	}
-	dprintk(state->verbose, FE_ERROR, 1, "FEC Core ID=[%s], Version=[%d]", (char *) &fec_str, fec_ver);
-
+	dprintk(50, "%s < FEC Core ID = %s, Version = %d\n", __func__, (char *)&fec_str, fec_ver);
 	return 0;
 }
 
@@ -1433,8 +1535,9 @@ static void stb0899_set_delivery(struct stb0899_state *state)
 	switch (state->delsys)
 	{
 		case SYS_DVBS:
-			dprintk(state->verbose, FE_DEBUG, 1, "Delivery System -- DVB-S");
-			/* FECM/Viterbi ON	*/
+		{
+//			dprintk(20, "Delivery System -- DVB-S\n");
+			/* FECM/Viterbi ON */
 			reg = stb0899_read_reg(state, STB0899_FECM);
 			STB0899_SETFIELD_VAL(FECM_RSVD0, reg, 0);
 			STB0899_SETFIELD_VAL(FECM_VITERBI_ON, reg, 1);
@@ -1461,8 +1564,11 @@ static void stb0899_set_delivery(struct stb0899_state *state)
 
 			STB0899_SETFIELD_VAL(STOP_CKS2DMD108, stop_clk[1], 1);
 			break;
+		}
 		case SYS_DVBS2:
-			/* FECM/Viterbi OFF	*/
+		{
+//			dprintk(20, "Delivery System -- DVB-S2\n");
+			/* FECM/Viterbi OFF */
 			reg = stb0899_read_reg(state, STB0899_FECM);
 			STB0899_SETFIELD_VAL(FECM_RSVD0, reg, 0);
 			STB0899_SETFIELD_VAL(FECM_VITERBI_ON, reg, 0);
@@ -1489,8 +1595,11 @@ static void stb0899_set_delivery(struct stb0899_state *state)
 
 			STB0899_SETFIELD_VAL(STOP_CKS2DMD108, stop_clk[1], 0);
 			break;
+		}
 		case SYS_DSS:
-			/* FECM/Viterbi ON	*/
+		{
+//			dprintk(20, "Delivery System -- DSS\n");
+			/* FECM/Viterbi ON */
 			reg = stb0899_read_reg(state, STB0899_FECM);
 			STB0899_SETFIELD_VAL(FECM_RSVD0, reg, 1);
 			STB0899_SETFIELD_VAL(FECM_VITERBI_ON, reg, 1);
@@ -1515,9 +1624,12 @@ static void stb0899_set_delivery(struct stb0899_state *state)
 
 			STB0899_SETFIELD_VAL(STOP_CKS2DMD108, stop_clk[1], 1);
 			break;
+		}
 		default:
-			dprintk(state->verbose, FE_ERROR, 1, "Unsupported delivery system");
+		{
+			dprintk(1, "Unsupported delivery system\n");
 			break;
+		}
 	}
 	STB0899_SETFIELD_VAL(STOP_CKADCI108, stop_clk[0], 0);
 	stb0899_write_regs(state, STB0899_STOPCLK1, stop_clk, 2);
@@ -1530,35 +1642,40 @@ static void stb0899_set_delivery(struct stb0899_state *state)
 static void stb0899_set_iterations(struct stb0899_state *state)
 {
 	struct stb0899_internal *internal = &state->internal;
-	struct stb0899_config *config = state->config;
+	struct stb0899_config   *config   = state->config;
 
 	s32 iter_scale;
-	u32 reg;
+//	u32 reg;
 
 	iter_scale = 17 * (internal->master_clk / 1000);
 	iter_scale += 410000;
-	iter_scale /= (internal->srate / 1000000);
-	iter_scale /= 1000;
+//	iter_scale /= (internal->srate / 1000000);
+//	iter_scale /= 1000;
+	iter_scale /= (internal->srate / 1000);
 
 	if (iter_scale > config->ldpc_max_iter)
+	{
 		iter_scale = config->ldpc_max_iter;
-
-	reg = STB0899_READ_S2REG(STB0899_S2DEMOD, MAX_ITER);
-	STB0899_SETFIELD_VAL(MAX_ITERATIONS, reg, iter_scale);
-	stb0899_write_s2reg(state, STB0899_S2DEMOD, STB0899_BASE_MAX_ITER, STB0899_OFF0_MAX_ITER, reg);
+	}
+//	reg = STB0899_READ_S2REG(STB0899_S2DEMOD, MAX_ITER);
+//	STB0899_SETFIELD_VAL(MAX_ITERATIONS, reg, iter_scale);
+//	stb0899_write_s2reg(state, STB0899_S2DEMOD, STB0899_BASE_MAX_ITER, STB0899_OFF0_MAX_ITER, reg);
+	stb0899_write_s2reg(state, STB0899_S2DEMOD, STB0899_BASE_MAX_ITER, STB0899_OFF0_MAX_ITER, iter_scale);
+	stb0899_write_s2reg(state, STB0899_S2DEMOD, STB0899_BASE_ITER_SCALE, STB0899_OFF0_ITER_SCALE, iter_scale);
 }
 
 static int stb0899_set_property(struct dvb_frontend *fe, struct dtv_property *tvp)
 {
 	struct stb0899_state *state = fe->demodulator_priv;
-	dprintk(state->verbose, FE_ERROR, 1, "%s(..)\n", __func__);
+//	dprintk(50, "%s <\n", __func__);
 	return 0;
 }
 
 static int stb0899_get_property(struct dvb_frontend *fe, struct dtv_property *tvp)
 {
 	struct stb0899_state *state = fe->demodulator_priv;
-	dprintk(state->verbose, FE_ERROR, 1, "%s(..)\n", __func__);
+
+//	dprintk(50, "%s >\n", __func__);
 
 	/* get delivery system info */
 	if (tvp->cmd == DTV_DELIVERY_SYSTEM)
@@ -1568,11 +1685,17 @@ static int stb0899_get_property(struct dvb_frontend *fe, struct dtv_property *tv
 			case SYS_DVBS2:
 			case SYS_DVBS:
 			case SYS_DSS:
+			{
 				break;
+			}
 			default:
+			{
+				dprintk(1, "%s < EINVAL\n", __func__);
 				return -EINVAL;
+			}
 		}
 	}
+//	dprintk(50, "%s <\n", __func__);
 	return 0;
 }
 
@@ -1589,37 +1712,48 @@ static enum dvbfe_search stb0899_search(struct dvb_frontend *fe, struct dvb_fron
 	i_params->freq	= c->frequency;
 	i_params->srate	= c->symbol_rate;
 	state->delsys = c->delivery_system;
-	dprintk(state->verbose, FE_DEBUG, 1, "delivery system=%d", state->delsys);
+//	dprintk(50, "%s > (delivery system = %d", __func__, state->delsys);
 
 	SearchRange = 10000000;
-	dprintk(state->verbose, FE_DEBUG, 1, "Frequency=%d, Srate=%d", i_params->freq, i_params->srate);
-	/* checking Search Range is meaningless for a fixed 3 Mhz			*/
+//	dprintk(20, "Frequency = %d, Srate = %d\n", i_params->freq, i_params->srate);
+
+	/* checking Search Range is meaningless for a fixed 3 MHz */
 	if (INRANGE(i_params->srate, 1000000, 45000000))
 	{
-		dprintk(state->verbose, FE_DEBUG, 1, "Parameters IN RANGE");
+//		dprintk(20, "Parameters IN RANGE\n");
 		stb0899_set_delivery(state);
 
 		if (state->config->tuner_set_rfsiggain)
 		{
 			if (internal->srate > 15000000)
+			{
 				gain =  8;	/* 15Mb < srate < 45Mb, gain = 8dB	*/
+			}
 			else if (internal->srate > 5000000)
+			{
 				gain = 12;	/*  5Mb < srate < 15Mb, gain = 12dB	*/
+			}
 			else
+			{
 				gain = 14;	/*  1Mb < srate <  5Mb, gain = 14db	*/
+			}
 			state->config->tuner_set_rfsiggain(fe, gain);
 		}
 
 		if (i_params->srate <= 5000000)
+		{
 			stb0899_set_mclk(state, config->lo_clk);
+		}
 		else
+		{
 			stb0899_set_mclk(state, config->hi_clk);
-
+		}
 		switch (state->delsys)
 		{
 			case SYS_DVBS:
 			case SYS_DSS:
-				dprintk(state->verbose, FE_DEBUG, 1, "DVB-S delivery system");
+			{
+//				dprintk(20, "DVB-S delivery system\n");
 				internal->freq	= i_params->freq;
 				internal->srate	= i_params->srate;
 				/*
@@ -1631,95 +1765,101 @@ static enum dvbfe_search stb0899_search(struct dvb_frontend *fe, struct dvb_fron
 				internal->srch_range	= SearchRange + 1500000 + (i_params->srate / 5);
 				internal->derot_percent	= 30;
 
-				/* What to do for tuners having no bandwidth setup ?	*/
+				/* What to do for tuners having no bandwidth setup ? */
 				/* enable tuner I/O */
 				stb0899_i2c_gate_ctrl(&state->frontend, 1);
 
 				if (state->config->tuner_set_bandwidth)
+				{
 					state->config->tuner_set_bandwidth(fe, (13 * (stb0899_carr_width(state) + SearchRange)) / 10);
+				}
 				if (state->config->tuner_get_bandwidth)
+				{
 					state->config->tuner_get_bandwidth(fe, &internal->tuner_bw);
-
+				}
 				/* disable tuner I/O */
 				stb0899_i2c_gate_ctrl(&state->frontend, 0);
 
-				/* Set DVB-S1 AGC		*/
+				/* Set DVB-S1 AGC */
 				stb0899_write_reg(state, STB0899_AGCRFCFG, 0x11);
 
-				/* Run the search algorithm	*/
-				dprintk(state->verbose, FE_DEBUG, 1, "running DVB-S search algo ..");
-				if (stb0899_dvbs_algo(state)	== RANGEOK)
+				/* Run the search algorithm */
+//				dprintk(20, "Running DVB-S search algo...\n");
+				if (stb0899_dvbs_algo(state) == RANGEOK)
 				{
-					internal->lock		= 1;
-					dprintk(state->verbose, FE_DEBUG, 1,
-						"-------------------------------------> DVB-S LOCK !");
-
-//				stb0899_write_reg(state, STB0899_ERRCTRL1, 0x3d); /* Viterbi Errors	*/
-//				internal->v_status = stb0899_read_reg(state, STB0899_VSTATUS);
-//				internal->err_ctrl = stb0899_read_reg(state, STB0899_ERRCTRL1);
-//				dprintk(state->verbose, FE_DEBUG, 1, "VSTATUS=0x%02x", internal->v_status);
-//				dprintk(state->verbose, FE_DEBUG, 1, "ERR_CTRL=0x%02x", internal->err_ctrl);
-
+					internal->lock = 1;
+//					dprintk(20, "----> DVB-S LOCK\n");
+//					stb0899_write_reg(state, STB0899_ERRCTRL1, 0x3d); /* Viterbi Errors	*/
+//					internal->v_status = stb0899_read_reg(state, STB0899_VSTATUS);
+//					internal->err_ctrl = stb0899_read_reg(state, STB0899_ERRCTRL1);
+//					dprintk(50, "VSTATUS=0x%02x\n", internal->v_status);
+//					dprintk(50, "ERR_CTRL=0x%02x\n", internal->err_ctrl);
 					return DVBFE_ALGO_SEARCH_SUCCESS;
 				}
 				else
 				{
-					internal->lock		= 0;
-
+					internal->lock = 0;
 					return DVBFE_ALGO_SEARCH_FAILED;
 				}
 				break;
+			}
 			case SYS_DVBS2:
-				internal->freq			= i_params->freq;
-				internal->srate			= i_params->srate;
-				internal->srch_range		= SearchRange;
+			{
+				internal->freq       = i_params->freq;
+				internal->srate      = i_params->srate;
+				internal->srch_range = SearchRange;
 
 				/* enable tuner I/O */
 				stb0899_i2c_gate_ctrl(&state->frontend, 1);
 
 				if (state->config->tuner_set_bandwidth)
+				{
 					state->config->tuner_set_bandwidth(fe, (stb0899_carr_width(state) + SearchRange));
+				}
 				if (state->config->tuner_get_bandwidth)
+				{
 					state->config->tuner_get_bandwidth(fe, &internal->tuner_bw);
-
+				}
 				/* disable tuner I/O */
 				stb0899_i2c_gate_ctrl(&state->frontend, 0);
 
-//			pParams->SpectralInv		= pSearch->IQ_Inversion;
+//				pParams->SpectralInv = pSearch->IQ_Inversion;
 
-				/* Set DVB-S2 AGC		*/
+				/* Set DVB-S2 AGC */
 				stb0899_write_reg(state, STB0899_AGCRFCFG, 0x1c);
 
-				/* Set IterScale =f(MCLK,SYMB)	*/
+				/* Set IterScale =f(MCLK,SYMB) */
 				stb0899_set_iterations(state);
 
-				/* Run the search algorithm	*/
-				dprintk(state->verbose, FE_DEBUG, 1, "running DVB-S2 search algo ..");
-				if (stb0899_dvbs2_algo(state)	== DVBS2_FEC_LOCK)
+				/* Run the search algorithm */
+//				dprintk(20, "Running DVB-S2 search algo...\n");
+				if (stb0899_dvbs2_algo(state) == DVBS2_FEC_LOCK)
 				{
-					internal->lock		= 1;
-					dprintk(state->verbose, FE_DEBUG, 1,
-						"-------------------------------------> DVB-S2 LOCK !");
+					internal->lock = 1;
+//					dprintk(20, "----> DVB-S2 LOCK\n");
 
-//				stb0899_write_reg(state, STB0899_ERRCTRL1, 0xb6); /* Packet Errors	*/
-//				internal->v_status = stb0899_read_reg(state, STB0899_VSTATUS);
-//				internal->err_ctrl = stb0899_read_reg(state, STB0899_ERRCTRL1);
-
+//					stb0899_write_reg(state, STB0899_ERRCTRL1, 0xb6); /* Packet Errors	*/
+//					internal->v_status = stb0899_read_reg(state, STB0899_VSTATUS);
+//					internal->err_ctrl = stb0899_read_reg(state, STB0899_ERRCTRL1);
+//					dprintk(50, "%s < (%d)\n", __func__, DVBFE_ALGO_SEARCH_SUCCESS);
 					return DVBFE_ALGO_SEARCH_SUCCESS;
 				}
 				else
 				{
-					internal->lock		= 0;
-
+					internal->lock = 0;
+					dprintk(1, "%s < Search failed (%d)\n", __func__, DVBFE_ALGO_SEARCH_FAILED);
 					return DVBFE_ALGO_SEARCH_FAILED;
 				}
 				break;
+			}
 			default:
-				dprintk(state->verbose, FE_ERROR, 1, "Unsupported delivery system");
+			{
+				dprintk(1, "Unsupported delivery system\n");
 				return DVBFE_ALGO_SEARCH_INVALID;
+			}
 		}
 	}
-
+	dprintk(1, "%s < Search error\n", __func__);
 	return DVBFE_ALGO_SEARCH_ERROR;
 }
 
@@ -1729,18 +1869,16 @@ static enum stb0899_status stb0899_track_carrier(struct stb0899_state *state)
 	u8 reg;
 
 	reg = stb0899_read_reg(state, STB0899_DSTATUS);
-	dprintk(state->verbose, FE_DEBUG, 1, "--------------------> STB0899_DSTATUS=[0x%02x]", reg);
+//	dprintk(50, "----> STB0899_DSTATUS = [0x%02x]\n", reg);
 	if (STB0899_GETFIELD(CARRIER_FOUND, reg))
 	{
-		dprintk(state->verbose, FE_DEBUG, 1, "-------------> CARRIEROK !");
+//		dprintk(50, "----> CARRIEROK\n");
 		return CARRIEROK;
 	}
 	else
 	{
-		dprintk(state->verbose, FE_DEBUG, 1, "-------------> NOCARRIER !");
-		return NOCARRIER;
+//		dprintk(1, "----> NOCARRIER\n");
 	}
-
 	return NOCARRIER;
 }
 
@@ -1749,18 +1887,17 @@ static enum stb0899_status stb0899_get_ifagc(struct stb0899_state *state)
 	u8 reg;
 
 	reg = STB0899_READ_S2REG(STB0899_S2DEMOD, DMD_STATUS);
-	dprintk(state->verbose, FE_DEBUG, 1, "DMD_STATUS=[0x%02x]", reg);
+//	dprintk(50, "DMD_STATUS = [0x%02x]\n", reg);
 	if (STB0899_GETFIELD(IF_AGC_LOCK, reg))
 	{
-		dprintk(state->verbose, FE_DEBUG, 1, "------------->IF AGC LOCKED !");
+//		dprintk(50, "----> IF AGC LOCKED\n");
 		return AGC1OK;
 	}
 	else
 	{
-		dprintk(state->verbose, FE_DEBUG, 1, "------------->IF AGC LOCK LOST !");
+		dprintk(1, "----> IF AGC LOCK LOST\n");
 		return NOAGC1;
 	}
-
 	return NOAGC1;
 }
 
@@ -1769,27 +1906,40 @@ static int stb0899_get_s1fec(struct stb0899_internal *internal, enum fe_code_rat
 	switch (internal->fecrate)
 	{
 		case STB0899_FEC_1_2:
+		{
 			*fec = FEC_1_2;
 			break;
+		}
 		case STB0899_FEC_2_3:
+		{
 			*fec = FEC_2_3;
 			break;
+		}
 		case STB0899_FEC_3_4:
+		{
 			*fec = FEC_3_4;
 			break;
+		}
 		case STB0899_FEC_5_6:
+		{
 			*fec = FEC_5_6;
 			break;
+		}
 		case STB0899_FEC_6_7:
+		{
 			*fec = FEC_6_7;
 			break;
+		}
 		case STB0899_FEC_7_8:
+		{
 			*fec = FEC_7_8;
 			break;
+		}
 		default:
+		{
 			return -EINVAL;
+		}
 	}
-
 	return 0;
 }
 
@@ -1798,128 +1948,188 @@ static int stb0899_get_modcod(struct stb0899_internal *internal, struct dvbs2_pa
 	switch (internal->modcod)
 	{
 		case STB0899_DUMMY_PLF:
-			params->modulation	= DVBFE_MOD_NONE;
-			params->fec		= DVBFE_FEC_NONE;
+		{
+			params->modulation = DVBFE_MOD_NONE;
+			params->fec        = DVBFE_FEC_NONE;
 			break;
+		}
 		case STB0899_QPSK_14:
-			params->modulation	= DVBFE_MOD_QPSK;
-			params->fec		= DVBFE_FEC_1_4;
+		{
+			params->modulation = DVBFE_MOD_QPSK;
+			params->fec        = DVBFE_FEC_1_4;
 			break;
+		}
 		case STB0899_QPSK_13:
-			params->modulation	= DVBFE_MOD_QPSK;
-			params->fec		= DVBFE_FEC_1_3;
+		{
+			params->modulation = DVBFE_MOD_QPSK;
+			params->fec       = DVBFE_FEC_1_3;
 			break;
+		}
 		case STB0899_QPSK_25:
-			params->modulation	= DVBFE_MOD_QPSK;
-			params->fec		= DVBFE_FEC_2_5;
+		{
+			params->modulation = DVBFE_MOD_QPSK;
+			params->fec        = DVBFE_FEC_2_5;
 			break;
+		}
 		case STB0899_QPSK_12:
-			params->modulation	= DVBFE_MOD_QPSK;
-			params->fec		= DVBFE_FEC_1_2;
+		{
+			params->modulation = DVBFE_MOD_QPSK;
+			params->fec        = DVBFE_FEC_1_2;
 			break;
+		}
 		case STB0899_QPSK_35:
-			params->modulation	= DVBFE_MOD_QPSK;
-			params->fec		= DVBFE_FEC_3_5;
+		{
+			params->modulation = DVBFE_MOD_QPSK;
+			params->fec        = DVBFE_FEC_3_5;
 			break;
+		}
 		case STB0899_QPSK_23:
-			params->modulation	= DVBFE_MOD_QPSK;
-			params->fec		= DVBFE_FEC_2_3;
+		{
+			params->modulation = DVBFE_MOD_QPSK;
+			params->fec        = DVBFE_FEC_2_3;
 			break;
+		}
 		case STB0899_QPSK_34:
-			params->modulation	= DVBFE_MOD_QPSK;
-			params->fec		= DVBFE_FEC_3_4;
+		{
+			params->modulation = DVBFE_MOD_QPSK;
+			params->fec        = DVBFE_FEC_3_4;
 			break;
+		}
 		case STB0899_QPSK_45:
-			params->modulation	= DVBFE_MOD_QPSK;
-			params->fec		= DVBFE_FEC_4_5;
+		{
+			params->modulation = DVBFE_MOD_QPSK;
+			params->fec        = DVBFE_FEC_4_5;
 			break;
+		}
 		case STB0899_QPSK_56:
-			params->modulation	= DVBFE_MOD_QPSK;
-			params->fec		= DVBFE_FEC_5_6;
+		{
+			params->modulation = DVBFE_MOD_QPSK;
+			params->fec        = DVBFE_FEC_5_6;
 			break;
+		}
 		case STB0899_QPSK_89:
-			params->modulation	= DVBFE_MOD_QPSK;
-			params->fec		= DVBFE_FEC_8_9;
+		{
+			params->modulation = DVBFE_MOD_QPSK;
+			params->fec        = DVBFE_FEC_8_9;
 			break;
+		}
 		case STB0899_QPSK_910:
-			params->modulation	= DVBFE_MOD_QPSK;
-			params->fec		= DVBFE_FEC_9_10;
+		{
+			params->modulation = DVBFE_MOD_QPSK;
+			params->fec        = DVBFE_FEC_9_10;
 			break;
+		}
 		case STB0899_8PSK_35:
-			params->modulation	= DVBFE_MOD_8PSK;
-			params->fec		= DVBFE_FEC_3_5;
+		{
+			params->modulation = DVBFE_MOD_8PSK;
+			params->fec        = DVBFE_FEC_3_5;
 			break;
+		}
 		case STB0899_8PSK_23:
-			params->modulation	= DVBFE_MOD_8PSK;
-			params->fec		= DVBFE_FEC_2_3;
+		{
+			params->modulation = DVBFE_MOD_8PSK;
+			params->fec        = DVBFE_FEC_2_3;
 			break;
+		}
 		case STB0899_8PSK_34:
-			params->modulation	= DVBFE_MOD_8PSK;
-			params->fec		= DVBFE_FEC_3_4;
+		{
+			params->modulation = DVBFE_MOD_8PSK;
+			params->fec        = DVBFE_FEC_3_4;
 			break;
+		}
 		case STB0899_8PSK_56:
-			params->modulation	= DVBFE_MOD_8PSK;
-			params->fec		= DVBFE_FEC_5_6;
+		{
+			params->modulation = DVBFE_MOD_8PSK;
+			params->fec        = DVBFE_FEC_5_6;
 			break;
+		}
 		case STB0899_8PSK_89:
-			params->modulation	= DVBFE_MOD_8PSK;
-			params->fec		= DVBFE_FEC_8_9;
+		{
+			params->modulation = DVBFE_MOD_8PSK;
+			params->fec        = DVBFE_FEC_8_9;
 			break;
+		}
 		case STB0899_8PSK_910:
-			params->modulation	= DVBFE_MOD_8PSK;
-			params->fec		= DVBFE_FEC_9_10;
+		{
+			params->modulation = DVBFE_MOD_8PSK;
+			params->fec        = DVBFE_FEC_9_10;
 			break;
+		}
 		case STB0899_16APSK_23:
-			params->modulation	= DVBFE_MOD_16APSK;
-			params->fec		= DVBFE_FEC_2_3;
+		{
+			params->modulation = DVBFE_MOD_16APSK;
+			params->fec        = DVBFE_FEC_2_3;
 			break;
+		}
 		case STB0899_16APSK_34:
-			params->modulation	= DVBFE_MOD_16APSK;
-			params->fec		= DVBFE_FEC_3_4;
+		{
+			params->modulation = DVBFE_MOD_16APSK;
+			params->fec        = DVBFE_FEC_3_4;
 			break;
+		}
 		case STB0899_16APSK_45:
-			params->modulation	= DVBFE_MOD_16APSK;
-			params->fec		= DVBFE_FEC_4_5;
+		{
+			params->modulation = DVBFE_MOD_16APSK;
+			params->fec        = DVBFE_FEC_4_5;
 			break;
+		}
 		case STB0899_16APSK_56:
-			params->modulation	= DVBFE_MOD_16APSK;
-			params->fec		= DVBFE_FEC_5_6;
+		{
+			params->modulation = DVBFE_MOD_16APSK;
+			params->fec        = DVBFE_FEC_5_6;
 			break;
+		}
 		case STB0899_16APSK_89:
-			params->modulation	= DVBFE_MOD_16APSK;
-			params->fec		= DVBFE_FEC_8_9;
+		{
+			params->modulation = DVBFE_MOD_16APSK;
+			params->fec        = DVBFE_FEC_8_9;
 			break;
+		}
 		case STB0899_16APSK_910:
-			params->modulation	= DVBFE_MOD_16APSK;
-			params->fec		= DVBFE_FEC_9_10;
+		{
+			params->modulation = DVBFE_MOD_16APSK;
+			params->fec        = DVBFE_FEC_9_10;
 			break;
+		}
 		case STB0899_32APSK_34:
-			params->modulation	= DVBFE_MOD_32APSK;
-			params->fec		= DVBFE_FEC_3_4;
+		{
+			params->modulation = DVBFE_MOD_32APSK;
+			params->fec        = DVBFE_FEC_3_4;
 			break;
+		}
 		case STB0899_32APSK_45:
-			params->modulation	= DVBFE_MOD_32APSK;
-			params->fec		= DVBFE_FEC_4_5;
+		{
+			params->modulation = DVBFE_MOD_32APSK;
+			params->fec        = DVBFE_FEC_4_5;
 			break;
+		}
 		case STB0899_32APSK_56:
-			params->modulation	= DVBFE_MOD_32APSK;
-			params->fec		= DVBFE_FEC_5_6;
+		{
+			params->modulation = DVBFE_MOD_32APSK;
+			params->fec        = DVBFE_FEC_5_6;
 			break;
+		}
 		case STB0899_32APSK_89:
-			params->modulation	= DVBFE_MOD_32APSK;
-			params->fec		= DVBFE_FEC_8_9;
+		{
+			params->modulation = DVBFE_MOD_32APSK;
+			params->fec        = DVBFE_FEC_8_9;
 			break;
+		}
 		case STB0899_32APSK_910:
-			params->modulation	= DVBFE_MOD_32APSK;
-			params->fec		= DVBFE_FEC_9_10;
+		{
+			params->modulation = DVBFE_MOD_32APSK;
+			params->fec        = DVBFE_FEC_9_10;
 			break;
+		}
 		default:
+		{
 			return -EINVAL;
+		}
 	}
-
 	return 0;
 }
 #endif
+
 /*
  * stb0899_track
  * periodically check the signal level against a specified
@@ -1941,13 +2151,14 @@ static int stb0899_track(struct dvb_frontend *fe, struct dvb_frontend_parameters
 #if 0
 	u32 lock_lost;
 
-	struct stb0899_state *state		= fe->demodulator_priv;
-	struct stb0899_internal *internal	= &state->internal;
+	struct stb0899_state    *state    = fe->demodulator_priv;
+	struct stb0899_internal *internal = &state->internal;
 
 	switch (state->delsys)
 	{
 		case DVBFE_DELSYS_DVBS:
-			dprintk(state->verbose, FE_DEBUG, 1, "Tracking DVB-S state");
+		{
+//			dprintk(50, "Tracking DVB-S state\n");
 			if (stb0899_track_carrier(state) == CARRIEROK)
 			{
 				params->frequency			= internal->freq;
@@ -1958,8 +2169,10 @@ static int stb0899_track(struct dvb_frontend *fe, struct dvb_frontend_parameters
 				stb0899_get_s1fec(internal, &params->delsys.dvbs.fec);
 			}
 			break;
+		}
 		case DVBFE_DELSYS_DSS:
-			dprintk(state->verbose, FE_DEBUG, 1, "Tracking DSS state");
+		{
+//			dprintk(50, "Tracking DSS state\n");
 			if (stb0899_track_carrier(state) == CARRIEROK)
 			{
 				params->frequency			= internal->freq;
@@ -1970,8 +2183,10 @@ static int stb0899_track(struct dvb_frontend *fe, struct dvb_frontend_parameters
 				stb0899_get_s1fec(internal, &params->delsys.dss.fec);
 			}
 			break;
+		}
 		case DVBFE_DELSYS_DVBS2:
-			dprintk(state->verbose, FE_DEBUG, 1, "Tracking DVB-S2 state");
+		{
+//			dprintk(50, "Tracking DVB-S2 state\n");
 			if (stb0899_get_ifagc(state) == AGC1OK)
 			{
 				params->frequency			= internal->freq;
@@ -1991,15 +2206,19 @@ static int stb0899_track(struct dvb_frontend *fe, struct dvb_frontend_parameters
 				params->delsys.dvbs2.syncd_2		= stb0899_read_reg(state, STB0899_SYNCDSTRM);
 			}
 			lock_lost = STB0899_READ_S2REG(STB0899_S2DEMOD, LOCK_LOST);
-			dprintk(state->verbose, FE_DEBUG, 1, "Lock Lost=[0x%02x]\n", lock_lost);
+//			dprintk(50, "Lock Lost = 0x%02x\n", lock_lost);
 			if (STB0899_GETFIELD(LOCK_LOST, lock_lost))
-				dprintk(state->verbose, FE_ERROR, 1, "Demodulator LOST LOCK !\n");
+			{
+				dprintk(1, "Demodulator LOST LOCK\n");
+			}
 			break;
+		}
 		default:
-			dprintk(state->verbose, FE_ERROR, 1, "Unsupported delivery system");
+		{
+			dprintk(1, "Unsupported delivery system\n");
 			return -EINVAL;
+		}
 	}
-
 //	*delay = HZ/10;
 #endif
 	return 0;
@@ -2007,10 +2226,10 @@ static int stb0899_track(struct dvb_frontend *fe, struct dvb_frontend_parameters
 
 static int stb0899_get_frontend(struct dvb_frontend *fe, struct dvb_frontend_parameters *p)
 {
-	struct stb0899_state *state		= fe->demodulator_priv;
-	struct stb0899_internal *internal	= &state->internal;
+	struct stb0899_state    *state    = fe->demodulator_priv;
+	struct stb0899_internal *internal = &state->internal;
 
-	dprintk(state->verbose, FE_DEBUG, 1, "Get params");
+//	dprintk(20, "%s Get parameters\n", __func__);
 	p->u.qpsk.symbol_rate = internal->srate;
 
 	return 0;
@@ -2023,8 +2242,8 @@ static enum dvbfe_algo stb0899_frontend_algo(struct dvb_frontend *fe)
 
 static struct dvb_frontend_ops stb0899_ops =
 {
-
-	.info = {
+	.info =
+	{
 		.name				= "STB0899 Multistandard",
 		.type				= FE_QPSK, /* with old API */
 		.frequency_min		= 950000,
@@ -2073,24 +2292,24 @@ struct dvb_frontend *stb0899_attach(struct stb0899_config *config, struct i2c_ad
 
 	state = kzalloc(sizeof(struct stb0899_state), GFP_KERNEL);
 	if (state == NULL)
+	{
 		goto error;
-
-	inversion				= config->inversion;
-	state->verbose				= &verbose;
-	state->config				= config;
-	state->i2c				= i2c;
-	state->frontend.ops			= stb0899_ops;
-	state->frontend.demodulator_priv	= state;
-	state->internal.inversion		= inversion;
+	}
+	inversion                        = config->inversion;
+	state->verbose                   = &verbose;
+	state->config                    = config;
+	state->i2c                       = i2c;
+	state->frontend.ops              = stb0899_ops;
+	state->frontend.demodulator_priv = state;
+	state->internal.inversion        = inversion;
 
 	stb0899_wakeup(&state->frontend);
 	if (stb0899_get_dev_id(state) == -ENODEV)
 	{
-		printk("%s: Exiting .. !\n", __func__);
+		dprintk(1, "%s: Exiting... (ENODEV)!\n", __func__);
 		goto error;
 	}
-
-	printk("%s: Attaching STB0899 \n", __func__);
+	dprintk(50, "%s < STB0899 frontend attached\n", __func__);
 	return &state->frontend;
 
 error:
@@ -2098,3 +2317,4 @@ error:
 	return NULL;
 }
 EXPORT_SYMBOL(stb0899_attach);
+// vim:ts=4

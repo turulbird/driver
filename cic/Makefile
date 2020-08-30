@@ -46,6 +46,16 @@ cimax-objs += cimax/cimax.o
 obj-m += cimax.o
 endif
 
+ifdef HL101
+cimax-objs += cimax/cimax.o
+obj-m += cimax.o
+endif
+
+ifdef VIP1_V1
+cimax-objs += cimax/cimax.o
+obj-m += cimax.o
+endif
+
 ifdef VIP1_V2
 cimax-objs += cimax/cimax.o
 obj-m += cimax.o
@@ -94,11 +104,6 @@ endif
 ifdef CUBEREVO_3000HD
 obj-m += starci.o
 starci-objs:= starci2win/starci2win.o
-endif
-
-ifdef HL101
-cimax-objs += cimax/cimax.o
-obj-m += cimax.o
 endif
 
 ifdef ATEVIO7500

@@ -232,8 +232,9 @@
 #include <linux/string.h>
 #include <linux/module.h>
 #if defined(HL101) \
+ || defined(VIP1_V1) \
  || defined(VIP1_V2) \
- || defined(VIP2_V1)
+ || defined(VIP2)
 #include <linux/version.h>
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,23)
 #  include <linux/stpio.h>
@@ -250,8 +251,9 @@ typedef int (*proc_write_t)(struct file *file, const char __user *buf, unsigned 
 
 // For 12V output
 #if defined(HL101) \
+ || defined(VIP1_V1) \
  || defined(VIP1_V2) \
- || defined(VIP2_V1)
+ || defined(VIP2)
 struct stpio_pin *_12v_pin;
 #endif
 
@@ -302,10 +304,12 @@ static int info_model_read(char *page, char **start, off_t off, int count, int *
 	int len = sprintf(page, "tf7700hdpvr\n");
 #elif defined(HL101)
 	int len = sprintf(page, "hl101\n");
+#elif defined(VIP1_V1)
+	int len = sprintf(page, "vip1-v1\n");
 #elif defined(VIP1_V2)
 	int len = sprintf(page, "vip1-v2\n");
-#elif defined(VIP2_V1)
-	int len = sprintf(page, "vip2-v1\n");
+#elif defined(VIP2)
+	int len = sprintf(page, "vip2\n");
 #elif defined(UFS910)
 	int len = sprintf(page, "ufs910\n");
 #elif defined(UFS922)
@@ -680,8 +684,9 @@ static int info_chipset_read(char *page, char **start, off_t off, int count, int
  || defined(TF7700) \
  || defined(UFS922) \
  || defined(UFC960) \
+ || defined(VIP1_V1) \
  || defined(VIP1_V2) \
- || defined(VIP2_V1) \
+ || defined(VIP2) \
  || defined(CUBEREVO) \
  || defined(CUBEREVO_MINI) \
  || defined(CUBEREVO_MINI2) \
@@ -857,13 +862,15 @@ out:
 
 #if defined(IPBOX9900) \
  || defined(HL101) \
+ || defined(VIP1_V1) \
  || defined(VIP1_V2) \
- || defined(VIP2_V1)
+ || defined(VIP2)
 int _12v_isON = 0;
 
 void set_12v(int onoff)
 {
 #if defined(HL101) \
+ || defined(VIP1_V1) \
  || defined(VIP1_V2) \
  || defined(VIP2_V1)
 	if (onoff)
@@ -914,6 +921,7 @@ int proc_misc_12V_output_write(struct file *file, const char __user *buf, unsign
 		ret = count;
 	}
 #if defined(HL101) \
+ || defined(VIP1_V1) \
  || defined(VIP1_V2) \
  || defined(VIP2_V1)
 //	set_12v(_12v_isON);  // set 12V output
@@ -1009,9 +1017,18 @@ struct ProcStructure_s e2Proc[] =
  || defined(TF7700) \
  || defined(VITAMIN_HD5000) \
  || defined(HL101) \
+ || defined(VIP1_V1) \
  || defined(VIP1_V2) \
- || defined(VIP2_V1)
+ || defined(VIP2)
 	{cProcEntry, "stb/lcd/symbol_circle",                                            NULL, NULL, NULL, NULL, ""},
+#endif
+#if defined(SPARK7162) \
+ || defined(TF7700) \
+ || defined(HL101) \
+ || defined(VIP1_V1) \
+ || defined(VIP1_V2) \
+ || defined(VIP2)
+	{cProcEntry, "stb/lcd/symbol_hdd",                                               NULL, NULL, NULL, NULL, ""},
 #endif
 #if defined(ADB_BOX) \
  || defined(FORTIS_HDBOX) \
@@ -1024,8 +1041,9 @@ struct ProcStructure_s e2Proc[] =
  || defined(SPARK7162) \
  || defined(TF7700) \
  || defined(HL101) \
+ || defined(VIP1_V1) \
  || defined(VIP1_V2) \
- || defined(VIP2_V1)
+ || defined(VIP2)
 	{cProcEntry, "stb/lcd/symbol_timeshift",                                         NULL, NULL, NULL, NULL, ""},
 #endif
 
@@ -1074,7 +1092,10 @@ struct ProcStructure_s e2Proc[] =
 //	{cProcEntry, "stb/fp/lnb_sense1",                                                NULL, NULL, NULL, NULL, ""},
 //	{cProcEntry, "stb/fp/lnb_sense2",                                                NULL, NULL, NULL, NULL, ""},
 	{cProcEntry, "stb/fp/led0_pattern",                                              NULL, NULL, default_write_proc, NULL, ""},
+#if !defined(VIP1_V2) \
+ && !defined(VIP2)
 	{cProcEntry, "stb/fp/led1_pattern",                                              NULL, NULL, default_write_proc, NULL, ""},
+#endif
 #if defined(ADB_BOX)
 	{cProcEntry, "stb/fp/led2_pattern",                                              NULL, NULL, default_write_proc, NULL, ""},
 	{cProcEntry, "stb/fp/led3_pattern",                                              NULL, NULL, default_write_proc, NULL, ""},
@@ -1102,15 +1123,12 @@ struct ProcStructure_s e2Proc[] =
 
 #if defined(SPARK) \
  || defined(SPARK7162) \
+ || defined(VIP1_V1) \
  || defined(VIP1_V2) \
- || defined(VIP2_V1)
+ || defined(VIP2)
 	{cProcEntry, "stb/fp/aotom",                                                     NULL, NULL, NULL, NULL, ""},
 	{cProcEntry, "stb/fp/displaytype",                                               NULL, NULL, NULL, NULL, ""},
 	{cProcEntry, "stb/fp/timemode",                                                  NULL, NULL, NULL, NULL, ""},
-
-//	{cProcEntry, "vfd",                                                              NULL, NULL, NULL, NULL, ""},
-//	{cProcDir,   "stb/vfd",                                                          NULL, NULL, NULL, NULL, ""},
-
 	{cProcDir,   "stb/power",                                                        NULL, NULL, NULL, NULL, ""},
 	{cProcEntry, "stb/power/standbyled",                                             NULL, NULL, NULL, NULL, ""},
 #endif
@@ -1123,11 +1141,11 @@ struct ProcStructure_s e2Proc[] =
 	{cProcEntry, "stb/tsmux/lnb_b_input",                                            NULL, NULL, NULL, NULL, ""},
 
 	{cProcDir, "stb/misc",                                                           NULL, NULL, NULL, NULL, ""},
-	// VIP1_V2: // PIO4.6 is on/off
 #if defined(IPBOX9900) \
  || defined(HL101) \
+ || defined(VIP1_V1) \
  || defined(VIP1_V2) \
- || defined(VIP2_V1)
+ || defined(VIP2)
 	{cProcEntry, "stb/misc/12V_output",                                              NULL, proc_misc_12V_output_read, proc_misc_12V_output_write, NULL, ""},
 #endif
 
@@ -1221,8 +1239,9 @@ struct ProcStructure_s e2Proc[] =
  || defined(TF7700) \
  || defined(UFS922) \
  || defined(UFC960) \
+ || defined(VIP1_V1) \
  || defined(VIP1_V2) \
- || defined(VIP2_V1) \
+ || defined(VIP2) \
  || defined(CUBEREVO) \
  || defined(CUBEREVO_MINI) \
  || defined(CUBEREVO_MINI2) \
@@ -1239,18 +1258,33 @@ struct ProcStructure_s e2Proc[] =
 	{cProcEntry, "stb/video/plane/dei_fmd",                                          NULL, NULL, NULL, NULL, "dei_fmd"},
 	{cProcEntry, "stb/video/plane/dei_mode",                                         NULL, NULL, NULL, NULL, "dei_mode"},
 	{cProcEntry, "stb/video/plane/dei_ctrl",                                         NULL, NULL, NULL, NULL, "dei_ctrl"},
-	{cProcDir,   "stb/fan",                                                          NULL, NULL, NULL, NULL, ""},
-	{cProcEntry, "stb/fan/fan_ctrl",                                                 NULL, NULL, NULL, NULL, ""},
 #endif
 
-#if defined(IPBOX9900) || defined(IPBOX99)
+#if defined(IPBOX9900) \
+ || defined(IPBOX99)
 	{cProcEntry, "stb/misc/fan",                                                     NULL, NULL, NULL, NULL, ""},
 #endif
 
-#if defined(ADB_BOX) || defined(SAGEMCOM88)
+// Enigma2 implementation of fan control, doubles the historic various SH4 ones... (TODO: add these)
+#if defined(CUBEREVO) \
+ || defined(IPBOX9900) \
+ || defined(IPBOX99) \
+ || defined(ADB_BOX) \
+ || defined(SAGEMCOM88)
+	{cProcEntry, "stb/fp/fan",                                                       NULL, NULL, NULL, NULL, ""},
+#endif
+#if defined(ADB_BOX) \
+ || defined(CUBEREVO) \
+ || defined(IPBOX9900) \
+ || defined(IPBOX99)
+	{cProcEntry, "stb/fp/fan_pwm",                                                   NULL, NULL, NULL, NULL, ""},
+#endif
+
+#if defined(ADB_BOX) \
+ || defined(SAGEMCOM88)
 	{cProcDir,   "stb/fan",                                                          NULL, NULL, NULL, NULL, ""},
-	{cProcEntry, "stb/hdmi/cec",                                                     NULL, NULL, NULL, NULL, ""},
 	{cProcEntry, "stb/fan/fan_ctrl",                                                 NULL, NULL, NULL, NULL, ""},
+	{cProcEntry, "stb/hdmi/cec",                                                     NULL, NULL, NULL, NULL, ""},
 	{cProcEntry, "stb/video/switch_type",                                            NULL, NULL, NULL, NULL, ""},
 	{cProcEntry, "stb/video/switch",                                                 NULL, NULL, NULL, NULL, ""},
 	{cProcEntry, "stb/video/switch_choices",                                         NULL, NULL, NULL, NULL, ""},
@@ -1616,8 +1650,10 @@ static int __init e2_proc_init_module(void)
 			}
 		}
 	}
-#if defined(VIP1_V2) \
- || defined(VIP2_V1)
+#if defined(HL101) \
+ || defined(VIP1_V1) \
+ || defined(VIP1_V2) \
+ || defined(VIP2)
 	_12v_pin = stpio_request_pin(4, 6, "12V_CTL", STPIO_OUT);
 	if (_12v_pin == NULL)
 	{
@@ -1650,4 +1686,3 @@ MODULE_DESCRIPTION("procfs module with enigma2 support");
 MODULE_AUTHOR("Team Ducktales");
 MODULE_LICENSE("GPL");
 // vim:ts=4
-

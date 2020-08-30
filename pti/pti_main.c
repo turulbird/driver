@@ -48,7 +48,7 @@ struct StreamContext_s;
 #include "pti.h"
 
 #if defined(PLAYER_179) || defined(PLAYER_191)
-#if (defined(HL101) || defined(VIP1_V2) || defined(VIP2_V1) || defined(SPARK) || defined(SPARK7162)) || defined(SAGEMCOM88)
+#if (defined(HL101) || defined(VIP1_V1) || defined(VIP1_V2) || defined(VIP2) || defined(SPARK) || defined(SPARK7162)) || defined(SAGEMCOM88)
 static int waitMS=20;
 static int videoMem=4096;
 #endif
@@ -1141,7 +1141,7 @@ module_init             (pti_init);
 module_exit             (pti_exit);
 
 #if defined(PLAYER_179) || defined(PLAYER_191)
-#if (defined(HL101) || defined(VIP1_V2) || defined(VIP2_V1) || defined(SPARK) || defined(SPARK7162)) || defined(SAGEMCOM88)
+#if (defined(HL101) || defined(VIP1_V1) || defined(VIP1_V2) || defined(VIP2) || defined(SPARK) || defined(SPARK7162)) || defined(SAGEMCOM88)
 module_param(waitMS, int, 0444);
 MODULE_PARM_DESC(waitMS, "waitMS");
 

@@ -36,7 +36,9 @@ int proc_tsmux_input0_write(struct file *file, const char __user *buf,
 	{
 		ret = -EFAULT;
 		if (copy_from_user(page, buf, count))
+		{
 			goto out;
+		}
 		page[count] = 0;
 		printk("%s\n", page);
 		ret = count;
@@ -49,9 +51,13 @@ int proc_tsmux_input0_write(struct file *file, const char __user *buf,
  || defined(ATEMIO520) \
  || defined(ATEMIO530)
 		if (strcmp(page, "A") == 0)
+		{
 			setMuxSource(0);
+		}
 		else if (strcmp(page, "CI0") == 0)
+		{
 			setMuxSource(1);
+		}
 #endif
 	}
 out:
@@ -78,7 +84,9 @@ int proc_tsmux_input1_write(struct file *file, const char __user *buf,
 	{
 		ret = -EFAULT;
 		if (copy_from_user(page, buf, count))
+		{
 			goto out;
+		}
 		page[count] = 0;
 		printk("%s\n", page);
 		ret = count;
@@ -89,11 +97,17 @@ int proc_tsmux_input1_write(struct file *file, const char __user *buf,
 #if defined(UFS922) \
  || defined(UFC960)
 		if (strcmp(page, "CI0") == 0)
+		{
 			printk("%s ->CIO received\n", __func__);
+		}
 		else if (strcmp(page, "CI1") == 0)
+		{
 			printk("%s ->CI1 received\n", __func__);
+		}
 		else
+		{
 			ret = -EINVAL;
+		}
 #endif
 	}
 out:
@@ -120,7 +134,9 @@ int proc_tsmux_lnb_b_input_write(struct file *file, const char __user *buf,
 	{
 		ret = -EFAULT;
 		if (copy_from_user(page, buf, count))
+		{
 			goto out;
+		}
 	}
 	ret = count;
 out:
@@ -147,7 +163,9 @@ int proc_tsmux_ci0_input_write(struct file *file, const char __user *buf,
 	{
 		ret = -EFAULT;
 		if (copy_from_user(page, buf, count))
+		{
 			goto out;
+		}
 		page[count] = 0;
 		printk("%s\n", page);
 		ret = count;
@@ -161,6 +179,7 @@ int proc_tsmux_ci0_input_write(struct file *file, const char __user *buf,
  || defined(CUBEREVO_3000HD) \
  || defined(FORTIS_HDBOX) \
  || defined(HL101) \
+ || defined(VIP1_V1) \
  || defined(VIP1_V2) \
  || defined(ATEVIO7500) \
  || defined(IPBOX9900) \
@@ -168,11 +187,17 @@ int proc_tsmux_ci0_input_write(struct file *file, const char __user *buf,
  || defined(IPBOX55) \
  || defined(UFS913)
 		if (strcmp(page, "A") == 0)
+		{
 			setCiSource(0, 0);
+		}
 		else if (strcmp(page, "B") == 0)
+		{
 			setCiSource(0, 1);
+		}
 		else
+		{
 			ret = -EINVAL;
+		}
 #endif
 	}
 out:
@@ -195,6 +220,7 @@ int proc_tsmux_ci0_input_read(char *page, char **start, off_t off, int count,
  || defined(CUBEREVO_3000HD) \
  || defined(FORTIS_HDBOX) \
  || defined(HL101) \
+ || defined(VIP1_V1) \
  || defined(VIP1_V2) \
  || defined(ATEVIO7500) \
  || defined(IPBOX9900) \
@@ -205,9 +231,13 @@ int proc_tsmux_ci0_input_read(char *page, char **start, off_t off, int count,
 		int source = 0;
 		getCiSource(0, &source);
 		if (source == 0)
+		{
 			len = sprintf(page, "A\n");
+		}
 		else
+		{
 			len = sprintf(page, "B\n");
+		}
 	}
 #endif
 	return len;
@@ -224,7 +254,9 @@ int proc_tsmux_ci1_input_write(struct file *file, const char __user *buf,
 	{
 		ret = -EFAULT;
 		if (copy_from_user(page, buf, count))
+		{
 			goto out;
+		}
 		page[count] = 0;
 		printk("%s\n", page);
 		ret = count;
@@ -238,6 +270,7 @@ int proc_tsmux_ci1_input_write(struct file *file, const char __user *buf,
  || defined(CUBEREVO_3000HD) \
  || defined(FORTIS_HDBOX) \
  || defined(HL101) \
+ || defined(VIP1_V1) \
  || defined(VIP1_V2) \
  || defined(ATEVIO7500) \
  || defined(IPBOX9900) \
@@ -245,11 +278,17 @@ int proc_tsmux_ci1_input_write(struct file *file, const char __user *buf,
  || defined(IPBOX55) \
  || defined(UFS913)
 		if (strcmp(page, "A") == 0)
+		{
 			setCiSource(1, 0);
+		}
 		else if (strcmp(page, "B") == 0)
+		{
 			setCiSource(1, 1);
+		}
 		else
+		{
 			ret = -EINVAL;
+		}
 #endif
 	}
 out:
@@ -272,6 +311,7 @@ int proc_tsmux_ci1_input_read(char *page, char **start, off_t off, int count,
  || defined(CUBEREVO_3000HD) \
  || defined(FORTIS_HDBOX) \
  || defined(HL101) \
+ || defined(VIP1_V1) \
  || defined(VIP1_V2) \
  || defined(ATEVIO7500) \
  || defined(IPBOX9900) \
@@ -282,10 +322,15 @@ int proc_tsmux_ci1_input_read(char *page, char **start, off_t off, int count,
 		int source = 0;
 		getCiSource(1, &source);
 		if (source == 0)
+		{
 			len = sprintf(page, "A\n");
+		}
 		else
+		{
 			len = sprintf(page, "B\n");
+		}
 	}
 #endif
 	return len;
 }
+// vim:ts=4

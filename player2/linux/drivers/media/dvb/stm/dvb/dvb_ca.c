@@ -74,7 +74,7 @@ static struct dvb_device CaDevice =
 
 #ifdef __TDT__
 static int caInitialized = 0;
-#if !defined(VIP2_V1) \
+#if !defined(VIP2) \
  && !defined (SPARK) \
  && !defined (SPARK7162) \
  && !defined (ADB_BOX) \
@@ -92,7 +92,7 @@ struct dvb_device *CaInit(struct DeviceContext_s *DeviceContext)
 	{
 		/* the following call creates ca0 associated with the cimax hardware */
 		printk("Initializing CI Controller\n");
-#if !defined(VIP2_V1) \
+#if !defined(VIP2) \
  && !defined (SPARK) \
  && !defined (SPARK7162) \
  && !defined(ADB_BOX) \

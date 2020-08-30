@@ -90,6 +90,7 @@ Date Modification Name
  || defined(FORTIS_HDBOX) \
  || defined(OCTAGON1008) \
  || defined(HL101) \
+ || defined(VIP1_V1) \
  || defined(TF7700) \
  || defined(CUBEREVO) \
  || defined(CUBEREVO_MINI2) \
@@ -117,6 +118,7 @@ Date Modification Name
  || defined(FORTIS_HDBOX) \
  || defined(OCTAGON1008) \
  || defined(HL101) \
+ || defined(VIP1_V1) \
  || defined(TF7700) \
  || defined(CUBEREVO) \
  || defined(CUBEREVO_MINI2) \

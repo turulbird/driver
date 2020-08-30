@@ -91,8 +91,9 @@ extern void fe_core_register_frontend(struct dvb_adapter *dvb_adap);
  || defined(SAGEMCOM88)
 extern void stv090x_register_frontend(struct dvb_adapter *dvb_adap);
 #elif defined(HL101) \
+ || defined(VIP1_V1) \
  || defined(VIP1_V2) \
- || defined(VIP2_V1) \
+ || defined(VIP2) \
  || defined(IPBOX9900) \
  || defined(IPBOX99) \
  || defined(IPBOX55) \
@@ -557,7 +558,7 @@ void ptiInit(struct DeviceContext_s *pContext)
  || defined(UFS922) \
  || defined(UFC960) \
  || defined(FORTIS_HDBOX) \
- || defined(VIP2_V1) \
+ || defined(VIP2) \
  || defined(CUBEREVO) \
  || defined(CUBEREVO_MINI2) \
  || defined(CUBEREVO_MINI) \
@@ -595,8 +596,9 @@ void ptiInit(struct DeviceContext_s *pContext)
  || defined(SAGEMCOM88)
 		stv090x_register_frontend(&pContext->DvbContext->DvbAdapter);
 #elif defined(HL101) \
+ || defined(VIP1_V1) \
  || defined(VIP1_V2) \
- || defined(VIP2_V1) \
+ || defined(VIP2) \
  || defined(IPBOX9900) \
  || defined(IPBOX99) \
  || defined(IPBOX55) \

@@ -70,6 +70,7 @@
 /******* SC generic *******/
 
 #if defined(HL101) \
+ || defined(VIP1_V1) \
  || defined(ATEVIO7500) \
  || defined(FORTIS_HDBOX) \
  || defined(CUBEREVO) \

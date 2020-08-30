@@ -715,8 +715,9 @@ static inline snd_pcm_uframes_t _ksnd_pcm_avail_update(snd_pcm_substream_t
  || defined(UFS922) \
  || defined(UFC960) \
  || defined(HL101) \
+ || defined(VIP1_V1) \
  || defined(VIP1_V2) \
- || defined(VIP2_V1) \
+ || defined(VIP2) \
  || defined(OCTAGON1008) \
  || defined(IPBOX9900) \
  || defined(IPBOX99) \
@@ -794,8 +795,9 @@ int ksnd_pcm_htimestamp(ksnd_pcm_t *kpcm, snd_pcm_uframes_t *avail, struct times
  || defined(UFS922) \
  || defined(UFC960) \
  || defined(HL101) \
+ || defined(VIP1_V1) \
  || defined(VIP1_V2) \
- || defined(VIP2_V1) \
+ || defined(VIP2) \
  || defined(OCTAGON1008) \
  || defined(IPBOX9900) \
  || defined(IPBOX99) \
@@ -810,9 +812,13 @@ int ksnd_pcm_htimestamp(ksnd_pcm_t *kpcm, snd_pcm_uframes_t *avail, struct times
 	mystamp = runtime->status->tstamp;
 	snd_pcm_stream_unlock_irq(substream);
 	if ((mystamp.tv_sec == 0) && (mystamp.tv_nsec == 0))
+	{
 		return -1;
+	}
 	if (myavail < 0)
+	{
 		return myavail;
+	}
 	*avail = myavail;
 	*tstamp = mystamp;
 	return 0;
@@ -869,17 +875,25 @@ static int _ksnd_pcm_wait(snd_pcm_substream_t *substream, int timeout)
 	int res = 1; /* success is a positive integer */
 	snd_pcm_stream_lock_irq(substream);
 	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
+	{
 		avail = snd_pcm_playback_avail(runtime);
+	}
 	else
+	{
 		avail = snd_pcm_capture_avail(runtime);
+	}
 	if (avail < runtime->control->avail_min)
 	{
 		wait_queue_t wait;
 		long jiffies;
 		if (timeout >= 0)
+		{
 			jiffies = (timeout * HZ) / 1000;
+		}
 		else
+		{
 			jiffies = 10 * HZ;
+		}
 		init_waitqueue_entry(&wait, current);
 		add_wait_queue(&runtime->sleep, &wait);
 		do
@@ -913,26 +927,38 @@ static int _ksnd_pcm_wait(snd_pcm_substream_t *substream, int timeout)
 				case SNDRV_PCM_STATE_SETUP:
 				case SNDRV_PCM_STATE_XRUN:
 				case SNDRV_PCM_STATE_DRAINING:
+				{
 					res = -EPIPE;
 					break;
+				}
 				case SNDRV_PCM_STATE_SUSPENDED:
-					printk("%s: result ESTRPIPE %d\n",
-					       __FUNCTION__, __LINE__);
+				{
+					printk("%s: result ESTRPIPE %d\n", __FUNCTION__, __LINE__);
 					res = -ESTRPIPE;
 					break;
+				}
 				case SNDRV_PCM_STATE_PAUSED:
-					printk("%s: Waiting for buffer %d\n",
-					       __FUNCTION__, __LINE__);
+				{
+					printk("%s: Waiting for buffer %d\n", __FUNCTION__, __LINE__);
 					break;
+				}
 				default:
+				{
 					break;
+				}
 			}
 			if (1 != res)
+			{
 				break;
+			}
 			if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
+			{
 				avail = snd_pcm_playback_avail(runtime);
+			}
 			else
+			{
 				avail = snd_pcm_capture_avail(runtime);
+			}
 		}
 		while (avail < runtime->control->avail_min);
 		remove_wait_queue(&runtime->sleep, &wait);
@@ -953,17 +979,23 @@ static void _ksnd_pcm_mmap_begin(snd_pcm_substream_t *substream,
 	snd_pcm_runtime_t *runtime = substream->runtime;
 	snd_pcm_uframes_t avail, f, cont, appl_ptr;
 	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
+	{
 		avail = snd_pcm_playback_avail(runtime);
+	}
 	else
+	{
 		avail = snd_pcm_capture_avail(runtime);
+	}
 	f = *frames;
 	if (f > avail)
+	{
 		f = avail;
-	cont =
-		runtime->buffer_size -
-		runtime->control->appl_ptr % runtime->buffer_size;
+	}
+	cont = runtime->buffer_size - runtime->control->appl_ptr % runtime->buffer_size;
 	if (f > cont)
+	{
 		f = cont;
+	}
 	appl_ptr = runtime->control->appl_ptr;
 	*frames = f;
 	*offset = appl_ptr % runtime->buffer_size;
@@ -975,7 +1007,9 @@ int ksnd_pcm_mmap_begin(ksnd_pcm_t *pcm, const snd_pcm_channel_area_t **areas,
 	snd_pcm_substream_t *substream = pcm->substream;
 	snd_pcm_channel_area_t *xareas = pcm->hwareas;
 	if (snd_BUG_ON(!substream || !areas || !offset || !frames))
+	{
 		return -EFAULT;
+	}
 	snd_pcm_stream_lock_irq(substream);
 	_ksnd_pcm_mmap_begin(substream, offset, frames);
 	snd_pcm_stream_unlock_irq(substream);
@@ -993,17 +1027,25 @@ static int _ksnd_pcm_update_appl_ptr(snd_pcm_substream_t *substream,
 	int err;
 	runtime->control->appl_ptr = appl_ptr;
 	if (substream->ops->ack)
+	{
 		substream->ops->ack(substream);
+	}
 	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
+	{
 		hw_avail = snd_pcm_playback_hw_avail(runtime);
+	}
 	else
+	{
 		hw_avail = snd_pcm_capture_hw_avail(runtime);
-	if (runtime->status->state == SNDRV_PCM_STATE_PREPARED &&
-			hw_avail >= (snd_pcm_sframes_t) runtime->start_threshold)
+	}
+	if (runtime->status->state == SNDRV_PCM_STATE_PREPARED
+	&&  hw_avail >= (snd_pcm_sframes_t) runtime->start_threshold)
 	{
 		err = snd_pcm_start(substream);
 		if (err < 0)
+		{
 			return err;
+		}
 	}
 	return 0;
 }
@@ -1018,7 +1060,9 @@ snd_pcm_sframes_t ksnd_pcm_mmap_commit(ksnd_pcm_t *pcm,
 	snd_pcm_sframes_t res = frames;
 	int err;
 	if (snd_BUG_ON(!substream))
+	{
 		return -EFAULT;
+	}
 	/* for SPDIF we need to run though the just committed PCM samples and
 	 * add formating (unless raw mode is enabled)
 	 */
@@ -1027,11 +1071,15 @@ snd_pcm_sframes_t ksnd_pcm_mmap_commit(ksnd_pcm_t *pcm,
 	switch (_ksnd_pcm_state(substream))
 	{
 		case SNDRV_PCM_STATE_XRUN:
+		{
 			res = -EPIPE;
 			goto _end_unlock;
+		}
 		case SNDRV_PCM_STATE_SUSPENDED:
+		{
 			res = -ESTRPIPE;
 			goto _end_unlock;
+		}
 	}
 	appl_ptr = runtime->control->appl_ptr;
 	/* verify no-one is interleaving access to the playback */
@@ -1040,10 +1088,15 @@ snd_pcm_sframes_t ksnd_pcm_mmap_commit(ksnd_pcm_t *pcm,
 	       (appl_ptr % runtime->buffer_size) != offset);
 	appl_ptr += frames;
 	if (appl_ptr >= runtime->boundary)
+	{
 		appl_ptr = 0;
+	}
 	err = _ksnd_pcm_update_appl_ptr(substream, appl_ptr);
 	if (err < 0)
+	{
 		res = err;
+	}
+
 _end_unlock:
 	snd_pcm_stream_unlock_irq(substream);
 	return res;
@@ -1071,8 +1124,7 @@ static inline int _ksnd_pcm_drain(snd_pcm_substream_t *substream)
 	return 0;
 }
 
-static inline int _ksnd_pcm_pause(snd_pcm_substream_t *substream,
-				  unsigned int push)
+static inline int _ksnd_pcm_pause(snd_pcm_substream_t *substream, unsigned int push)
 {
 	snd_pcm_kernel_ioctl(substream, SNDRV_PCM_IOCTL_PAUSE, (void *) push);
 	return 0;
@@ -1094,10 +1146,7 @@ int ksnd_pcm_delay(ksnd_pcm_t *pcm, snd_pcm_sframes_t *delay)
 
 static struct file default_file = {.f_flags = 0 };
 
-int ksnd_pcm_open(ksnd_pcm_t **kpcm,
-		  int card,
-		  int device,
-		  snd_pcm_stream_t stream)
+int ksnd_pcm_open(ksnd_pcm_t **kpcm, int card, int device, snd_pcm_stream_t stream)
 {
 	int err = 0;
 	ksnd_pcm_t *xkpcm;
@@ -1161,9 +1210,12 @@ int ksnd_pcm_open(ksnd_pcm_t **kpcm,
 	}
 	mutex_unlock(&pcm->open_mutex);
 	if (err < 0)
+	{
 		goto _error_do_put_and_free;
+	}
 	*kpcm = xkpcm;
 	return err;
+
 _error_do_put_and_free:
 	module_put(pcm->card->module);
 _error_do_free:
@@ -1177,7 +1229,9 @@ void ksnd_pcm_close(ksnd_pcm_t *kpcm)
 	snd_pcm_t *pcm;
 	snd_pcm_substream_t *substream = kpcm->substream;
 	if (kpcm->hwareas[0].addr)
+	{
 		iounmap(kpcm->hwareas[0].addr);
+	}
 	pcm = substream->pcm;
 	_ksnd_pcm_drop(substream);
 	mutex_lock(&pcm->open_mutex);
@@ -1212,6 +1266,7 @@ static int _ksnd_pcm_write_transfer(snd_pcm_substream_t *substream,
 		int dstwidth = frames_to_bytes(runtime, 1);
 		int transfersize = srcwidth > dstwidth ? dstwidth : srcwidth;
 		int i;
+
 		for (i = 0; i < frames; i++)
 		{
 			memcpy(hwbuf, buf, transfersize);
@@ -1231,6 +1286,7 @@ static int _ksnd_pcm_IEC60958_transfer(snd_pcm_substream_t *substream,
 				       unsigned int srcchannels)
 {
 	int ret = 0;
+
 	mm_segment_t fs;
 	fs = get_fs();
 	set_fs(get_ds());
@@ -1253,6 +1309,7 @@ static int _ksnd_pcm_writei1(snd_pcm_substream_t *substream,
 	snd_pcm_uframes_t xfer = 0;
 	snd_pcm_uframes_t offset = 0;
 	int err = 0;
+
 	if (size == 0)
 	{
 		return 0;
@@ -1263,16 +1320,24 @@ static int _ksnd_pcm_writei1(snd_pcm_substream_t *substream,
 		case SNDRV_PCM_STATE_PREPARED:
 		case SNDRV_PCM_STATE_RUNNING:
 		case SNDRV_PCM_STATE_PAUSED:
+		{
 			break;
+		}
 		case SNDRV_PCM_STATE_XRUN:
+		{
 			err = -EPIPE;
 			goto _end_unlock;
+		}
 		case SNDRV_PCM_STATE_SUSPENDED:
+		{
 			err = -ESTRPIPE;
 			goto _end_unlock;
+		}
 		default:
+		{
 			err = -EBADFD;
 			goto _end_unlock;
+		}
 	}
 	while (size > 0)
 	{
@@ -1292,6 +1357,7 @@ static int _ksnd_pcm_writei1(snd_pcm_substream_t *substream,
 		{
 #endif
 			int res;
+
 			snd_pcm_stream_unlock_irq(substream);
 			do
 			{
@@ -1305,16 +1371,14 @@ static int _ksnd_pcm_writei1(snd_pcm_substream_t *substream,
 			snd_pcm_stream_lock_irq(substream);
 			if (res == 0) /* timeout */
 			{
-				if (_ksnd_pcm_state(substream) ==
-						SNDRV_PCM_STATE_SUSPENDED)
+				if (_ksnd_pcm_state(substream) == SNDRV_PCM_STATE_SUSPENDED)
 				{
 					err = -ESTRPIPE;
 					goto _end_unlock;
 				}
 				else
 				{
-					snd_printd("playback write error "
-						   "(DMA or IRQ trouble?)\n");
+					snd_printd("playback write error (DMA or IRQ trouble?)\n");
 					err = -EIO;
 					goto _end_unlock;
 				}
@@ -1333,7 +1397,9 @@ static int _ksnd_pcm_writei1(snd_pcm_substream_t *substream,
 		frames = size > avail ? avail : size;
 		cont = runtime->buffer_size - runtime->control->appl_ptr % runtime->buffer_size;
 		if (frames > cont)
+		{
 			frames = cont;
+		}
 		if (snd_BUG_ON(!frames))
 		{
 			snd_pcm_stream_unlock_irq(substream);
@@ -1345,17 +1411,25 @@ static int _ksnd_pcm_writei1(snd_pcm_substream_t *substream,
 		err = transfer(substream, appl_ofs, data, offset, frames, srcchannels);
 		snd_pcm_stream_lock_irq(substream);
 		if (err < 0)
+		{
 			goto _end;
+		}
 		switch (_ksnd_pcm_state(substream))
 		{
 			case SNDRV_PCM_STATE_XRUN:
+			{
 				err = -EPIPE;
 				goto _end_unlock;
+			}
 			case SNDRV_PCM_STATE_SUSPENDED:
+			{
 				err = -ESTRPIPE;
 				goto _end_unlock;
+			}
 			default:
+			{
 				break;
+			}
 		}
 		appl_ptr += frames;
 		if (appl_ptr >= runtime->boundary)
@@ -1367,19 +1441,23 @@ static int _ksnd_pcm_writei1(snd_pcm_substream_t *substream,
 			runtime->control->appl_ptr = appl_ptr;
 		}
 		if (substream->ops->ack)
+		{
 			substream->ops->ack(substream);
+		}
 		offset += frames;
 		size -= frames;
 		xfer += frames;
-		if (_ksnd_pcm_state(substream) == SNDRV_PCM_STATE_PREPARED &&
-				snd_pcm_playback_hw_avail(runtime) >=
-				(snd_pcm_sframes_t) runtime->start_threshold)
+		if (_ksnd_pcm_state(substream) == SNDRV_PCM_STATE_PREPARED
+		&&  snd_pcm_playback_hw_avail(runtime) >= (snd_pcm_sframes_t) runtime->start_threshold)
 		{
 			err = snd_pcm_start(substream);
 			if (err < 0)
+			{
 				goto _end_unlock;
+			}
 		}
 	}
+
 _end_unlock:
 	snd_pcm_stream_unlock_irq(substream);
 _end:
@@ -1393,6 +1471,7 @@ int ksnd_pcm_writei(ksnd_pcm_t *kpcm,
 	snd_pcm_runtime_t *runtime;
 	int err;
 	transfer_f out_func = 0;
+
 	runtime = substream->runtime;
 	if (substream->pcm->card->number == 2)
 	{
@@ -1403,19 +1482,25 @@ int ksnd_pcm_writei(ksnd_pcm_t *kpcm,
 		out_func = _ksnd_pcm_write_transfer;
 	}
 	if (_ksnd_pcm_state(substream) == SNDRV_PCM_STATE_OPEN)
+	{
 		return -EBADFD;
+	}
 	if (runtime->access != SNDRV_PCM_ACCESS_RW_INTERLEAVED
-			&& runtime->channels > 1)
+	&&  runtime->channels > 1)
+	{
 		return -EINVAL;
+	}
 	if (substream->stream != SNDRV_PCM_STREAM_PLAYBACK)
+	{
 		return -EINVAL;
+	}
 	if (size == 0)
+	{
 		return 0;
+	}
 	do
 	{
-		err =
-			_ksnd_pcm_writei1(substream, (unsigned long)data, size,
-					  srcchannels, out_func);
+		err = _ksnd_pcm_writei1(substream, (unsigned long)data, size, srcchannels, out_func);
 		if (err < 0)
 		{
 			if (err == -EAGAIN)
@@ -1469,7 +1554,9 @@ int ksnd_pcm_mute(ksnd_pcm_t *kpcm, unsigned int push)
 	{
 		err = ksnd_pcm_prepare(kpcm);
 		if (err < 0)
+		{
 			return err;
+		}
 		ksnd_pcm_start(kpcm);
 	}
 	else
@@ -1497,7 +1584,9 @@ int ksnd_pcm_start(ksnd_pcm_t *kpcm)
 {
 	snd_pcm_substream_t *substream = kpcm->substream;
 	if (substream != NULL)
+	{
 		snd_pcm_kernel_ioctl(substream, SNDRV_PCM_IOCTL_START, NULL);
+	}
 	return 0;
 }
 
@@ -1521,18 +1610,26 @@ static int _ksnd_pcm_hw_param_value(const ksnd_pcm_hw_params_t *params,
 	{
 		const struct snd_mask *mask = hw_param_mask_c(params, var);
 		if (!snd_mask_single(mask))
+		{
 			return -EINVAL;
+		}
 		if (dir)
+		{
 			*dir = 0;
+		}
 		return snd_mask_value(mask);
 	}
 	if (hw_is_interval(var))
 	{
 		const struct snd_interval *i = hw_param_interval_c(params, var);
 		if (!snd_interval_single(i))
+		{
 			return -EINVAL;
+		}
 		if (dir)
+		{
 			*dir = i->openmin;
+		}
 		return snd_interval_value(i);
 	}
 	return -EINVAL;
@@ -1546,7 +1643,9 @@ static int _ksnd_pcm_hw_param_get(const snd_pcm_hw_params_t *params, snd_pcm_hw_
 {
 	int err = _ksnd_pcm_hw_param_value(params, var, dir);
 	if (err < 0)
+	{
 		return err;
+	}
 	*val = err;
 	return 0;
 }
@@ -1563,7 +1662,9 @@ int ksnd_pcm_hw_params_current(ksnd_pcm_t *kpcm, ksnd_pcm_hw_params_t *params)
 {
 #if 0
 	if (kpcm->actual_hwparams it not valid)
+	{
 		return -EBADFD;
+	}
 #endif
 	*params = kpcm->actual_hwparams;
 	return 0;
@@ -1574,11 +1675,14 @@ int ksnd_pcm_hw_params(ksnd_pcm_t *kpcm, ksnd_pcm_hw_params_t *params)
 	snd_pcm_substream_t *substream = kpcm->substream;
 	int err;
 	if (substream == NULL)
+	{
 		return -EFAULT;
-	err = snd_pcm_kernel_ioctl(substream, SNDRV_PCM_IOCTL_HW_PARAMS,
-				   params);
+	}
+	err = snd_pcm_kernel_ioctl(substream, SNDRV_PCM_IOCTL_HW_PARAMS, params);
 	if (0 != err)
+	{
 		return err;
+	}
 	kpcm->actual_hwparams = *params;
 	return 0;
 }
@@ -1605,7 +1709,9 @@ int ksnd_pcm_set_params(ksnd_pcm_t *pcm,
 	void *hwbuf;
 	err = ksnd_pcm_hw_params_malloc(&hw_params);
 	if (0 != err)
+	{
 		goto failure;
+	}
 	sw_params = kmalloc(sizeof(*sw_params), GFP_KERNEL);
 	if (!sw_params)
 	{
@@ -1615,30 +1721,37 @@ int ksnd_pcm_set_params(ksnd_pcm_t *pcm,
 	switch (sampledepth)
 	{
 		case 16:
+		{
 			format = SNDRV_PCM_FORMAT_S16_LE;
 			break;
+		}
 		case 24:
+		{
 			sampledepth = 32;
 		/*FALLTHRU*/
+		}
 		case 32:
+		{
 			format = SNDRV_PCM_FORMAT_S32_LE;
 			break;
+		}
 		default:
-			snd_printd("%s Unsupported sampledepth %d\n",
-				   __FUNCTION__, sampledepth);
+		{
+			snd_printd("%s Unsupported sampledepth %d\n", __FUNCTION__, sampledepth);
 			err = -EINVAL;
 			goto failure;
+		}
 	}
 	err = ksnd_pcm_hw_params_any(pcm, hw_params);
 	if (snd_BUG_ON(err < 0))
+	{
 		goto failure;
+	}
 	_snd_pcm_hw_param_setinteger(hw_params, SNDRV_PCM_HW_PARAM_PERIODS);
 	_snd_pcm_hw_param_min(hw_params, SNDRV_PCM_HW_PARAM_PERIODS, 2, 0);
 	snd_mask_none(&mask);
 	snd_mask_set(&mask, SNDRV_PCM_ACCESS_RW_INTERLEAVED);
-	err =
-		snd_pcm_hw_param_mask(substream, hw_params,
-				      SNDRV_PCM_HW_PARAM_ACCESS, &mask);
+	err = snd_pcm_hw_param_mask(substream, hw_params, SNDRV_PCM_HW_PARAM_ACCESS, &mask);
 	if (err < 0)
 	{
 		err = -EINVAL;
@@ -1646,19 +1759,29 @@ int ksnd_pcm_set_params(ksnd_pcm_t *pcm,
 	}
 	err = snd_pcm_hw_param_set(substream, hw_params, SNDRV_PCM_HW_PARAM_RATE, samplerate, 0);
 	if (snd_BUG_ON(err < 0))
+	{
 		goto failure;
+	}
 	err = snd_pcm_hw_param_near(substream, hw_params, SNDRV_PCM_HW_PARAM_CHANNELS, nrchannels, NULL);
 	if (snd_BUG_ON(err < 0))
+	{
 		goto failure;
+	}
 	err = snd_pcm_hw_param_near(substream, hw_params, SNDRV_PCM_HW_PARAM_FORMAT, format, 0);
 	if (snd_BUG_ON(err < 0))
+	{
 		goto failure;
+	}
 	err = snd_pcm_hw_param_near(substream, hw_params, SNDRV_PCM_HW_PARAM_PERIOD_SIZE, periodsize, NULL);
 	if (snd_BUG_ON(err < 0))
+	{
 		goto failure;
+	}
 	err = snd_pcm_hw_param_near(substream, hw_params, SNDRV_PCM_HW_PARAM_BUFFER_SIZE, buffersize, NULL);
 	if (snd_BUG_ON(err < 0))
+	{
 		goto failure;
+	}
 	_ksnd_pcm_drop(substream);
 	/*now we re-use the 61937 control to enable the HW sync mechanism */
 	if (0 != (err = ksnd_pcm_hw_params(pcm, hw_params) < 0))
@@ -1669,8 +1792,7 @@ int ksnd_pcm_set_params(ksnd_pcm_t *pcm,
 		goto failure;
 	}
 	memset(sw_params, 0, sizeof(*sw_params));
-	sw_params->start_threshold =
-		(runtime->buffer_size - (runtime->period_size * 2));
+	sw_params->start_threshold = (runtime->buffer_size - (runtime->period_size * 2));
 	sw_params->stop_threshold = runtime->buffer_size;
 	sw_params->tstamp_mode = SNDRV_PCM_TSTAMP_ENABLE;
 	sw_params->period_step = 1;
@@ -1678,9 +1800,7 @@ int ksnd_pcm_set_params(ksnd_pcm_t *pcm,
 	sw_params->avail_min = runtime->period_size;
 	sw_params->silence_threshold = runtime->period_size;
 	sw_params->silence_size = runtime->period_size;
-	if ((err =
-				snd_pcm_kernel_ioctl(substream, SNDRV_PCM_IOCTL_SW_PARAMS,
-						     sw_params)) < 0)
+	if ((err = snd_pcm_kernel_ioctl(substream, SNDRV_PCM_IOCTL_SW_PARAMS, sw_params)) < 0)
 	{
 		snd_printd("SW_PARAMS failed: for %d:%d code is %i\n",
 			   substream->pcm->card->number, substream->pcm->device,
@@ -1688,9 +1808,13 @@ int ksnd_pcm_set_params(ksnd_pcm_t *pcm,
 		goto failure;
 	}
 	if ((err = ksnd_pcm_prepare(pcm)) < 0)
+	{
 		goto failure;
+	}
 	if (pcm->hwareas[0].addr)
+	{
 		iounmap(pcm->hwareas[0].addr);
+	}
 	hwbuf = ioremap_nocache(runtime->dma_addr, runtime->dma_bytes);
 	for (i = 0; i < nrchannels; i++)
 	{
@@ -1706,11 +1830,16 @@ int ksnd_pcm_set_params(ksnd_pcm_t *pcm,
 	       substream->pcm->card->number, substream->pcm->device,
 	       nrchannels, samplerate, periodsize, buffersize);
 	err = 0;
+
 failure:
 	if (hw_params)
+	{
 		ksnd_pcm_hw_params_free(hw_params);
+	}
 	if (sw_params)
+	{
 		kfree(sw_params);
+	}
 	return err;
 }
 
@@ -1729,15 +1858,23 @@ int ksnd_pcm_get_params(ksnd_pcm_t *kpcm,
 	int err;
 	err = ksnd_pcm_hw_params_malloc(&hw);
 	if (err < 0)
+	{
 		return err;
+	}
 	err = ksnd_pcm_hw_params_current(kpcm, hw);
 	if (err >= 0)
+	{
 		err = ksnd_pcm_hw_params_get_buffer_size(hw, buffer_size);
+	}
 	if (err >= 0)
+	{
 		err = ksnd_pcm_hw_params_get_period_size(hw, period_size, NULL);
+	}
 	ksnd_pcm_hw_params_free(hw);
 	if (err < 0)
+	{
 		return err;
+	}
 	return 0;
 }
 
@@ -1746,7 +1883,9 @@ int ksnd_pcm_hw_params_malloc(ksnd_pcm_hw_params_t **ptr)
 	ksnd_pcm_hw_params_t *p;
 	p = kzalloc(sizeof(*p), GFP_KERNEL);
 	if (!p)
+	{
 		return -ENOMEM;
+	}
 	*ptr = p;
 	return 0;
 }
@@ -1767,7 +1906,9 @@ int ksnd_pcm_hw_params_get_buffer_size(const ksnd_pcm_hw_params_t *params, snd_p
 	unsigned int _val;
 	int err = _ksnd_pcm_hw_param_get(params, SNDRV_PCM_HW_PARAM_BUFFER_SIZE, &_val, NULL);
 	if (err >= 0)
+	{
 		*val = _val;
+	}
 	return err;
 }
 
@@ -1785,7 +1926,9 @@ int ksnd_pcm_hw_params_get_period_size(const ksnd_pcm_hw_params_t *params, snd_p
 	unsigned int _val;
 	int err = _ksnd_pcm_hw_param_get(params, SNDRV_PCM_HW_PARAM_PERIOD_SIZE, &_val, dir);
 	if (err >= 0)
+	{
 		*val = _val;
+	}
 	return err;
 }
 
@@ -1810,7 +1953,9 @@ void ksnd_ctl_elem_id_alloca(snd_ctl_elem_id_t **id)
 void ksnd_ctl_elem_id_set_name(snd_ctl_elem_id_t *obj, const char *val)
 {
 	if (snd_BUG_ON(!obj))
+	{
 		return;
+	}
 	strncpy((char *)obj->name, val, sizeof(obj->name) - 1);
 	obj->name[sizeof(obj->name) - 1] = '\0';
 }
@@ -1823,7 +1968,9 @@ void ksnd_ctl_elem_id_set_name(snd_ctl_elem_id_t *obj, const char *val)
 void ksnd_ctl_elem_id_set_interface(snd_ctl_elem_id_t *obj, snd_ctl_elem_iface_t val)
 {
 	if (snd_BUG_ON(!obj))
+	{
 		return;
+	}
 	obj->iface = val;
 }
 
@@ -1835,7 +1982,9 @@ void ksnd_ctl_elem_id_set_interface(snd_ctl_elem_id_t *obj, snd_ctl_elem_iface_t
 void ksnd_ctl_elem_id_set_device(snd_ctl_elem_id_t *obj, unsigned int val)
 {
 	if (snd_BUG_ON(!obj))
+	{
 		return;
+	}
 	obj->device = val;
 }
 /**
@@ -1846,7 +1995,9 @@ void ksnd_ctl_elem_id_set_device(snd_ctl_elem_id_t *obj, unsigned int val)
 void ksnd_ctl_elem_id_set_index(snd_ctl_elem_id_t *obj, unsigned int val)
 {
 	if (snd_BUG_ON(!obj))
+	{
 		return;
+	}
 	obj->index = val;
 }
 
@@ -1875,7 +2026,10 @@ void ksnd_ctl_elem_value_alloca(snd_ctl_elem_value_t **id)
  */
 void ksnd_ctl_elem_value_set_id(snd_ctl_elem_value_t *obj, const snd_ctl_elem_id_t *ptr)
 {
-	if (obj && ptr) obj->id = *ptr;
+	if (obj && ptr)
+	{
+		obj->id = *ptr;
+	}
 }
 
 /**
@@ -1886,7 +2040,10 @@ void ksnd_ctl_elem_value_set_id(snd_ctl_elem_value_t *obj, const snd_ctl_elem_id
  */
 void ksnd_ctl_elem_value_set_integer(snd_ctl_elem_value_t *obj, unsigned int idx, long val)
 {
-	if (obj) obj->value.integer.value[idx] = val;
+	if (obj)
+	{
+		obj->value.integer.value[idx] = val;
+	}
 }
 
 /**
@@ -1897,7 +2054,9 @@ void ksnd_ctl_elem_value_set_integer(snd_ctl_elem_value_t *obj, unsigned int idx
 void ksnd_ctl_elem_value_set_iec958(snd_ctl_elem_value_t *obj, const struct snd_aes_iec958 *ptr)
 {
 	if (snd_BUG_ON(!obj || !ptr))
+	{
 		return;
+	}
 	memcpy(&obj->value.iec958, ptr, sizeof(obj->value.iec958));
 }
 
@@ -1913,7 +2072,9 @@ int ksnd_hctl_elem_write(snd_kcontrol_t *elem, snd_ctl_elem_value_t *control)
 {
 	int ret = -EINVAL;
 	if (elem->put)
+	{
 		ret = elem->put(elem, control);
+	}
 	return ret;
 }
 
@@ -1931,3 +2092,4 @@ static void __exit ksnd_module_exit(void)
 
 module_init(ksnd_module_init);
 module_exit(ksnd_module_exit);
+// vim:ts=4

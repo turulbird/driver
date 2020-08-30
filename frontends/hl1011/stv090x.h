@@ -30,7 +30,7 @@
 #endif
 
 //#define	TUNER_IX7306
-#define	TUNER_STB6110
+#define	TUNER_STV6110
 
 enum stv090x_demodulator
 {
@@ -108,6 +108,7 @@ struct stv090x_config
 	bool diseqc_envelope_mode;
 
 	int (*tuner_init)(struct dvb_frontend *fe);
+	int (*tuner_sleep)(struct dvb_frontend *fe);
 	int (*tuner_set_mode)(struct dvb_frontend *fe, enum tuner_mode mode);
 	int (*tuner_set_frequency)(struct dvb_frontend *fe, u32 frequency);
 	int (*tuner_get_frequency)(struct dvb_frontend *fe, u32 *frequency);

@@ -64,8 +64,7 @@ static int zl10353_single_write(struct dvb_frontend *fe, u8 reg, u8 val)
 {
 	struct zl10353_state *state = fe->demodulator_priv;
 	u8 buf[2] = { reg, val };
-	struct i2c_msg msg =
-	{ .addr = state->config.demod_address, .flags = 0, .buf = buf, .len = 2 };
+	struct i2c_msg msg = { .addr = state->config.demod_address, .flags = 0, .buf = buf, .len = 2 };
 	int err = i2c_transfer(state->i2c, &msg, 1);
 
 	if (err != 1)

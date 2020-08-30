@@ -88,8 +88,9 @@ Date Modification Name
  && (defined(FORTIS_HDBOX) \
  || defined(UFS922) \
  || defined(HL101) \
+ || defined(VIP1_V1) \
  || defined(VIP1_V2) \
- || defined(VIP2_V1) \
+ || defined(VIP2) \
  || defined(OCTAGON1008))
 #define MIXER_NUM_PERIODS 4
 #elif defined(__TDT__)

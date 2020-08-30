@@ -73,6 +73,7 @@
  *  /proc/stb/lcd/
  *             |
  *             +--- symbol_circle (rw)       Control of spinner (VFD only)
+ *             +--- symbol_timeshift (rw)    Control of TimeShift icon (#43, VFD only)
  *
  *  /proc/stb/power/
  *             |
@@ -114,7 +115,7 @@ int aotomEnableLed(int which, int on)
 
 	if (which < 0 || which >= LASTLED)
 	{
-		dprintk(5, "LED number out of range %d\n", which);
+		dprintk(1, "LED number out of range %d\n", which);
 		return -EINVAL;
 	}
 	led_state[which].enable = on;
@@ -227,6 +228,7 @@ static int progress_write(struct file *file, const char __user *buf, unsigned lo
 		ret = count;
 #endif		
 	}
+
 out:
 	free_page((unsigned long)page);
 	return ret;
@@ -302,6 +304,57 @@ static int symbol_circle_read(char *page, char **start, off_t off, int count, in
 	return len;
 }
 
+static int symbol_timeshift_write(struct file *file, const char __user *buf, unsigned long count, void *data)
+{
+	char* page;
+	ssize_t ret = -ENOMEM;
+	char* myString;
+
+	page = (char*)__get_free_page(GFP_KERNEL);
+
+	if (page)
+	{
+		ret = -EFAULT;
+		if (copy_from_user(page, buf, count))
+		{
+			goto out;
+		}
+		myString = (char*) kmalloc(count + 1, GFP_KERNEL);
+		strncpy(myString, page, count);
+		myString[count - 1] = '\0';
+
+		sscanf(myString, "%d", &symbol_timeshift);
+		kfree(myString);
+
+		if (symbol_timeshift > 0)
+		{
+			symbol_timeshift = 1;
+		}
+		else
+		{
+			symbol_timeshift = 0;
+		}
+		aotomSetIcon(ICON_TIMESHIFT, symbol_timeshift);
+		/* always return count to avoid endless loop */
+		ret = count;
+		
+	}
+
+out:
+	free_page((unsigned long)page);
+	return ret;
+}
+
+static int symbol_timeshift_read(char *page, char **start, off_t off, int count, int *eof, void *data)
+{
+	int len = 0;
+
+	if (NULL != page)
+	{
+		len = sprintf(page, "%d", symbol_timeshift);
+	}
+	return len;
+}
 // Proc for accessing quick control of aotom (by skl)
 // String format: fxy
 // f is "l" (for led) or "i" (for icons)
@@ -366,7 +419,7 @@ static int rtc_read(char *page, char **start, off_t off, int count, int *eof, vo
 
 	if (NULL != page)
 	{
-		len = sprintf(page,"%u\n", rtc_time - rtc_offset);
+		len = sprintf(page, "%u\n", rtc_time - rtc_offset);
 	}
 	return len;
 }
@@ -391,7 +444,7 @@ static int rtc_write(struct file *file, const char __user *buf, unsigned long co
 		}
 		strncpy(myString, page, count);
 		myString[count] = '\0';
-		dprintk(5, "%s > %s\n", __func__, myString);
+		dprintk(1, "%s > %s\n", __func__, myString);
 
 		test = sscanf (myString, "%u", &argument);
 
@@ -403,10 +456,11 @@ static int rtc_write(struct file *file, const char __user *buf, unsigned long co
 		/* always return count to avoid endless loop */
 		ret = count;
 	}
+
 out:
 	free_page((unsigned long)page);
 	kfree(myString);
-	dprintk(10, "%s <\n", __func__);
+	dprintk(100, "%s <\n", __func__);
 	return ret;
 }
 
@@ -448,7 +502,7 @@ static int rtc_offset_write(struct file *file, const char __user *buf, unsigned 
 out:
 	free_page((unsigned long)page);
 	kfree(myString);
-	dprintk(10, "%s <\n", __func__);
+	dprintk(100, "%s <\n", __func__);
 	return ret;
 }
 
@@ -458,6 +512,8 @@ static int wakeup_time_write(struct file *file, const char __user *buf, unsigned
 	ssize_t ret = -ENOMEM;
 	int test = -1;
 	char *myString = kmalloc(count + 1, GFP_KERNEL);
+
+	dprintk(100, "%s > %s\n", __func__, myString);
 
 	page = (char *)__get_free_page(GFP_KERNEL);
 
@@ -471,7 +527,6 @@ static int wakeup_time_write(struct file *file, const char __user *buf, unsigned
 		}
 		strncpy(myString, page, count);
 		myString[count] = '\0';
-		dprintk(5, "%s > %s\n", __func__, myString);
 
 		test = sscanf(myString, "%u", &wakeup_time);
 
@@ -486,7 +541,7 @@ static int wakeup_time_write(struct file *file, const char __user *buf, unsigned
 out:
 	free_page((unsigned long)page);
 	kfree(myString);
-	dprintk(10, "%s <\n", __func__);
+	dprintk(100, "%s <\n", __func__);
 	return ret;
 }
 
@@ -612,6 +667,7 @@ static int led1_pattern_read(char *page, char **start, off_t off, int count, int
 	}
 	return len;
 }
+
 static int led1_pattern_write(struct file *file, const char __user *buf, unsigned long count, void *data)
 {
 	return led_pattern_write(file, buf, count, data, 1);

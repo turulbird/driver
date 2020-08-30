@@ -25,28 +25,6 @@
 #include "dvb_frontend.h"
 #include "stb0899_drv.h"
 
-#define FE_ERROR				0
-#define FE_NOTICE				1
-#define FE_INFO					2
-#define FE_DEBUG				3
-#define FE_DEBUGREG				4
-
-#define dprintk(x, y, z, format, arg...) do {						\
-		if (z) {									\
-			if	((*x > FE_ERROR) && (*x > y))					\
-				printk(KERN_ERR "%s: " format "\n", __func__ , ##arg);		\
-			else if	((*x > FE_NOTICE) && (*x > y))					\
-				printk(KERN_NOTICE "%s: " format "\n", __func__ , ##arg);	\
-			else if ((*x > FE_INFO) && (*x > y))					\
-				printk(KERN_INFO "%s: " format "\n", __func__ , ##arg);		\
-			else if ((*x > FE_DEBUG) && (*x > y))					\
-				printk(KERN_DEBUG "%s: " format "\n", __func__ , ##arg);	\
-		} else {									\
-			if (*x > y)								\
-				printk(format, ##arg);						\
-		}										\
-	} while(0)
-
 #define INRANGE(val, x, y)			(((x <= val) && (val <= y)) ||		\
 						 ((y <= val) && (val <= x)) ? 1 : 0)
 
@@ -64,16 +42,12 @@
 
 
 #define STB0899_GETFIELD(bitf, val)		((val >> STB0899_OFFST_##bitf) & ((1 << STB0899_WIDTH_##bitf) - 1))
-
-
 #define STB0899_SETFIELD(mask, val, width, offset)      (mask & (~(((1 << width) - 1) <<	\
 								   offset))) | ((val &			\
 										   ((1 << width) - 1)) << offset)
-
 #define STB0899_SETFIELD_VAL(bitf, mask, val)	(mask = (mask & (~(((1 << STB0899_WIDTH_##bitf) - 1) <<\
 								   STB0899_OFFST_##bitf))) | \
 							(val << STB0899_OFFST_##bitf))
-
 
 enum stb0899_status
 {

@@ -33,6 +33,19 @@
 
 #include "dvb_frontend.h"
 
+extern short paramDebug;
+#if defined TAGDEBUG
+#undef TAGDEBUG
+#endif
+#define TAGDEBUG "[stb0899] "
+
+#ifndef dprintk
+#define dprintk(level, x...) do \
+{ \
+	if ((paramDebug) && (paramDebug >= level)) printk(TAGDEBUG x); \
+} while (0)
+#endif
+
 #define STB0899_TSMODE_SERIAL		1
 #define STB0899_CLKPOL_FALLING		2
 #define STB0899_CLKNULL_PARITY		3
