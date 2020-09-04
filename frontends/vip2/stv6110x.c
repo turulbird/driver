@@ -156,8 +156,9 @@ static int stv6110x_set_frequency(struct dvb_frontend *fe, u32 frequency)
 		pCalc = (REFCLOCK_kHz / 100) / R_DIV(rDiv);
 
 		if ((abs((s32)(pCalc - pVal))) < (abs((s32)(pCalcOpt - pVal))))
+		{
 			rDivOpt = rDiv;
-
+		}
 		pCalcOpt = (REFCLOCK_kHz / 100) / R_DIV(rDivOpt);
 	}
 
@@ -482,7 +483,7 @@ static struct stv6110x_devctl stv6110x_ctl =
 struct stv6110x_devctl *stv6110x_attach(struct dvb_frontend *fe, const struct stv6110x_config *config, struct i2c_adapter *i2c)
 {
 	struct stv6110x_state *stv6110x;
-	u8 default_regs[] = {0x07, 0x11, 0xdc, 0x85, 0x17, 0x01, 0xe6, 0x1e};
+	u8 default_regs[] = { 0x07, 0x11, 0xdc, 0x85, 0x17, 0x01, 0xe6, 0x1e };
 	int ret;
 
 	stv6110x = kzalloc(sizeof(struct stv6110x_state), GFP_KERNEL);
@@ -490,9 +491,9 @@ struct stv6110x_devctl *stv6110x_attach(struct dvb_frontend *fe, const struct st
 	{
 		goto error;
 	}
-	stv6110x->i2c		= i2c;
-	stv6110x->config	= config;
-	stv6110x->devctl	= &stv6110x_ctl;
+	stv6110x->i2c    = i2c;
+	stv6110x->config = config;
+	stv6110x->devctl = &stv6110x_ctl;
 	memcpy(stv6110x->regs, default_regs, 8);
 
 	/* setup divider */
@@ -543,10 +544,9 @@ struct stv6110x_devctl *stv6110x_attach(struct dvb_frontend *fe, const struct st
 			goto error;
 		}
 	}
-	fe->tuner_priv		= stv6110x;
-	fe->ops.tuner_ops	= stv6110x_ops;
-
-	dprintk(20, "%s: Attaching STV6110x \n", __func__);
+	fe->tuner_priv    = stv6110x;
+	fe->ops.tuner_ops = stv6110x_ops;
+	dprintk(20, "%s: Attaching STV6110x\n", __func__);
 	return stv6110x->devctl;
 
 error:
