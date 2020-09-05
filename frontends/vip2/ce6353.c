@@ -50,14 +50,14 @@ do \
 
 struct ce6353_state
 {
-	struct i2c_adapter    *i2c;
-	struct dvb_frontend   frontend;
+	struct i2c_adapter   *i2c;
+	struct dvb_frontend  frontend;
 
 	struct ce6353_config config;
 
-	enum fe_bandwidth     bandwidth;
-	u32                   ucblocks;
-	u32                   frequency;
+	enum fe_bandwidth    bandwidth;
+	u32                  ucblocks;
+	u32                  frequency;
 };
 
 static int ce6353_single_write(struct dvb_frontend *fe, u8 reg, u8 val)

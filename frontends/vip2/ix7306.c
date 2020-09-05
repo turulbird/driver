@@ -4,7 +4,7 @@
  * Copyright (C) Manu Abraham <abraham.manu@gmail.com>
  *
  * Version for:
- * Edision argus VIP (1 pluggable tuner)
+ * Edision argus VIP V2 (1 pluggable tuner)
  * Edision argus VIP2 (2 pluggable tuners)
  *
  * This program is free software; you can redistribute it and/or modify

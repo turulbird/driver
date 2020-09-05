@@ -85,8 +85,8 @@ static struct stv090x_dev *find_dev(struct i2c_adapter *i2c_adap, u8 i2c_addr)
 	 Search of the last stv0900 chip or
 	 find it by i2c adapter and i2c address */
 	while ((temp_dev != NULL)
-	&&     ((temp_dev->internal->i2c_adap != i2c_adap) ||
-	        (temp_dev->internal->i2c_addr != i2c_addr)))
+	&&     ((temp_dev->internal->i2c_adap != i2c_adap)
+	        || (temp_dev->internal->i2c_addr != i2c_addr)))
 	{
 		temp_dev = temp_dev->next_dev;
 	}
@@ -1564,7 +1564,7 @@ static int stv090x_vitclk_ctl(struct stv090x_state *state, int enable)
 
 err:
 	mutex_unlock(&state->internal->demod_lock);
-	dprintk(1, "%s: I/O error", __func__);
+	dprintk(1, "%s: I/O error\n", __func__);
 	return -1;
 }
 
@@ -1622,7 +1622,7 @@ static int stv090x_dvbs_track_crl(struct stv090x_state *state)
 	return 0;
 
 err:
-	dprintk(1, "%s: I/O error", __func__);
+	dprintk(1, "%s: I/O error\n", __func__);
 	return -1;
 }
 
@@ -1814,7 +1814,7 @@ static int stv090x_delivery_search(struct stv090x_state *state)
 	return 0;
 
 err:
-	dprintk(1, "%s: I/O error", __func__);
+	dprintk(1, "%s: I/O error\n", __func__);
 	return -1;
 }
 
@@ -2098,7 +2098,7 @@ static int stv090x_start_search(struct stv090x_state *state)
 	return 0;
 
 err:
-	dprintk(1, "%s: I/O error", __func__);
+	dprintk(1, "%s: I/O error\n", __func__);
 	return -1;
 }
 
@@ -2185,7 +2185,7 @@ static int stv090x_get_agc2_min_level(struct stv090x_state *state)
 		for (j = 0; j < 10; j++)
 		{
 			agc2 += (STV090x_READ_DEMOD(state, AGC2I1) << 8)
-			      | STV090x_READ_DEMOD(state, AGC2I0);
+			      |  STV090x_READ_DEMOD(state, AGC2I0);
 		}
 		agc2 /= 10;
 		if (agc2 < agc2_min)
@@ -2196,7 +2196,7 @@ static int stv090x_get_agc2_min_level(struct stv090x_state *state)
 	return agc2_min;
 
 err:
-	dprintk(1, "%s: I/O error", __func__);
+	dprintk(1, "%s: I/O error\n", __func__);
 	return -1;
 }
 
@@ -2383,7 +2383,7 @@ static u32 stv090x_srate_srch_coarse(struct stv090x_state *state)
 				tmg_cpt++;
 			}
 			agc2 += (STV090x_READ_DEMOD(state, AGC2I1) << 8)
-			      | STV090x_READ_DEMOD(state, AGC2I0);
+			      |  STV090x_READ_DEMOD(state, AGC2I0);
 		}
 		agc2 /= 10;
 		srate_coarse = stv090x_get_srate(state, state->internal->mclk);
@@ -2470,7 +2470,7 @@ err_gateoff:
 	stv090x_i2c_gate_ctrl(fe, 0);
 
 err:
-	dprintk(1, "%s: I/O error", __func__);
+	dprintk(1, "%s: I/O error\n", __func__);
 	return -1;
 }
 
@@ -2623,7 +2623,7 @@ static u32 stv090x_srate_srch_fine(struct stv090x_state *state)
 	return srate_coarse;
 
 err:
-	dprintk(1, "%s: I/O error", __func__);
+	dprintk(1, "%s: I/O error\n", __func__);
 	return -1;
 }
 
@@ -2753,7 +2753,7 @@ static int stv090x_blind_search(struct stv090x_state *state)
 				for (i = 0; i < 10; i++)
 				{
 					agc2 += (STV090x_READ_DEMOD(state, AGC2I1) << 8)
-					      | STV090x_READ_DEMOD(state, AGC2I0);
+					      |  STV090x_READ_DEMOD(state, AGC2I0);
 					if (agc2 >= 0xff00)
 					{
 						agc2_ovflw++;
@@ -2778,7 +2778,7 @@ static int stv090x_blind_search(struct stv090x_state *state)
 	return lock;
 
 err:
-	dprintk(1, "%s: I/O error", __func__);
+	dprintk(1, "%s: I/O error\n", __func__);
 	return -1;
 }
 
@@ -2878,7 +2878,7 @@ static int stv090x_chk_tmg(struct stv090x_state *state)
 	return tmg_lock;
 
 err:
-	dprintk(1, "%s: I/O error", __func__);
+	dprintk(1, "%s: I/O error\n", __func__);
 	return -1;
 }
 
@@ -2922,7 +2922,7 @@ static int stv090x_get_coldlock(struct stv090x_state *state, s32 timeout_dmd)
 		}
 		else
 		{
-			//note: state->srate < 10000000
+			// note: state->srate < 10000000
 			if (state->srate <= 4000000)
 			{
 				car_step = 1000;
@@ -3047,7 +3047,7 @@ static int stv090x_get_coldlock(struct stv090x_state *state, s32 timeout_dmd)
 err_gateoff:
 	stv090x_i2c_gate_ctrl(fe, 0);
 err:
-	dprintk(1, "%s: I/O error", __func__);
+	dprintk(1, "%s: I/O error\n", __func__);
 	return -1;
 }
 
@@ -3238,7 +3238,7 @@ static int stv090x_search_car_loop(struct stv090x_state *state, s32 inc, s32 tim
 	return lock;
 
 err:
-	dprintk(1, "%s: I/O error", __func__);
+	dprintk(1, "%s: I/O error\n", __func__);
 	return -1;
 }
 
@@ -3312,6 +3312,7 @@ static int stv090x_sw_algo(struct stv090x_state *state)
 		}
 	}
 	trials = 0;
+
 	do
 	{
 		lock = stv090x_search_car_loop(state, inc, timeout_step, zigzag, steps_max);
@@ -3348,7 +3349,7 @@ static int stv090x_sw_algo(struct stv090x_state *state)
 				}
 				if (dvbs2_fly_wheel < 0xd)
 				{
-					/*FALSE lock, The demod is loosing lock */
+					/* FALSE lock, The demod is loosing lock */
 					lock = 0;
 					if (trials < 2)
 					{
@@ -3368,12 +3369,14 @@ static int stv090x_sw_algo(struct stv090x_state *state)
 			}
 		}
 	}
-	while ((!lock) && (trials < 2) && (!no_signal));
+	while ((!lock)
+	&&     (trials < 2)
+	&&     (!no_signal));
 
 	return lock;
 
 err:
-	dprintk(1, "%s: I/O error", __func__);
+	dprintk(1, "%s: I/O error\n", __func__);
 	return -1;
 }
 
@@ -3529,7 +3532,8 @@ static enum stv090x_signal_state stv090x_get_sig_params(struct stv090x_state *st
 	reg = STV090x_READ_DEMOD(state, FECM);
 	state->inversion = STV090x_GETFIELD_Px(reg, IQINV_FIELD);
 
-	if ((state->algo == STV090x_BLIND_SEARCH) || (state->srate < 10000000))
+	if ((state->algo == STV090x_BLIND_SEARCH)
+	||  (state->srate < 10000000))
 	{
 
 		if (stv090x_i2c_gate_ctrl(fe, 1) < 0)
@@ -3577,7 +3581,7 @@ static enum stv090x_signal_state stv090x_get_sig_params(struct stv090x_state *st
 err_gateoff:
 	stv090x_i2c_gate_ctrl(fe, 0);
 err:
-	dprintk(1, "%s: I/O error", __func__);
+	dprintk(1, "%s: I/O error\n", __func__);
 	return -1;
 }
 
@@ -3626,7 +3630,6 @@ static u8 stv090x_optimize_carloop(struct stv090x_state *state, enum stv090x_mod
 		while ((i < 3) && (modcod != car_loop_qpsk_low[i].modcod))
 		{
 			i++;
-
 		}
 		if (i >= 3)
 		{
@@ -3950,7 +3953,8 @@ static int stv090x_optimize_track(struct stv090x_state *state)
 						goto err;
 					}
 				}
-				if ((state->demod_mode == STV090x_SINGLE) && (modcod > STV090x_8PSK_910))
+				if ((state->demod_mode == STV090x_SINGLE)
+				&&  (modcod > STV090x_8PSK_910))
 				{
 					if (modcod <= STV090x_16APSK_910)
 					{
@@ -4125,7 +4129,8 @@ static int stv090x_optimize_track(struct stv090x_state *state)
 		}
 		state->tuner_bw = stv090x_car_width(srate, state->rolloff) + 10000000;
 
-		if ((state->internal->dev_ver >= 0x20) || (blind_tune == 1))
+		if ((state->internal->dev_ver >= 0x20)
+		||  (blind_tune == 1))
 		{
 			if (state->algo != STV090x_WARM_SEARCH)
 			{
@@ -4214,7 +4219,7 @@ static int stv090x_optimize_track(struct stv090x_state *state)
 err_gateoff:
 	stv090x_i2c_gate_ctrl(fe, 0);
 err:
-	dprintk(1, "%s: I/O error", __func__);
+	dprintk(1, "%s: I/O error\n", __func__);
 	return -1;
 }
 
@@ -4313,7 +4318,7 @@ static int stv090x_set_s2rolloff(struct stv090x_state *state)
 	return 0;
 
 err:
-	dprintk(1, "%s: I/O error", __func__);
+	dprintk(1, "%s: I/O error\n", __func__);
 	return -1;
 }
 
@@ -4416,7 +4421,7 @@ static enum stv090x_signal_state stv090x_acq_fixs1(struct stv090x_state *state)
 	return signal_state;
 
 err:
-	dprintk(1, "%s: I/O error", __func__);
+	dprintk(1, "%s: I/O error\n", __func__);
 	return -1;
 }
 #endif
@@ -4570,7 +4575,9 @@ static enum stv090x_signal_state stv090x_algo(struct stv090x_state *state)
 	if (state->config->tuner_set_frequency)
 	{
 		if (state->config->tuner_set_frequency(fe, state->frequency) < 0)
+		{
 			goto err_gateoff;
+		}
 	}
 #endif
 	if (state->config->tuner_set_bandwidth)
@@ -4627,7 +4634,8 @@ static enum stv090x_signal_state stv090x_algo(struct stv090x_state *state)
 		 */
 		for (i = 0; i < 5; i++)
 		{
-			power_iq += (STV090x_READ_DEMOD(state, POWERI) + STV090x_READ_DEMOD(state, POWERQ)) >> 1;
+			power_iq += (STV090x_READ_DEMOD(state, POWERI)
+			          +  STV090x_READ_DEMOD(state, POWERQ)) >> 1;
 		}
 		power_iq /= 5;
 	}
@@ -4779,7 +4787,7 @@ static enum stv090x_signal_state stv090x_algo(struct stv090x_state *state)
 err_gateoff:
 	stv090x_i2c_gate_ctrl(fe, 0);
 err:
-	dprintk(1, "%s: I/O error", __func__);
+	dprintk(1, "%s: I/O error\n", __func__);
 	return -1;
 }
 
@@ -4860,15 +4868,15 @@ static int stv090x_read_status(struct dvb_frontend *fe, enum fe_status *status)
 
 	switch (search_state)
 	{
-		case 0: /* searching */
-		case 1: /* first PLH detected */
+		case 0:  /* searching */
+		case 1:  /* first PLH detected */
 		default:
 		{
 			dprintk(20, "Status: Unlocked (Searching...)\n");
 			*status = 0;
 			break;
 		}
-		case 2: /* DVB-S2 mode */
+		case 2:  /* DVB-S2 mode */
 		{
 			dprintk(20, "Delivery system: DVB-S2\n");
 			reg = STV090x_READ_DEMOD(state, DSTATUS);
@@ -4890,7 +4898,7 @@ static int stv090x_read_status(struct dvb_frontend *fe, enum fe_status *status)
 			}
 			break;
 		}
-		case 3: /* DVB-S1/legacy mode */
+		case 3:  /* DVB-S1/legacy mode */
 		{
 			dprintk(20, "Delivery system: DVB-S\n");
 			reg = STV090x_READ_DEMOD(state, DSTATUS);
@@ -4974,7 +4982,7 @@ static int stv090x_read_per(struct dvb_frontend *fe, u32 *per)
 	return 0;
 
 err:
-	dprintk(1, "%s: I/O error", __func__);
+	dprintk(1, "%s: I/O error\n", __func__);
 	return -1;
 }
 
@@ -5166,7 +5174,7 @@ static int stv090x_set_tone(struct dvb_frontend *fe, fe_sec_tone_mode_t tone)
 	return 0;
 
 err:
-	dprintk(1, "%s: I/O error", __func__);
+	dprintk(1, "%s: I/O error\n", __func__);
 	return -1;
 }
 
@@ -5351,7 +5359,7 @@ static int stv090x_send_diseqc_burst(struct dvb_frontend *fe, fe_sec_mini_cmd_t 
 	return 0;
 
 err:
-	dprintk(1, "%s: I/O error", __func__);
+	dprintk(1, "%s: I/O error\n", __func__);
 	return -1;
 }
 
@@ -5400,7 +5408,7 @@ static int stv090x_sleep(struct dvb_frontend *fe)
 	return 0;
 
 err:
-	dprintk(1, "%s: I/O error", __func__);
+	dprintk(1, "%s: I/O error\n", __func__);
 	return -1;
 }
 
@@ -5426,7 +5434,7 @@ static int stv090x_wakeup(struct dvb_frontend *fe)
 	return 0;
 
 err:
-	dprintk(1, "%s: I/O error", __func__);
+	dprintk(1, "%s: I/O error\n", __func__);
 	return -1;
 }
 
@@ -5596,7 +5604,7 @@ static int stv090x_ldpc_mode(struct stv090x_state *state, enum stv090x_mode ldpc
 	return 0;
 
 err:
-	dprintk(1, "%s: I/O error", __func__);
+	dprintk(1, "%s: I/O error\n", __func__);
 	return -1;
 }
 
@@ -5645,7 +5653,7 @@ static int stv090x_set_mclk(struct stv090x_state *state, u32 mclk, u32 clk)
 	return 0;
 
 err:
-	dprintk(1, "%s: I/O error", __func__);
+	dprintk(1, "%s: I/O error\n", __func__);
 	return -1;
 }
 
@@ -6021,7 +6029,7 @@ static int stv090x_set_tspath(struct stv090x_state *state)
 	return 0;
 
 err:
-	dprintk(1, "%s: I/O error", __func__);
+	dprintk(1, "%s: I/O error\n", __func__);
 	return -1;
 }
 
@@ -6094,7 +6102,7 @@ static int stv090x_init(struct dvb_frontend *fe)
 err_gateoff:
 	stv090x_i2c_gate_ctrl(fe, 0);
 err:
-	dprintk(1, "%s: I/O error", __func__);
+	dprintk(1, "%s: I/O error\n", __func__);
 	return -1;
 }
 
@@ -6201,12 +6209,11 @@ static int stv090x_setup(struct dvb_frontend *fe)
 	else if (state->internal->dev_ver < 0x20)
 	{
 		dprintk(1, "ERROR: Unsupported Cut %1x.%1x!\n", state->internal->dev_ver >> 8, state->internal->dev_ver & 0xff);
-
 		goto err;
 	}
 	else if (state->internal->dev_ver > 0x30)
 	{
-		/* we shouldn't bail out from here */
+		/* we should not bail out from here */
 		dprintk(10, "INFO: Cut %1x.%1x; probably incomplete support!\n", state->internal->dev_ver >> 8, state->internal->dev_ver & 0xff);
 	}
 	/* ADC1 range */
@@ -6234,7 +6241,7 @@ static int stv090x_setup(struct dvb_frontend *fe)
 	return 0;
 
 err:
-	dprintk(1, "%s: I/O error", __func__);
+	dprintk(1, "%s: I/O error\n", __func__);
 	return -1;
 }
 
