@@ -7,7 +7,7 @@
  * Edision argus VIP2 (2 pluggable tuners)
  *
  * Supports:
- * DVB-S(2): STM STV090x demodulator, Sharp 7306 tuner (default tuner 1)
+ * DVB-S(2): STM STV090x demodulator, Sharp 7306 tuner (default)
  * DVB-S(2): STM STV090x demodulator, STM STV6110x tuner
  * DVB-T   : Intel CE6353 demodulator, Sharp 6465 tuner (default tuner 2)
  * DVB-C   : Philips/NXP TDA10023 demodulator, LG 031 tuner
@@ -70,10 +70,9 @@
 #define I2C_ADDR_TDA10023  (0x18 >> 1)  // 18 -> 0x0c
 #define I2C_ADDR_LG031     (0xc6 >> 1)  // c6 -> 0x63
 
-/* On this framework, We cannot support dual tuner,
- * so we can only use one. In order to support dual tuner,
- * we need add tuner type option to stx090x_config,
- * when this is done, just remove the define TUNER_IX7306 in stv090x.h
+/* On the VIP2, a dual DVB-S(2) tuner setup is not
+ * supported because both tuner slots share the same LNB
+ * making true dual tuner operation not possible.
  */
 
 #if defined(TUNER_IX7306)
@@ -83,7 +82,7 @@
 #define CLK_EXT_IX7306 		8000000
 #define CLK_EXT_STV6110 	16000000
 #else
-#error "You must define tuner type..."
+#error "You must define a tuner type..."
 #endif
 
 short paramDebug = 0;  // debug print level is zero as default (0=nothing, 1= errors, 10=some detail, 20=more detail, 100=open/close functions, 150=all)
@@ -99,7 +98,7 @@ static int demodType1;
 static int demodType2;
 static int tunerType1;
 static int tunerType2;
-#else
+#else  // VIP1_V2
 static char *demod = "stv090x";
 static char *tuner = "sharp7306";
 
@@ -151,7 +150,6 @@ enum fe_ctl
 	FE0_1318	= 7,
 };
 
-//#if defined(VIP2)
 /* PIO definitions for 74HC595 LNB drive */
 static unsigned char fctl = 0;
 
@@ -208,7 +206,6 @@ void hc595_out(unsigned char ctls, int state)
 	LCLK_SET();
 }
 EXPORT_SYMBOL(hc595_out);
-//#endif
 
 static struct stv090x_config stv090x_config =
 {
@@ -303,15 +300,10 @@ static struct dvb_frontend *frontend_get_by_type(struct core_config *cfg, int iD
 			frontend = dvb_attach(stv090x_attach, &stv090x_config, cfg->i2c_adap, STV090x_DEMODULATOR_0);
 			if (frontend)
 			{
-#if defined(VIP2)
 				stv090x_config.fe_rst 	  = cfg->tuner->fe_rst;
 				stv090x_config.fe_1318 	  = cfg->tuner->fe_1318;
 				stv090x_config.fe_1419 	  = cfg->tuner->fe_1419;
 				stv090x_config.fe_lnb_en  = cfg->tuner->fe_lnb_en;
-#else
-				stv090x_config.lnb_enable = cfg->lnb_enable;
-				stv090x_config.lnb_vsel   = cfg->lnb_vsel;
-#endif
 				dprintk(20, "STV090x demodulator attached\n");
 
 				switch (iTunerType)
@@ -505,13 +497,10 @@ static struct dvb_frontend *init_fe_device(struct dvb_adapter *adapter, struct t
 		kfree(cfg);
 		return NULL;
 	}
-	/* set to low */
+	/* toggle tuner reset */
 	hc595_out(tuner_cfg->fe_rst, 0);
-	/* Wait for everything to die */
 	msleep(50);
-	/* Pull it up out of Reset state */
 	hc595_out(tuner_cfg->fe_rst, 1);
-	/* Wait for PLL to stabilize */
 	msleep(250);
 	/*
 	 * PLL state should be stable now. Ideally, we should check
@@ -543,7 +532,6 @@ static struct dvb_frontend *init_fe_device(struct dvb_adapter *adapter, struct t
 
 struct tuner_config tuner_resources[] =
 {
-#if defined(VIP2)
 	[0] =
 	{
 		.adapter   = 0,
@@ -553,6 +541,7 @@ struct tuner_config tuner_resources[] =
 		.fe_1419   = FE0_1419,
 		.fe_lnb_en = FE0_LNB_EN
 	},
+#if defined(VIP2)
 	[1] =
 	{
 		.adapter   = 0,
@@ -572,7 +561,7 @@ void fe_core_register_frontend(struct dvb_adapter *dvb_adap)
 
 #if defined(VIP2)
 	dprintk(0, "Spider-Team plug and play frontend core for Edision argus VIP2\n");
-#else
+#else  // VIP1_V2
 	dprintk(0, "Spider-Team plug and play frontend core for Edision argus VIP V2\n");
 #endif
 	core[i] = (struct core *)kmalloc(sizeof(struct core), GFP_KERNEL);
@@ -587,7 +576,7 @@ void fe_core_register_frontend(struct dvb_adapter *dvb_adap)
 
 #if defined(VIP2)
 	dprintk(20, "# of tuner(s): %d\n", ARRAY_SIZE(tuner_resources));
-
+#endif
 	dprintk(20, "Allocating LNB control PIO pins\n");
 	srclk = stpio_request_pin(2, 2, "HC595_SRCLK", STPIO_OUT);  // data clock pin
 	lclk  = stpio_request_pin(2, 3, "HC595_LCLK", STPIO_OUT);  // latch pin
@@ -616,7 +605,7 @@ void fe_core_register_frontend(struct dvb_adapter *dvb_adap)
 		}
 		return;
 	}
-#endif
+
 	for (vLoop = 0; vLoop < ARRAY_SIZE(tuner_resources); vLoop++)
 	{
 		if (core[i]->frontend[vLoop] == NULL)
@@ -714,7 +703,7 @@ int __init fe_core_init(void)
 	dprintk(0, "Demodulator2: ");
 	printk_demod_name_and_type(demodType2);
 	printk("Tuner2: %s\n", tuner_name[tunerType2]);
-#else
+#else  // VIP1_V2
 	/****** FRONT END 0 ********/
 	demodType = fe_get_demod_type(demod);
 	tunerType = fe_get_tuner_type(tuner);
@@ -745,7 +734,7 @@ module_param(tuner1, charp, 0);
 module_param(tuner2, charp, 0);
 MODULE_PARM_DESC(tuner1, "tuner1 sharp7306(default), stv6110x, sharp6465, lg031");  // default: DVB-S2 Sharp 7306
 MODULE_PARM_DESC(tuner2, "tuner2 sharp7306, stv6110x, sharp6465(default), lg031");  // default: DVB-T
-#else
+#else  // VIP1_V2
 module_param(demod, charp, 0);
 MODULE_PARM_DESC(demod, "demodulator stv090x(default), ce6353, tda10023");
 

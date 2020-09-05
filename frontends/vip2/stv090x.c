@@ -26,7 +26,8 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#if !defined(VIP2)
+#if !defined(VIP1_V2) \
+ && !defined(VIP2)
 #error: Wrong receiver model!
 #endif
 

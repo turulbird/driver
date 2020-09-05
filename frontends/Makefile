@@ -61,18 +61,15 @@ fe-core-objs += hl101/core.o
 obj-m += fe-core.o
 endif
 
-ifdef VIP1_V2
-fe-core-objs += vip1_v2/stb0899_algo.o
-fe-core-objs += vip1_v2/stb0899_drv.o
-fe-core-objs += vip1_v2/stb6100.o
-fe-core-objs += vip1_v2/stv090x.o
-fe-core-objs += vip1_v2/stv6110x.o
-fe-core-objs += vip1_v2/ix7306.o
-fe-core-objs += vip1_v2/zl10353.o
-fe-core-objs += vip1_v2/tda10023.o
-fe-core-objs += vip1_v2/lg031.o
-fe-core-objs += vip1_v2/sharp6465.o
-fe-core-objs += vip1_v2/core.o
+ifdef VIP1_V2  # Same as VIP2
+fe-core-objs += vip2/stv090x.o
+fe-core-objs += vip2/stv6110x.o
+fe-core-objs += vip2/ix7306.o
+fe-core-objs += vip2/ce6353.o
+fe-core-objs += vip2/tda10023.o
+fe-core-objs += vip2/lg031.o
+fe-core-objs += vip2/sharp6465.o
+fe-core-objs += vip2/core.o
 obj-m += fe-core.o
 endif
 
@@ -237,7 +234,7 @@ endif
 ifdef UFS922
 cx21143-objs += cx24116/cx24116.o
 obj-m += cx21143.o
-ifeq (,$(wildcard $(DRIVER_TOPDIR)/frontends/avl2108_ufs922 ))
+ifeq (,$(wildcard $(DRIVER_TOPDIR)/frontends/avl2108_ufs922))
 avl2108-objs += avl2108/avl2108.o
 avl2108-objs += avl2108/stv6110a.o
 avl2108-objs += avl2108/stv6306.o
@@ -253,7 +250,7 @@ endif
 endif
 
 ifdef UFC960
-tda10023-objs +=  ufc960/tda10023.o
+tda10023-objs += ufc960/tda10023.o
 tda10023-objs += ufc960/core.o
 obj-m += tda10023.o
 endif
@@ -285,7 +282,7 @@ obj-y += multituner/
 endif
 
 ifdef IPBOX9900
-fe-core-objs +=  ipbox/stv090x.o
+fe-core-objs += ipbox/stv090x.o
 fe-core-objs += ipbox/stv6110x.o
 fe-core-objs += ipbox/zl10353.o
 fe-core-objs += ipbox/mxl5007t.o
