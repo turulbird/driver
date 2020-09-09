@@ -39,6 +39,7 @@
  *                          still set to default value of 3599.
  * 20181203 Audioniek       /proc/stb/lcd/symbol_circle support added,
  *                          E2 start code on write progress removed.
+ * 20200909 Audioniek       /proc/stb/lcd/symbol_timeshift support added.
  * 
  ****************************************************************************/
 
@@ -103,6 +104,7 @@ static int rtc_offset = 3600;
 static u32 wakeup_time;
 static int progress = 0;
 static int symbol_circle = 0;
+static int symbol_timeshift = 0;
 static int progress_done = 0;
 static u32 led0_pattern = 0;
 static u32 led1_pattern = 0;
@@ -240,7 +242,7 @@ static int progress_read(char *page, char **start, off_t off, int count, int *eo
 
 	if (NULL != page)
 	{
-		len = sprintf(page,"%d", progress);
+		len = sprintf(page, "%d", progress);
 	}
 	return len;
 }
@@ -286,8 +288,8 @@ static int symbol_circle_write(struct file *file, const char __user *buf, unsign
 		}
 		/* always return count to avoid endless loop */
 		ret = count;
-		
 	}
+
 out:
 	free_page((unsigned long)page);
 	return ret;
@@ -299,7 +301,7 @@ static int symbol_circle_read(char *page, char **start, off_t off, int count, in
 
 	if (NULL != page)
 	{
-		len = sprintf(page,"%d", symbol_circle);
+		len = sprintf(page, "%d", symbol_circle);
 	}
 	return len;
 }
@@ -444,7 +446,6 @@ static int rtc_write(struct file *file, const char __user *buf, unsigned long co
 		}
 		strncpy(myString, page, count);
 		myString[count] = '\0';
-		dprintk(1, "%s > %s\n", __func__, myString);
 
 		test = sscanf (myString, "%u", &argument);
 
@@ -460,7 +461,6 @@ static int rtc_write(struct file *file, const char __user *buf, unsigned long co
 out:
 	free_page((unsigned long)page);
 	kfree(myString);
-	dprintk(100, "%s <\n", __func__);
 	return ret;
 }
 
@@ -828,10 +828,12 @@ static int timemode_write(struct file *file, const char __user *buf, unsigned lo
 	return ret;
 }
 
-//static int null_write(struct file *file, const char __user *buf, unsigned long count, void *data)
-//{
-//	return count;
-//}
+#if 0
+static int null_write(struct file *file, const char __user *buf, unsigned long count, void *data)
+{
+	return count;
+}
+#endif
 
 struct fp_procs
 {
@@ -843,6 +845,7 @@ struct fp_procs
 	{ "progress", progress_read, progress_write },
 	{ "stb/fp/rtc", rtc_read, rtc_write },
 	{ "stb/lcd/symbol_circle", symbol_circle_read, symbol_circle_write },
+	{ "stb/lcd/symbol_timeshift", symbol_timeshift_read, symbol_timeshift_write },
 	{ "stb/fp/rtc_offset", rtc_offset_read, rtc_offset_write },
 	{ "stb/fp/aotom", NULL, aotom_write },
 	{ "stb/fp/displaytype", displaytype_read, NULL },
