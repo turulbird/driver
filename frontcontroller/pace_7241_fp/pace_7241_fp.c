@@ -601,7 +601,7 @@ static struct file_operations vfd_fops =
 	.release = vfd_close
 };
 
-static void __exit led_module_exit(void)
+static void led_module_exit(void)
 {
 	DBG("[%s] >>>\n", __func__);
 	unregister_chrdev(VFD_MAJOR, "vfd");

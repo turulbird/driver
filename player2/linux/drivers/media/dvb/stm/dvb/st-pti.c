@@ -88,7 +88,8 @@ extern void fe_core_register_frontend(struct dvb_adapter *dvb_adap);
  || defined(ATEMIO520) \
  || defined(ATEMIO530) \
  || defined(VITAMIN_HD5000) \
- || defined(SAGEMCOM88)
+ || defined(SAGEMCOM88) \
+ || defined(PACE7241)
 extern void stv090x_register_frontend(struct dvb_adapter *dvb_adap);
 #elif defined(HL101) \
  || defined(VIP1_V1) \
@@ -148,14 +149,12 @@ int stpti_start_feed(struct dvb_demux_feed *dvbdmxfeed, struct DeviceContext_s *
 #if defined(ADB_BOX) \
  || defined(SAGEMCOM88) \
  || defined(SPARK7162) // 3 tuners plus possible USB DVB-T
-	if (!(((pSession->source >= DMX_SOURCE_FRONT0) &&
-			(pSession->source <= DMX_SOURCE_FRONT3)) ||
-			((pSession->source == DMX_SOURCE_DVR0) && swts)))
+	if (!(((pSession->source >= DMX_SOURCE_FRONT0) && (pSession->source <= DMX_SOURCE_FRONT3))
+	||    ((pSession->source == DMX_SOURCE_DVR0) && swts)))
 		return -1;
 #else
-	if (!(((pSession->source >= DMX_SOURCE_FRONT0) &&
-			(pSession->source <= DMX_SOURCE_FRONT2)) ||
-			((pSession->source == DMX_SOURCE_DVR0) && swts)))
+	if (!(((pSession->source >= DMX_SOURCE_FRONT0) && (pSession->source <= DMX_SOURCE_FRONT2))
+	||    ((pSession->source == DMX_SOURCE_DVR0) && swts)))
 		return -1;
 #endif
 #ifdef VERY_VERBOSE
@@ -193,8 +192,7 @@ int stpti_start_feed(struct dvb_demux_feed *dvbdmxfeed, struct DeviceContext_s *
 			case DMX_TS_PES_OTHER:
 				break;
 			default:
-				printk("%s: pes type = %d (not supported) <\n", __FUNCTION__,
-				       dvbdmxfeed->pes_type);
+				printk("%s: pes type = %d (not supported) <\n", __FUNCTION__, dvbdmxfeed->pes_type);
 				return -EINVAL;
 		}
 	}
@@ -593,7 +591,8 @@ void ptiInit(struct DeviceContext_s *pContext)
  || defined(ATEMIO520) \
  || defined(ATEMIO530) \
  || defined(VITAMIN_HD5000) \
- || defined(SAGEMCOM88)
+ || defined(SAGEMCOM88) \
+ || defined(PACE7241)
 		stv090x_register_frontend(&pContext->DvbContext->DvbAdapter);
 #elif defined(HL101) \
  || defined(VIP1_V1) \
@@ -602,8 +601,7 @@ void ptiInit(struct DeviceContext_s *pContext)
  || defined(IPBOX9900) \
  || defined(IPBOX99) \
  || defined(IPBOX55) \
- || defined(ADB_BOX) \
- || defined(PACE7241)
+ || defined(ADB_BOX)
 		fe_core_register_frontend(&pContext->DvbContext->DvbAdapter);
 #elif defined(CUBEREVO) \
  || defined(CUBEREVO_MINI2) \

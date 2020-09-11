@@ -79,7 +79,8 @@ static int caInitialized = 0;
  && !defined (SPARK7162) \
  && !defined (ADB_BOX) \
  && !defined (CUBEREVO_2000HD) \
- && !defined(SAGEMCOM88)
+ && !defined(SAGEMCOM88) \
+ && !defined(PACE7241)
 extern int init_ci_controller(struct dvb_adapter *dvb_adap);
 #endif
 #endif
@@ -97,7 +98,8 @@ struct dvb_device *CaInit(struct DeviceContext_s *DeviceContext)
  && !defined (SPARK7162) \
  && !defined(ADB_BOX) \
  && !defined (CUBEREVO_2000HD) \
- && !defined(SAGEMCOM88)
+ && !defined(SAGEMCOM88) \
+ && !defined(PACE7241)
 		init_ci_controller(&DeviceContext->DvbContext->DvbAdapter);
 #endif
 		caInitialized = 1;
@@ -106,8 +108,7 @@ struct dvb_device *CaInit(struct DeviceContext_s *DeviceContext)
 	return &CaDevice;
 }
 
-static int CaOpen(struct inode *Inode,
-		  struct file *File)
+static int CaOpen(struct inode *Inode, struct file *File)
 {
 	struct dvb_device *DvbDevice = (struct dvb_device *)File->private_data;
 	struct DeviceContext_s *Context = (struct DeviceContext_s *)DvbDevice->priv;
@@ -120,8 +121,7 @@ static int CaOpen(struct inode *Inode,
 	return 0;
 }
 
-static int CaRelease(struct inode *Inode,
-		     struct file *File)
+static int CaRelease(struct inode *Inode, struct file *File)
 {
 	struct dvb_device *DvbDevice = (struct dvb_device *)File->private_data;
 	struct DeviceContext_s *Context = (struct DeviceContext_s *)DvbDevice->priv;
