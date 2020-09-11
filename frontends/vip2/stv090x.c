@@ -5,6 +5,7 @@
  * Copyright (C) ST Microelectronics
  *
  * Version for:
+ *  Edision argus VIP V2 (1 pluggable tuner)
  *  Edision argus VIP2 (2 pluggable tuners)
  *
  * STV0903 with Sharp 7306 or STM STV6110x tuner,
@@ -3536,7 +3537,6 @@ static enum stv090x_signal_state stv090x_get_sig_params(struct stv090x_state *st
 	if ((state->algo == STV090x_BLIND_SEARCH)
 	||  (state->srate < 10000000))
 	{
-
 		if (stv090x_i2c_gate_ctrl(fe, 1) < 0)
 		{
 			goto err;
@@ -4026,8 +4026,7 @@ static int stv090x_optimize_track(struct stv090x_state *state)
 					}
 				}
 			}
-
-			STV090x_WRITE_DEMOD(state, ERRCTRL1, 0x67); /* PER */
+			STV090x_WRITE_DEMOD(state, ERRCTRL1, 0x67);  /* PER */
 			break;
 		}
 		case STV090x_UNKNOWN:
@@ -4181,6 +4180,7 @@ static int stv090x_optimize_track(struct stv090x_state *state)
 				goto err;
 			}
 			i = 0;
+
 			while ((!(stv090x_get_dmdlock(state, (state->DemodTimeout / 2)))) && (i <= 2))
 			{
 				if (STV090x_WRITE_DEMOD(state, DMDISTATE, 0x1f) < 0)
@@ -5191,14 +5191,14 @@ static int stv090x_set_voltage(struct dvb_frontend *fe, fe_sec_voltage_t voltage
 	{
 		case SEC_VOLTAGE_13:
 		{
-			dprintk(10, "Frontend %d: Voltage = 18V (vertical)\n", fe->id);
+			dprintk(10, "Frontend %d: Voltage = 13V (vertical)\n", fe->id);
 			hc595_out(state->config->fe_lnb_en, VOLTAGE_ON);
 			hc595_out(state->config->fe_1318, VOLTAGE_13);
 			break;
 		}
 		case SEC_VOLTAGE_18:
 		{
-			dprintk(10, "Frontend %d: Voltage = 13V (horizontal)\n", fe->id);
+			dprintk(10, "Frontend %d: Voltage = 18V (horizontal)\n", fe->id);
 			hc595_out(state->config->fe_lnb_en, VOLTAGE_ON);
 			hc595_out(state->config->fe_1318, VOLTAGE_18);
 			break;
