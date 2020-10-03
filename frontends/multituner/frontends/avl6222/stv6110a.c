@@ -45,11 +45,19 @@
 #define RSTV6110_MAX     8
 
 extern short paramDebug;
+#if defined TAGDEBUG
+#undef TAGDEBUG
+#endif
 #define TAGDEBUG "[stv6110a] "
 
-#define dprintk(level, x...) do { \
-		if ((paramDebug) && (paramDebug > level)) printk(TAGDEBUG x); \
+#if !defined dprintk
+#define dprintk(level, x...) do \
+{ \
+	if ((paramDebug) && (paramDebug > level)) \
+	{ \
+		printk(TAGDEBUG x); \
 	} while (0)
+#endif
 
 struct stv6110_state
 {

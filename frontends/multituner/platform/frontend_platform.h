@@ -1,5 +1,5 @@
 /*
- * @brief platform.h
+ * @brief frontend_platform.h
  *
  * @author konfetti
  *
@@ -25,19 +25,19 @@
 
 struct platform_frontend_config_s
 {
-	char    *name;
+	char *name;
 
 	/*
 	 *  - i2c address
 	 */
-	int demod_i2c;
-	int tuner_i2c;
+	int  demod_i2c;
+	int  tuner_i2c;
 
 	/* specific stuff can be passed here */
 	void *private;
 };
 
-#if 0
+#if defined UFS913
 struct platform_frontend_s
 {
 	int numConfigs;
