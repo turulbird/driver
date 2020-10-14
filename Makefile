@@ -379,6 +379,7 @@ obj-y += dvbt/siano/
 endif
 
 ifdef PACE7241
+obj-y += cec/
 obj-y += smartcard/
 obj-y += fan_pace7241/
 endif
