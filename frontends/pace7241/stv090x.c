@@ -372,7 +372,7 @@ static struct stv090x_reg stv0900_initval[] =
 	{ STV090x_P1_F22TX,			0xc0 },
 	{ STV090x_P1_F22RX,			0xc0 },
 	{ STV090x_P1_DISRXCTL,		0x00 },
-#if 0//0
+#if 0
 	{ STV090x_P1_TNRSTEPS,		0x87 },
 	{ STV090x_P1_TNRGAIN,		0x09 },
 #endif
@@ -398,7 +398,7 @@ static struct stv090x_reg stv0900_initval[] =
 	{ STV090x_P1_FBERCPT4,		0x00 },
 	{ STV090x_P1_FSPYBER,		0x10 },
 	{ STV090x_P1_ERRCTRL1,		0x35 },
-	{ STV090x_P1_ERRCTRL2,		0x12 },//0xc1 },
+	{ STV090x_P1_ERRCTRL2,		0x12 },  // 0xc1 },
 	{ STV090x_P1_CFRICFG,		0xf8 },
 	{ STV090x_P1_NOSCFG,		0x1c },
 	{ STV090x_P1_CORRELMANT,	0x70 },
@@ -479,35 +479,35 @@ static struct stv090x_reg stv0900_initval[] =
 	//wszystkie 82 + gpio2=02 - 1-0
 
 #if 1	//02-HI 82-LOW
-	{ STV090x_GPIO1CFG,    		0x02 }, 
-	{ STV090x_GPIO2CFG,    		0x02 }, 
-	{ STV090x_GPIO3CFG,    		0x02 }, 
-	{ STV090x_GPIO4CFG,    		0x02 }, 
-	{ STV090x_GPIO5CFG,    		0x02 }, 
-	{ STV090x_GPIO6CFG,    		0x02 }, 
-	{ STV090x_GPIO7CFG,    		0x02 }, 
-	{ STV090x_GPIO8CFG,    		0x02 }, 
-	{ STV090x_GPIO9CFG,    		0x02 }, 
-	{ STV090x_GPIO10CFG,    	0x02 }, 
-	{ STV090x_GPIO11CFG,   		0x02 }, 
-	{ STV090x_GPIO12CFG,    	0x02 }, 
-	{ STV090x_GPIO13CFG,    	0x02 }, 
+	{ STV090x_GPIO1CFG,    		0x02 },
+	{ STV090x_GPIO2CFG,    		0x02 },
+	{ STV090x_GPIO3CFG,    		0x02 },
+	{ STV090x_GPIO4CFG,    		0x02 },
+	{ STV090x_GPIO5CFG,    		0x02 },
+	{ STV090x_GPIO6CFG,    		0x02 },
+	{ STV090x_GPIO7CFG,    		0x02 },
+	{ STV090x_GPIO8CFG,    		0x02 },
+	{ STV090x_GPIO9CFG,    		0x02 },
+	{ STV090x_GPIO10CFG,    	0x02 },
+	{ STV090x_GPIO11CFG,   		0x02 },
+	{ STV090x_GPIO12CFG,    	0x02 },
+	{ STV090x_GPIO13CFG,    	0x02 },
 #else
 	{ STV090x_GPIO1CFG,    		0x82 },
 	{ STV090x_GPIO2CFG,    		0x02 },
 	{ STV090x_GPIO3CFG,    		0x82 },
-	{ STV090x_GPIO4CFG,    		0x82 }, 
-	{ STV090x_GPIO5CFG,    		0x82 }, 
-	{ STV090x_GPIO6CFG,    		0x82 }, 
-	{ STV090x_GPIO7CFG,    		0x82 }, 
-	{ STV090x_GPIO8CFG,    		0x82 }, 
-	{ STV090x_GPIO9CFG,    		0x82 }, 
-	{ STV090x_GPIO10CFG,    	0x82 }, 
-	{ STV090x_GPIO11CFG,   		0x82 }, 
-	{ STV090x_GPIO12CFG,    	0x82 }, 
-	{ STV090x_GPIO13CFG,    	0x82 }, 
+	{ STV090x_GPIO4CFG,    		0x82 },
+	{ STV090x_GPIO5CFG,    		0x82 },
+	{ STV090x_GPIO6CFG,    		0x82 },
+	{ STV090x_GPIO7CFG,    		0x82 },
+	{ STV090x_GPIO8CFG,    		0x82 },
+	{ STV090x_GPIO9CFG,    		0x82 },
+	{ STV090x_GPIO10CFG,    	0x82 },
+	{ STV090x_GPIO11CFG,   		0x82 },
+	{ STV090x_GPIO12CFG,    	0x82 },
+	{ STV090x_GPIO13CFG,    	0x82 },
 #endif
-	};
+};
 
 #define STV090x_TNRSTEPS    0xf4e7
 #define STV090x_TNRGAIN     0xf4e8
@@ -637,83 +637,83 @@ static struct stv090x_reg stv0903_initval[] =
 
 static struct stv090x_reg stv0900_cut20_val[] =
 {
-	{0xF41E, 0xE8},
-	{0xF41F, 0x10},
-	{0xF417, 0x20},
-	{0xF43D, 0x38},
-	{0xF4E1, 0x82},
-	{0xF4EE, 0x02},
-	{0xF43F, 0xD0},
-	{0xF440, 0xB0},
-	{0xF454, 0x00},
-	{0xF574, 0x20},
-	{0xF5A0, 0x88},
-	{0xF5A2, 0x3A},
-	{0xF5A8, 0x00},
-	{0xF5B2, 0x10},
-	{0xF598, 0x35},//!!!!
-	{0xF441, 0xF8},
-	{0xF420, 0x70},
-	{0xF421, 0x88},
-	{0xF42C, 0x5B},
-	{0xF42D, 0x38},
-	{0xF438, 0xE4},
-	{0xF439, 0x1A},
-	{0xF43A, 0x09},
-	{0xF43E, 0x20},
-	{0xF458, 0x5A},
-	{0xF459, 0x58},
-	{0xF490, 0x26},
-	{0xF49C, 0x86},
-	{0xF500, 0x06},
-	{0xF501, 0x00},
-	{0xF502, 0x04},
-	{0xF415, 0x3B},
-	{0xFA86, 0x1D},
-	{0xFA3F, 0x04},
-	{0xF600, 0x20},
-	{0xF533, 0x00},
-	{0xF333, 0x00},
-	{0xFF11, 0x80},
-	{0xFF11, 0x00},
-	{0xF1E0, 0x26},
-	{0xF1E2, 0x26},
-	};
+	{ 0xF41E, 0xE8 },
+	{ 0xF41F, 0x10 },
+	{ 0xF417, 0x20 },
+	{ 0xF43D, 0x38 },
+	{ 0xF4E1, 0x82 },
+	{ 0xF4EE, 0x02 },
+	{ 0xF43F, 0xD0 },
+	{ 0xF440, 0xB0 },
+	{ 0xF454, 0x00 },
+	{ 0xF574, 0x20 },
+	{ 0xF5A0, 0x88 },
+	{ 0xF5A2, 0x3A },
+	{ 0xF5A8, 0x00 },
+	{ 0xF5B2, 0x10 },
+	{ 0xF598, 0x35 },  //!!!!
+	{ 0xF441, 0xF8 },
+	{ 0xF420, 0x70 },
+	{ 0xF421, 0x88 },
+	{ 0xF42C, 0x5B },
+	{ 0xF42D, 0x38 },
+	{ 0xF438, 0xE4 },
+	{ 0xF439, 0x1A },
+	{ 0xF43A, 0x09 },
+	{ 0xF43E, 0x20 },
+	{ 0xF458, 0x5A },
+	{ 0xF459, 0x58 },
+	{ 0xF490, 0x26 },
+	{ 0xF49C, 0x86 },
+	{ 0xF500, 0x06 },
+	{ 0xF501, 0x00 },
+	{ 0xF502, 0x04 },
+	{ 0xF415, 0x3B },
+	{ 0xFA86, 0x1D },
+	{ 0xFA3F, 0x04 },
+	{ 0xF600, 0x20 },
+	{ 0xF533, 0x00 },
+	{ 0xF333, 0x00 },
+	{ 0xFF11, 0x80 },
+	{ 0xFF11, 0x00 },
+	{ 0xF1E0, 0x26 },
+	{ 0xF1E2, 0x26 },
+};
 #else
 static struct stv090x_reg stv0900_cut20_val[] =
 {
-	{ STV090x_P2_DMDCFG3,		0xe8 },
-	{ STV090x_P2_DMDCFG4,		0x10 },
-	{ STV090x_P2_CARFREQ,		0x38 },
-	{ STV090x_P2_CARHDR,		0x20 },
-	{ STV090x_P2_KREFTMG,		0x5a },
-	{ STV090x_P2_SMAPCOEF7,		0x06 },
-	{ STV090x_P2_SMAPCOEF6,		0x00 },
-	{ STV090x_P2_SMAPCOEF5,		0x04 },
-	{ STV090x_P2_NOSCFG,		0x0c },
-	{ STV090x_P1_DMDCFG3,		0xe8 },
-	{ STV090x_P1_DMDCFG4,		0x10 },
-	{ STV090x_P1_CARFREQ,		0x38 },
-	{ STV090x_P1_CARHDR,		0x20 },
-	{ STV090x_P1_KREFTMG,		0x5a },
-	{ STV090x_P1_SMAPCOEF7,		0x06 },
-	{ STV090x_P1_SMAPCOEF6,		0x00 },
-	{ STV090x_P1_SMAPCOEF5,		0x04 },
-	{ STV090x_P1_NOSCFG,		0x0c },
-	{ STV090x_GAINLLR_NF4,		0x21 },
-	{ STV090x_GAINLLR_NF5,		0x21 },
-	{ STV090x_GAINLLR_NF6,		0x20 },
-	{ STV090x_GAINLLR_NF7,		0x1F },
-	{ STV090x_GAINLLR_NF8,		0x1E },
-	{ STV090x_GAINLLR_NF9,		0x1E },
-	{ STV090x_GAINLLR_NF10,		0x1D },
-	{ STV090x_GAINLLR_NF11,		0x1B },
-	{ STV090x_GAINLLR_NF12,		0x20 },
-	{ STV090x_GAINLLR_NF13,		0x20 },
-	{ STV090x_GAINLLR_NF14,		0x20 },
-	{ STV090x_GAINLLR_NF15,		0x20 },
-	{ STV090x_GAINLLR_NF16,		0x20 },
-	{ STV090x_GAINLLR_NF17,		0x21 },
+	{ STV090x_P2_DMDCFG3,     0xe8 },
+	{ STV090x_P2_DMDCFG4,     0x10 },
+	{ STV090x_P2_CARFREQ,     0x38 },
+	{ STV090x_P2_CARHDR,      0x20 },
+	{ STV090x_P2_KREFTMG,     0x5a },
+	{ STV090x_P2_SMAPCOEF7,   0x06 },
+	{ STV090x_P2_SMAPCOEF6,   0x00 },
+	{ STV090x_P2_SMAPCOEF5,   0x04 },
+	{ STV090x_P2_NOSCFG,      0x0c },
+	{ STV090x_P1_DMDCFG3,     0xe8 },
+	{ STV090x_P1_DMDCFG4,     0x10 },
+	{ STV090x_P1_CARFREQ,     0x38 },
+	{ STV090x_P1_CARHDR,      0x20 },
+	{ STV090x_P1_KREFTMG,     0x5a },
+	{ STV090x_P1_SMAPCOEF7,   0x06 },
+	{ STV090x_P1_SMAPCOEF6,   0x00 },
+	{ STV090x_P1_SMAPCOEF5,   0x04 },
+	{ STV090x_P1_NOSCFG,      0x0c },
+	{ STV090x_GAINLLR_NF4,    0x21 },
+	{ STV090x_GAINLLR_NF5,    0x21 },
+	{ STV090x_GAINLLR_NF6,    0x20 },
+	{ STV090x_GAINLLR_NF7,    0x1F },
+	{ STV090x_GAINLLR_NF8,    0x1E },
+	{ STV090x_GAINLLR_NF9,    0x1E },
+	{ STV090x_GAINLLR_NF10,   0x1D },
+	{ STV090x_GAINLLR_NF11,   0x1B },
+	{ STV090x_GAINLLR_NF12,   0x20 },
+	{ STV090x_GAINLLR_NF13,   0x20 },
+	{ STV090x_GAINLLR_NF14,   0x20 },
+	{ STV090x_GAINLLR_NF15,   0x20 },
+	{ STV090x_GAINLLR_NF16,   0x20 },
+	{ STV090x_GAINLLR_NF17,   0x21 }
 };
 #endif
 
@@ -822,7 +822,7 @@ static struct stv090x_long_frame_crloop stv090x_s2_apsk_crl_cut20[] =
 };
 
 /* Cut 3.0 Long Frame Tracking CR Loop */
-static struct stv090x_long_frame_crloop	stv090x_s2_apsk_crl_cut30[] =
+static struct stv090x_long_frame_crloop stv090x_s2_apsk_crl_cut30[] =
 {
 	/* MODCOD             2MPon 2MPoff 5MPon 5MPoff 10MPon 10MPoff 20MPon 20MPoff 30MPon 30MPoff */
 	{ STV090x_16APSK_23,  0x0a, 0x0a,  0x0a, 0x0a,  0x1a,  0x0a,   0x3a,  0x0a,   0x2a,  0x0a },
@@ -914,7 +914,7 @@ static int stv090x_read_reg(struct stv090x_state *state, unsigned int reg)
 	{
 		if (ret != -ERESTARTSYS)
 		{
-			dprintk(1, "Read error, Reg=[0x%02x], Status=%d", reg, ret);
+			dprintk(1, "%s Read error, Reg=[0x%02x], Status=%d\n", __func__, reg, ret);
 		}
 		return ret < 0 ? ret : -EREMOTEIO;
 	}
@@ -940,7 +940,7 @@ static int stv090x_write_regs(struct stv090x_state *state, unsigned int reg, u8 
 	{
 		int i;
 
-		printk("%s [0x%04x]:", __func__, reg);
+		dprintk(1, "%s [0x%04x]:", __func__, reg);
 		for (i = 0; i < count; i++)
 		{
 			printk(" %02x", data[i]);
@@ -954,7 +954,7 @@ static int stv090x_write_regs(struct stv090x_state *state, unsigned int reg, u8 
 	{
 		if (ret != -ERESTARTSYS)
 		{
-			dprintk(1, "Reg=[0x%04x], Data=[0x%02x ...], Count=%u, Status=%d", reg, data[0], count, ret);
+			dprintk(1, "%s Reg=[0x%04x], Data=[0x%02x ...], Count=%u, Status=%d\n", __func__, reg, data[0], count, ret);
 		}
 		return ret < 0 ? ret : -EREMOTEIO;
 	}
@@ -976,18 +976,17 @@ static int stv090x_i2c_gate_ctrl(struct dvb_frontend *fe, int enable)
 #if 1  // never reached!
 	if (state->demod == STV090x_DEMODULATOR_0) 
 	{
-		dprintk(20,"!!!!!!! STV090x_DEMODULATOR_0 gate:\n");
+		dprintk(20, "!!!!!!! STV090x_DEMODULATOR_0 gate:\n");
 	}
 	else
 	{
-		dprintk(20,"!!!!!!! STV090x_DEMODULATOR_1 gate:\n");
+		dprintk(20, "!!!!!!! STV090x_DEMODULATOR_1 gate:\n");
 	}
 	//--------------------------------------------------------	
 	if (enable)
 	{
 		mutex_lock(&tuner_lock);
 	}
-
 	if (STV090x_WRITE_DEMOD(state, I2CRPT, 0xc0) < 0)
 	{
 		goto err;
@@ -995,15 +994,13 @@ static int stv090x_i2c_gate_ctrl(struct dvb_frontend *fe, int enable)
 	if (!enable)
 	{
 		mutex_unlock(&tuner_lock);
-		return 0;
 	}
+	return 0;
 	//--------------------------------------------------------	
 #else
 	if (enable)
 	{
-		dprintk(20, "%s: Enable\n", __func__);
-//		STV090x_SETFIELD_Px(reg, I2CT_ON_FIELD, 1);
-//		if (STV090x_WRITE_DEMOD(state, I2CRPT, reg) < 0)
+		dprintk(50, "%s: Enable Gate\n", __func__);
 		if (STV090x_WRITE_DEMOD(state, I2CRPT, 0xc0) < 0)
 		{
 			//STV090x_SETFIELD_Px(reg, I2CT_ON_FIELD, 1);
@@ -1013,7 +1010,7 @@ static int stv090x_i2c_gate_ctrl(struct dvb_frontend *fe, int enable)
 	}
 	else
 	{
-		dprintk(20, "%s: Disable\n", __func__);
+		dprintk(520, "%s: Disable Gate\n", __func__);
 //		STV090x_SETFIELD_Px(reg, I2CT_ON_FIELD, 0);
 //		if ((STV090x_WRITE_DEMOD(state, I2CRPT, reg)) < 0)
 		if ((STV090x_WRITE_DEMOD(state, I2CRPT, 0x40)) < 0)
@@ -1029,7 +1026,7 @@ static int stv090x_i2c_gate_ctrl(struct dvb_frontend *fe, int enable)
 #endif
 
 err:
-	dprintk(1, "I/O error");
+	dprintk(1, "%s: I/O error\n", __func__);
 	mutex_unlock(&tuner_lock);
 	return -1;
 }
@@ -1133,7 +1130,7 @@ static int stv090x_set_srate(struct stv090x_state *state, u32 srate)
 	return 0;
 
 err:
-	dprintk(1, "%s I/O error\n", __func__);
+	dprintk(1, "%s: I/O error\n", __func__);
 	return -1;
 }
 
@@ -1183,7 +1180,7 @@ static int stv090x_set_max_srate(struct stv090x_state *state, u32 clk, u32 srate
 	return 0;
 
 err:
-	dprintk(1, "%s I/O error\n", __func__);
+	dprintk(1, "%s: I/O error\n", __func__);
 	return -1;
 }
 
@@ -1219,7 +1216,7 @@ static int stv090x_set_min_srate(struct stv090x_state *state, u32 clk, u32 srate
 	return 0;
 
 err:
-	dprintk(1, "%s I/O error\n", __func__);
+	dprintk(1, "%s: I/O error\n", __func__);
 	return -1;
 }
 
@@ -1278,7 +1275,7 @@ static int stv090x_set_vit_thacq(struct stv090x_state *state)
 	return 0;
 
 err:
-	dprintk(1, "%s: I/O error", __func__);
+	dprintk(1, "%s: I/O error\n", __func__);
 	return -1;
 }
 
@@ -1311,7 +1308,7 @@ static int stv090x_set_vit_thtracq(struct stv090x_state *state)
 	return 0;
 
 err:
-	dprintk(1, "%s: I/O error", __func__);
+	dprintk(1, "%s: I/O error\n", __func__);
 	return -1;
 }
 
@@ -1451,7 +1448,7 @@ static int stv090x_set_viterbi(struct stv090x_state *state)
 	return 0;
 
 err:
-	dprintk(1, "%s: I/O error", __func__);
+	dprintk(1, "%s: I/O error\n", __func__);
 	return -1;
 }
 
@@ -1524,7 +1521,7 @@ static int stv090x_stop_modcod(struct stv090x_state *state)
 	return 0;
 
 err:
-	dprintk(1, "%s: I/O error", __func__);
+	dprintk(1, "%s: I/O error\n", __func__);
 	return -1;
 }
 
@@ -1544,29 +1541,41 @@ static int stv090x_activate_modcod(struct stv090x_state *state)
 		{
 			default:
 			case 0:
+			{
 				f_mod = 14;
 				break;
+			}
 			case 1:
+			{
 				f_mod = 13;
 				break;
+			}
 			case 2:
+			{
 				f_mod = 11;
 				break;
+			}
 			case 3:
+			{
 				f_mod = 7;
 				break;
+			}
 		}
 		if (matype <= 1)
 		{
 			if (modcod % 2)
 			{
 				if (stv090x_write_reg(state, index, 0xf0 | f_mod) < 0)
+				{
 					goto err;
+				}
 			}
 			else
 			{
 				if (stv090x_write_reg(state, index, (f_mod << 4) | 0x0f) < 0)
+				{
 					goto err;
+				}
 			}
 		}
 	}
@@ -1640,7 +1649,7 @@ static int stv090x_activate_modcod(struct stv090x_state *state)
 	return 0;
 
 err:
-	dprintk(1, "%s: I/O error", __func__);
+	dprintk(1, "%s: I/O error\n", __func__);
 	return -1;
 }
 
@@ -1713,7 +1722,7 @@ static int stv090x_activate_modcod_single(struct stv090x_state *state)
 	return 0;
 
 err:
-	dprintk(1, "%s: I/O error", __func__);
+	dprintk(1, "%s: I/O error\n", __func__);
 	return -1;
 }
 
@@ -1749,7 +1758,7 @@ static int stv090x_vitclk_ctl(struct stv090x_state *state, int enable)
 		}
 		default:
 		{
-			dprintk(1, "Wrong demodulator!");
+			dprintk(1, "Invalid demodulator # %d!\n", state->demod);
 			break;
 		}
 	}
@@ -1850,7 +1859,7 @@ static int stv090x_delivery_search(struct stv090x_state *state)
 			{
 				goto err;
 			}
-			if (STV090x_WRITE_DEMOD(state, CAR2CFG, 0x22) < 0) /* disable DVB-S2 */
+			if (STV090x_WRITE_DEMOD(state, CAR2CFG, 0x22) < 0)  /* disable DVB-S2 */
 			{
 				goto err;
 			}
@@ -2216,7 +2225,7 @@ static int stv090x_start_search(struct stv090x_state *state)
 	}
 	if (state->internal->dev_ver >= 0x20)
 	{
-		/*Frequency offset detector setting*/
+		/* Frequency offset detector setting */
 		if (state->srate < 2000000)
 		{
 			if (state->internal->dev_ver <= 0x20)
@@ -3281,13 +3290,16 @@ static int stv090x_get_coldlock(struct stv090x_state *state, s32 timeout_dmd)
 						{
 							goto err;
 						}
+						reg = STV090x_READ_DEMOD(state, DMDCFGMD);
 						STV090x_SETFIELD_Px(reg, DVBS1_ENABLE_FIELD, 1);
 						STV090x_SETFIELD_Px(reg, DVBS2_ENABLE_FIELD, 1);
+
 						if (STV090x_WRITE_DEMOD(state, DMDCFGMD, reg) < 0)
 						{
 							goto err;
 						}
 					}
+
 					if (STV090x_WRITE_DEMOD(state, CFRINIT1, 0x00) < 0)
 					{
 						goto err;
@@ -3941,7 +3953,7 @@ static u8 stv090x_optimize_carloop(struct stv090x_state *state, enum stv090x_mod
 
 	if (state->internal->dev_ver <= 0x12)
 	{
-		car_loop = stv090x_s2_crl;
+		car_loop          = stv090x_s2_crl;
 		car_loop_qpsk_low = stv090x_s2_lowqpsk_crl_cut20;
 		car_loop_apsk_low = stv090x_s2_apsk_crl_cut20;
 	}
@@ -4363,16 +4375,16 @@ static int stv090x_optimize_track(struct stv090x_state *state)
 						goto err;
 					}
 				}
-				if (state->internal->dev_ver <= 0x11)
-				{
-					if (state->demod_mode != STV090x_SINGLE)
-					{
-						stv090x_activate_modcod(state); /* link to LDPC after demod LOCK */
-					}
-				}
-				STV090x_WRITE_DEMOD(state, ERRCTRL1, 0x67);  /* PER */
-				break;
 			}
+			if (state->internal->dev_ver <= 0x11)
+			{
+				if (state->demod_mode != STV090x_SINGLE)
+				{
+					stv090x_activate_modcod(state); /* link to LDPC after demod LOCK */
+				}
+			}
+			STV090x_WRITE_DEMOD(state, ERRCTRL1, 0x67);  /* PER */
+			break;
 		}
 		case STV090x_UNKNOWN:
 		default:
@@ -4814,7 +4826,7 @@ static enum stv090x_signal_state stv090x_algo(struct stv090x_state *state)
 	int lock = 0, low_sr = 0, no_signal = 0;
 
 	dprintk(100, "%s >\n", __func__);
-	
+
 	reg = STV090x_READ_DEMOD(state, TSCFGH);
 	STV090x_SETFIELD_Px(reg, RST_HWARE_FIELD, 1); /* Stop path 1 stream merger */
 	if (STV090x_WRITE_DEMOD(state, TSCFGH, reg) < 0)
@@ -5080,18 +5092,18 @@ static enum stv090x_signal_state stv090x_algo(struct stv090x_state *state)
 	if (state->internal->dev_ver == 0x12)
 	{
 		reg = STV090x_READ_DEMOD(state, TSCFGH);
-		STV090x_SETFIELD_Px(reg, RST_HWARE_FIELD, 0); /* release merger reset */
+		STV090x_SETFIELD_Px(reg, RST_HWARE_FIELD, 0);  /* release merger reset */
 		if (STV090x_WRITE_DEMOD(state, TSCFGH, reg) < 0)
 		{
 			goto err;
 		}
 		msleep(3);
-		STV090x_SETFIELD_Px(reg, RST_HWARE_FIELD, 1); /* merger reset */
+		STV090x_SETFIELD_Px(reg, RST_HWARE_FIELD, 1);  /* merger reset */
 		if (STV090x_WRITE_DEMOD(state, TSCFGH, reg) < 0)
 		{
 			goto err;
 		}
-		STV090x_SETFIELD_Px(reg, RST_HWARE_FIELD, 0); /* release merger reset */
+		STV090x_SETFIELD_Px(reg, RST_HWARE_FIELD, 0);  /* release merger reset */
 		if (STV090x_WRITE_DEMOD(state, TSCFGH, reg) < 0)
 		{
 			goto err;
@@ -5144,14 +5156,20 @@ static enum stv090x_signal_state stv090x_algo(struct stv090x_state *state)
 				reg = STV090x_READ_DEMOD(state, TSCFGH);
 				STV090x_SETFIELD_Px(reg, RST_HWARE_FIELD, 0);  /* release merger reset */
 				if (STV090x_WRITE_DEMOD(state, TSCFGH, reg) < 0)
+				{
 					goto err;
+				}
 				msleep(3);
 				STV090x_SETFIELD_Px(reg, RST_HWARE_FIELD, 1);  /* merger reset */
 				if (STV090x_WRITE_DEMOD(state, TSCFGH, reg) < 0)
+				{
 					goto err;
+				}
 				STV090x_SETFIELD_Px(reg, RST_HWARE_FIELD, 0);  /* release merger reset */
 				if (STV090x_WRITE_DEMOD(state, TSCFGH, reg) < 0)
+				{
 					goto err;
+				}
 			}
 		}
 		else if (state->internal->dev_ver >= 0x20)
@@ -5410,7 +5428,7 @@ static int stv090x_read_per(struct dvb_frontend *fe, u32 *per)
 #endif
 		*per = ((h << 16) | (m << 8) | l);
 
-		dprintk(150, "h:%d m:%d l:%d per:%d\n",h,m,l,*per);
+		dprintk(150, "h:%d m:%d l:%d per:%d\n", h, m, l, *per);
 
 		count_4 = STV090x_READ_DEMOD(state, FBERCPT4);
 		count_3 = STV090x_READ_DEMOD(state, FBERCPT3);
@@ -5680,6 +5698,10 @@ static int stv090x_set_voltage(struct dvb_frontend *fe, fe_sec_voltage_t voltage
 			{
 				b = 0x34;  // lnb1	34	3b
 				ret = i2c_transfer(state->i2c, &msg, 1);
+				if (ret = !1)
+				{
+					dprintk(1, "SEC_VOLTAGE_13 Error A8292\n");
+				}
 			}
 			else
 			{
@@ -5699,15 +5721,19 @@ static int stv090x_set_voltage(struct dvb_frontend *fe, fe_sec_voltage_t voltage
 			{
 				b = 0x3b;  // lnb1	34	3b
 				ret = i2c_transfer(state->i2c, &msg, 1);
+				if (ret = !1)
+				{
+					dprintk(1, "SEC_VOLTAGE_18 Error A8292\n");
+				}
 			}
 			else
 			{
 				b = 0x3b + 64;  // lnb2	34	3b
 				ret = i2c_transfer(state->i2c, &msg, 1);
-			}
-			if (ret != 1)
-			{
-				dprintk(1, "%s: Error setting LNB voltage to 18V (frontend %d)\n", __func__, id);
+				if (ret != 1)
+				{
+					dprintk(1, "SEC_VOLTAGE_18 Error A8292\n");
+				}
 			}
 			break;
 		}
@@ -5717,16 +5743,20 @@ static int stv090x_set_voltage(struct dvb_frontend *fe, fe_sec_voltage_t voltage
 			if (state->demod == STV090x_DEMODULATOR_0)
 			{
 				b = 0x10;  // lnb1	34	3b
-				ret=i2c_transfer(state->i2c, &msg, 1);
+				ret = i2c_transfer(state->i2c, &msg, 1);
+				if (ret = !1)
+				{
+					dprintk(1, "SEC_VOLTAGE_OFF Error A8292\n");
+				}
 			}
 			else
 			{
 				b = 0x10 + 64;  // lnb2	34	3b
 				ret = i2c_transfer(state->i2c, &msg, 1);
-			}
-			if (ret != 1)
-			{
-				dprintk(1, "%s: Error setting LNB voltage off (frontend %d)\n", __func__, id);
+				if (ret != 1)
+				{
+					dprintk(1, "SEC_VOLTAGE_OFF Error A8292\n");
+				}
 			}
 			break;
 		}
@@ -5952,7 +5982,7 @@ static int stv090x_wakeup(struct dvb_frontend *fe)
 	struct stv090x_state *state = fe->demodulator_priv;
 	u32 reg;
 
-	dprintk(20, "Wake %s from standby", state->device == STV0900 ? "STV0900" : "STV0903");
+	dprintk(20, "Wake %s from standby\n", state->device == STV0900 ? "STV0900" : "STV0903");
 
 	reg = stv090x_read_reg(state, STV090x_SYNTCTRL);
 	STV090x_SETFIELD(reg, STANDBY_FIELD, 0x00);
@@ -6153,8 +6183,7 @@ static u32 stv090x_get_mclk(struct stv090x_state *state)
 	div = stv090x_read_reg(state, STV090x_NCOARSE);
 	reg = stv090x_read_reg(state, STV090x_SYNTCTRL);
 	ratio = STV090x_GETFIELD(reg, SELX1RATIO_FIELD) ? 4 : 6;
-
-	return (div + 1) * config->xtal / ratio; /* kHz */
+	return (div + 1) * config->xtal / ratio;  /* kHz */
 }
 
 static int stv090x_set_mclk(struct stv090x_state *state, u32 mclk, u32 clk)
@@ -6202,7 +6231,8 @@ static int stv090x_set_tspath(struct stv090x_state *state)
 	// fix for cut3.0 - 18.11.2012 (SagemCom ESI88)
 	if (state->internal->dev_ver >= 0x30)
 	{
-		if ((state->config->ts1_mode == STV090x_TSMODE_SERIAL_CONTINUOUS) && (state->config->ts2_mode == STV090x_TSMODE_SERIAL_CONTINUOUS))
+		if ((state->config->ts1_mode == STV090x_TSMODE_SERIAL_CONTINUOUS)
+		&&  (state->config->ts2_mode == STV090x_TSMODE_SERIAL_CONTINUOUS))
 		{
 			stv090x_write_reg(state, STV090x_TSGENERAL, 0x00);
 		}
@@ -6599,43 +6629,39 @@ static int stv090x_init(struct dvb_frontend *fe)
 	if (first_init == 0)
 	{
 		first_init = 1;
-	}
-	ret = i2c_transfer(state->i2c, &msg_r, 1);
-	if (ret != 1)
-	{
-		dprintk(1, "%s: Error:LNB init1 A8292\n", __func__);
-	}
-	b = 0x10;  // lnb1
-	ret = i2c_transfer(state->i2c, &msg, 1);
-	if (ret != 1)
-	{
-		dprintk(1, "%s: Error: LNB1 init2 A8292\n", __func__);
-	}
-	b = 0x10 + 64;  // lnb2
-	ret = i2c_transfer(state->i2c, &msg, 1);
-	if (ret!= 1)
-	{
-		dprintk(1, "%s: Error: LNB2 init3 A8292\n", __func__);
-	}
-	b = 0x82;  // lnb1
-	ret = i2c_transfer(state->i2c, &msg, 1);
-	if (ret != 1)
-	{
-		dprintk(1, "%s: Error:LNB1 init4 A8292\n", __func__);
-	}
-	b = 0x82 + 64;  // lnb2
-	ret = i2c_transfer(state->i2c, &msg, 1);
-	if (ret != 1)
-	{
-		dprintk(1, "%s: Error:LNB2 init5 A8292\n", __func__);
-	}
-//}
 
-//	printk(">> 1\n");
-
+		ret = i2c_transfer(state->i2c, &msg_r, 1);
+		if (ret != 1)
+		{
+			dprintk(1, "%s: Error:LNB init1 A8292\n", __func__);
+		}
+		b = 0x10;  // lnb1
+		ret = i2c_transfer(state->i2c, &msg, 1);
+		if (ret != 1)
+		{
+			dprintk(1, "%s: Error: LNB1 init2 A8292\n", __func__);
+		}
+		b = 0x10 + 64;  // lnb2
+		ret = i2c_transfer(state->i2c, &msg, 1);
+		if (ret!= 1)
+		{
+			dprintk(1, "%s: Error: LNB2 init3 A8292\n", __func__);
+		}
+		b = 0x82;  // lnb1
+		ret = i2c_transfer(state->i2c, &msg, 1);
+		if (ret != 1)
+		{
+			dprintk(1, "%s: Error:LNB1 init4 A8292\n", __func__);
+		}
+		b = 0x82 + 64;  // lnb2
+		ret = i2c_transfer(state->i2c, &msg, 1);
+		if (ret != 1)
+		{
+			dprintk(1, "%s: Error:LNB2 init5 A8292\n", __func__);
+		}
+	}
 	if (state->internal->mclk == 0)
 	{
-
 #if 0
 //dodane 17.11.2012
 		if (config->tuner_init)
@@ -6647,7 +6673,7 @@ static int stv090x_init(struct dvb_frontend *fe)
 		}
 //dodane 17.11.2012
 #endif
-		stv090x_set_mclk(state, 135000000, config->xtal); /* 135 Mhz */
+		stv090x_set_mclk(state, 135000000, config->xtal);  /* 135 Mhz */
 		msleep(5);
 		if (stv090x_write_reg(state, STV090x_SYNTCTRL, 0x20 | config->clk_mode) < 0)
 		{
@@ -6655,38 +6681,32 @@ static int stv090x_init(struct dvb_frontend *fe)
 		}
 		stv090x_get_mclk(state);
 	}
-//	printk(">> 2\n");
-
 	if (stv090x_wakeup(fe) < 0)
 	{
 		dprintk(1, "Error waking device\n");
 		goto err;
 	}
-//		printk(">> 3\n");
+
 	if (stv090x_ldpc_mode(state, state->demod_mode) < 0)
 	{
 		goto err;
 	}
-//	printk(">> 4\n");
 	reg = STV090x_READ_DEMOD(state, TNRCFG2);
 	STV090x_SETFIELD_Px(reg, TUN_IQSWAP_FIELD, state->inversion);
 	if (STV090x_WRITE_DEMOD(state, TNRCFG2, reg) < 0)
 	{
 		goto err;
 	}
-//	printk(">> 5\n");
 	reg = STV090x_READ_DEMOD(state, DEMOD);
 	STV090x_SETFIELD_Px(reg, ROLLOFF_CONTROL_FIELD, state->rolloff);
 	if (STV090x_WRITE_DEMOD(state, DEMOD, reg) < 0)
 	{
 		goto err;
 	}
-//	printk(">> 6\n");
 	if (stv090x_i2c_gate_ctrl(fe, 1) < 0)
 	{
 		goto err;
 	}
-#if 0
 	if (config->tuner_set_mode)
 	{
 		if (config->tuner_set_mode(fe, TUNER_WAKE) < 0)
@@ -6694,8 +6714,7 @@ static int stv090x_init(struct dvb_frontend *fe)
 			goto err_gateoff;
 		}
 	}
-#endif
-//		printk(">> 7\n");
+
 	if (config->tuner_init)
 	{
 		if (config->tuner_init(fe) < 0)
@@ -6703,15 +6722,10 @@ static int stv090x_init(struct dvb_frontend *fe)
 			goto err_gateoff;
 		}
 	}
-
-//		printk(">> 8\n");
-
 	if (stv090x_i2c_gate_ctrl(fe, 0) < 0)
 	{
 		goto err;
 	}
-//		printk(">> 9\n");
-
 	if (stv090x_set_tspath(state) < 0)
 	{
 		goto err;
@@ -6758,7 +6772,7 @@ static int stv090x_setup(struct dvb_frontend *fe)
 
 	/* STV090x init */
 	/* Stop Demod */
-	dprintk(20,"Stop Demodulator\n");
+	dprintk(20, "Stop Demodulator\n");
 	if (stv090x_write_reg(state, STV090x_P1_DMDISTATE, 0x5c) < 0)
 	{
 		goto err;
@@ -6770,7 +6784,7 @@ static int stv090x_setup(struct dvb_frontend *fe)
 	msleep(5);
 
 	/* Set No Tuner Mode */
-	dprintk(20,"Set No Tuner Mode\n");
+	dprintk(20, "Set No Tuner Mode\n");
 	if (stv090x_write_reg(state, STV090x_P1_TNRCFG, 0x6c) < 0)
 	{
 		goto err;
@@ -6781,33 +6795,33 @@ static int stv090x_setup(struct dvb_frontend *fe)
 	}
 
 	/* I2C repeater OFF */
-	dprintk(20,"I2C repeater OFF\n");
+	dprintk(20, "I2C repeater OFF\n");
 	STV090x_SETFIELD_Px(reg, ENARPT_LEVEL_FIELD, config->repeater_level);
-	dprintk(20, "STV090x_P1_I2CRPT:%04x\n",reg);  // 0x40
+	dprintk(100, "STV090x_P1_I2CRPT: %04x\n", reg);  // 0x40
 
 //	61 - frontend0
 //	62 - frontend1
 
 	// 40-off c0-on
 	// reg = 0xc0;	//otwiera gate dla addr=0x62 i jest to frontend1
-	dprintk(20, "stv090x_write_reg(state, STV090x_P1_I2CRPT, %04x)\n",reg);
+	dprintk(100, "stv090x_write_reg(state, STV090x_P1_I2CRPT, %04x)\n",reg);
 	if (stv090x_write_reg(state, STV090x_P1_I2CRPT, reg) < 0) //frontend1
 	{
 		goto err;
 	}
 	// reg = 0xc0;
-	dprintk(20, "stv090x_write_reg(state, STV090x_P1_I2CRPT, %04x)\n",reg);
-	if (stv090x_write_reg(state, STV090x_P2_I2CRPT, reg) < 0) //frontend0
+	dprintk(100, "stv090x_write_reg(state, STV090x_P1_I2CRPT, %04x)\n",reg);
+	if (stv090x_write_reg(state, STV090x_P2_I2CRPT, reg) < 0)  // frontend0
 	{
 		goto err;
 	}
-	dprintk(20, "stv090x_write_reg(state, STV090x_NCOARSE, 0x13)\n");
+	dprintk(100, "stv090x_write_reg(state, STV090x_NCOARSE, 0x13)\n");
 	if (stv090x_write_reg(state, STV090x_NCOARSE, 0x13) < 0) /* set PLL divider */
 	{
 		goto err;
 	}
 	msleep(5);
-	dprintk(20, "stv090x_write_reg(state, STV090x_I2CCFG, 0x08)\n");
+	dprintk(100, "stv090x_write_reg(state, STV090x_I2CCFG, 0x08)\n");
 	if (stv090x_write_reg(state, STV090x_I2CCFG, 0x08) < 0) /* 1/41 oversampling */
 	{
 		goto err;
@@ -6846,14 +6860,13 @@ static int stv090x_setup(struct dvb_frontend *fe)
 	}
 	else if (state->internal->dev_ver < 0x10)
 	{
-	//} else if (state->internal->dev_ver < 0x20) {
-		dprintk(1, "ERROR: Unsupported Cut: 0x%02x!", state->internal->dev_ver);
+		dprintk(1, "ERROR: Unsupported Cut: 0x%02x!\n", state->internal->dev_ver);
 		goto err;
 	}
 	else if (state->internal->dev_ver > 0x30)
 	{
 		/* we should not bail out from here */
-		dprintk(10, "INFO: Cut %1x.%1x; probably incomplete support!\n", state->internal->dev_ver >> 8, state->internal->dev_ver & 0xff);
+		dprintk(1, "INFO: Cut %1x.%1x; probably incomplete support!\n", state->internal->dev_ver >> 8, state->internal->dev_ver & 0xff);
 	}
 	/* ADC1 range */
 	reg = stv090x_read_reg(state, STV090x_TSTTNR1);
@@ -6891,7 +6904,7 @@ static struct dvb_frontend_ops stv090x_ops =
 	{
 		.name                = "STV090x Multistandard",
 		.type                = FE_QPSK,
-		.frequency_min       = 950000,
+		.frequency_min       =  950000,
 		.frequency_max       = 2150000,
 		.frequency_stepsize  = 0,
 		.frequency_tolerance = 0,
@@ -6930,82 +6943,83 @@ static struct dvb_frontend_ops stv090x_ops_1 =
 {
 	.info =
 	{
-		.name				= "STV090x Multistandard ID1",
-		.type				= FE_QPSK,
-		.frequency_min		= 950000,
-		.frequency_max 		= 2150000,
-		.frequency_stepsize	= 0,
-		.frequency_tolerance= 0,
-		.symbol_rate_min 	= 1000000,
-		.symbol_rate_max 	= 45000000,
-		.caps				= FE_CAN_INVERSION_AUTO |
-					  FE_CAN_FEC_AUTO       |
-					  FE_CAN_QPSK           |
-					  FE_CAN_2G_MODULATION
+		.name                = "STV090x Multistandard ID1",
+		.type                = FE_QPSK,
+		.frequency_min       =  950000,
+		.frequency_max       = 2150000,
+		.frequency_stepsize  = 0,
+		.frequency_tolerance = 0,
+		.symbol_rate_min     = 1000000,
+		.symbol_rate_max     = 45000000,
+		.caps                = FE_CAN_INVERSION_AUTO
+		                     | FE_CAN_FEC_AUTO
+		                     | FE_CAN_QPSK
+		                     | FE_CAN_2G_MODULATION
 	},
 
-	.release				= stv090x_release,
-	.init					= stv090x_init,
+	.release                 = stv090x_release,
+	.init                    = stv090x_init,
 
-	.sleep					= stv090x_sleep,
-	.get_frontend_algo		= stv090x_frontend_algo,
-	.set_property			= stv090x_set_property,
-	.get_property			= stv090x_get_property,
+	.sleep                   = stv090x_sleep,
+	.get_frontend_algo       = stv090x_frontend_algo,
+	.set_property            = stv090x_set_property,
+	.get_property            = stv090x_get_property,
 
-	.i2c_gate_ctrl			= stv090x_i2c_gate_ctrl,
+	.i2c_gate_ctrl           = stv090x_i2c_gate_ctrl,
 
-	.diseqc_send_master_cmd	= stv090x_send_diseqc_msg,
-	.diseqc_send_burst		= stv090x_send_diseqc_burst,
-	.diseqc_recv_slave_reply= stv090x_recv_slave_reply,
-	.set_tone				= stv090x_set_tone,
-	.set_voltage			= stv090x_set_voltage,
+	.diseqc_send_master_cmd  = stv090x_send_diseqc_msg,
+	.diseqc_send_burst       = stv090x_send_diseqc_burst,
+	.diseqc_recv_slave_reply = stv090x_recv_slave_reply,
+	.set_tone                = stv090x_set_tone,
 
-	.search					= stv090x_search,
-	.read_status			= stv090x_read_status,
-	.read_ber				= stv090x_read_per,
-	.read_signal_strength	= stv090x_read_signal_strength,
-	.read_snr				= stv090x_read_cnr
+	.search                  = stv090x_search,
+	.read_status             = stv090x_read_status,
+	.read_ber                = stv090x_read_per,
+	.read_signal_strength    = stv090x_read_signal_strength,
+	.read_snr                = stv090x_read_cnr,
+
+	.set_voltage             = stv090x_set_voltage
 };
 
 static struct dvb_frontend_ops stv090x_ops_2 =
 {
 	.info =
 	{
-		.name				= "STV090x Multistandard ID2",
-		.type				= FE_QPSK,
-		.frequency_min		= 950000,
-		.frequency_max 		= 2150000,
-		.frequency_stepsize	= 0,
-		.frequency_tolerance= 0,
-		.symbol_rate_min 	= 1000000,
-		.symbol_rate_max 	= 45000000,
-		.caps				= FE_CAN_INVERSION_AUTO |
-					  FE_CAN_FEC_AUTO       |
-					  FE_CAN_QPSK           |
-					  FE_CAN_2G_MODULATION
+		.name                = "STV090x Multistandard ID2",
+		.type                = FE_QPSK,
+		.frequency_min       =  950000,
+		.frequency_max       = 2150000,
+		.frequency_stepsize  = 0,
+		.frequency_tolerance = 0,
+		.symbol_rate_min     = 1000000,
+		.symbol_rate_max     = 45000000,
+		.caps                = FE_CAN_INVERSION_AUTO
+		                     | FE_CAN_FEC_AUTO
+		                     | FE_CAN_QPSK
+		                     | FE_CAN_2G_MODULATION
 	},
 
-	.release				= stv090x_release,
-	.init					= stv090x_init,
+	.release                 = stv090x_release,
+	.init                    = stv090x_init,
 
-	.sleep					= stv090x_sleep,
-	.get_frontend_algo		= stv090x_frontend_algo,
-	.set_property			= stv090x_set_property,
-	.get_property			= stv090x_get_property,
+	.sleep                   = stv090x_sleep,
+	.get_frontend_algo       = stv090x_frontend_algo,
+	.set_property            = stv090x_set_property,
+	.get_property            = stv090x_get_property,
+	.i2c_gate_ctrl           = stv090x_i2c_gate_ctrl,
 
-	.i2c_gate_ctrl			= stv090x_i2c_gate_ctrl,
+	.diseqc_send_master_cmd  = stv090x_send_diseqc_msg,
+	.diseqc_send_burst       = stv090x_send_diseqc_burst,
+	.diseqc_recv_slave_reply = stv090x_recv_slave_reply,
+	.set_tone                = stv090x_set_tone,
 
-	.diseqc_send_master_cmd	= stv090x_send_diseqc_msg,
-	.diseqc_send_burst		= stv090x_send_diseqc_burst,
-	.diseqc_recv_slave_reply= stv090x_recv_slave_reply,
-	.set_tone				= stv090x_set_tone,
-	.set_voltage			= stv090x_set_voltage,
+	.search                  = stv090x_search,
+	.read_status             = stv090x_read_status,
+	.read_ber                = stv090x_read_per,
+	.read_signal_strength    = stv090x_read_signal_strength,
+	.read_snr                = stv090x_read_cnr,
 
-	.search					= stv090x_search,
-	.read_status			= stv090x_read_status,
-	.read_ber				= stv090x_read_per,
-	.read_signal_strength	= stv090x_read_signal_strength,
-	.read_snr				= stv090x_read_cnr
+	.set_voltage             = stv090x_set_voltage
 };
 #endif
 
@@ -7019,7 +7033,6 @@ struct dvb_frontend *stv090x_attach(const struct stv090x_config *config, struct 
 	{
 		goto error;
 	}
-//	state->verbose				= &verbose;
 	state->config                    = config;
 	state->i2c                       = i2c;
 	state->demod                     = demod;
@@ -7061,20 +7074,20 @@ struct dvb_frontend *stv090x_attach(const struct stv090x_config *config, struct 
 
 	if (stv090x_sleep(&state->frontend) < 0)
 	{
-		dprintk(1, "Error putting device to sleep");
+		dprintk(1, "Error putting device to sleep\n");
 		goto error;
 	}
 	if (stv090x_setup(&state->frontend) < 0)
 	{
-		dprintk(1, "Error setting up device");
+		dprintk(1, "Error setting up device\n");
 		goto error;
 	}
 	if (stv090x_wakeup(&state->frontend) < 0)
 	{
-		dprintk(1, "Error waking device");
+		dprintk(1, "Error waking device\n");
 		goto error;
 	}
-	dprintk(1, "Attaching %s demodulator(%d) Cut=0x%02x", state->device == STV0900 ? "STV0900" : "STV0903", demod, state->internal->dev_ver);
+	dprintk(1, "Attaching %s demodulator(%d) Cut=0x%02x\n", state->device == STV0900 ? "STV0900" : "STV0903", demod, state->internal->dev_ver);
 	return &state->frontend;
 
 error:

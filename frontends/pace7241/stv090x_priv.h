@@ -60,7 +60,8 @@ enum stv090x_signal_state
 	STV090x_OUTOFRANGE
 };
 
-enum stv090x_fec {
+enum stv090x_fec
+{
 	STV090x_PR12 = 0,
 	STV090x_PR23,
 	STV090x_PR34,
@@ -209,9 +210,9 @@ struct stv090x_internal
 	struct i2c_adapter *i2c_adap;
 	u8                 i2c_addr;
 
-	struct mutex       demod_lock; /* Lock access to shared register */
-	struct mutex       tuner_lock; /* Lock access to tuners */
-	s32                mclk; /* Masterclock Divider factor */
+	struct mutex       demod_lock;  /* Lock access to shared register */
+	struct mutex       tuner_lock;  /* Lock access to tuners */
+	s32                mclk;  /* Masterclock Divider factor */
 	u32                dev_ver;
 
 	int                num_used;

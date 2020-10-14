@@ -65,6 +65,7 @@
 #define RESET stm_gpio(6, 7)
 
 short paramDebug = 0;  // debug print level is zero as default (0=nothing, 1= errors, 10=some detail, 20=more detail, 100=open/close functions, 150=all)
+
 static struct core *core[MAX_DVB_ADAPTERS];
 
 static struct stv090x_config stv090x_config =
@@ -112,7 +113,6 @@ static struct stv6110x_config stv6110x_config2 =
 };
 
 #ifdef DVBT
-
 static struct tda10048_config tda10048_config_ =
 {
 	.demod_address    = I2C_ADDR_TDA10048,
@@ -125,7 +125,7 @@ static struct tda10048_config tda10048_config_ =
 	.clk_freq_khz     = TDA10048_CLK_16000,
 };
 
-static struct tda18218_config tda18218_config_= 
+static struct tda18218_config tda18218_config_=
 {
 	.i2c_address = I2C_ADDR_TDA18218,  // 0xc1
 	.i2c_wr_max  = 21,  /* max wr bytes AF9015 I2C adap can handle at once */
@@ -143,12 +143,12 @@ static struct dvb_frontend *frontend_init(struct core_config *cfg, int i)
 		frontend = stv090x_attach(&stv090x_config, cfg->i2c_adap, STV090x_DEMODULATOR_0);
 		if (frontend)
 		{
-			dprintk(20, "%s: attached STV090x_DEMODULATOR_0\n", __func__);
+			dprintk(20, "%s: Attached STV090X demodulator 0\n", __func__);
 
 			ctl = dvb_attach(stv6110x_attach, frontend, &stv6110x_config1, cfg->i2c_adap);
 			if (ctl)
 			{
-				dprintk(20, "%s: attached stv6110x\n", __func__);
+				dprintk(20, "%s: Attached STV6110x tuner\n", __func__);
 				stv090x_config.tuner_init          = ctl->tuner_init;
 				stv090x_config.tuner_sleep         = ctl->tuner_sleep;
 				stv090x_config.tuner_set_mode      = ctl->tuner_set_mode;
@@ -163,13 +163,13 @@ static struct dvb_frontend *frontend_init(struct core_config *cfg, int i)
 			}
 			else
 			{
-				dprintk(1, "Error attaching stv6110x %s\n", __func__);
+				dprintk(1, "Error attaching STV6110X %s\n", __func__);
 				goto error_out;
 			}
 		}
 		else
 		{
-			dprintk(1, "%s: Error attaching STV090x_DEMODULATOR_0\n", __func__);
+			dprintk(1, "%s: Error attaching STV090X demodulator 0\n", __func__);
 			goto error_out;
 		}
 	}
@@ -178,11 +178,12 @@ static struct dvb_frontend *frontend_init(struct core_config *cfg, int i)
 		frontend = stv090x_attach(&stv090x_config, cfg->i2c_adap, STV090x_DEMODULATOR_1);
 		if (frontend)
 		{
-			printk("%s: attached STV090x_DEMODULATOR_1\n", __func__);
+			dprintk(20, "%s: Attached STV090X demodulator 1\n", __func__);
+		
 			ctl = dvb_attach(stv6110x_attach, frontend, &stv6110x_config2, cfg->i2c_adap);
 			if (ctl)
 			{
-				printk("%s: attached stv6110x\n", __func__);
+				dprintk(20,"%s: Attached STV6110X tuner\n", __func__);
 				stv090x_config.tuner_init	  	  = ctl->tuner_init;
 				stv090x_config.tuner_set_mode	  = ctl->tuner_set_mode;
 				stv090x_config.tuner_set_frequency = ctl->tuner_set_frequency;
@@ -196,24 +197,24 @@ static struct dvb_frontend *frontend_init(struct core_config *cfg, int i)
 			}
 			else
 			{
-				dprintk(1, "Error attaching stv6110x %s\n", __func__);
+				dprintk(1, "Error attaching STV6110X %s\n", __func__);
 				goto error_out;
 			}
 		}
 		else
 		{
-			dprintk(1, "%s: Error attaching STV090x_DEMODULATOR_1\n", __func__);
+			dprintk(1, "%s: Error attaching STV090X demodulator 1\n", __func__);
 			goto error_out;
 		}
 	}
 #ifdef DVBT
-	if ((i == 2))
+	if (i == 2)
 	{
 		dprintk(20, "DVB-T TDA10048\n");
 		frontend = dvb_attach(tda10048_attach, &tda10048_config_, cfg->i2c_adap);
 		if (frontend)
 		{
-			dprintk("%s: Attached TDA10048 demodulator\n", __func__);
+			dprintk(20, "%s: Attaching TDA18218 tuner\n", __func__);
 			if (dvb_attach(tda18218_attach, frontend, cfg->i2c_adap, &tda18218_config_)== NULL)
 			{
 				dprintk(1, "%s: Error attaching TDA18218 tuner\n", __func__);
@@ -248,7 +249,7 @@ static struct dvb_frontend *init_fe_device(struct dvb_adapter *adapter, struct p
 	struct dvb_frontend *frontend;
 	struct core_config *cfg;
 
-	dprintk(100, "%s> (bus = %d)\n", __func__, tuner_cfg->i2c_bus);
+	dprintk(100, "%s > (I2C bus = %d)\n", __func__, tuner_cfg->i2c_bus);
 
 	cfg = kmalloc(sizeof(struct core_config), GFP_KERNEL);
 	if (cfg == NULL)
@@ -258,11 +259,12 @@ static struct dvb_frontend *init_fe_device(struct dvb_adapter *adapter, struct p
 	}
 	else
 	{
-		dprintk(20, "kmalloc succeded\n");
+		dprintk (100, "%s: kmalloc succeeded\n", __func__);
 	}
 	/* initialize the config data */
 	cfg->i2c_adap = i2c_get_adapter(tuner_cfg->i2c_bus);
 	dprintk(20, "I2C adapter = 0x%0x\n", (int)cfg->i2c_adap);
+
 	cfg->i2c_addr = tuner_cfg->i2c_addr;
 
 	if (cfg->i2c_adap == NULL)
@@ -294,7 +296,7 @@ static struct dvb_frontend *init_fe_device(struct dvb_adapter *adapter, struct p
 		return NULL;
 	}
 	state = frontend->demodulator_priv;
-	dprintk(20, "Registering frontend successful\n");
+	dprintk(20, "%s: Registering frontend successful\n", __func__);
 	return frontend;
 }
 
@@ -302,22 +304,22 @@ struct plat_tuner_config tuner_resources[] =
 {
 	[0] =
 	{
-		.adapter   = 0,
-		.i2c_bus   = 0,
-		.i2c_addr  = I2C_ADDR_STV090X,
+		.adapter  = 0,
+		.i2c_bus  = 0,
+		.i2c_addr = I2C_ADDR_STV090X,
 	},
 	[1] =
 	{
-		.adapter   = 0,
-		.i2c_bus   = 0,
-		.i2c_addr  = I2C_ADDR_STV090X,
+		.adapter  = 0,
+		.i2c_bus  = 0,
+		.i2c_addr = I2C_ADDR_STV090X,
 	},
 #ifdef DVBT
 	[2] =
 	{
 		.adapter  = 0,
 		.i2c_bus  = 0,
- 		.i2c_addr = 0x08,
+		.i2c_addr = 0x08,
 	},
 #endif
 };
@@ -327,7 +329,7 @@ void stv090x_register_frontend(struct dvb_adapter *dvb_adap)
 	int i = 0;
 	int vLoop = 0;
 
-	dprintk(0, "PACE7241 frontend core\n");
+	dprintk(10, "%s: Pace HDS7241 frontend core\n", __func__);
 	/* Initialize front reset */
 	if (gpio_request(RESET, "RESET_STV0900") == 0)
 	{
@@ -360,7 +362,7 @@ void stv090x_register_frontend(struct dvb_adapter *dvb_adap)
 	{
 		if (core[i]->frontend[vLoop] == NULL)
 		{
-			dprintk(20, "Initialize tuner %d\n", __func__, vLoop);
+			dprintk(20, "%s: Initialize tuner %d\n", __func__, vLoop);
 			core[i]->frontend[vLoop] = init_fe_device(core[i]->dvb_adapter, &tuner_resources[vLoop], vLoop);
 		}
 	}

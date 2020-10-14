@@ -31,6 +31,7 @@
 #  include <linux/stm/pio.h>
 #endif
 #include "core.h"
+
 #define	TUNER_STV6110  // Tuner is/are STV6110
 
 enum stv090x_tuner
@@ -99,7 +100,7 @@ struct stv090x_config
 	u8                     address;  /* default: 0x68 */
 
 	struct stpio_pin       *lnb_enable;
-	struct stpio_pin       *lnb_vsel;	 // 13/18V select pin
+	struct stpio_pin       *lnb_vsel;  // 13/18V select pin
 
 	u8                     ts1_mode;
 	u8                     ts2_mode;
@@ -108,9 +109,9 @@ struct stv090x_config
 
 	enum stv090x_i2crpt	   repeater_level;
 
-	u8                     tuner_bbgain; /* default: 10db */
-	enum stv090x_adc_range adc1_range;   /* default: 2Vpp */
-	enum stv090x_adc_range adc2_range;   /* default: 2Vpp */
+	u8                     tuner_bbgain;  /* default: 10db */
+	enum stv090x_adc_range adc1_range;    /* default: 2Vpp */
+	enum stv090x_adc_range adc2_range;    /* default: 2Vpp */
 
 	bool                   diseqc_envelope_mode;
 
