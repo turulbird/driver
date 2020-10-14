@@ -158,7 +158,7 @@ static int CaIoctl(struct inode *Inode,
 			{
 				if (descramble_index >= NUMBER_OF_DESCRAMBLERS)
 				{
-					printk("Error only descramblers 0 - %d supportet\n", NUMBER_OF_DESCRAMBLERS - 1);
+					printk("Error only descramblers 0 - %d supported\n", NUMBER_OF_DESCRAMBLERS - 1);
 					return -1;
 				}
 				pSession->descramblerForPid[pid] = descramble_index;
