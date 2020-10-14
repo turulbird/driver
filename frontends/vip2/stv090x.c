@@ -987,7 +987,7 @@ static int stv090x_set_srate(struct stv090x_state *state, u32 srate)
 	return 0;
 
 err:
-	dprintk(1, "%s I/O error\n", __func__);
+	dprintk(1, "%s: I/O error\n", __func__);
 	return -1;
 }
 
@@ -1037,7 +1037,7 @@ static int stv090x_set_max_srate(struct stv090x_state *state, u32 clk, u32 srate
 	return 0;
 
 err:
-	dprintk(1, "%s I/O error\n", __func__);
+	dprintk(1, "%s: I/O error\n", __func__);
 	return -1;
 }
 
@@ -1073,7 +1073,7 @@ static int stv090x_set_min_srate(struct stv090x_state *state, u32 clk, u32 srate
 	return 0;
 
 err:
-	dprintk(1, "%s I/O error\n", __func__);
+	dprintk(1, "%s: I/O error\n", __func__);
 	return -1;
 }
 
@@ -1132,7 +1132,7 @@ static int stv090x_set_vit_thacq(struct stv090x_state *state)
 	return 0;
 
 err:
-	dprintk(1, "%s: I/O error", __func__);
+	dprintk(1, "%s: I/O error\n", __func__);
 	return -1;
 }
 
@@ -1165,7 +1165,7 @@ static int stv090x_set_vit_thtracq(struct stv090x_state *state)
 	return 0;
 
 err:
-	dprintk(1, "%s: I/O error", __func__);
+	dprintk(1, "%s: I/O error\n", __func__);
 	return -1;
 }
 
@@ -1303,7 +1303,7 @@ static int stv090x_set_viterbi(struct stv090x_state *state)
 	return 0;
 
 err:
-	dprintk(1, "%s: I/O error", __func__);
+	dprintk(1, "%s: I/O error\n", __func__);
 	return -1;
 }
 
@@ -1376,7 +1376,7 @@ static int stv090x_stop_modcod(struct stv090x_state *state)
 	return 0;
 
 err:
-	dprintk(1, "%s: I/O error", __func__);
+	dprintk(1, "%s: I/O error\n", __func__);
 	return -1;
 }
 
@@ -1449,7 +1449,7 @@ static int stv090x_activate_modcod(struct stv090x_state *state)
 	return 0;
 
 err:
-	dprintk(1, "%s: I/O error", __func__);
+	dprintk(1, "%s: I/O error\n", __func__);
 	return -1;
 }
 
@@ -1522,7 +1522,7 @@ static int stv090x_activate_modcod_single(struct stv090x_state *state)
 	return 0;
 
 err:
-	dprintk(1, "%s: I/O error", __func__);
+	dprintk(1, "%s: I/O error\n", __func__);
 	return -1;
 }
 
@@ -1997,7 +1997,7 @@ static int stv090x_start_search(struct stv090x_state *state)
 	}
 	if (state->internal->dev_ver >= 0x20)
 	{
-		/*Frequency offset detector setting*/
+		/* Frequency offset detector setting */
 		if (state->srate < 2000000)
 		{
 			if (state->internal->dev_ver <= 0x20)
