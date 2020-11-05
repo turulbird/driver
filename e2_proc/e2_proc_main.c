@@ -864,6 +864,7 @@ out:
 #if defined(IPBOX9900) \
  || defined(HL101) \
  || defined(VIP1_V1) \
+ || defined(VIP1_V2) \
  || defined(VIP2)
 int _12v_isON = 0;
 
@@ -871,6 +872,7 @@ void set_12v(int onoff)
 {
 #if defined(HL101) \
  || defined(VIP1_V1) \
+ || defined(VIP1_V2) \
  || defined(VIP2)
 	if (onoff)
 	{
@@ -921,6 +923,7 @@ int proc_misc_12V_output_write(struct file *file, const char __user *buf, unsign
 	}
 #if defined(HL101) \
  || defined(VIP1_V1) \
+ || defined(VIP1_V2) \
  || defined(VIP2)
 //	set_12v(_12v_isON);  // set 12V output
 #endif
