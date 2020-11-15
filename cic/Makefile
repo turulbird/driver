@@ -180,3 +180,9 @@ ifdef ARIVALINK200
 dummy_cic-objs += dummy_cic/dummy_cic.o
 obj-m += dummy_cic.o
 endif
+
+ifdef OPT9600
+obj-m += starci.o
+starci-objs:= ipbox9900/starci2win.o
+endif
+

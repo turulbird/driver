@@ -148,6 +148,9 @@ endif
 ifdef PACE7241
 CCFLAGSY += -DPACE7241
 endif
+ifdef OPT9600
+CCFLAGSY += -DOPT9600
+endif
 
 ifneq (,$(findstring 2.6.3,$(KERNELVERSION)))
 ccflags-y += $(CCFLAGSY)
@@ -382,6 +385,11 @@ ifdef PACE7241
 obj-y += cec/
 obj-y += smartcard/
 obj-y += fan_pace7241/
+endif
+
+ifdef OPT9600
+#obj-y += cec/
+obj-y += smartcard/
 endif
 
 endif
