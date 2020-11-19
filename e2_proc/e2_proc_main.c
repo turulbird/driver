@@ -158,7 +158,7 @@
  *  |
  *  ---------- misc
  *  |           |
- *  |           --------- 12V_output <- IPBOX9900 only
+ *  |           --------- 12V_output <- VIP1_V1, HL101, OPT9600, IPBOX9900 only
  *  |
  *  ---------- tuner (dagoberts tuner entry ;-) )
  *  |           |
@@ -233,15 +233,14 @@
 #include <linux/module.h>
 #if defined(HL101) \
  || defined(VIP1_V1) \
- || defined(VIP1_V2) \
- || defined(VIP2)
+ || defined(OPT9600)
 #include <linux/version.h>
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,23)
 #  include <linux/stpio.h>
 #else
 #  include <linux/stm/pio.h>
 #endif  // kernel version
-#endif  // vip1_v2
+#endif  // vip1_v1
 
 typedef int (*proc_read_t)(char *page, char **start, off_t off, int count, int *eof, void *data_unused);
 typedef int (*proc_write_t)(struct file *file, const char __user *buf, unsigned long count, void *data);
@@ -252,8 +251,7 @@ typedef int (*proc_write_t)(struct file *file, const char __user *buf, unsigned 
 // For 12V output
 #if defined(HL101) \
  || defined(VIP1_V1) \
- || defined(VIP1_V2) \
- || defined(VIP2)
+ || defined(OPT9600)
 struct stpio_pin *_12v_pin;
 #endif
 
@@ -362,6 +360,8 @@ static int info_model_read(char *page, char **start, off_t off, int count, int *
 	int len = sprintf(page, "arivalink200\n");
 #elif defined(PACE7241)
 	int len = sprintf(page, "pace7241\n");
+#elif defined(OPT9600)
+	int len = sprintf(page, "opt9600\n");
 #else
 	int len = sprintf(page, "unknown\n");
 #endif
@@ -672,7 +672,8 @@ out:
 static int info_chipset_read(char *page, char **start, off_t off, int count, int *eof, void *data)
 {
 #if defined(UFS910) \
- || defined(ADB_BOX)
+ || defined(ADB_BOX) \
+ || defined(OPT9600)
 	int len = sprintf(page, "STi7100\n");
 #elif defined(ATEVIO7500) \
  || defined(UFS913) \
@@ -864,16 +865,14 @@ out:
 #if defined(IPBOX9900) \
  || defined(HL101) \
  || defined(VIP1_V1) \
- || defined(VIP1_V2) \
- || defined(VIP2)
+ || defined(OPT9600)
 int _12v_isON = 0;
 
 void set_12v(int onoff)
 {
 #if defined(HL101) \
  || defined(VIP1_V1) \
- || defined(VIP1_V2) \
- || defined(VIP2)
+ || defined(OPT9600)
 	if (onoff)
 	{
 		stpio_set_pin(_12v_pin, 1);
@@ -952,7 +951,7 @@ int proc_misc_12V_output_read(char *page, char **start, off_t off, int count, in
 	}
 	return len;
 }
-#endif  // IPBOX9900, VIP, HL101
+#endif  // IPBOX9900, VIP1_V1, HL101, OPT9600
 
 static int zero_read(char *page, char **start, off_t off, int count, int *eof, void *data)
 {
@@ -1653,9 +1652,12 @@ static int __init e2_proc_init_module(void)
 	}
 #if defined(HL101) \
  || defined(VIP1_V1) \
- || defined(VIP1_V2) \
- || defined(VIP2)
+ || defined(OPT9600)
+#if !defined(OPT9600)
 	_12v_pin = stpio_request_pin(4, 6, "12V_CTL", STPIO_OUT);
+#else
+	_12v_pin = stpio_request_pin(4, 6, "12V_CTL", STPIO_OUT); // TODO: find pin
+#endif
 	if (_12v_pin == NULL)
 	{
 		printk("Allocating PIO 4.6 for 12V output failed\n");
