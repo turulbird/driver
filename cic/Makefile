@@ -183,6 +183,6 @@ endif
 
 ifdef OPT9600
 obj-m += starci.o
-starci-objs:= ipbox9900/starci2win.o
+starci-objs:= opt9600/starci2win.o
 endif
 
