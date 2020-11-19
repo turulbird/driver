@@ -3,6 +3,8 @@
  *
  * @author konfetti
  *
+ * Version for Opticum HD 9600 series.
+ *
  * 	Copyright (C) 2011 duckbox
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -57,9 +59,9 @@ static struct platform_frontend_s avl2108_config =
 		[0] =
 		{
 			.name               = "avl2108-1",
-
-			.tuner_enable       = {3, 3, 1},
-			.lnb                = {2, 6, 0, 2, 5, 1},
+ 
+			.tuner_enable       = { 3, 3, 1 },
+			.lnb                = { 2, 6, 0, 2, 5, 1 },
 			.i2c_bus            = 0,
 
 			.demod_i2c          = 0x0C,
@@ -70,8 +72,8 @@ static struct platform_frontend_s avl2108_config =
 		{
 			.name               = "avl2108-2",
 
-			.tuner_enable       = {3, 2, 1},
-			.lnb                = {4, 4, 0, 4, 3, 1},
+			.tuner_enable       = { 3, 2, 1 },
+			.lnb                = { 4, 4, 0, 4, 3, 1 },
 			.i2c_bus            = 1,
 
 			.demod_i2c          = 0x0C,
@@ -154,8 +156,8 @@ static struct platform_frontend_s avl2108_config =
 		{
 			.name             = "avl2108-1",
 
-			.tuner_enable       = {2, 4, 1},
-			.lnb                = {0, 0x0a, 0x08, 0xd0, 0xd4, 0xdc},
+			.tuner_enable       = { 2, 4, 1 },
+			.lnb                = { 0, 0x0a, 0x08, 0xd0, 0xd4, 0xdc },
 			.i2c_bus            = 0,
 
 			.demod_i2c        = 0x0C,
@@ -166,8 +168,8 @@ static struct platform_frontend_s avl2108_config =
 		{
 			.name             = "avl2108-2",
 
-			.tuner_enable       = {2, 5, 1},
-			.lnb                = {1, 0x0a, 0x08, 0xd0, 0xd4, 0xdc},
+			.tuner_enable       = { 2, 5, 1 },
+			.lnb                = { 1, 0x0a, 0x08, 0xd0, 0xd4, 0xdc },
 			.i2c_bus            = 1,
 
 			.demod_i2c        = 0x0C,
@@ -191,13 +193,13 @@ static struct platform_frontend_s avl2108_config =
  * Tone enable (pin 7, high = tone on)        : PIO2.3 (currently not used by driver)
  * 1V Vout lift (pin 9, LLC input, high = +1V): PIO2.6  (currently not used by driver)
  *
- * Driver currently does not support the DVB-T front of TS models.
+ * Driver currently does not support the DVB-T frontend of TS models.
  *
  */
 static struct avl_private_data_s avl_tuner_priv =
 {
 	.ref_freq         = 1,
-	.demod_freq       = 11200, /* fixme: the next three could be determined by the pll config!!! */
+	.demod_freq       = 11200,  /* fixme: the next three could be determined by the pll config!!! */
 	.fec_freq         = 16800,
 	.mpeg_freq        = 22400,
 	.i2c_speed_khz    = TUNER_I2C_CLK,

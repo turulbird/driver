@@ -34,16 +34,20 @@
 extern short paramDebug;
 #define TAGDEBUG "[lnb_pio] "
 
-#define dprintk(level, x...) do { \
-		if ((paramDebug) && (paramDebug > level)) printk(TAGDEBUG x); \
-	} while (0)
+#define dprintk(level, x...) do \
+{ \
+	if ((paramDebug) && (paramDebug > level)) \
+	{ \
+		printk(TAGDEBUG x); \
+	} \
+} while (0)
 
 struct lnb_state
 {
-	struct stpio_pin	*lnb_pin;
-	struct stpio_pin	*lnb_enable_pin;
+	struct stpio_pin *lnb_pin;
+	struct stpio_pin *lnb_enable_pin;
 
-	u32                 lnb[6];
+	u32              lnb[6];
 };
 
 u16 lnb_pio_set_voltage(void *_state, struct dvb_frontend *fe, fe_sec_voltage_t voltage)

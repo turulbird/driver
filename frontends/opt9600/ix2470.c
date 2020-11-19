@@ -1,5 +1,5 @@
 /*
-	IX2470 Silicon tuner driver
+	Sharp IX2470 Silicon tuner driver
 
 	Copyright (C) Manu Abraham <abraham.manu@gmail.com>
 
@@ -119,7 +119,7 @@ static int ix2470_set_frequency(struct dvb_frontend *fe, u32 Frequency)
 	u8 b1, PD23, PD45, LPF;
 	int ret = 0;
 
-	#define F_XTAL   4000000        // 4MHz Quarz Oscillator
+#define F_XTAL 4000000  // 4MHz Quarz Oscillator
 
 	dprintk(FE_DEBUG, 1, "Frequency: %d ", Frequency);
 	freq = Frequency;
@@ -663,11 +663,10 @@ static struct dvb_tuner_ops ix2470_ops =
 
 static struct ix2470_devctl ix2470_ctl =
 {
-	.tuner_set_frequency	= ix2470_set_frequency,
-//	.tuner_set_bandwidth	= ix2470_set_bw,
-	.tuner_get_status	= ix2470_get_status,
+	.tuner_set_frequency = ix2470_set_frequency,
+//	.tuner_set_bandwidth = ix2470_set_bw,
+	.tuner_get_status    = ix2470_get_status,
 };
-
 
 struct ix2470_devctl *ix2470_attach(struct dvb_frontend *fe, const struct ix2470_cfg *cfg, struct i2c_adapter *i2c)
 {
@@ -678,13 +677,13 @@ struct ix2470_devctl *ix2470_attach(struct dvb_frontend *fe, const struct ix2470
 	{
 		goto exit;
 	}
-	ix2470->i2c		= i2c;
-	ix2470->fe		= fe;
-	ix2470->cfg		= cfg;
-	ix2470->ctl		= &ix2470_ctl;
+	ix2470->i2c       = i2c;
+	ix2470->fe        = fe;
+	ix2470->cfg       = cfg;
+	ix2470->ctl       = &ix2470_ctl;
 
-	fe->tuner_priv		= ix2470;
-	fe->ops.tuner_ops	= ix2470_ops;
+	fe->tuner_priv    = ix2470;
+	fe->ops.tuner_ops = ix2470_ops;
 	dprintk(FE_ERROR, 1, "Attaching %s IX2470 QPSK/8PSK tuner", cfg->name);
 	return ix2470->ctl;
 

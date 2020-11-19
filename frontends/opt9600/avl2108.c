@@ -5,8 +5,10 @@
  *
  * @brief Availink avl2108 - DVBS/S2 Satellite demod driver with Sharp BS2F7VZ7700 tuner
  *
+ * Version for Opticum HD 9600 series.
+ *
  * 	Copyright (C) 2009-2010 Duolabs Spa
- *                2020 adapted by Audioniek for use with Opticum 9600HD
+ *                2020 adapted by Audioniek for use with Opticum HD 9600 series
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -45,46 +47,50 @@
 
 #include "avl2108_platform.h"
 
-#define AVL2108_DEMOD_FW "dvb-fe-avl2108.fw" /*< Demod fw used for locking */
+#define AVL2108_DEMOD_FW "dvb-fe-avl2108.fw"  /*< Demod fw used for locking */
 
 #define I2C_MAX_READ	64
 #define I2C_MAX_WRITE	64
 
 /*< Format */
-#define format_addr(X, Y)		\
-	do {						\
-		Y[0] =(u8)((X) >> 16);	\
-		Y[1] =(u8)((X) >> 8);	\
-		Y[2] =(u8)(X);			\
+#define format_addr(X, Y) \
+	do { \
+		Y[0] =(u8)((X) >> 16); \
+		Y[1] =(u8)((X) >> 8); \
+		Y[2] =(u8)(X); \
 	} while (0)
 
 /*< Create a formatted 16 bit array */
-#define format_16(X, Y)			\
-	do {						\
-		Y[0] =(u8)((X) >> 8);	\
-		Y[1] =(u8)((X) & 0xFF);	\
+#define format_16(X, Y) \
+	do { \
+		Y[0] =(u8)((X) >> 8); \
+		Y[1] =(u8)((X) & 0xFF); \
 	} while (0)
 
 /*< Create a formatted 32 bit array */
-#define format_32(X, Y)			\
-	do {						\
-		Y[0] =(u8)((X) >> 24);	\
-		Y[1] =(u8)((X) >> 16);	\
-		Y[2] =(u8)((X) >> 8);	\
-		Y[3] =(u8)((X) & 0xFF);	\
+#define format_32(X, Y) \
+	do { \
+		Y[0] =(u8)((X) >> 24); \
+		Y[1] =(u8)((X) >> 16); \
+		Y[2] =(u8)((X) >> 8); \
+		Y[3] =(u8)((X) & 0xFF); \
 	} while (0)
 
 short paramDebug = 50;
 #define TAGDEBUG "[avl2108] "
 
-#define dprintk(level, x...) do { \
-		if ((paramDebug) && (paramDebug > level)) printk(TAGDEBUG x); \
-	} while (0)
+#define dprintk(level, x...) do \
+{ \
+	if ((paramDebug) && (paramDebug > level)) \
+	{ \
+		printk(TAGDEBUG x); \
+	} \
+} while (0)
 
 struct avl2108_diseqc_tx_status
 {
-	u8 tx_done;		/*< 1 if transmit finished. 0 if Diseqc is still in transmitting */
-	u8 tx_fifo_cnt;	/*< How many bytes are still in the transmitter's FIFO */
+	u8 tx_done;      /*< 1 if transmit finished. 0 if Diseqc is still in transmitting */
+	u8 tx_fifo_cnt;  /*< How many bytes are still in the transmitter's FIFO */
 };
 
 struct avl2108_ver_info
@@ -100,42 +106,42 @@ struct avl2108_ver_info
 struct avl2108_tuning
 {
 	u32 frequency;
-	u32 symbol_rate;	/* In Hz */
-	u8 lock_mode;		/* 0 = channel lock mode is set to fixed, 1 = channel lock mode is set to adaptive */
-	u8 auto_iq_swap;	/* Enable/Disable the automatic IQ swap feature */
+	u32 symbol_rate;  /* In Hz */
+	u8 lock_mode;     /* 0 = channel lock mode is set to fixed, 1 = channel lock mode is set to adaptive */
+	u8 auto_iq_swap;  /* Enable/Disable the automatic IQ swap feature */
 	u8 delsys;
-	u8 iq_swap;			/* If auto_iq_swap is enabled and this field is set to 0, the demod doesn't swap the IQ signals */
+	u8 iq_swap;       /* If auto_iq_swap is enabled and this field is set to 0, the demod doesn't swap the IQ signals */
 	/* If auto_iq_swap is disabled and this field is set to 1, the demod swaps the IQ signals */
 };
 
 struct avl2108_pllconf
 {
-	u16 m_r1;		/*< PLL register r1 */
-	u16 m_r2;		/*< PLL register r2 */
-	u16 m_r3;		/*< PLL register r3 */
-	u16 m_r4;		/*< PLL register r4 */
-	u16 m_r5;		/*< PLL register r5 */
-	u16 ref_freq;	/*< Reference clock in kHz */
-	u16 demod_freq;	/*< Demod clock in 10kHz */
-	u16 fec_freq;	/*< FEC clock in 10kHz */
-	u16 mpeg_freq;	/*< MPEG clock in 10kHz */
+	u16 m_r1;       /*< PLL register r1 */
+	u16 m_r2;       /*< PLL register r2 */
+	u16 m_r3;       /*< PLL register r3 */
+	u16 m_r4;       /*< PLL register r4 */
+	u16 m_r5;       /*< PLL register r5 */
+	u16 ref_freq;   /*< Reference clock in kHz */
+	u16 demod_freq; /*< Demod clock in 10kHz */
+	u16 fec_freq;   /*< FEC clock in 10kHz */
+	u16 mpeg_freq;  /*< MPEG clock in 10kHz */
 };
 
 const struct avl2108_pllconf pll_conf[] =
 {
 	/* For all parallel modes and all serial modes below 30M (symbol rate) */
-	{10, 0, 335, 6, 5, 4000, 11200, 16800, 19200},	/*< Reference clock 4M;   --> 112, 168, 192 */
-	{10, 0, 299, 6, 5, 4500, 11250, 16875, 19286},	/*< Reference clock 4.5M; --> 112.5, 168.75, 192.86 */
-	{10, 1, 269, 6, 5, 10000, 11250, 16875, 19286},	/*< Reference clock 10M;  --> 112.5, 168.75, 192.86 */
-	{10, 0, 83, 6, 5, 16000, 11200, 16800, 19200},	/*< Reference clock 16M;  --> 112, 168, 192 */
-	{10, 0, 49, 6, 5, 27000, 11250, 16875, 19286},	/*< Reference clock 27M;  --> 112.5, 168.75, 192.86 */
+	{ 10, 0, 335, 6, 5, 4000,  11200, 16800, 19200 },  /*< Reference clock 4M;   --> 112, 168, 192 */
+	{ 10, 0, 299, 6, 5, 4500,  11250, 16875, 19286 },  /*< Reference clock 4.5M; --> 112.5, 168.75, 192.86 */
+	{ 10, 1, 269, 6, 5, 10000, 11250, 16875, 19286 },  /*< Reference clock 10M;  --> 112.5, 168.75, 192.86 */
+	{ 10, 0, 83,  6, 5, 16000, 11200, 16800, 19200 },  /*< Reference clock 16M;  --> 112, 168, 192 */
+	{ 10, 0, 49,  6, 5, 27000, 11250, 16875, 19286 },  /*< Reference clock 27M;  --> 112.5, 168.75, 192.86 */
 
 	/* for all modes */
-	{10, 0, 335, 6, 4, 4000, 11200, 16800, 22400},	/*< Reference clock 4M;   --> 112, 168, 224 */
-	{10, 0, 299, 6, 4, 4500, 11250, 16875, 22500},	/*< Reference clock 4.5M; --> 112.5, 168.75, 225 */
-	{10, 1, 269, 6, 4, 10000, 11250, 16875, 22500},	/*< Reference clock 10M;  --> 112.5, 168.75, 225 */
-	{10, 0, 83, 6, 4, 16000, 11200, 16800, 22400},	/*< Reference clock 16M;  --> 112, 168, 224 */
-	{10, 0, 49, 6, 4, 27000, 11250, 16875, 22500}	/*< Reference clock 27M;  --> 112.5, 168.75, 225 */
+	{ 10, 0, 335, 6, 4, 4000,  11200, 16800, 22400 },  /*< Reference clock 4M;   --> 112, 168, 224 */
+	{ 10, 0, 299, 6, 4, 4500,  11250, 16875, 22500 },  /*< Reference clock 4.5M; --> 112.5, 168.75, 225 */
+	{ 10, 1, 269, 6, 4, 10000, 11250, 16875, 22500 },  /*< Reference clock 10M;  --> 112.5, 168.75, 225 */
+	{ 10, 0, 83,  6, 4, 16000, 11200, 16800, 22400 },  /*< Reference clock 16M;  --> 112, 168, 224 */
+	{ 10, 0, 49,  6, 4, 27000, 11250, 16875, 22500 }   /*< Reference clock 27M;  --> 112.5, 168.75, 225 */
 };
 
 const unsigned short pll_array_size = sizeof(pll_conf) / sizeof(struct avl2108_pllconf);
@@ -222,7 +228,6 @@ static u16 avl2108_i2c_readreg(struct avl2108_state *state, u8 *data, u16 *size)
 		dprintk(10, "%s(): 0x%02x 0x%02x 0x%02x 0x%02x\n", __func__, res4[0], res4[1], res4[2], res4[3]);
 #endif
 	}
-
 	return AVL2108_OK;
 }
 
@@ -296,7 +301,7 @@ static u16 avl2108_i2c_write(void *_state, u8 *buf, u16 buf_size)
 	{
 		size = buf_size;
 	}
-	tmp = (I2C_MAX_WRITE - 3) & 0xfffe; /* How many bytes data we can transfer every time */
+	tmp = (I2C_MAX_WRITE - 3) & 0xfffe;  /* How many bytes data we can transfer every time */
 
 	x2 = 0;
 	while (size > tmp)
@@ -884,7 +889,7 @@ u16 avl2108_restore_config(struct dvb_frontend *fe, u32 *buf32, u16 *buf16)
 }
 
 /**
- * @brief The AVL2108 can have two funcitonal modes: blind scan or 'normal' mode
+ * @brief The AVL2108 can have two functional modes: blind scan or 'normal' mode
  */
 u16 avl2108_set_functional_mode(struct dvb_frontend *fe)
 {
@@ -1209,7 +1214,7 @@ static int avl2108_send_diseqc_msg(struct dvb_frontend *fe, struct dvb_diseqc_ma
 
 /**
  * @brief Send Mini-DiSEqC burst also called Tone-burst.
- * 		  It's used for switching between satellite A and satellite B
+ * 		  It is used for switching between satellite A and satellite B
  * @param burst The satellite to which we want to switch: SEC_MINI_A or SEC_MINI_B
  * @return 0 = success
  */
@@ -1274,7 +1279,7 @@ static int avl2108_diseqc_send_burst(struct dvb_frontend *fe, fe_sec_mini_cmd_t 
 
 /**
  * @brief Set/Unset the tone. This is used for selecting a High (22 KHz) or a Low (0 KHz) freq
- * @param tone The  to which we want to use: SEC_TONE_ON or SEC_TONE_OFF
+ * @param tone The to which we want to use: SEC_TONE_ON or SEC_TONE_OFF
  * @return 0 = success
  */
 int avl2108_set_tone(struct dvb_frontend *fe, fe_sec_tone_mode_t tone)
@@ -1287,7 +1292,7 @@ int avl2108_set_tone(struct dvb_frontend *fe, fe_sec_tone_mode_t tone)
 
 	if (tone == SEC_TONE_ON)
 	{
-		/*avl2108_diseqc_start_cont(fe);*/
+		/* avl2108_diseqc_start_cont(fe); */
 		ret = avl2108_diseqc_switch_mode(fe);
 		if (ret != AVL2108_OK)
 		{
@@ -2161,10 +2166,10 @@ void avl2108_register_frontend(struct dvb_adapter *dvb_adap)
 		cfg->tuner_active_lh  = frontendList[i].tuner_enable[2];
 		cfg->demod_address    = frontendList[i].demod_i2c;
 		cfg->tuner_address    = frontendList[i].tuner_i2c;
-		cfg->ref_freq         = priv->ref_freq;	/*< Reference clock in kHz units */
-		cfg->demod_freq       = priv->demod_freq;/*< Demod clock in 10kHz units */
-		cfg->fec_freq         = priv->fec_freq;	/*< FEC clock in 10kHz units */
-		cfg->mpeg_freq        = priv->mpeg_freq;	/*< MPEG clock in 10kHz units */
+		cfg->ref_freq         = priv->ref_freq;	 /*< Reference clock in kHz units */
+		cfg->demod_freq       = priv->demod_freq;  /*< Demod clock in 10kHz units */
+		cfg->fec_freq         = priv->fec_freq;	 /*< FEC clock in 10kHz units */
+		cfg->mpeg_freq        = priv->mpeg_freq;  /*< MPEG clock in 10kHz units */
 		cfg->i2c_speed_khz    = priv->i2c_speed_khz;
 		cfg->agc_polarization = priv->agc_polarization;
 		cfg->mpeg_mode        = priv->mpeg_mode;
