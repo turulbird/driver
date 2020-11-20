@@ -672,8 +672,7 @@ out:
 static int info_chipset_read(char *page, char **start, off_t off, int count, int *eof, void *data)
 {
 #if defined(UFS910) \
- || defined(ADB_BOX) \
- || defined(OPT9600)
+ || defined(ADB_BOX)
 	int len = sprintf(page, "STi7100\n");
 #elif defined(ATEVIO7500) \
  || defined(UFS913) \
@@ -700,7 +699,8 @@ static int info_chipset_read(char *page, char **start, off_t off, int count, int
  || defined(IPBOX9900) \
  || defined(IPBOX99) \
  || defined(IPBOX55) \
- || defined(ARIVALINK200)
+ || defined(ARIVALINK200) \
+ || defined(OPT9600)
 	int len = sprintf(page, "STi7109\n");
 #elif defined(UFS912) \
  || defined(HS7110) \
@@ -922,8 +922,7 @@ int proc_misc_12V_output_write(struct file *file, const char __user *buf, unsign
 	}
 #if defined(HL101) \
  || defined(VIP1_V1) \
- || defined(VIP1_V2) \
- || defined(VIP2)
+ || defined(OPT9600)
 //	set_12v(_12v_isON);  // set 12V output
 #endif
 	ret = count;
@@ -1144,7 +1143,7 @@ struct ProcStructure_s e2Proc[] =
 #if defined(IPBOX9900) \
  || defined(HL101) \
  || defined(VIP1_V1) \
- || defined(VIP2)
+ || defined(OPT9600)
 	{cProcEntry, "stb/misc/12V_output",                                              NULL, proc_misc_12V_output_read, proc_misc_12V_output_write, NULL, ""},
 #endif
 
