@@ -194,6 +194,8 @@ static const int DAC456SaturationPoint;
  * to STPIO_BIDIR_Z1 sometime before we run. */
 #if defined(ADB_BOX) 
 #define GPIO_PIN_HOTPLUG stm_gpio(3,7)
+#elif defined(OPT9600) 
+#define GPIO_PIN_HOTPLUG stm_gpio(4,4)
 #else
 #define GPIO_PIN_HOTPLUG stm_gpio(2,2)
 #endif
