@@ -1,6 +1,15 @@
 #ifndef avl2108_platform_123
 #define avl2108_platform_123
 
+extern short paramDebug;  // debug print level is zero as default (0=nothing, 1= errors, 10=some detail, 20=more detail, 50=open/close functions, 100=all)
+#define TAGDEBUG "[avl2108_platform] "
+#define dprintk(level, x...) \
+do \
+{ \
+	if ((paramDebug) && (paramDebug >= level) || level == 0) \
+	printk(TAGDEBUG x); \
+} while (0)
+
 struct avl_private_data_s
 {
 	u16 ref_freq;

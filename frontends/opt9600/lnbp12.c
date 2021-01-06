@@ -1,12 +1,14 @@
 /*
  * @brief lnbp12.c
  *
- * Originally wriiten by konfetti as lnb_pio.c
+ * Driver for STM LNBP12 LNB power controller
+ *
+ * Originally written by konfetti as lnb_pio.c
  *
  * 	Copyright (C) 2011 duckbox
  *            (C) 2020 Audioniek: adapted to STM LNBP12
  *
- *  Driver for STM LNBP12 LNB PIO driven powercontroller as
+ *  Driver for STM LNBP12 LNB PIO driven power controller as
  *  used in the Opticum HD 9600 series
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -36,8 +38,14 @@
 #include "avl2108.h"
 
 extern short paramDebug;
+#if defined TAGDEBUG
+#undef TAGDEBUG
+#endif
 #define TAGDEBUG "[lnbp12] "
 
+#if defined dprintk
+#undef dprintk
+#endif
 #define dprintk(level, x...) do \
 { \
 	if ((paramDebug) && (paramDebug > level)) \
@@ -149,21 +157,21 @@ void *lnbp12_attach(u32 *lnb, struct avl2108_equipment_s *equipment)
 //	Allocate PIO pins
 #if defined(OPT9600)
 //	Switch 22kHz tone of LNBP12 off
+	dprintk(20, "Initializing PIO %1d.%d (LNBP12_ENT)\n", LNBP12_ENT_PORT, LNBP12_ENT_PIN);
 	state->lnb_tone_enable_pin = stpio_request_pin(LNBP12_ENT_PORT, LNBP12_ENT_PIN, "LNBP12_ENT", STPIO_OUT);
-	dprintk(20, "LNBP12_ENT pin = %p\n", state->lnb_tone_enable_pin);
 	stpio_set_pin(state->lnb_tone_enable_pin, 0);
 
 //	Switch elevated LNB voltages off
+	dprintk(20, "Initializing PIO %1d.%d (LNBP12_LLC)\n", LNBP12_LLC_PORT, LNBP12_LLC_PIN);
 	state->lnb_llc_pin = stpio_request_pin(LNBP12_LLC_PORT, LNBP12_LLC_PIN, "LNBP12_LLC", STPIO_OUT);
-	dprintk(20, "LNBP12_LLC pin = %p\n", state->lnb_llc_pin);
-	stpio_set_pin(state->lnb_enable_pin, 0);
+	stpio_set_pin(state->lnb_llc_pin, 0);
 #endif
 
+	dprintk(20, "Initializing PIO %1d.%d (LNBP12_EN)\n", lnb[0], lnb[1]);
 	state->lnb_enable_pin = stpio_request_pin(lnb[0], lnb[1], "LNBP12_EN", STPIO_OUT);
-
-	dprintk(20, "LNBP12_EN pin = %p\n", state->lnb_enable_pin);
 	stpio_set_pin(state->lnb_enable_pin, lnb[2]);  // switch LNB voltage off
 
+	dprintk(20, "Initializing PIO %1d.%d (LNBP12_VSEL)\n", lnb[3], lnb[4]);
 	state->lnb_pin = stpio_request_pin(lnb[3], lnb[4], "LNBP12_VSEL", STPIO_OUT);
 	return state;
 }

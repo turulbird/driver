@@ -43,11 +43,11 @@
 #define cTUNER_INT_STV6306      1
 #define cTUNER_EXT_STV6306      2
 #define cTUNER_EXT_STV6110A     3
-#define cTUNER_INT_IX2470       4
-#define cTUNER_EXT_IX2470       5
+#define cTUNER_EXT_IX2470       4
 
 #define cLNB_LNBH221            1
 #define cLNB_PIO                2
+#define cLNB_LNBP12             3
 
 /* Error codes */
 #define AVL2108_OK              0	/*< No error */
@@ -174,13 +174,16 @@ struct dvb_frontend *avl2108_attach(struct avl2108_config *config, struct i2c_ad
 int avl2108_set_tone(struct dvb_frontend *fe, fe_sec_tone_mode_t tone);
 int avl2108_set_voltage(struct dvb_frontend *fe, fe_sec_voltage_t voltage);
 
+#if defined(OPT9600)
 extern int ix2470_attach(struct dvb_frontend *fe, void *demod_priv, struct avl2108_equipment_s *equipment, u8 internal, struct i2c_adapter *i2c);
-#if !defined(OPT9600)
+#else
 extern int stv6110a_attach(struct dvb_frontend *fe, void *demod_priv, struct avl2108_equipment_s *equipment, u32 mclk, u32 max_lfp);
 #endif
 
+#if defined(OPT9600)
+extern void *lnbp12_attach(u32 *lnb, struct avl2108_equipment_s *equipment);
+#else
 extern void *lnb_pio_attach(u32 *lnb, struct avl2108_equipment_s *equipment);
-#if !defined(OPT9600)
 extern void *lnbh221_attach(u32 *lnb, struct avl2108_equipment_s *equipment);
 #endif
 
