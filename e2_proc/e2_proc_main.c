@@ -256,8 +256,7 @@ typedef int (*proc_write_t)(struct file *file, const char __user *buf, unsigned 
 
 // For 12V output
 #if defined(HL101) \
- || defined(VIP1_V1) \
- || defined(OPT9600)
+ || defined(VIP1_V1)
 struct stpio_pin *_12v_pin;
 #endif
 
@@ -877,8 +876,7 @@ int _12v_isON = 0;
 void set_12v(int onoff)
 {
 #if defined(HL101) \
- || defined(VIP1_V1) \
- || defined(OPT9600)
+ || defined(VIP1_V1)
 	if (onoff)
 	{
 		stpio_set_pin(_12v_pin, 1);
@@ -1261,7 +1259,8 @@ struct ProcStructure_s e2Proc[] =
  || defined(IPBOX9900) \
  || defined(IPBOX99) \
  || defined(IPBOX55) \
- || defined(ARIVALINK200)
+ || defined(ARIVALINK200) \
+ || defined(OPT9600)
 	/* dagobert: the dei settings can be used for all 7109 architectures to affect the de-interlacer */
 	{cProcEntry, "stb/video/plane/dei_fmd",                                          NULL, NULL, NULL, NULL, "dei_fmd"},
 	{cProcEntry, "stb/video/plane/dei_mode",                                         NULL, NULL, NULL, NULL, "dei_mode"},
@@ -1660,13 +1659,9 @@ static int __init e2_proc_init_module(void)
 		}
 	}
 #if defined(HL101) \
- || defined(VIP1_V1) \
- || defined(OPT9600)
-#if !defined(OPT9600)
+ || defined(VIP1_V1)
 	_12v_pin = stpio_request_pin(4, 6, "12V_CTL", STPIO_OUT);
-#else
-	_12v_pin = stpio_request_pin(4, 6, "12V_CTL", STPIO_OUT); // TODO: find pin
-#endif
+
 	if (_12v_pin == NULL)
 	{
 		printk("Allocating PIO 4.6 for 12V output failed\n");
@@ -1675,6 +1670,17 @@ static int __init e2_proc_init_module(void)
 	{
 		set_12v(0);  // switch 12V output off
 	}
+#elif defined(OPT9600)
+//	_12v_pin = stpio_request_pin(4, 6, "12V_CTL", STPIO_OUT); // TODO: find pin
+
+//	if (_12v_pin == NULL)
+//	{
+//		printk("Allocating PIO 4.6 for 12V output failed\n");
+//	}
+//	else
+//	{
+//		set_12v(0);  // switch 12V output off
+//	}
 #endif
 	return 0;
 }
