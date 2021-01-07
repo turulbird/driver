@@ -43,16 +43,6 @@ extern short paramDebug;
 #endif
 #define TAGDEBUG "[lnbp12] "
 
-#if defined dprintk
-#undef dprintk
-#endif
-#define dprintk(level, x...) do \
-{ \
-	if ((paramDebug) && (paramDebug > level)) \
-	{ \
-		printk(TAGDEBUG x); \
-	} \
-} while (0)
 
 struct lnb_state
 {

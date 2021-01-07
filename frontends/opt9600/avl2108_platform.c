@@ -27,7 +27,8 @@
 #include "avl2108_platform.h"
 #include "avl2108_reg.h"
 #include "avl2108.h"
-#include "ix2470.h"
+//#include "ix2470.h"
+
 
 #if 0
 static const struct ix2470_cfg cfg =
@@ -41,6 +42,10 @@ static const struct ix2470_cfg cfg =
 #endif
 
 short paramDebug = 0;
+#if defined TAGDEBUG
+#undef TAGDEBUG
+#endif
+#define TAGDEBUG "[avl2108_platform] "
 
 /*
  * DVB-S(2) Frontend is a Sharp BS2F7VZ7700 (AVL2108 demodulator + IX2470VA tuner),

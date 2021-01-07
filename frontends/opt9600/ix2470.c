@@ -33,6 +33,11 @@
 
 #define I2C_ADDR_IX2470  (0xc0 >> 1)  // TODO: get from platform config
 
+#if defined TAGDEBUG
+#undef TAGDEBUG
+#endif
+#define TAGDEBUG "[ix2470] "
+
 struct ix2470_state
 {
 	struct dvb_frontend     *fe;

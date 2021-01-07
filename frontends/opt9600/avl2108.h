@@ -35,9 +35,17 @@
 
 #include "avl2108_platform.h"
 
-#define eprintk(args...)  do \
+extern short paramDebug;
+//#if defined dprintk
+//#undef dprintk
+//#endif
+
+#define dprintk(level, x...) do \
 { \
-	printk("[avl2108] ERROR: " args); \
+	if ((paramDebug) && (paramDebug > level)) \
+	{ \
+		printk(TAGDEBUG x); \
+	} \
 } while (0)
 
 #define cTUNER_INT_STV6306      1

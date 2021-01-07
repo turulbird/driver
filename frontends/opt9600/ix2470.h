@@ -23,23 +23,6 @@
 
 #include "avl2108.h"
 
-extern short paramDebug;
-#if defined TAGDEBUG
-#undef TAGDEBUG
-#endif
-#define TAGDEBUG "[ix2470] "
-
-#if defined dprintk
-#undef dprintk
-#endif
-#define dprintk(level, x...) do \
-{ \
-	if ((paramDebug) && (paramDebug > level)) \
-	{ \
-		printk(TAGDEBUG x); \
-	} \
-} while (0)
-
 enum ix2470_step
 {
 	IX2470_STEP_1000 = 0,  // 1000 kHz
@@ -86,17 +69,8 @@ struct ix2470_devctl
 	int (*tuner_get_status) (struct dvb_frontend *fe, u32 *status);
 };
 
-//#if defined(CONFIG_DVB_IX2470) || (defined(CONFIG_DVB_IX2470_MODULE) && defined(MODULE))
-
 //extern int ix2470_attach(struct dvb_frontend *fe, const struct ix2470_cfg *cfg, u8 internal, struct i2c_adapter *i2c);
 extern int ix2470_attach(struct dvb_frontend *fe, void *demod_priv, struct avl2108_equipment_s *equipment, u8 internal, struct i2c_adapter *i2c);
-//#else
-//static inline struct ix2470_devctl *ix2470_attach(struct dvb_frontend *fe, const struct ix2470_cfg *cfg, struct i2c_adapter *i2c)
-//{
-//	printk(KERN_WARNING "%s: driver disabled by Kconfig\n", __func__);
-//	return NULL;
-//}
-//#endif /* CONFIG_DVB_IX2470 */
 
 #endif /* __IX2470_H */
 // vim:ts=4
