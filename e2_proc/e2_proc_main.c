@@ -400,7 +400,7 @@ int info_scroll_repeats_write(struct file *file, const char __user *buf, unsigne
 
 	char *myString = kmalloc(count + 1, GFP_KERNEL);
 #ifdef VERY_VERBOSE
-	printk("%s %ld - ", __FUNCTION__, count);
+	printk("%s %ld - ", __func__, count);
 #endif
 	page = (char *)__get_free_page(GFP_KERNEL);
 
@@ -422,7 +422,6 @@ int info_scroll_repeats_write(struct file *file, const char __user *buf, unsigne
 			kfree(scroll_repeats);
 		}
 		scroll_repeats = myString;
-		printk("scroll_repeats = %s\n", scroll_repeats);
 
 		/* always return count to avoid endless loop */
 		ret = count;
@@ -459,7 +458,7 @@ int info_scroll_delay_write(struct file *file, const char __user *buf, unsigned 
 
 	char *myString = kmalloc(count + 1, GFP_KERNEL);
 #ifdef VERY_VERBOSE
-	printk("%s %ld - ", __FUNCTION__, count);
+	printk("%s %ld - ", __func__, count);
 #endif
 	page = (char *)__get_free_page(GFP_KERNEL);
 
@@ -481,7 +480,6 @@ int info_scroll_delay_write(struct file *file, const char __user *buf, unsigned 
 			kfree(scroll_delay);
 		}
 		scroll_delay = myString;
-		printk("scroll_delay = %s\n", scroll_delay);
 
 		/* always return count to avoid endless loop */
 		ret = count;
@@ -518,7 +516,7 @@ int info_initial_scroll_delay_write(struct file *file, const char __user *buf, u
 
 	char *myString = kmalloc(count + 1, GFP_KERNEL);
 #ifdef VERY_VERBOSE
-	printk("%s %ld - ", __FUNCTION__, count);
+	printk("%s %ld - ", __func__, count);
 #endif
 	page = (char *)__get_free_page(GFP_KERNEL);
 
@@ -540,7 +538,6 @@ int info_initial_scroll_delay_write(struct file *file, const char __user *buf, u
 			kfree(initial_scroll_delay);
 		}
 		initial_scroll_delay = myString;
-		printk("initial_scroll_delay = %s\n", initial_scroll_delay);
 
 		/* always return count to avoid endless loop */
 		ret = count;
@@ -577,7 +574,7 @@ int info_final_scroll_delay_write(struct file *file, const char __user *buf, uns
 
 	char *myString = kmalloc(count + 1, GFP_KERNEL);
 #ifdef VERY_VERBOSE
-	printk("%s %ld - ", __FUNCTION__, count);
+	printk("%s %ld - ", __func__, count);
 #endif
 	page = (char *)__get_free_page(GFP_KERNEL);
 
@@ -599,7 +596,6 @@ int info_final_scroll_delay_write(struct file *file, const char __user *buf, uns
 			kfree(final_scroll_delay);
 		}
 		final_scroll_delay = myString;
-		printk("final_scroll_delay = %s\n", final_scroll_delay);
 
 		/* always return count to avoid endless loop */
 		ret = count;
@@ -638,7 +634,7 @@ int info_rctype_write(struct file *file, const char __user *buf, unsigned long c
 
 	char *myString = kmalloc(count + 1, GFP_KERNEL);
 #ifdef VERY_VERBOSE
-	printk("%s %ld - ", __FUNCTION__, count);
+	printk("%s %ld - ", __func__, count);
 #endif
 	page = (char *)__get_free_page(GFP_KERNEL);
 
@@ -752,7 +748,7 @@ static int three_d_mode_write(struct file *file, const char __user *buf, unsigne
 
 	char *myString = kmalloc(count + 1, GFP_KERNEL);
 #ifdef VERY_VERBOSE
-	printk("%s %ld - ", __FUNCTION__, count);
+	printk("%s %ld - ", __func__, count);
 #endif
 	page = (char *)__get_free_page(GFP_KERNEL);
 
@@ -831,7 +827,7 @@ static int wakeup_time_write(struct file *file, const char __user *buf, unsigned
 
 	char *myString = kmalloc(count + 1, GFP_KERNEL);
 #ifdef VERY_VERBOSE
-	printk("%s %ld - ", __FUNCTION__, count);
+	printk("%s %ld - ", __func__, count);
 #endif
 	page = (char *)__get_free_page(GFP_KERNEL);
 
@@ -869,8 +865,7 @@ out:
 
 #if defined(IPBOX9900) \
  || defined(HL101) \
- || defined(VIP1_V1) \
- || defined(OPT9600)
+ || defined(VIP1_V1)
 int _12v_isON = 0;
 
 void set_12v(int onoff)
@@ -894,7 +889,7 @@ int proc_misc_12V_output_write(struct file *file, const char __user *buf, unsign
 	ssize_t ret = -ENOMEM;
 	char *myString;
 #ifdef VERY_VERBOSE
-	printk("%s %ld\n", __FUNCTION__, count);
+	printk("%s %ld\n", __func__, count);
 #endif
 	page = (char *)__get_free_page(GFP_KERNEL);
 
@@ -925,8 +920,7 @@ int proc_misc_12V_output_write(struct file *file, const char __user *buf, unsign
 		ret = count;
 	}
 #if defined(HL101) \
- || defined(VIP1_V1) \
- || defined(OPT9600)
+ || defined(VIP1_V1)
 //	set_12v(_12v_isON);  // set 12V output
 #endif
 	ret = count;
@@ -941,7 +935,7 @@ int proc_misc_12V_output_read(char *page, char **start, off_t off, int count, in
 {
 	int len = 0;
 #ifdef VERY_VERBOSE
-	printk("%s %d\n", __FUNCTION__, count);
+	printk("%s %d\n", __func__, count);
 #endif
 
 	if (_12v_isON)
@@ -954,7 +948,7 @@ int proc_misc_12V_output_read(char *page, char **start, off_t off, int count, in
 	}
 	return len;
 }
-#endif  // IPBOX9900, VIP1_V1, HL101, OPT9600
+#endif  // IPBOX9900, VIP1_V1, HL101
 
 static int zero_read(char *page, char **start, off_t off, int count, int *eof, void *data)
 {
@@ -1148,8 +1142,7 @@ struct ProcStructure_s e2Proc[] =
 	{cProcDir, "stb/misc",                                                           NULL, NULL, NULL, NULL, ""},
 #if defined(IPBOX9900) \
  || defined(HL101) \
- || defined(VIP1_V1) \
- || defined(OPT9600)
+ || defined(VIP1_V1)
 	{cProcEntry, "stb/misc/12V_output",                                              NULL, proc_misc_12V_output_read, proc_misc_12V_output_write, NULL, ""},
 #endif
 
@@ -1228,7 +1221,8 @@ struct ProcStructure_s e2Proc[] =
  || defined(SPARK) \
  || defined(SPARK7162) \
  || defined(SAGEMCOM88) \
- || defined(VITAMIN_HD5000)
+ || defined(VITAMIN_HD5000) \
+ || defined(OPT9600)
 	{cProcDir,   "stb/cec",                                                          NULL, NULL, NULL, NULL, ""},
 	{cProcEntry, "stb/cec/state_activesource",                                       NULL, NULL, NULL, NULL, ""},
 	{cProcEntry, "stb/cec/state_standby",                                            NULL, NULL, NULL, NULL, ""},
@@ -1670,17 +1664,6 @@ static int __init e2_proc_init_module(void)
 	{
 		set_12v(0);  // switch 12V output off
 	}
-#elif defined(OPT9600)
-//	_12v_pin = stpio_request_pin(4, 6, "12V_CTL", STPIO_OUT); // TODO: find pin
-
-//	if (_12v_pin == NULL)
-//	{
-//		printk("Allocating PIO 4.6 for 12V output failed\n");
-//	}
-//	else
-//	{
-//		set_12v(0);  // switch 12V output off
-//	}
 #endif
 	return 0;
 }
