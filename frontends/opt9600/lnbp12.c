@@ -9,7 +9,7 @@
  *            (C) 2020 Audioniek: adapted to STM LNBP12
  *
  *  Driver for STM LNBP12 LNB PIO driven power controller as
- *  used in the Opticum HD 9600 series
+ *  used in the Opticum HD (TS) 9600 series
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -95,7 +95,7 @@ u16 lnbp12_set_voltage(void *_state, struct dvb_frontend *fe, fe_sec_voltage_t v
 	struct lnb_state *state = (struct lnb_state *) _state;
 	u16 ret = 0;
 
-	dprintk(100, "%s(%p, %d)\n", __func__, fe, voltage);
+	dprintk(150, "%s > (%p, %d)\n", __func__, fe, voltage);
 
 	switch (voltage)
 	{
@@ -104,7 +104,7 @@ u16 lnbp12_set_voltage(void *_state, struct dvb_frontend *fe, fe_sec_voltage_t v
 			if (state->lnb_enable_pin)
 			{
 				stpio_set_pin(state->lnb_enable_pin, !state->lnb[2]);  // switch LNB voltage off
-				dprintk(10, "%s: LNB voltage is off\n", __func__);
+				dprintk(20, "LNB voltage is off\n");
 			}
 			break;
 		}
@@ -115,7 +115,7 @@ u16 lnbp12_set_voltage(void *_state, struct dvb_frontend *fe, fe_sec_voltage_t v
 				stpio_set_pin(state->lnb_enable_pin, state->lnb[2]);  // switch LNB voltage on
 			}
 			stpio_set_pin(state->lnb_pin, state->lnb[5]);
-			dprintk(10, "%s: LNB voltage = 13V (vertical)\n", __func__);
+			dprintk(20, "LNB voltage = 13V (vertical)\n");
 			break;
 		}
 		case SEC_VOLTAGE_18:  // horizontal
@@ -125,14 +125,16 @@ u16 lnbp12_set_voltage(void *_state, struct dvb_frontend *fe, fe_sec_voltage_t v
 				stpio_set_pin(state->lnb_enable_pin, state->lnb[2]);  // switch LNB voltage on
 			}
 			stpio_set_pin(state->lnb_pin, !state->lnb[5]);
-			dprintk(10, "%s: LNB voltage = 18V (horizontal)\n", __func__);
+			dprintk(20, "LNB voltage = 18V (horizontal)\n");
 			break;
 		}
 		default:
 		{
+			dprintk(1, "%s < Error: invalid voltage value %d)\n", __func__, voltage);
 			return -EINVAL;
 		}
 	}
+	dprintk(150, "%s < (%d)\n", __func__, ret);
 	return ret;
 }
 
@@ -147,21 +149,21 @@ void *lnbp12_attach(u32 *lnb, struct avl2108_equipment_s *equipment)
 //	Allocate PIO pins
 #if defined(OPT9600)
 //	Switch 22kHz tone of LNBP12 off
-	dprintk(20, "Initializing PIO %1d.%d (LNBP12_ENT)\n", LNBP12_ENT_PORT, LNBP12_ENT_PIN);
+	dprintk(70, "Initializing PIO %1d.%d (LNBP12_ENT)\n", LNBP12_ENT_PORT, LNBP12_ENT_PIN);
 	state->lnb_tone_enable_pin = stpio_request_pin(LNBP12_ENT_PORT, LNBP12_ENT_PIN, "LNBP12_ENT", STPIO_OUT);
 	stpio_set_pin(state->lnb_tone_enable_pin, 0);
 
 //	Switch elevated LNB voltages off
-	dprintk(20, "Initializing PIO %1d.%d (LNBP12_LLC)\n", LNBP12_LLC_PORT, LNBP12_LLC_PIN);
+	dprintk(70, "Initializing PIO %1d.%d (LNBP12_LLC)\n", LNBP12_LLC_PORT, LNBP12_LLC_PIN);
 	state->lnb_llc_pin = stpio_request_pin(LNBP12_LLC_PORT, LNBP12_LLC_PIN, "LNBP12_LLC", STPIO_OUT);
 	stpio_set_pin(state->lnb_llc_pin, 0);
 #endif
 
-	dprintk(20, "Initializing PIO %1d.%d (LNBP12_EN)\n", lnb[0], lnb[1]);
+	dprintk(70, "Initializing PIO %1d.%d (LNBP12_EN)\n", lnb[0], lnb[1]);
 	state->lnb_enable_pin = stpio_request_pin(lnb[0], lnb[1], "LNBP12_EN", STPIO_OUT);
 	stpio_set_pin(state->lnb_enable_pin, lnb[2]);  // switch LNB voltage off
 
-	dprintk(20, "Initializing PIO %1d.%d (LNBP12_VSEL)\n", lnb[3], lnb[4]);
+	dprintk(70, "Initializing PIO %1d.%d (LNBP12_VSEL)\n", lnb[3], lnb[4]);
 	state->lnb_pin = stpio_request_pin(lnb[3], lnb[4], "LNBP12_VSEL", STPIO_OUT);
 	return state;
 }

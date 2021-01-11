@@ -4,9 +4,10 @@
  * @author Pedro Aguilar <pedro@duolabs.com>
  *
  * @brief Availink AVL2108 - DVBS/S2 Satellite demod driver with
- *        Sharp IX2470VA tuner connected to I2C repeater
+ *        Sharp IX2470VA tuner connected to I2C repeater as present
+ *        in Sharp BS2F7VZ7700 frontend
  *
- *        Version for Opticum HD 9600 series.
+ *        Version for Opticum HD (TS) 9600 series.
  *
  * 	Copyright (C) 2009-2010 Duolabs Spa
  *                2020-2021 adapted by Audioniek for use with Opticum HD 9600 series
@@ -82,19 +83,6 @@ short paramDebug = 10;
 #undef TAGDEBUG
 #endif
 #define TAGDEBUG "[avl2108] "
-
-#if 0
-#if defined dprintk
-#undef dprintk
-#endif
-#define dprintk(level, x...) do \
-{ \
-	if ((paramDebug) && (paramDebug > level)) \
-	{ \
-		printk(TAGDEBUG x); \
-	} \
-} while (0)
-#endif
 
 struct avl2108_diseqc_tx_status
 {
@@ -413,11 +401,11 @@ static u16 avl2108_i2c_write32(struct avl2108_state *state, u32 addr, u32 data)
 	return ret;
 }
 
-/*****************************
+/********************************
  * i2c repeater. The demod acts
  * as a repeater allowing us
  * to talk to the tuner
- *****************************/
+ ********************************/
 
 static u16 avl2108_i2c_repeater_get_status(struct avl2108_state *state)
 {
@@ -440,6 +428,8 @@ static u16 avl2108_i2c_repeater_exec(struct avl2108_state *state, u8 *buf, u8 si
 	u16 ret = AVL2108_OK;
 	u32 i = 0;
 
+//	dprintk(150, "%s >\n", __func__);
+
 	while (avl2108_i2c_repeater_get_status(state) != AVL2108_OK)
 	{
 		if (20 < i++)
@@ -454,7 +444,7 @@ static u16 avl2108_i2c_repeater_exec(struct avl2108_state *state, u8 *buf, u8 si
 	{
 		ret = avl2108_i2c_write(state, buf, size);
 	}
-	dprintk(50, "%s < status %u\n", __func__, ret);
+//	dprintk(150, "%s < status %u\n", __func__, ret);
 	return ret;
 }
 
@@ -465,16 +455,25 @@ static u16 avl2108_i2c_repeater_send(void *_state, u8 *buf, u16 size)
 	u16 i, j;
 	u16 cmd_size;
 
+//	dprintk(150, "%s > (size = %d)\n", __func__, size);
+#if 0
+	for (i = 0; i < size; i++)
+	{
+		dprintk(150, "Byte[%i] = 0x%02x\n", i, buf[i]);
+	}
+#endif
 	memset(tmp_buf, 0, I2C_CMD_LEN + 3);
 
 	if (size > I2C_CMD_LEN - 3)
 	{
+		dprintk(1, "%s Error I2C message too long (max. %d)\n", __func__, I2C_CMD_LEN - 3);
 		return AVL2108_ERROR_GENERIC;
 	}
+	
 	cmd_size = ((size + 3) % 2) + 3 + size;
 	format_addr(REG_I2C_CMD + I2C_CMD_LEN - cmd_size, tmp_buf);
 
-	i = 3 + ((3 + size) % 2);  /* skip one byte if the size +3 is odd */
+	i = 3 + ((3 + size) % 2);  /* skip one byte if the size + 3 is odd */
 
 	for (j = 0; j < size; j++)
 	{
@@ -483,6 +482,7 @@ static u16 avl2108_i2c_repeater_send(void *_state, u8 *buf, u16 size)
 	tmp_buf[i++] = (u8)size;
 	tmp_buf[i++] = state->config->tuner_address;
 	tmp_buf[i++] = I2C_WRITE;
+//	dprintk(150, "%s <\n", __func__);
 	return avl2108_i2c_repeater_exec(state, tmp_buf, (u8)(cmd_size + 3));
 }
 
@@ -517,7 +517,7 @@ static u16 avl2108_i2c_repeater_recv(void *_state, u8 *buf, u16 size)
 		}
 		ret = avl2108_i2c_read(state, REG_I2C_RSP, buf, size);
 	}
-	dprintk(150, "%s < status %u\n", __func__, ret);
+//	dprintk(150, "%s < status %u\n", __func__, ret);
 	return ret;
 }
 
@@ -572,7 +572,7 @@ static u16 avl2108_send_op(u8 ucOpCmd, void *_state)
 		x1 = extract_16(buf);
 		ret |= avl2108_i2c_write16(state, REG_RX_CMD, x1);
 	}
-	dprintk(150, "%s < status %u\n", __func__, ret);
+//	dprintk(150, "%s < status %u\n", __func__, ret);
 	return ret;
 }
 
@@ -597,7 +597,7 @@ u16 avl2108_cpu_halt(struct dvb_frontend *fe)
 			}
 		}
 	}
-	dprintk(150, "%s < status %u\n", __func__, ret);
+//	dprintk(150, "%s < status %u\n", __func__, ret);
 	return ret;
 }
 
@@ -613,7 +613,7 @@ static u16 avl2108_setup_pll(struct avl2108_state *state, const struct avl2108_p
 {
 	u16 ret;
 
-	dprintk(150, "%s >\n", __func__);
+//	dprintk(150, "%s >\n", __func__);
 	ret = avl2108_i2c_write32(state, (PLL_R3), pll_ptr->m_r3);
 	ret |= avl2108_i2c_write32(state, (PLL_R2), pll_ptr->m_r2);
 	ret |= avl2108_i2c_write32(state, (PLL_R1), pll_ptr->m_r1);
@@ -665,7 +665,7 @@ static int avl2108_load_firmware(struct dvb_frontend *fe)
 	memcpy(buffer, fw->data, fw->size);
 #endif
 
-	dprintk(10, "Data_size %d bytes\n", data_size);
+	dprintk(50, "Firmware data_size %d bytes\n", data_size);
 	while (i < data_size)
 	{
 		buf_size = extract_32(fw->data + i);
@@ -713,7 +713,7 @@ static u16 avl2108_channel_lock(struct dvb_frontend *fe, struct avl2108_tuning *
 	u16 Standard;
 	u8 func_mode;
 
-	dprintk(20, "%s: > iq_swap %d, auto_iq %d, symbol_rate %d\n", __func__, tuning->iq_swap, tuning->auto_iq_swap, tuning->symbol_rate);
+	dprintk(20, "%s > iq_swap %d, auto_iq %d, symbol_rate %d\n", __func__, tuning->iq_swap, tuning->auto_iq_swap, tuning->symbol_rate);
 	ret |= avl2108_get_mode(state, &func_mode);
 	if (func_mode == FUNC_MODE_DEMOD)
 	{
@@ -776,7 +776,7 @@ static int avl2108_get_demod_status(struct dvb_frontend *fe)
 	u8	buf[2];
 	u32 x1 = 0;
 
-	dprintk(100, "%s >\n", __func__);
+	dprintk(150, "%s >\n", __func__);
 	r = avl2108_i2c_read32(state, REG_CORE_RESET_B, &x1);
 	r |= avl2108_i2c_read16(state, REG_CORE_RDY_WORD, (u16 *)buf);
 	if ((AVL2108_OK == r))
@@ -786,7 +786,7 @@ static int avl2108_get_demod_status(struct dvb_frontend *fe)
 			r = AVL2108_ERROR_GENERIC;
 		}
 	}
-	dprintk(100, "%s < status %u\n", __func__, r);
+	dprintk(150, "%s < status %u\n", __func__, r);
 	return r;
 }
 
@@ -825,7 +825,7 @@ static int avl2108_demod_init(struct dvb_frontend *fe)
 	/* This setting has no effect on AVL2108LG */
 	ret |= avl2108_i2c_write16(state, REG_MPEG_PERSISTENT_CLK_MODE, mpeg_data_clk);
 
-	dprintk(100, "%s < status %u\n", __func__, ret);
+	dprintk(150, "%s < status %u\n", __func__, ret);
 	return ret;
 }
 
@@ -859,7 +859,7 @@ u16 avl2108_save_config(struct dvb_frontend *fe, u32 *buf32, u16 *buf16)
 	ret |= avl2108_i2c_read16(state, 1536, buf16++);
 	ret |= avl2108_i2c_read16(state, REG_MPEG_PERSISTENT_CLK_MODE, buf16++);
 	ret |= avl2108_i2c_read16(state, REG_BLIND_SCAN_CARIER_FREQ_TO_KHZ, buf16);
-	dprintk(100, "%s < status %u\n", __func__, ret);
+	dprintk(150, "%s < status %u\n", __func__, ret);
 	return ret;
 }
 
@@ -893,7 +893,7 @@ u16 avl2108_restore_config(struct dvb_frontend *fe, u32 *buf32, u16 *buf16)
 	ret |= avl2108_i2c_write16(state, 1536, *buf16++);
 	ret |= avl2108_i2c_write16(state, REG_MPEG_PERSISTENT_CLK_MODE, *buf16++);
 	ret |= avl2108_i2c_write16(state, REG_BLIND_SCAN_CARIER_FREQ_TO_KHZ, *buf16);
-	dprintk(100, "%s < status %u\n", __func__, ret);
+	dprintk(150, "%s < status %u\n", __func__, ret);
 	return ret;
 }
 
@@ -939,7 +939,7 @@ u16 avl2108_set_functional_mode(struct dvb_frontend *fe)
 
 		ret |= avl2108_i2c_repeater_init(speed, state);
 	}
-	dprintk(100, "%s < status %u\n", __func__, ret);
+	dprintk(150, "%s < status %u\n", __func__, ret);
 	return ret;
 }
 
@@ -978,7 +978,7 @@ u16 avl2108_get_version(struct avl2108_state *state, struct avl2108_ver_info *ve
 		version->patch_build = buf[2];
 		version->patch_build = ((u16)((version->patch_build) << 8)) + buf[3];
 	}
-	dprintk(100, "%s < status %u\n", __func__, ret);
+	dprintk(150, "%s < status %u\n", __func__, ret);
 	return ret;
 }
 
@@ -1021,18 +1021,18 @@ static int avl2108_diseqc_init(struct dvb_frontend *fe)
 	/* Initialize the tx_control */
 	ret |= avl2108_i2c_read32(state, REG_DISEQC_TX_CTRL, &x1);
 	x1 &= 0x00000300;
-	x1 |= 0x20;		/* Reset tx_fifo */
+	x1 |= 0x20;  /* Reset tx_fifo */
 	x1 |= ((u32)(diseqc_info & 0x000F) << 6);
 	x1 |= ((u32)(diseqc_info & 0x0F00 >> 8) << 4);
-	x1 |= (1 << 3);			/* Enable tx gap */
+	x1 |= (1 << 3);  /* Enable tx gap */
 	ret |= avl2108_i2c_write32(state, REG_DISEQC_TX_CTRL, x1);
-	x1 &= ~(0x20);	/* Release tx_fifo reset */
+	x1 &= ~(0x20);  /* Release tx_fifo reset */
 	ret |= avl2108_i2c_write32(state, REG_DISEQC_TX_CTRL, x1);
 
 	/* Initialize the rx_control */
 	x1 = ((u32)(diseqc_info & 0x0F00 >> 8) << 2);
-	x1 |= (1 << 1);	/* Activate the receiver */
-	x1 |= (1 << 3);	/* Envelop high when tone present */
+	x1 |= (1 << 1);  /* Activate the receiver */
+	x1 |= (1 << 3);  /* Envelop high when tone present */
 	ret |= avl2108_i2c_write32(state, REG_DISEQC_RX_CTRL, x1);
 	x1 = (u32)(diseqc_info & 0xF000 >> 12);
 	ret |= avl2108_i2c_write32(state, REG_DISEQC_RX_MSG_TMR, x1);
@@ -1081,7 +1081,7 @@ u16 avl2108_diseqc_switch_mode(struct dvb_frontend *fe)
 			break;
 		}
 	}
-	dprintk(10, "%s < status %u\n", __func__, ret);
+//	dprintk(150, "%s < status %u\n", __func__, ret);
 	return ret;
 }
 
@@ -1133,7 +1133,7 @@ u16 avl2108_diseqc_send_mod_data(struct dvb_frontend *fe, const u8 *buf, u8 size
 			}
 		}
 	}
-	dprintk(10, "%s < ret: %u\n", __func__, ret);
+//	dprintk(150, "%s < ret: %u\n", __func__, ret);
 	return ret;
 }
 
@@ -1159,7 +1159,7 @@ u16 avl2108_diseqc_get_tx_status(struct dvb_frontend *fe, struct avl2108_diseqc_
 	{
 		ret = AVL2108_ERROR_GENERIC;
 	}
-	dprintk(10, "%s < status %u\n", __func__, ret);
+	dprintk(150, "%s < status %u\n", __func__, ret);
 	return ret;
 }
 
@@ -1180,7 +1180,7 @@ static int avl2108_send_diseqc_msg(struct dvb_frontend *fe, struct dvb_diseqc_ma
 	ret = avl2108_diseqc_send_mod_data(fe, d->msg, d->msg_len);
 	if (ret != AVL2108_OK)
 	{
-		dprintk(1, "%s Output %u modulation bytes: fail!\n", __func__, d->msg_len);
+		dprintk(1, "%s Output %u modulation bytes: failed\n", __func__, d->msg_len);
 	}
 	else
 	{
@@ -1206,17 +1206,17 @@ static int avl2108_send_diseqc_msg(struct dvb_frontend *fe, struct dvb_diseqc_ma
 
 		if (cnt == 0)
 		{
-			dprintk(20, "%s(): cnt= %d, r= 0x%x, tx_status.tx_done = %d\n",
+			dprintk(20, "%s: cnt= %d, r= 0x%x, tx_status.tx_done = %d\n",
 				__func__, cnt, ret, tx_status.tx_done);
 		}
 		if (ret != AVL2108_OK)
 		{
-			dprintk(1, "%s Output %u modulation bytes fail!\n", __func__, d->msg_len);
+			dprintk(1, "%s Error: Output %u DiSEqC bytes failed\n", __func__, d->msg_len);
 		}
-		else
-		{
-			dprintk(100, "%s Output %u modulation bytes: success!\n", __func__, d->msg_len);
-		}
+//		else
+//		{
+//			dprintk(50, "%s Output %u DiSEqC bytes: successful\n", __func__, d->msg_len);
+//		}
 	}
 	return 0;
 }
@@ -1279,10 +1279,12 @@ static int avl2108_diseqc_send_burst(struct dvb_frontend *fe, fe_sec_mini_cmd_t 
 	{
 		dprintk(1, "%s Tune-burst sent failed: %d\n", __func__, tx_status.tx_done);
 	}
+#if 0
 	else
 	{
 		dprintk(10, "%s Tune-burst sent successfully: %d\n", __func__, tx_status.tx_done);
 	}
+#endif
 	return 0;
 }
 
@@ -1297,7 +1299,7 @@ int avl2108_set_tone(struct dvb_frontend *fe, fe_sec_tone_mode_t tone)
 	u16 ret;
 	u32 x1;
 
-	dprintk(100, "%s >", __func__);
+	dprintk(150, "%s >", __func__);
 
 	if (tone == SEC_TONE_ON)
 	{
@@ -1378,7 +1380,7 @@ static int avl2108_read_status(struct dvb_frontend *fe, fe_status_t *status)
 	if (lock_status != 1)
 	{
 		*status = 0;
-		dprintk(1, "%s Could not get lock status!\n", __func__);
+		dprintk(150, "%s Could not get lock status!\n", __func__);
 	}
 	else
 	{
@@ -1487,10 +1489,10 @@ static int avl2108_read_ucblocks(struct dvb_frontend *fe, u32 *ucblocks)
 	return 0;
 }
 
-/*****************************
+/**********************************
  * Frontend ops
  * (except status/stats gathering)
- *****************************/
+ **********************************/
 
 /**
  * @brief Free the main struct avl2108_state
@@ -1534,42 +1536,7 @@ struct dvb_frontend *avl2108_attach(struct avl2108_config *config, struct i2c_ad
 	state->boot_done = 0;
 	state->diseqc_status = DISEQC_STATUS_UNINIT;
 
-#if defined(UFS922)
-// || defined(OPT9600)
-	{
-		int ret;
-		u8 b0[] = { 0x00 };
-		u8 b1[] = { 0x00 };
-
-		struct i2c_msg msg[] =
-		{
-			{.addr = config->demod_address, .flags = 0, .buf = b0, .len = 1},
-			{.addr = config->demod_address, .flags = I2C_M_RD, .buf = b1, .len = 1}
-		};
-
-		ret = i2c_transfer(state->i2c, msg, 2);
-
-		if (ret != 2)
-		{
-			dprintk(1, "%s: i2c-error: %i\n", __func__, ret);
-
-			kfree(state);
-			return NULL;
-		}
-
-		dprintk(10, "b1[0] = 0x%02x\n", b1[0]);
-		if (b1[0] == 0x99)  // TODO: get correct value
-		{
-			dprintk(10, "Detected IX2470 tuner\n");
-		}
-		else
-		{
-			dprintk(10, "No IX2470 tuner\n");
-		}
-	}
-#endif
-
-	/* Get version and patch (debug only) number */
+	/* Get AVL2108 version and patch number */
 	if (avl2108_get_version(state, &version) != AVL2108_OK)
 	{
 		dprintk(1, "Could not get version\n");
@@ -1590,39 +1557,19 @@ struct dvb_frontend *avl2108_attach(struct avl2108_config *config, struct i2c_ad
 	state->equipment.demod_send_op           = avl2108_send_op;
 	state->equipment.demod_get_op_status     = avl2108_get_op_status;
 
-#if defined(OPT9600)
 	if (config->usedTuner == cTUNER_EXT_IX2470)
 	{
-		dprintk(10, "Using external control (no tuner fw; tuner XI2470)\n");
+		dprintk(10, "Tuner is Sharp IX2470\n");
 		ix2470_attach(&state->frontend, state, &state->equipment, 0, i2c);
 	}
-#else
-	if (config->usedTuner == cTUNER_EXT_STV6110A)
-	{
-		dprintk(10, "Using external control (no tuner fw; tuner stv6110A)\n");
-		/* fixme make mclk configurable via platform */
-		stv6110a_attach(&state->frontend, state, &state->equipment, 16, state->config->max_lpf);
-	}
-#endif
 	else
 	{
 		dprintk(1, "Error: Unknown tuner in platform data.\n");
 	}
-#if defined(OPT9600)
 	if (config->usedLNB == cLNB_LNBP12)
 	{
 		state->lnb_priv = lnbp12_attach(state->config->lnb, &state->equipment);
 	}
-#else
-	if (config->usedLNB == cLNB_LNBH221)
-	{
-		state->lnb_priv = lnbh221_attach(state->config->lnb, &state->equipment);
-	}
-	else if (config->usedLNB == cLNB_PIO)
-	{
-		state->lnb_priv = lnb_pio_attach(state->config->lnb, &state->equipment);
-	}
-#endif
 	else
 	{
 		dprintk(1, "Error: Unknown LNB type in platform data.\n");
@@ -1681,20 +1628,6 @@ static int avl2108_initfe(struct dvb_frontend *fe)
 		return -1;
 	}
 
-	if ((state->config->usedTuner != cTUNER_EXT_IX2470)
-	&&  (state->config->usedTuner != cTUNER_EXT_STV6110A))
-	{
-		if (state->equipment.tuner_load_fw)
-		{
-			ret = state->equipment.tuner_load_fw(fe);
-			if (ret != AVL2108_OK)
-			{
-				dprintk(1, "Tuner firmware load failed!");
-				return -1;
-			}
-		}
-	}
-
 	/* tuner init start */
 	ret = avl2108_i2c_write16(state, REG_TUNER_SLAVE_ADDR, state->config->tuner_address);
 
@@ -1705,13 +1638,6 @@ static int avl2108_initfe(struct dvb_frontend *fe)
 		ret |= avl2108_i2c_write16(state, REG_TUNER_LPF_MARGIN_100KHZ, 0);
 		ret |= avl2108_i2c_write16(state, REG_TUNER_MAX_LPF_100KHZ, state->config->max_lpf);
 	}
-//	else if (state->config->usedTuner == cTUNER_EXT_STV6110A)
-//	{
-//		/* Use external control */
-//		ret |= avl2108_i2c_write16(state, REG_TUNER_USE_INTERNAL_CTRL, 0);
-//		ret |= avl2108_i2c_write16(state, REG_TUNER_LPF_MARGIN_100KHZ, 0);
-//		ret |= avl2108_i2c_write16(state, REG_TUNER_MAX_LPF_100KHZ, state->config->max_lpf);
-//	}
 	else
 	{
 		/* use internal control requires extra fw */
@@ -1720,13 +1646,20 @@ static int avl2108_initfe(struct dvb_frontend *fe)
 
 	if (state->equipment.tuner_init)
 	{
+		dprintk(50, "Initializing tuner.\n");
 		ret |= state->equipment.tuner_init(fe);
+
+		if (ret != AVL2108_OK)
+		{
+			dprintk(1, "Tuner initialization failed!\n");
+			return -1;
+		}
 	}
 	ret |= avl2108_i2c_repeater_init(state->config->i2c_speed_khz, state);
 
 	if (ret != AVL2108_OK)
 	{
-		dprintk(1, "Tuner initialization failed!\n");
+		dprintk(1, "I2C repeater or tuner initialization failed!\n");
 		return -1;
 	}
 	/* tuner init end */
@@ -1737,7 +1670,7 @@ static int avl2108_initfe(struct dvb_frontend *fe)
 		dprintk(1, "DiSEqC initialization failed!\n");
 		return -1;
 	}
-	dprintk(50, "Demod and tuner successfully initialized\n");
+	dprintk(50, "Demodulator and tuner successfully initialized.\n");
 	state->boot_done = 1;
 	return 0;
 }
@@ -1812,10 +1745,10 @@ static struct dvbfe_info dvbs_info =
 		                 | DVBFE_FEC_7_8
 		                 | DVBFE_FEC_AUTO
 	},
-	.frequency_min       =  950000,
-	.frequency_max       = 2150000,
-	.frequency_step      = 1011,
-	.frequency_tolerance = 5000,
+	.frequency_min       =   950000,
+	.frequency_max       =  2150000,
+	.frequency_step      =     1011,
+	.frequency_tolerance =     5000,
 	.symbol_rate_min     =   800000,
 	.symbol_rate_max     = 50000000
 };
@@ -1842,12 +1775,12 @@ static const struct dvbfe_info dvbs2_info =
 		                  | DVBFE_FEC_8_9
 		                  | DVBFE_FEC_9_10,
 	},
-	.frequency_min         =  950000,
-	.frequency_max         = 2150000,
-	.frequency_step        = 0,
+	.frequency_min         =   950000,
+	.frequency_max         =  2150000,
+	.frequency_step        =        0,
 	.symbol_rate_min       =   800000,
 	.symbol_rate_max       = 50000000,
-	.symbol_rate_tolerance = 0
+	.symbol_rate_tolerance =        0
 };
 
 static int avl2108_get_info(struct dvb_frontend *fe, struct dvbfe_info *fe_info)
@@ -1858,19 +1791,19 @@ static int avl2108_get_info(struct dvb_frontend *fe, struct dvbfe_info *fe_info)
 	{
 		case DVBFE_DELSYS_DVBS:
 		{
-			dprintk(10, "%s(DVBS)\n", __func__);
+			dprintk(10, "%s Delivery system: DVB-S\n", __func__);
 			memcpy(fe_info, &dvbs_info, sizeof(dvbs_info));
 			break;
 		}
 		case DVBFE_DELSYS_DVBS2:
 		{
-			dprintk(10, "%s(DVBS2)\n", __func__);
+			dprintk(10, "%s Delivery system: DVB-S2\n", __func__);
 			memcpy(fe_info, &dvbs2_info, sizeof(dvbs2_info));
 			break;
 		}
 		default:
 		{
-			printk("%s() invalid arg\n", __func__);
+			dprintk(1, "%s Invalid argument\n", __func__);
 			return -EINVAL;
 		}
 	}
@@ -2070,7 +2003,7 @@ static int avl2108_set_frontend(struct dvb_frontend *fe, struct dvb_frontend_par
 			break;
 		}
 		msleep(/* 10 */ 3);    /* Wait 10ms for demod to lock the channel */
-		dprintk(20, "%s(): Waiting for lock, retry %d\n", __func__);
+		dprintk(20, "%s Waiting for lock, retry %d\n", __func__);
 	}
 	while (--cnt);
 
@@ -2095,10 +2028,10 @@ static struct dvb_frontend_ops avl2108_ops =
 	{
 		.name                = "Availink AVL2108 DVB-S2",
 		.type                = FE_QPSK,
-		.frequency_min       =  950000,
-		.frequency_max       = 2150000,
-		.frequency_stepsize  = 1011, /* kHz for QPSK frontends */
-		.frequency_tolerance = 5000,
+		.frequency_min       =   950000,
+		.frequency_max       =  2150000,
+		.frequency_stepsize  =     1011,  /* kHz for QPSK frontends */
+		.frequency_tolerance =     5000,
 		.symbol_rate_min     =   800000,  /* Min = 800K */
 		.symbol_rate_max     = 50000000,  /* Max = 50M */
 		.caps                = FE_CAN_INVERSION_AUTO
@@ -2145,38 +2078,25 @@ void avl2108_register_frontend(struct dvb_adapter *dvb_adap)
 	struct stpio_pin *pin;
 	int i;
 
-	dprintk(100, "%s >\n", __func__);
+	dprintk(150, "%s >\n", __func__);
 
-#if 0 //def ATEVIO7500
-	/* fixme: I think we should move this to st-merger.c */
-
-	/* set the muxer pin otherwise startci output will
-	 * not properly passed to tsmerger.
-	 */
-	pin = stpio_request_pin(5, 3, "tuner2_mux", STPIO_OUT);
-	stpio_set_pin(pin, 0);
-	pin = stpio_request_pin(5, 4, "tuner2_mux", STPIO_OUT);
-	stpio_set_pin(pin, 0);
-#endif
-#if defined(OPT9600)
 	/* Opticum HD 9600 uses three PIO pins to further control the front end:
 	 *
-	 * DVBTPWREN#  : PIO 2.5 (power enable for DVB- part, active low) -> driver initializes this to high, does not bother any further
+	 * DVBTPWREN#  : PIO 2.5 (power enable for DVB-T part, active low) -> driver initializes this to high, does not bother any further
 	 * DVBS2OE#    : PIO 3.3 (output enable for parallel stream out) -> driver initializes this to low, does not bother any further
-	 * DVBS2PWREN# : PIO 4.6 (power enable for DVB- part, active low) -> driver initializes this to low, does not bother any further
+	 * DVBS2PWREN# : PIO 4.6 (power enable for DVB-S(2) part, active low) -> driver initializes this to low, does not bother any further
 	 *
 	 * Net result is that the tuner is always set to DVB-S(2), even on TS models
 	 */
-	dprintk(70, "Initialize PIO 2.5 (DVB-T power) to 1 (off)\n");
+//	dprintk(70, "Initialize PIO 2.5 (DVB-T power) to 1 (off)\n");
 	pin = stpio_request_pin(2, 5, "DVBT_PWR", STPIO_OUT);
 	stpio_set_pin(pin, 1);  // switch DVB-T power off
-	dprintk(70, "Initialize PIO 4.6 (DVB-S(2) power) to 0 (on)\n");
+//	dprintk(70, "Initialize PIO 4.6 (DVB-S(2) power) to 0 (on)\n");
 	pin = stpio_request_pin(4, 6, "DVBS_PWR", STPIO_OUT);
 	stpio_set_pin(pin, 0);  // switch DVB-S(2) power on
-	dprintk(70, "Initialize PIO 3.3 (DVB-S OE#) to 0 (enabled)\n");
+//	dprintk(70, "Initialize PIO 3.3 (DVB-S OE#) to 0 (enabled)\n");
 	pin = stpio_request_pin(3, 3, "DVBS2OE#", STPIO_OUT);
 	stpio_set_pin(pin, 0);  // ?
-#endif
 
 	for (i = 0; i < numFrontends; i++)
 	{
@@ -2190,7 +2110,7 @@ void avl2108_register_frontend(struct dvb_adapter *dvb_adap)
 			return;
 		}
 		cfg->tuner_no = i + 1;
-		dprintk(70, "Initialize PIO %1d.%1d for tuner enable\n", frontendList[i].tuner_enable[0], frontendList[i].tuner_enable[1]);
+//		dprintk(70, "Initialize PIO %1d.%1d for tuner enable\n", frontendList[i].tuner_enable[0], frontendList[i].tuner_enable[1]);
 		cfg->tuner_enable_pin = stpio_request_pin(frontendList[i].tuner_enable[0], frontendList[i].tuner_enable[1], "FE_RESET", STPIO_OUT);
 //		dprintk(10, "tuner_enable_pin %p\n", cfg->tuner_enable_pin);
 
@@ -2264,7 +2184,7 @@ static int avl2108_probe(struct platform_device *pdev)
 	struct platform_frontend_s *plat_data = pdev->dev.platform_data;
 	int i;
 
-	dprintk(100, "%s >\n", __func__);
+	dprintk(150, "%s >\n", __func__);
 
 	numFrontends = plat_data->numFrontends;
 	frontendList = kmalloc(numFrontends * sizeof(struct platform_frontend_config_s), GFP_KERNEL);
@@ -2279,7 +2199,7 @@ static int avl2108_probe(struct platform_device *pdev)
 		dprintk(50, "  LNB power on/off : PIO %1d.%1d, on=%1d\n", frontendList[i].lnb[0], frontendList[i].lnb[1], frontendList[i].lnb[2]);
 		dprintk(50, "  LNB 13/18 select : PIO %1d.%1d, 18V=%1d\n", frontendList[i].lnb[3], frontendList[i].lnb[4], frontendList[i].lnb[5]);
 	}
-	dprintk(100, "%s <\n", __func__);
+	dprintk(150, "%s <\n", __func__);
 	return 0;
 }
 
@@ -2308,9 +2228,9 @@ int __init avl2108_init(void)
 {
 	int ret;
 
-	dprintk(100, "%s >\n", __func__);
+	dprintk(150, "%s >\n", __func__);
 	ret = platform_driver_register(&avl2108_driver);
-	dprintk(100, "%s < %d\n", __func__, ret);
+	dprintk(150, "%s < %d\n", __func__, ret);
 	return ret;
 }
 

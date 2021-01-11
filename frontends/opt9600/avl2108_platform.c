@@ -97,11 +97,14 @@ static struct platform_frontend_s avl2108_config =
 			.name         = "avl2108",
 
 			.tuner_enable = { 5, 3, 1 },  // group, bit, state for active
-			.lnb          = { 5, 2, 1, 2, 2, 1 },  // enable (group, bit, state for on), voltage select (group, bit, state for 18V)
+			.lnb          = { 5, 2, 1, 2, 2, 0 },  // enable (group, bit, state for on), voltage select (group, bit, state for 13V)
 			.i2c_bus      = 1,
 
-			.demod_i2c    = 0x0C,
-			.tuner_i2c    = 0xC0,
+			.demod_i2c    = 0x0C, // 0x18 >> 1
+			.tuner_i2c    = 0xC0, // ADR input voltage < 0.1 * Vcc
+//			.tuner_i2c    = 0xC2, // ADR input open
+//			.tuner_i2c    = 0xC4, // 0.4 * Vcc < ADR input voltage < 0.6 * Vcc
+//			.tuner_i2c    = 0xC6, // ADR input voltage > 0.9 * Vcc
 			.private      = &avl_tuner_priv
 		},
 	},
