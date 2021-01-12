@@ -496,6 +496,7 @@ u16 ix2470_tuner_init(struct dvb_frontend *fe)
 int ix2470_attach(struct dvb_frontend *fe, void *demod_priv, struct avl2108_equipment_s *equipment, u8 internal, struct i2c_adapter *i2c)
 {
 	struct ix2470_state *ix2470;
+	const struct ix2470_cfg *cfg = &ix2470va_cfg;
 
 	dprintk(150, "%s >\n", __func__);
 
