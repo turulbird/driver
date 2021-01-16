@@ -50,6 +50,7 @@ struct ix2470_cfg
 	u8 addr;
 	u8 step_size;
 	u8 bb_gain;
+	u8 c_pump;
 	u8 t_lock;
 };
 

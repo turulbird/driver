@@ -459,7 +459,7 @@ static u16 avl2108_i2c_repeater_send(void *_state, u8 *buf, u16 size)
 #if 0
 	for (i = 0; i < size; i++)
 	{
-		dprintk(150, "Byte[%i] = 0x%02x\n", i, buf[i]);
+		dprintk(100, "Byte[%i] = 0x%02x\n", i, buf[i]);
 	}
 #endif
 	memset(tmp_buf, 0, I2C_CMD_LEN + 3);
@@ -1385,7 +1385,7 @@ static int avl2108_read_status(struct dvb_frontend *fe, fe_status_t *status)
 	else
 	{
 		*status |= FE_HAS_SIGNAL | FE_HAS_CARRIER | FE_HAS_VITERBI | FE_HAS_SYNC | FE_HAS_LOCK;
-		dprintk(50, "Service locked!\n");
+		dprintk(150, "Service locked!\n");
 	}
 	return 0;
 }
@@ -2003,7 +2003,7 @@ static int avl2108_set_frontend(struct dvb_frontend *fe, struct dvb_frontend_par
 			break;
 		}
 		msleep(/* 10 */ 3);    /* Wait 10ms for demod to lock the channel */
-		dprintk(20, "%s Waiting for lock, retry %d\n", __func__);
+		dprintk(20, "Waiting for lock, retry %d\n", cnt);
 	}
 	while (--cnt);
 
