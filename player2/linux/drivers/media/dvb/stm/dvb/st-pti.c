@@ -505,9 +505,9 @@ void ptiInit(struct DeviceContext_s *pContext)
  || defined(ATEMIO520) \
  || defined(ATEMIO530) \
  || defined(VITAMIN_HD5000)
-	unsigned long start = 0xfe230000;
+	unsigned long start = 0xfe230000;  // STx7105 & STx7111
 #else
-	unsigned long start = 0x19230000;
+	unsigned long start = 0x19230000;  // STx7100 & STx7109
 #endif
 	struct PtiSession *pSession;
 	int tag;
