@@ -63,8 +63,8 @@ struct lnb_state
 };
 
 /*
- * The LNBP12 LNB power controller as used in the Opticum HD9600 series
- * is connected as follows:
+ * The LNBP12 LNB power controller as used in the Opticum HD 9600 and
+ * HD 9600 PRIMA series is connected as follows:
  *
  * Vsel (pin 4): sets the LNB voltage to 13/14V or 18/19V -> PIO2.2
  * EN   (pin 5): switches LNB voltage on (H) or off (L)   -> PIO5.2
@@ -74,13 +74,13 @@ struct lnb_state
  *               therefore as LNB voltage on/off input
  * ENT  (pin 7): switch 22kHz tone on (H) or off (L)      -> PIO2.3
  *               The driver initializes this pin to L
- *               (tone off) and does bother with this
- *               pin any further
+ *               (tone off) and does not bother with
+ *               this pin any further
  * LLC  (pin 9): Elevates LNB voltage by 1V when high     -> PIO2.6
  *               The driver initializes this pin to L
- *               (+1V off) and does bother with this
- *               pin any further
- * MI:  (pin 10): connected to ground
+ *               (+1V off) and does not bother with
+ *               this pin any further
+ * MI: (pin 10): connected to ground
  *
  * The LNBP12 does not provide any pins to monitor its status,
  * e.g. LNB overcurrent.

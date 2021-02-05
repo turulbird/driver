@@ -101,7 +101,7 @@ struct ix2470_state
 	u8                         internal;
 	struct i2c_adapter         *i2c;
 	struct ix2470_cfg          *ix2470cfg;
-	u8 			               byte[4];  // current values of byte 2 through 5
+	u8                         byte[4];  // current values of byte 2 through 5
 	u32                        frequency;
 };
 
@@ -314,12 +314,12 @@ u16 ix2470_tuner_lock(struct dvb_frontend *fe, u32 freq, u32 srate, u32 lpf)
 	 * fvco = ((P * N) + A) * (fosc) / R
 	 *		fvco = tune frequency in MHz
 	 *		fosc = 4 MHz
-	 *		R	 = 8 (REF = 1) or 4 (REF = 0)
+	 *		R    = 8 (REF = 1) or 4 (REF = 0)
 	 *      NOTE: fosc / R is smaller than 1 -> only deal with (P * N) + A
 	 *
-	 *		A	 = swallow division ratio (0 - 31; A < N)
-	 *		N	 = Programmable division ratio (5 - 255)
-	 *		P	 = Prescaler division ratio (set by PSC == 1 ? 16 : 32)
+	 *		A     = swallow division ratio (0 - 31; A < N)
+	 *		N     = Programmable division ratio (5 - 255)
+	 *		P     = Prescaler division ratio (set by PSC == 1 ? 16 : 32)
 	 *
 	 * Actual formula used:
 	 * fvco / fosc = ((P * N) + A) / R
