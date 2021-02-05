@@ -47,7 +47,7 @@ short paramDebug = 0;
  * Voltage select (pin 4, 13V = low)           : PIO2.2
  * Enable/power off (pin 5, Enable = high)     : PIO5.2
  * Tone enable (pin 7, high = tone on)         : PIO2.3 (currently not used by driver, initialized to 0)
- * 1V Vout lift (pin 9, LLC input, high = +1V) : PIO2.6 (currently not used by driver, initialized to 0)
+ * 1V Vout lift (pin 9, LLC input, high = +1V) : PIO2.6
  *
  * Driver currently does not support the DVB-T frontend of TS models
  * and disables it in the driver initialization by powering it off.

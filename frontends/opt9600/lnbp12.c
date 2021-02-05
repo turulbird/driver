@@ -90,6 +90,18 @@ struct lnb_state
 #define LNBP12_LLC_PORT 2
 #define LNBP12_LLC_PIN  6
 
+u16 lnbp12_set_high_lnb_voltage(void *_state, struct dvb_frontend *fe, long arg)
+{
+	struct lnb_state *state = (struct lnb_state *) _state;
+	u16 ret = 0;
+
+	dprintk(150, "%s > (%p, %d)\n", __func__, fe, arg);
+
+	stpio_set_pin(state->lnb_llc_pin, (arg ? 1 : 0));
+	dprintk(150, "%s < (%d)\n", __func__, ret);
+	return ret;
+}
+
 u16 lnbp12_set_voltage(void *_state, struct dvb_frontend *fe, fe_sec_voltage_t voltage)
 {
 	struct lnb_state *state = (struct lnb_state *) _state;
@@ -145,6 +157,7 @@ void *lnbp12_attach(u32 *lnb, struct avl2108_equipment_s *equipment)
 	memcpy(state->lnb, lnb, sizeof(state->lnb));
 
 	equipment->lnb_set_voltage = lnbp12_set_voltage;
+	equipment->set_high_lnb_voltage = lnbp12_set_high_lnb_voltage;
 
 //	Allocate PIO pins
 #if defined(OPT9600)
