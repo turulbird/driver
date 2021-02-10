@@ -992,6 +992,16 @@ int avl2108_set_voltage(struct dvb_frontend *fe, fe_sec_voltage_t voltage)
 	return ret;
 }
 
+int avl2108_set_high_lnb_voltage(struct dvb_frontend* fe, long arg)
+{
+	struct avl2108_state *state = fe->demodulator_priv;
+	int ret = 0;
+
+//	dprintk(10, "%s(%p, %d)\n", __func__, fe, arge);
+	ret = state->equipment.set_high_lnb_voltage(state->lnb_priv, fe, arg);
+	return ret;
+}
+
 /*****************************
  * DiSEqC, LNB and tone
  *****************************/
@@ -2058,6 +2068,9 @@ static struct dvb_frontend_ops avl2108_ops =
 	.read_ucblocks           = avl2108_read_ucblocks,
 	.set_tone                = avl2108_set_tone,
 	.set_voltage             = avl2108_set_voltage,
+#if defined(OPT9600)
+	.enable_high_lnb_voltage = avl2108_set_high_lnb_voltage,
+#endif
 	.diseqc_send_master_cmd  = avl2108_send_diseqc_msg,
 	.diseqc_send_burst       = avl2108_diseqc_send_burst,
 
