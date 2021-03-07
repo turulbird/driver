@@ -80,12 +80,12 @@ obj-m += fe-core.o
 endif
 
 ifdef SPARK
-stv090x-objs += spark/stv090x.o
-stv090x-objs += spark/stv6110x.o
-stv090x-objs += spark/ix7306.o
-stv090x-objs += spark/core.o
-stv090x-objs += spark/vx7903.o
-obj-m += stv090x.o
+spark-fe-objs += spark/stv090x.o
+spark-fe-objs += spark/stv6110x.o
+spark-fe-objs += spark/ix7306.o
+spark-fe-objs += spark/core.o
+spark-fe-objs += spark/vx7903.o
+obj-m += spark-fe.o
 endif
 
 ifdef SPARK7162
