@@ -62,7 +62,7 @@ do \
 #define IOCTL_SET_STANDBY         5
 
 // XXX74T1
-int xxx74t1_init(struct i2c_client *client);
-int xxx74t1_ioctl(struct i2c_client *client, unsigned int cmd, void *arg);
-int xxx74t1_ioctl_kernel(struct i2c_client *client, unsigned int cmd, void *arg);
+int xxx_74t1_init(struct i2c_client *client);
+int xxx_74t1_ioctl(struct i2c_client *client, unsigned int cmd, void *arg);
+int xxx_74t1_ioctl_kernel(struct i2c_client *client, unsigned int cmd, void *arg);
 // vim:ts=4

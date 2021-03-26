@@ -81,7 +81,7 @@ static int rfmod_newprobe(struct i2c_client *client, const struct i2c_device_id 
 	{
 		case MC44BC74T1:
 		{
-			xxx74t1_init(client);
+			xxx_74t1_init(client);
 			break;
 		}
 		default:
@@ -113,7 +113,7 @@ static int rfmod_command_ioctl(struct i2c_client *client, unsigned int cmd, void
 	{
 		case MC44BC74T1:
 		{
-			err = xxx74t1_ioctl(client, cmd, arg);
+			err = xxx_74t1_ioctl(client, cmd, arg);
 			break;
 		}
 	}
