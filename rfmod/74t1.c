@@ -146,11 +146,11 @@ int xxx_74t1_write_2bytes(struct i2c_client *client, unsigned char byte1, unsign
  *
  * Meaning of individual bits:
  * SO    = Sound Oscillator on/off; 0=on, PowerOn value=0 
- * PS    = Picture sound ratio: 0: 12 1: 16 (recommended), PowerOn value=0
+ * PS    = Picture sound ratio: 0: 12dB 1: 16dB (recommended), PowerOn value=0
  * PWC   = Peak White Clip (0 = on), PowerOn value=0
  * OSC   = Carrier Oscillator enable: 1=on (PowerOn value=1)
  * ATT   = Modulator output attenuator (0=normal, 1: attenuator on), PowerOn value=0
- * SFD10 = Sound carrier frequency selection
+ * SFD10 = Sound subcarrier frequency selection
  *         00 = 4.5 MHz
  *         01 = 5.5 MHz (PowerOn value)
  *         10 = 6.0 MHz
@@ -388,11 +388,10 @@ int xxx_74t1_finetune(struct i2c_client *client, int finetune)
 	if (N < 0)
 	{
 		dprintk(1, "Error: illegal divisor N, set channel 36\n");
-		xxx_74t1_calc_N_from_channel(36);
+		N = xxx_74t1_calc_N_from_channel(36);
 	}
 	NewN = N + finetune;
-	xxx_74t1_set_video_carrier_freq(client, NewN);
-	return 0;
+	return xxx_74t1_set_video_carrier_freq(client, NewN);
 }
 
 int xxx_74t1_set_standby(struct i2c_client *client, int standby)
