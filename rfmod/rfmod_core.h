@@ -1,4 +1,5 @@
-/*
+/***************************************************************************
+ *
  * rfmod_core.c  Enigma2 compatible RF modulator driver
  *
  * (c) 2021 Audioniek
@@ -17,13 +18,14 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
-******************************************************************************
+ ***************************************************************************
  *
  * Changes
  *
  * Date     By              Description
- * ----------------------------------------------------------------------------
+ * -------------------------------------------------------------------------
  * 20210326 Audioniek       Initial version.
+ *
  */
 #include <linux/module.h>
 #include <linux/kernel.h>

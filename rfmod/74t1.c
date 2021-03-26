@@ -1,9 +1,9 @@
-/*
- * 74t1.c  Enigma2 compatible driver for XXX74T1
- *         I2C controlled RF modulator
+/***************************************************************************
  *
- * Version for Shenzen Tena Electronics TNF-0170S722-2
- * modulator as used in Spark7162
+ * 74t1.c  Enigma2 compatible driver for XXX74T1 I2C controlled RF modulator
+ *
+ * Version for Shenzen Tena Electronics TNF-0170S722-2 modulator as used
+ * in Fulan Spark7162 models
  *
  * (c) 2021 Audioniek
  *
@@ -21,14 +21,14 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
-******************************************************************************
+ ***************************************************************************
  *
  * Changes
  *
  * Date     By              Description
- * ----------------------------------------------------------------------------
- * 20210326 Audioniek       Initial version, based on Shenzen Tena Electronics
- *                          datasheet for TNF-0170S722-2.
+ * -------------------------------------------------------------------------
+ * 20210326 Audioniek       Initial version, based on Shenzen Tena
+ *                          Electronics datasheet for TNF-0170S722-2.
  *
  */
 
@@ -145,7 +145,7 @@ int xxx_74t1_write_2bytes(struct i2c_client *client, unsigned char byte1, unsign
  *  byte5:   N5 |  N4  |  N3 |  N2  |  N1  |  N0 |  X1 |  X0   Ports byte 2 (PB2)
  *
  * Meaning of individual bits:
- * SO    = 1: Sound Oscillator on/off; 0=on, PowerOn value=0 
+ * SO    = Sound Oscillator on/off; 0=on, PowerOn value=0 
  * PS    = Picture sound ratio: 0: 12 1: 16 (recommended), PowerOn value=0
  * PWC   = Peak White Clip (0 = on), PowerOn value=0
  * OSC   = Carrier Oscillator enable: 1=on (PowerOn value=1)
@@ -178,6 +178,7 @@ int xxx_74t1_write_2bytes(struct i2c_client *client, unsigned char byte1, unsign
  * ADR -> PB1 -> PB2
  *
  * For further details, see datasheet.
+ *
  */
 
 // Bitmask definitions
@@ -203,6 +204,7 @@ int xxx_74t1_write_2bytes(struct i2c_client *client, unsigned char byte1, unsign
  * Input: divisor factor N
  *
  * Note: sets X2..0 to zero (UHF operation)
+ *
  */
 int xxx_74t1_set_video_carrier_freq(struct i2c_client *client, int N)
 {
@@ -232,7 +234,7 @@ int xxx_74t1_set_video_carrier_freq(struct i2c_client *client, int N)
  *
  * Notes:
  * 1. Valid channel numbers are 21 - 69;
- * 2. Channel 21 has a carrier of 474.25 MHz (CCIR PAL-G standard);
+ * 2. Channel 21 has a carrier of 471.25 MHz (CCIR PAL-G standard);
  * 3. Channel spacing is 8 MHz (CCIR PAL-G standard).
  *
  * Returns: frequency in kHz
@@ -400,17 +402,17 @@ int xxx_74t1_set_standby(struct i2c_client *client, int standby)
 	if (standby)
 	{
 		// OSC=0, SO=1, ATT=1
-		byte[1] &= ~BIT74T1_OSC;  // OSC=0
-		byte[0] |=  BIT74T1_SO;   // SO=1
+		byte[1] &= ~BIT74T1_OSC;  // OSC=0 -> UHF oscillator off
+		byte[0] |=  BIT74T1_SO;   // SO=1  -> sound oscillator off
 		byte[1] |=  BIT74T1_ATT;  // ATT=1 -> set software standby
 		return xxx_74t1_write_2bytes(client, byte[0], byte[1]);
 	}
 	else
 	{
 		// OSC=1, SO=0, ATT=0
-		byte[1] |=  BIT74T1_OSC;  // OSC=1  // UHF oscillator on
-		byte[0] &= ~BIT74T1_SO;   // SO=0   // sound oscillator on
-		byte[1] &= ~BIT74T1_ATT;  // ATT=0  // normal operation
+		byte[1] |=  BIT74T1_OSC;  // OSC=1  ->UHF oscillator on
+		byte[0] &= ~BIT74T1_SO;   // SO=0  -> sound oscillator on
+		byte[1] &= ~BIT74T1_ATT;  // ATT=0 -> normal operation
 		res = xxx_74t1_write_2bytes(client, byte[0], byte[1]);
 		// data sheet states to reprogram the video carrier
 		// frequency after leaving standby
@@ -490,22 +492,16 @@ int xxx_74t1_ioctl(struct i2c_client *client, unsigned int cmd, void *arg)
  */
 int xxx_74t1_init(struct i2c_client *client)
 {
-	int channel = 36;
-	int testmode = 0;  // off
-	int audioenable = 1;  // on
-//	int audiocarrier = AC5_5_MHZ;
-	int finetune = 0;  // no fine tune
-	int standby = 0;  // active
 	int res;
 	int N;
 
-	dprintk(20, "%s >\n", __func__);
+//	dprintk(100, "%s >\n", __func__);
 
 	memset(byte, 0, sizeof(byte));  // initialize data array
 	
 	// Prepare byte C1 (byte[0])
 	// Note because of previous memset, only the 1 bits need to be set
-	byte[0] |=  0x80;     // set MSbit
+	byte[0] |=  0x80;        // set MSbit
 	byte[0] |=  BIT74T1_SO;  // SO=1 -> sound oscillator off (needed for standby)
 	byte[0] |=  BIT74T1_PS;  // PS=1 -> picture to sound ratio is 16dB (recommended value)
 	byte[0] &= ~BIT74T1_X3;  // X3=0
@@ -520,7 +516,7 @@ int xxx_74t1_init(struct i2c_client *client)
 	res = xxx_74t1_write_2bytes(client, byte[0], byte[1]);
 
 	// Set initial channel
-	N = xxx_74t1_calc_N_from_channel(channel);
+	N = xxx_74t1_calc_N_from_channel(36);
 	res = xxx_74t1_set_video_carrier_freq(client, N);
 	return res;
 }
