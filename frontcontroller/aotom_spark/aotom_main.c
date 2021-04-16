@@ -112,11 +112,6 @@
 
 short paramDebug = 0;  //debug print level is zero as default (0=nothing, 1= open/close functions, 5=some detail, 10=all)
 #define TAGDEBUG "[aotom] "
-#define dprintk(level, x...) \
-do \
-{ \
-	if ((paramDebug) && (paramDebug > level)) printk(TAGDEBUG x); \
-} while (0)
 
 #define NO_KEY_PRESS     -1
 #define KEY_PRESS_DOWN    1
