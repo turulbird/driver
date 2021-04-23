@@ -996,9 +996,13 @@ struct ProcStructure_s e2Proc[] =
  || defined(HS7819) \
  || defined(SPARK) \
  || defined(SPARK7162)
+	{cProcEntry, "stb/info/OEM",                                                     NULL, NULL, NULL, NULL, ""},
 	{cProcEntry, "stb/info/brand",                                                   NULL, NULL, NULL, NULL, ""},
 	{cProcEntry, "stb/info/model_name",                                              NULL, NULL, NULL, NULL, ""},
+#if defined(SPARK) \
+ || defined(SPARK7162)
 	{cProcEntry, "stb/info/stb_id",                                                  NULL, NULL, NULL, NULL, ""},
+#endif
 #endif
 
 	{cProcDir,   "stb/ir",                                                           NULL, NULL, NULL, NULL, ""},
