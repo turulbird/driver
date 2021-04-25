@@ -26,7 +26,7 @@
 #include "avl2108_reg.h"
 #include "avl2108.h"
 
-#if defined(ATEVIO7500)
+#if defined(HS8200)
 static struct avl_private_data_s avl_tuner_priv =
 {
 	.ref_freq         = 1,

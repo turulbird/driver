@@ -291,7 +291,7 @@ avl2108_platform-objs += avl2108/avl2108_platform.o
 obj-m += avl2108_platform.o
 endif
 
-ifdef ATEVIO7500
+ifdef HS8200
 obj-y += multituner/
 endif
 

@@ -53,7 +53,7 @@
 
 //-------------------------------------
 
-#if defined(ATEVIO7500)
+#if defined(HS8200)
 unsigned int InterruptLine = 120;
 unsigned int ASCXBaseAddress = ASC3BaseAddress;
 #elif defined(HS7110) \
@@ -109,4 +109,4 @@ int serial_putc(char Data)
 	*ASCn_TX_BUFF = Data;
 	return 1;
 }
-
+// vim:ts=4

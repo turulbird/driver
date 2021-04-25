@@ -106,7 +106,7 @@ obj-m += starci.o
 starci-objs:= starci2win/starci2win.o
 endif
 
-ifdef ATEVIO7500
+ifdef HS8200
 obj-m += starci.o
 starci-objs:= starci2win/starci2win.o
 endif

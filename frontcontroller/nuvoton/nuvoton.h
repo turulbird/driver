@@ -51,7 +51,7 @@ extern short paramDebug;
  || defined(HS7429)
 #define DISP_SIZE 8
 #elif defined(FORTIS_HDBOX) \
- || defined(ATEVIO7500)
+ || defined(HS8200)
 #define DISP_SIZE 12
 #elif defined(HS7810A) \
  || defined(HS7119) \
@@ -79,7 +79,7 @@ extern tFrontPanelOpen FrontPanelOpen[LASTMINOR];
 #define EOP                   0x03
 
 #if defined(FORTIS_HDBOX) \
- || defined(ATEVIO7500)
+ || defined(HS8200)
 #define ICON_THREAD_STATUS_RUNNING 0
 #define ICON_THREAD_STATUS_STOPPED 1
 #define ICON_THREAD_STATUS_INIT    2
@@ -121,7 +121,7 @@ extern tFrontPanelOpen FrontPanelOpen[LASTMINOR];
 #if defined(FORTIS_HDBOX) \
  || defined(OCTAGON1008)
 #define RESELLER_OFFSET 0x000000f0  // offset to 32 bit word in mtd0 that holds the resellerID & loader version
-#elif defined(ATEVIO7500) \
+#elif defined(HS8200) \
  ||  defined(HS7110) \
  ||  defined(HS7420) \
  ||  defined(HS7810A) \
@@ -270,7 +270,7 @@ enum //FS9X00 icon numbers and their names
 	ICON_SPINNER    // 41
 };
 
-#elif defined(ATEVIO7500)
+#elif defined(HS8200)
 /***************************************************************
  *
  * Icons for HS8200
@@ -372,7 +372,7 @@ enum //HS8200 icon numbers and their names
 
 #define cCommandGetFrontInfo     0xd0 // 01     - not used in nuvoton                    2 bytes 0:00, 1:01
 
-#if defined(ATEVIO7500)
+#if defined(HS8200)
 #define cCommand_E9              0xe9 // 10     ? not used in nuvoton                    9 bytes
 #define cCommand_EB              0xeb // 12     ? not used in nuvoton                    nothing
 #define cCommand_F4              0xf4 // 05     ? not used in nuvoton                    nothing
@@ -481,7 +481,7 @@ struct saved_data_s
 	int display_on;
 #if !defined(HS7110)
 	int icon_state[ICON_MAX + 2];
-#if defined(ATEVIO7500)
+#if defined(HS8200)
 	int icon_count; // number of icons switched on
 #endif
 #endif
@@ -503,7 +503,7 @@ struct vfd_buffer
 #endif
 
 #if defined(FORTIS_HDBOX) \
- || defined(ATEVIO7500)
+ || defined(HS8200)
 typedef struct
 {
 	int state;
@@ -523,7 +523,7 @@ extern int nuvotonWriteCommand(char *buffer, int len, int needAck);
 #if defined(FORTIS_HDBOX)
 extern tIconState spinner_state;
 #endif
-#if defined(ATEVIO7500)
+#if defined(HS8200)
 extern tIconState spinner_state;
 extern tIconState icon_state;
 extern int icon_thread(void *arg);

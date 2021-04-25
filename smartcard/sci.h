@@ -39,7 +39,7 @@
  || defined(VITAMIN_HD5000)
 #include "sci_7111.h"
 #elif defined(CONFIG_CPU_SUBTYPE_STX7105) \
- || defined(ATEVIO7500)
+ || defined(HS8200)
 #include "sci_7105.h"
 #endif
 
@@ -71,7 +71,7 @@
 
 #if defined(HL101) \
  || defined(VIP1_V1) \
- || defined(ATEVIO7500) \
+ || defined(HS8200) \
  || defined(FORTIS_HDBOX) \
  || defined(CUBEREVO) \
  || defined(ADB_BOX) \

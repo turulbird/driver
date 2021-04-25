@@ -8,7 +8,7 @@
  * @brief Availink avl2108 - DVBS/S2 Satellite demod driver with Sharp BS2S7HZ6360 tuner
  *
  * Copyright (C) 2009-2010 Duolabs Spa
- *               2011 adapted by konfetti for use with ufs922, octagon1008 and atevio7500
+ *               2011 adapted by konfetti for use with ufs922, octagon1008 and hs8200
  *
  * based on avl6222 code from:
  * @author Ramon-Tomislav Rebersak <ramon.rebersak@gmail.com>
@@ -65,16 +65,6 @@
 		Y[2] =(u8)((X) >> 8); \
 		Y[3] =(u8)((X) & 0xFF); \
 	} while (0)
-
-#if defined TAGDEBUG
-#undef TAGDEBUG
-#endif
-#define TAGDEBUG "[avl6222] "
-
-#define dprintk(level, x...) do \
-{ \
-	if ((paramDebug) && (paramDebug > level)) printk(TAGDEBUG x); \
-} while (0)
 
 /*---------------------------------------------------------------------
  * Definitions

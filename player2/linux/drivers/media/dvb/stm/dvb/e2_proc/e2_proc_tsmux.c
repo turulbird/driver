@@ -181,7 +181,7 @@ int proc_tsmux_ci0_input_write(struct file *file, const char __user *buf,
  || defined(HL101) \
  || defined(VIP1_V1) \
  || defined(VIP1_V2) \
- || defined(ATEVIO7500) \
+ || defined(HS8200) \
  || defined(IPBOX9900) \
  || defined(IPBOX99) \
  || defined(IPBOX55) \
@@ -223,7 +223,7 @@ int proc_tsmux_ci0_input_read(char *page, char **start, off_t off, int count,
  || defined(HL101) \
  || defined(VIP1_V1) \
  || defined(VIP1_V2) \
- || defined(ATEVIO7500) \
+ || defined(HS8200) \
  || defined(IPBOX9900) \
  || defined(IPBOX99) \
  || defined(IPBOX55) \
@@ -274,7 +274,7 @@ int proc_tsmux_ci1_input_write(struct file *file, const char __user *buf,
  || defined(HL101) \
  || defined(VIP1_V1) \
  || defined(VIP1_V2) \
- || defined(ATEVIO7500) \
+ || defined(HS8200) \
  || defined(IPBOX9900) \
  || defined(IPBOX99) \
  || defined(IPBOX55) \
@@ -316,7 +316,7 @@ int proc_tsmux_ci1_input_read(char *page, char **start, off_t off, int count,
  || defined(HL101) \
  || defined(VIP1_V1) \
  || defined(VIP1_V2) \
- || defined(ATEVIO7500) \
+ || defined(HS8200) \
  || defined(IPBOX9900) \
  || defined(IPBOX99) \
  || defined(IPBOX55) \

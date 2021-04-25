@@ -80,7 +80,7 @@ ifdef FORTIS_HDBOX
 obj-y += nuvoton/
 endif
 
-ifdef ATEVIO7500
+ifdef HS8200
 obj-y += nuvoton/
 endif
 

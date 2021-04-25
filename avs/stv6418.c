@@ -50,7 +50,7 @@ static unsigned char backup_regs[STV6418_MAX_REGS + 1];
 /* hold old values for standby */
 static unsigned char t_stnby=0;
 
-#if !defined(IPBOX9900) && !defined(IPBOX99) && !defined(ATEVIO7500) && !defined(CUBEREVO_3000HD)
+#if !defined(IPBOX9900) && !defined(IPBOX99) && !defined(HS8200) && !defined(CUBEREVO_3000HD)
 static struct stpio_pin* eMute;   // mute bin
 
 #define MUTE_CLR() {stpio_set_pin(eMute, 0);}
@@ -281,7 +281,7 @@ inline int stv6418_set_mute( struct i2c_client *client, int type )
 			set_bits(regs, cReg1, 0, 0, 2);  /* tv cinch mute */
 			set_bits(regs, cReg1, 0, 3, 2);  /* vcr mute */
 		}
-#ifndef ATEVIO7500
+#ifndef HS8200
 #if !defined (IPBOX9900) \
  && !defined (IPBOX99) \
  && !defined(CUBEREVO_3000HD)
@@ -299,7 +299,7 @@ inline int stv6418_set_mute( struct i2c_client *client, int type )
 			tv_value = 0xff;
 			vcr_value = 0xff;
 		}
-#ifndef ATEVIO7500
+#ifndef HS8200
 #if !defined (IPBOX9900) \
  && !defined (IPBOX99) \
  && !defined(CUBEREVO_3000HD)
@@ -1103,7 +1103,7 @@ int stv6418_init(struct i2c_client *client)
 
 #if !defined(IPBOX9900) \
  && !defined(IPBOX99) \
- && !defined(ATEVIO7500) \
+ && !defined(HS8200) \
  && !defined(CUBEREVO_3000HD)
 	eMute= stpio_request_pin (2, 2, "AVS_MUTE", STPIO_OUT);
 	if (eMute == NULL)

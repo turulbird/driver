@@ -590,7 +590,7 @@ void parseMessage(unsigned char src, unsigned char dst, unsigned int len, unsign
 				responseBuffer[3] = 0xD0;
 				responseBuffer[4] = 0x55;
 #else
-#ifdef ATEVIO7500
+#ifdef HS8200
 				responseBuffer[2] = 0x00;
 				responseBuffer[3] = 0x1E;
 				responseBuffer[4] = 0xB8;

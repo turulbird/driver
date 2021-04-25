@@ -331,8 +331,8 @@ static int info_model_read(char *page, char **start, off_t off, int count, int *
 	int len = sprintf(page, "hdbox\n");
 #elif defined(OCTAGON1008)
 	int len = sprintf(page, "octagon1008\n");
-#elif defined(ATEVIO7500)
-	int len = sprintf(page, "atevio7500\n");
+#elif defined(HS8200)
+	int len = sprintf(page, "hs8200\n");
 #elif defined(HS7110)
 	int len = sprintf(page, "hs7110\n");
 #elif defined(HS7119)
@@ -675,7 +675,7 @@ static int info_chipset_read(char *page, char **start, off_t off, int count, int
 #if defined(UFS910) \
  || defined(ADB_BOX)
 	int len = sprintf(page, "STi7100\n");
-#elif defined(ATEVIO7500) \
+#elif defined(HS8200) \
  || defined(UFS913) \
  || defined(SAGEMCOM88) \
  || defined(PACE7241)
@@ -987,7 +987,7 @@ struct ProcStructure_s e2Proc[] =
 #endif
 #if defined(FORTIS_HDBOX) \
  || defined(OCTAGON1008) \
- || defined(ATEVIO7500) \
+ || defined(HS8200) \
  || defined(HS7110) \
  || defined(HS7119) \
  || defined(HS7420) \
@@ -1017,7 +1017,7 @@ struct ProcStructure_s e2Proc[] =
 
 #if defined(ADB_BOX) \
  || defined(FORTIS_HDBOX) \
- || defined(ATEVIO7500) \
+ || defined(HS8200) \
  || defined(SPARK7162) \
  || defined(TF7700) \
  || defined(VITAMIN_HD5000) \
@@ -1037,7 +1037,7 @@ struct ProcStructure_s e2Proc[] =
 #endif
 #if defined(ADB_BOX) \
  || defined(FORTIS_HDBOX) \
- || defined(ATEVIO7500) \
+ || defined(HS8200) \
  || defined(CUBEREVO) \
  || defined(CUBEREVO_MINI) \
  || defined(CUBEREVO_MINI2) \
@@ -1118,7 +1118,7 @@ struct ProcStructure_s e2Proc[] =
 
 #if defined(FORTIS_HDBOX) \
  || defined(OCTAGON1008) \
- || defined(ATEVIO7500) \
+ || defined(HS8200) \
  || defined(HS7110) \
  || defined(HS7119) \
  || defined(HS7420) \
@@ -1217,7 +1217,7 @@ struct ProcStructure_s e2Proc[] =
 	{cProcEntry, "stb/video/plane/psi_apply",                                        NULL, NULL, NULL, NULL, "psi_apply"},
 #if defined(UFS912) \
  || defined(UFS913) \
- || defined(ATEVIO7500) \
+ || defined(HS8200) \
  || defined(HS7110) \
  || defined(HS7119) \
  || defined(ATEMIO520) \

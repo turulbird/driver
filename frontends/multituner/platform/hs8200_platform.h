@@ -1,5 +1,5 @@
 /*
- * @brief at7500_platform.h
+ * @brief hs8200_platform.h
  *
  * @author konfetti
  *
@@ -20,8 +20,8 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#ifndef _at7500_123
-#define _at7500_123
+#ifndef _hs8200_123
+#define _hs8200_123
 
 #include <linux/version.h>
 #include <linux/dvb/version.h>
@@ -178,7 +178,7 @@ struct platform_frontend_config_s s5h1432_frontend =
 	.private            = &s5h_tuner_priv,
 };
 #endif
-struct tunersocket_s atevio7500_socket =
+struct tunersocket_s hs8200_socket =
 {
 	.numSockets       = 2,
 	.socketList       = (struct socket_s[])
@@ -250,13 +250,13 @@ struct platform_device s5h1432_frontend_device =
 };
 #endif
 
-struct platform_device atevio7500_socket_device =
+struct platform_device hs8200_socket_device =
 {
 	.name          = "socket",
 	.id            = -1,
 	.dev           =
 	{
-		.platform_data = &atevio7500_socket,
+		.platform_data = &hs8200_socket,
 	},
 	.num_resources = 0,
 	.resource      = NULL,
@@ -268,7 +268,7 @@ struct platform_device *platform[] __initdata =
 	&tda10024_frontend_device,
 	&cxd2820_frontend_device,
 //	&s5h1432_frontend_device,
-	&atevio7500_socket_device,
+	&hs8200_socket_device,
 };
 #endif
 // vim:ts=4

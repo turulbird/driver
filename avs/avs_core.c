@@ -112,7 +112,7 @@ static unsigned short normal_i2c[] =
  || defined(VIP1_V1) \
  || defined(UFS912) \
  || defined(UFS913) \
- || defined(ATEVIO7500) \
+ || defined(HS8200) \
  || defined(IPBOX9900) \
  || defined(IPBOX99) \
  || defined(ADB_BOX) \

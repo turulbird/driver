@@ -189,7 +189,7 @@ static void WriteRegister(volatile unsigned long *reg, unsigned long val)
 #if defined(UFS912) \
  || defined(SPARK) \
  || defined (SPARK7162) \
- || defined(ATEVIO7500) \
+ || defined(HS8200) \
  || defined(HS7110) \
  || defined(HS7810A) \
  || defined(HS7420) \
@@ -222,7 +222,7 @@ void spdif_out_mute(int mute)
 #if defined(UFS912) \
  || defined(SPARK) \
  || defined(SPARK7162) \
- || defined(ATEVIO7500) \
+ || defined(HS8200) \
  || defined(HS7110) \
  || defined(HS7810A) \
  || defined(HS7420) \
@@ -243,7 +243,7 @@ void spdif_out_mute(int mute)
 #if defined(UFS912) \
  || defined(SPARK) \
  || defined(SPARK7162) \
- || defined(ATEVIO7500) \
+ || defined(HS8200) \
  || defined(HS7110) \
  || defined(HS7810A) \
  || defined(HS7420) \
@@ -267,7 +267,7 @@ void spdif_out_mute(int mute)
 #if defined(UFS912) \
  || defined(SPARK) \
  || defined(SPARK7162) \
- || defined(ATEVIO7500) \
+ || defined(HS8200) \
  || defined(HS7110) \
  || defined(HS7810A) \
  || defined(HS7420) \

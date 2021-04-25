@@ -113,7 +113,7 @@ extern void socket_register_adapter(struct dvb_adapter *dvb_adap);
  ||   defined(OPT9600)
 extern void avl2108_register_frontend(struct dvb_adapter *dvb_adap);
 extern void avl2108_register_frontend(struct dvb_adapter *dvb_adap);
-#elif defined(ATEVIO7500)
+#elif defined(HS8200)
 extern void socket_register_adapter(struct dvb_adapter *dvb_adap);
 #elif defined(SPARK7162)
 extern void spark7162_register_frontend(struct dvb_adapter *dvb_adap);
@@ -495,7 +495,7 @@ void ptiInit(struct DeviceContext_s *pContext)
  || defined(UFS913) \
  || defined(SPARK) \
  || defined(SPARK7162) \
- || defined(ATEVIO7500) \
+ || defined(HS8200) \
  || defined(HS7110) \
  || defined(HS7810A) \
  || defined(HS7420) \
@@ -567,7 +567,7 @@ void ptiInit(struct DeviceContext_s *pContext)
  || defined(CUBEREVO_9500HD) \
  || defined(CUBEREVO_MINI_FTA) \
  || defined(CUBEREVO_3000HD) \
- || defined(ATEVIO7500) \
+ || defined(HS8200) \
  || defined(IPBOX9900) \
  || defined(IPBOX99) \
  || defined(IPBOX55) \
@@ -618,7 +618,7 @@ void ptiInit(struct DeviceContext_s *pContext)
 #elif defined(OCTAGON1008) \
  ||   defined(OPT9600)
 		avl2108_register_frontend(&pContext->DvbContext->DvbAdapter);
-#elif defined(ATEVIO7500)
+#elif defined(HS8200)
 		socket_register_adapter(&pContext->DvbContext->DvbAdapter);
 #elif defined(SPARK7162)
 		spark7162_register_frontend(&pContext->DvbContext->DvbAdapter);

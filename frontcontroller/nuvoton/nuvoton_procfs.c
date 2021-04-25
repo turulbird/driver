@@ -79,8 +79,8 @@
  *
  *  /proc/stb/lcd/
  *             |
- *             +--- symbol_circle (rw)       Control of spinner (FORTIS_HDBOX & ATEVIO7500 only)
- *             +--- symbol_timeshift (rw)    Control of timeshift icon (FORTIS_HDBOX & ATEVIO7500 only)
+ *             +--- symbol_circle (rw)       Control of spinner (FORTIS_HDBOX & HS8200 only)
+ *             +--- symbol_timeshift (rw)    Control of timeshift icon (FORTIS_HDBOX & HS8200 only)
  */
 
 /* from e2procfs */
@@ -106,7 +106,7 @@ extern int nuvotonSetWakeUpTime(char *time);
 /* Globals */
 static int progress = 0;
 #if defined(FORTIS_HDBOX) \
- || defined(ATEVIO7500)
+ || defined(HS8200)
 static int symbol_circle = 0;
 static int timeshift = 0;
 static int old_icon_state;
@@ -159,7 +159,7 @@ static int progress_read(char *page, char **start, off_t off, int count, int *eo
 }	
 
 #if defined(FORTIS_HDBOX) \
- || defined(ATEVIO7500)
+ || defined(HS8200)
 static int symbol_circle_write(struct file *file, const char __user *buf, unsigned long count, void *data)
 {
 	char* page;
@@ -191,7 +191,7 @@ static int symbol_circle_write(struct file *file, const char __user *buf, unsign
 			}
 			if (spinner_state.state == 0)  // if spinner not active
 			{
-#if defined(ATEVIO7500)
+#if defined(HS8200)
 				if (icon_state.state != 0)
 				{  // stop icon thread if active
 					old_icon_state = icon_state.state;
@@ -235,7 +235,7 @@ static int symbol_circle_write(struct file *file, const char __user *buf, unsign
 			{
 				spinner_state.state = 0;
 				lastdata.icon_state[ICON_SPINNER] = 0;
-#if defined(ATEVIO7500)
+#if defined(HS8200)
 //				dprintk(50, "%s Stop spinner thread\n", __func__);
 				i = 0;
 				do
@@ -247,7 +247,7 @@ static int symbol_circle_write(struct file *file, const char __user *buf, unsign
 //				dprintk(50, "%s Spinner thread stopped\n", __func__);
 #endif
 			}
-#if defined(ATEVIO7500)
+#if defined(HS8200)
 			if (old_icon_state != 0)  // restart icon thread when it was active
 			{
 				icon_state.state = old_icon_state;
@@ -758,7 +758,7 @@ static int led_pattern_write(struct file *file, const char __user *buf, unsigned
 			}
 			else if (pattern == 0xffffffff)
 			{
-#if defined(FORTIS_HDBOX) || defined(ATEVIO7500)
+#if defined(FORTIS_HDBOX) || defined(HS8200)
 				nuvotonSetLED(which + 1, 31);
 #else
 				nuvotonSetLED(which+ 1 , 7);
@@ -1142,7 +1142,7 @@ struct fp_procs
 	{ "stb/fp/version", fp_version_read, NULL },
 	{ "stb/fp/resellerID", fp_reseller_read, NULL },
 #if defined(FORTIS_HDBOX) \
- || defined(ATEVIO7500)
+ || defined(HS8200)
 	{ "stb/lcd/symbol_circle", symbol_circle_read, symbol_circle_write },
 	{ "stb/lcd/symbol_timeshift", timeshift_read, timeshift_write }
 #endif

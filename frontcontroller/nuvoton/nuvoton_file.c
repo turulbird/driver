@@ -37,13 +37,13 @@
  *                          once if text is longer than display size,
  * 20131224 Audioniek       except on HS7119, HS7810A & HS7819.
  * 20131205 Audioniek       Errors and doubles corrected in HDBOX icon table.
- * 20131220 Audioniek       Start of work on ATEVIO7500 (Fortis HS8200).
+ * 20131220 Audioniek       Start of work on HS8200 (Fortis HS8200).
  * 20131224 Audioniek       nuvotonWriteString on HS7119/HS7810A/HS7819
  *                          completely rewritten including special handling
  *                          of periods and colons.
  * 20140210 Audioniek       Start of work on HS7119 & HS7819.
- * 20140403 Audioniek       SetLED for ATEVIO7500 added.
- * 20140415 Audioniek       ATEVIO7500 finished; yet to do: icons.
+ * 20140403 Audioniek       SetLED for HS8200 added.
+ * 20140415 Audioniek       HS8200 finished; yet to do: icons.
  * 20140426 Audioniek       HS7119/7810A/7819 work completed.
  * 20140916 Audioniek       Fixed compiler warnings with HS7119/7810A/7819.
  * 20140921 Audioniek       No special handling of periods and colons for
@@ -110,7 +110,7 @@
  * OCTAGON1008:  The HS9510 and its variants. In Germany sold as
  *               Octagon SF1008P, Octagon SF1008SE, Atevio AV700 and
  *               Astro ASR1100.
- * ATEVIO7500:   The HS8200. In Germany sold as Octagon SF1028, Atevio AV7500,
+ * HS8200:   The HS8200. In Germany sold as Octagon SF1028, Atevio AV7500,
  *               Atemio AV7600 and Opticum Actus Duo.
  * All other Fortis models are designated by the internal Fortis model
  * number that can be found on the component side of the main board, usually
@@ -145,7 +145,7 @@
 
 #if defined(FORTIS_HDBOX)
 tIconState spinner_state;
-#elif defined(ATEVIO7500)
+#elif defined(HS8200)
 tIconState spinner_state;
 tIconState icon_state;
 #endif
@@ -590,7 +590,7 @@ struct iconToInternal
 	{ "ICON_RADIO",     ICON_RADIO,     0x24, 0x04, 0xff, 0x00 }   // 39
 };
 
-#elif defined(ATEVIO7500)
+#elif defined(HS8200)
 /***************************************************************
  *
  * Icons for HS8200
@@ -940,7 +940,7 @@ int nuvotonSetIcon(int which, int on)
 	dprintk(100, "%s <\n", __func__);
 	return res;
 }
-#elif defined (ATEVIO7500)
+#elif defined (HS8200)
 int nuvotonSetIcon(int which, int on)
 {
 	char buffer[9];  // buffer to construct front processor command in
@@ -1081,7 +1081,7 @@ int nuvotonSetLED(int which, int level)
 
 #define MAX_BRIGHT 7
 #elif defined(FORTIS_HDBOX) \
- || defined(ATEVIO7500)                    
+ || defined(HS8200)                    
 #define MAX_LED 255  // LED number is a bit mask: bit 0 (  1) = red power
                      //                           bit 1 (  2) = blue power
                      //                           bit 2 (  4) = -
@@ -1143,7 +1143,7 @@ EXPORT_SYMBOL(nuvotonSetLED);
  */
 #if defined(FORTIS_HDBOX) \
  || defined(OCTAGON1008) \
- || defined(ATEVIO7500) \
+ || defined(HS8200) \
  || defined(HS7420) \
  || defined(HS7429)  // VFD models
 int nuvotonSetBrightness(int level)
@@ -1468,7 +1468,7 @@ int nuvotonSetTimeFormat(char format)
  */
 #if defined(FORTIS_HDBOX) \
  || defined(OCTAGON1008) \
- || defined(ATEVIO7500) \
+ || defined(HS8200) \
  || defined(HS7420) \
  || defined(HS7429)  // VFD models
 int nuvotonSetDisplayOnOff(char level)
@@ -1501,7 +1501,7 @@ int nuvotonSetDisplayOnOff(char level)
 			lastdata.icon_state[ICON_SPINNER] = 1;
 			spinner_state.state = 0;
 		}
-#elif defined(ATEVIO7500)
+#elif defined(HS8200)
 		if (spinner_state.state)
 		{
 			lastdata.icon_state[ICON_SPINNER] = 1;
@@ -1522,7 +1522,7 @@ int nuvotonSetDisplayOnOff(char level)
 			}
 		}
 #if defined(FORTIS_HDBOX) \
- || defined(ATEVIO7500)
+ || defined(HS8200)
 		if (lastdata.icon_state[ICON_SPINNER] != 0)
 		{
 			spinner_state.state = 1;
@@ -1602,7 +1602,7 @@ int nuvotonGetVersion(unsigned int *data)
 		return -1;
 	}
 #if 0
-#if defined(ATEVIO7500) \
+#if defined(HS8200) \
  ||  defined(HS7110) \
  ||  defined(HS7420) \
  ||  defined(HS7810A) \
@@ -1992,9 +1992,9 @@ int nuvotonWriteString(unsigned char *aBuf, int len)
 	dprintk(100, "%s <\n", __func__);
 	return res;
 }
-#elif defined(ATEVIO7500) \
+#elif defined(HS8200) \
  || defined(FORTIS_HDBOX)
-// ATEVIO7500  : 13 character dot matrix VFD without colons or icons,
+// HS8200  : 13 character dot matrix VFD without colons or icons,
 //               leftmost character used as icon display
 // FORTIS_HDBOX: 12 character dot matrix VFD with colons and icons
 int nuvotonWriteString(unsigned char *aBuf, int len)
@@ -2110,7 +2110,7 @@ int nuvotonWriteString(unsigned char *aBuf, int len)
 	dprintk(100, "%s <\n", __func__);
 	return res;
 }
-#else  // not HS7119, HS7420, HS7429, HS7810A, HS7819, OCTAGON1008, FORTIS_HDBOX or ATEVIO7500 -> HS7110
+#else  // not HS7119, HS7420, HS7429, HS7810A, HS7819, OCTAGON1008, FORTIS_HDBOX or HS8200 -> HS7110
 int nuvotonWriteString(unsigned char *aBuf, int len)
 {
 	dprintk(100, "%s >\n", __func__);
@@ -2228,7 +2228,7 @@ int nuvoton_init_func(void)
 	char initD[] = {SOP, cCommandSetLed, 0x01, 0x00, 0x08, EOP};        // power LED (red) off, deep standby brightness 8
 	char initE[] = {SOP, cCommandSetLed, 0x02, 0x03, 0x00, EOP};        // logo brightness 3, deep standby off
 
-#elif defined(ATEVIO7500)  // sequence is identical to HDBOX
+#elif defined(HS8200)  // sequence is identical to HDBOX
 /* Shortened essential factory sequence HS8200
  *
  * SOP ce 10 20 20 20 20 20 20 20 20 20 20 20 20 20 EOP blank display
@@ -2320,7 +2320,7 @@ int nuvoton_init_func(void)
 	printk("Fortis HS9510");
 #elif defined(FORTIS_HDBOX)
 	printk("Fortis FS9000/9200");
-#elif defined(ATEVIO7500)
+#elif defined(HS8200)
 	printk("Fortis HS8200");
 #elif defined(HS7110)
 	printk("Fortis HS7110");
@@ -2357,7 +2357,7 @@ int nuvoton_init_func(void)
  	res |= nuvotonWriteCommand(init5, sizeof(init5), 0);
 #if defined(FORTIS_HDBOX) \
  || defined(OCTAGON1008) \
- || defined(ATEVIO7500) \
+ || defined(HS8200) \
  || defined(HS7420) \
  || defined(HS7429) \
  || defined(HS7119) \
@@ -2367,7 +2367,7 @@ int nuvoton_init_func(void)
 #endif
 #if defined(FORTIS_HDBOX) \
  || defined(OCTAGON1008) \
- || defined(ATEVIO7500) \
+ || defined(HS8200) \
  || defined(HS7420) \
  || defined(HS7429)
 	res |= nuvotonWriteCommand(init7, sizeof(init7), 0);
@@ -2397,7 +2397,7 @@ int nuvoton_init_func(void)
 		res |= nuvotonSetIcon(vLoop, 0);  //switch all icons off
 	}
 #endif
-#if defined(ATEVIO7500)
+#if defined(HS8200)
 	lastdata.icon_count = 0;
 #endif
 
@@ -2799,7 +2799,7 @@ static int NUVOTONdev_ioctl(struct inode *Inode, struct file *File, unsigned int
 				switch (icon_nr)
 				{
 #if defined(FORTIS_HDBOX) \
- || defined(ATEVIO7500)
+ || defined(HS8200)
 					case 0x13:  // crypted
 					{
 						icon_nr = ICON_SCRAMBLED;
@@ -2810,7 +2810,7 @@ static int NUVOTONdev_ioctl(struct inode *Inode, struct file *File, unsigned int
 						icon_nr = ICON_DOLBY;
 						break;
 					}
-#if !defined(ATEVIO7500)
+#if !defined(HS8200)
 					case 0x15:  // MP3
 					{
 						icon_nr = ICON_MP3;
@@ -2872,7 +2872,7 @@ static int NUVOTONdev_ioctl(struct inode *Inode, struct file *File, unsigned int
 			switch (icon_nr)
 			{
 #if defined(FORTIS_HDBOX) \
- || defined(ATEVIO7500)
+ || defined(HS8200)
 				case ICON_SPINNER:
 				{
 					if (mode == 0)  // vfd mode
@@ -2895,7 +2895,7 @@ static int NUVOTONdev_ioctl(struct inode *Inode, struct file *File, unsigned int
 						spinner_state.period = on * 10;
 						up(&spinner_state.sem);
 					}
-#elif defined(ATEVIO7500)
+#elif defined(HS8200)
 					if (on)
 					{
 						if (icon_state.state == 1)
@@ -2937,10 +2937,10 @@ static int NUVOTONdev_ioctl(struct inode *Inode, struct file *File, unsigned int
 					res = 0;
 					break;
 				}
-#endif  // ATEVIO7500 or FORTIS HD_BOX
+#endif  // HS8200 or FORTIS HD_BOX
 				case ICON_MAX:
 				{
-#if defined(ATEVIO7500)
+#if defined(HS8200)
 					if (spinner_state.state == 1)  // switch spinner off if on
 					{
 						dprintk(50, "%s Stop spinner\n", __func__);
@@ -2992,7 +2992,7 @@ static int NUVOTONdev_ioctl(struct inode *Inode, struct file *File, unsigned int
 				}
 				default:  // (re)set a single icon
 				{
-#if defined(ATEVIO7500)
+#if defined(HS8200)
 					if (on != lastdata.icon_state[icon_nr])
 					{
 						on ? lastdata.icon_count++ : lastdata.icon_count--;

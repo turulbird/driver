@@ -37,7 +37,7 @@
 /* Access ASC3; from u-boot; copied from TF7700 ;-)   */
 /* ************************************************** */
 
-#if defined(ATEVIO7500) \
+#if defined(HS8200) \
  || defined(HS7110) \
  || defined(HS7119) \
  || defined(HS7420) \
@@ -54,7 +54,7 @@
 	 || defined(HS7810A) \
 	 || defined(HS7819)
 		#define ASC3BaseAddress 0xfd034000
-	#else //ATEVIO7500
+	#else //HS8200
 		#define ASC3BaseAddress 0xfd033000
 	#endif
 #else //1G receivers

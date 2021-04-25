@@ -92,8 +92,8 @@ endif
 ifdef FORTIS_HDBOX
 CCFLAGSY += -DFORTIS_HDBOX
 endif
-ifdef ATEVIO7500
-CCFLAGSY += -DATEVIO7500
+ifdef HS8200
+CCFLAGSY += -DHS8200
 endif
 ifdef HS7110
 CCFLAGSY += -DHS7110
@@ -252,7 +252,7 @@ ifdef UFS913
 obj-y += cec/
 endif
 
-ifdef ATEVIO7500
+ifdef HS8200
 obj-y += cec/
 obj-y += smartcard/
 obj-y += sata_switch/

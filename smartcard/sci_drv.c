@@ -568,7 +568,7 @@ INT smartcard_voltage_config(SCI_CONTROL_BLOCK *sci, UINT vcc)
 #if !defined(SPARK) \
  && !defined(HL101) \
  && !defined(VIP1_V1) \
- && !defined(ATEVIO7500) \
+ && !defined(HS8200) \
  && !defined(ADB_BOX) \
  && !defined(VITAMIN_HD5000)  // no voltage control
 			set_reg_writeonly(sci, BASE_ADDRESS_PIO4, PIO_CLR_P4OUT, 0x40);
@@ -582,7 +582,7 @@ INT smartcard_voltage_config(SCI_CONTROL_BLOCK *sci, UINT vcc)
 #if !defined(SPARK) \
  && !defined(HL101) \
  && !defined(VIP1_V1) \
- && !defined(ATEVIO7500) \
+ && !defined(HS8200) \
  && !defined(ADB_BOX) \
  && !defined(VITAMIN_HD5000)  // no voltage control
 			set_reg_writeonly(sci, BASE_ADDRESS_PIO4, PIO_SET_P4OUT, 0x40);
@@ -597,7 +597,7 @@ INT smartcard_voltage_config(SCI_CONTROL_BLOCK *sci, UINT vcc)
 #if !defined(SPARK) \
  && !defined(HL101) \
  && !defined(VIP1_V1) \
- && !defined(ATEVIO7500) \
+ && !defined(HS8200) \
  && !defined(ADB_BOX) // no voltage control
 			set_reg_writeonly(sci, BASE_ADDRESS_PIO4, PIO_SET_P4OUT, 0x40);
 #endif
@@ -614,7 +614,7 @@ INT smartcard_voltage_config(SCI_CONTROL_BLOCK *sci, UINT vcc)
 #if !defined(SPARK) \
  && !defined(HL101) \
  && !defined(VIP1_V1) \
- && !defined(ATEVIO7500) \
+ && !defined(HS8200) \
  && !defined(ADB_BOX)  // no voltage control
 			set_reg_writeonly(sci, BASE_ADDRESS_PIO3, PIO_CLR_P3OUT, 0x40);
 #endif
@@ -627,7 +627,7 @@ INT smartcard_voltage_config(SCI_CONTROL_BLOCK *sci, UINT vcc)
 #if !defined(SPARK) \
  && !defined(HL101) \
  && !defined(VIP1_V1) \
- && !defined(ATEVIO7500) \
+ && !defined(HS8200) \
  && !defined(ADB_BOX)  // no voltage control
 			set_reg_writeonly(sci, BASE_ADDRESS_PIO3, PIO_SET_P3OUT, 0x40);
 #endif
@@ -641,7 +641,7 @@ INT smartcard_voltage_config(SCI_CONTROL_BLOCK *sci, UINT vcc)
 #if !defined(SPARK) \
  && !defined(HL101) \
  && !defined(VIP1_V1) \
- && !defined(ATEVIO7500) \
+ && !defined(HS8200) \
  && !defined(ADB_BOX)  // no voltage control
 			set_reg_writeonly(sci, BASE_ADDRESS_PIO3, PIO_CLR_P3OUT, 0x40);
 #endif
@@ -1328,7 +1328,7 @@ static int SCI_SetClockSource(SCI_CONTROL_BLOCK *sci)
 	iounmap((void *)reg_address);
 #endif
 #if defined(CONFIG_CPU_SUBTYPE_STX7105) \
- || defined(ATEVIO7500)
+ || defined(HS8200)
 	reg_address = (U32)checked_ioremap(EPLD_BASE_ADDRESS / +EPLD_SCREG, 4);
 	if (reg_address)
 	{

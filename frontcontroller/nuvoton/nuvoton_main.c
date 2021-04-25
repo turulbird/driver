@@ -141,7 +141,7 @@ int rtc_offset;
 #define cGetE9Size          13
 #define cGetF9Size          13
 
-#if defined(ATEVIO7500) \
+#if defined(HS8200) \
  || defined(FORTIS_HDBOX) \
  || defined(OCTAGON1008)
 #define cMinimumSize         4
@@ -793,7 +793,7 @@ static int spinner_thread(void *arg)
 }
 #endif
 
-#if defined(ATEVIO7500)
+#if defined(HS8200)
 /*********************************************************************
  *
  * spinner_thread: Thread to display the spinner on HS8200.
@@ -1104,13 +1104,13 @@ static int __init nuvoton_init_module(void)
 	}
 
 #if defined(FORTIS_HDBOX) \
- || defined(ATEVIO7500)
+ || defined(HS8200)
 	spinner_state.state = 0;
 	spinner_state.period = 0;
 	spinner_state.status = ICON_THREAD_STATUS_STOPPED;
 	sema_init(&spinner_state.sem, 0);
 	spinner_state.task = kthread_run(spinner_thread, (void *) ICON_SPINNER, "spinner_thread");
-#if defined(ATEVIO7500)
+#if defined(HS8200)
 	icon_state.state = 0;
 	icon_state.period = 0;
 	icon_state.status = ICON_THREAD_STATUS_STOPPED;
@@ -1152,7 +1152,7 @@ static void __exit nuvoton_cleanup_module(void)
 		up(&spinner_state.sem);
 		kthread_stop(spinner_state.task);
 	}
-#elif defined(ATEVIO7500)
+#elif defined(HS8200)
 	if (!(spinner_state.status == ICON_THREAD_STATUS_STOPPED) && spinner_state.task)
 	{
 		dprintk(50, "Stopping spinner thread\n");
