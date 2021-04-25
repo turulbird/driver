@@ -41,6 +41,7 @@
  *                          adding it to E2 itself.
  * 20190102 Audioniek       /proc/stb/lcd/symbol_circle support added.
  * 20191202 Audioniek       /proc/stb/lcd/symbol_timeshift support added.
+ * 20210425 Audioniek       Fixed buildproblem with /proc/power/vfd.
  * 
  ****************************************************************************/
 
@@ -274,56 +275,6 @@ static int symbol_circle_read(char *page, char **start, off_t off, int count, in
 	return len;
 }
 
-static int vfd_onoff_write(struct file *file, const char __user *buf, unsigned long count, void *data)
-{
-	char* page;
-	ssize_t ret = -ENOMEM;
-	char* myString;
-	int i = 0;
-
-	page = (char*)__get_free_page(GFP_KERNEL);
-
-	if (page)
-	{
-		ret = -EFAULT;
-		if (copy_from_user(page, buf, count))
-		{
-			goto out;
-		}
-		myString = (char*) kmalloc(count + 1, GFP_KERNEL);
-		strncpy(myString, page, count);
-		myString[count - 1] = '\0';
-
-		sscanf(myString, "%d", &vfd_on);
-		kfree(myString);
-
-		vfd_on = (vfd_on == 0 ? 0 : 1);
-		ret = nuvotonSetDisplayOnOff((char)vfd_on);
-		if (ret)
-		{
-			goto out;
-		}
-		/* always return count to avoid endless loop */
-		ret = count;
-		goto out;
-	}
-
-out:
-	free_page((unsigned long)page);
-	return ret;
-}
-
-static int vfd_onoff_read(char *page, char **start, off_t off, int count, int *eof, void *data)
-{
-	int len = 0;
-
-	if (NULL != page)
-	{
-		len = sprintf(page,"%d", lastdata.display_on);
-	}
-	return len;
-}
-
 static int timeshift_write(struct file *file, const char __user *buf, unsigned long count, void *data)
 {
 	char* page;
@@ -370,6 +321,58 @@ static int timeshift_read(char *page, char **start, off_t off, int count, int *e
 	if (NULL != page)
 	{
 		len = sprintf(page,"%d", timeshift);
+	}
+	return len;
+}
+#endif
+
+#if !defined(HS7110)
+static int vfd_onoff_write(struct file *file, const char __user *buf, unsigned long count, void *data)
+{
+	char* page;
+	ssize_t ret = -ENOMEM;
+	char* myString;
+	int i = 0;
+
+	page = (char*)__get_free_page(GFP_KERNEL);
+
+	if (page)
+	{
+		ret = -EFAULT;
+		if (copy_from_user(page, buf, count))
+		{
+			goto out;
+		}
+		myString = (char*) kmalloc(count + 1, GFP_KERNEL);
+		strncpy(myString, page, count);
+		myString[count - 1] = '\0';
+
+		sscanf(myString, "%d", &vfd_on);
+		kfree(myString);
+
+		vfd_on = (vfd_on == 0 ? 0 : 1);
+		ret = nuvotonSetDisplayOnOff((char)vfd_on);
+		if (ret)
+		{
+			goto out;
+		}
+		/* always return count to avoid endless loop */
+		ret = count;
+		goto out;
+	}
+
+out:
+	free_page((unsigned long)page);
+	return ret;
+}
+
+static int vfd_onoff_read(char *page, char **start, off_t off, int count, int *eof, void *data)
+{
+	int len = 0;
+
+	if (NULL != page)
+	{
+		len = sprintf(page,"%d", lastdata.display_on);
 	}
 	return len;
 }
