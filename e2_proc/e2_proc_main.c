@@ -329,8 +329,8 @@ static int info_model_read(char *page, char **start, off_t off, int count, int *
 	int len = sprintf(page, "spark7162\n");
 #elif defined(FORTIS_HDBOX)
 	int len = sprintf(page, "hdbox\n");
-#elif defined(OCTAGON1008)
-	int len = sprintf(page, "octagon1008\n");
+#elif defined(HS9510)
+	int len = sprintf(page, "hs9510\n");
 #elif defined(HS8200)
 	int len = sprintf(page, "hs8200\n");
 #elif defined(HS7110)
@@ -682,7 +682,7 @@ static int info_chipset_read(char *page, char **start, off_t off, int count, int
 	int len = sprintf(page, "STi7105\n");
 #elif defined(FORTIS_HDBOX) \
  || defined(HL101) \
- || defined(OCTAGON1008) \
+ || defined(HS9510) \
  || defined(TF7700) \
  || defined(UFS922) \
  || defined(UFC960) \
@@ -986,7 +986,7 @@ struct ProcStructure_s e2Proc[] =
 	{cProcEntry, "stb/info/adb_variant",                                             NULL, NULL, NULL, NULL, ""},
 #endif
 #if defined(FORTIS_HDBOX) \
- || defined(OCTAGON1008) \
+ || defined(HS9510) \
  || defined(HS8200) \
  || defined(HS7110) \
  || defined(HS7119) \
@@ -1117,7 +1117,7 @@ struct ProcStructure_s e2Proc[] =
 	{cProcEntry, "stb/fp/was_timer_wakeup",                                          NULL, NULL, NULL, NULL, ""},
 
 #if defined(FORTIS_HDBOX) \
- || defined(OCTAGON1008) \
+ || defined(HS9510) \
  || defined(HS8200) \
  || defined(HS7110) \
  || defined(HS7119) \
@@ -1243,7 +1243,7 @@ struct ProcStructure_s e2Proc[] =
 	/* dagobert: the dei settings can be used for all 7109 architectures to affect the de-interlacer */
 #if defined(FORTIS_HDBOX) \
  || defined(HL101) \
- || defined(OCTAGON1008) \
+ || defined(HS9510) \
  || defined(TF7700) \
  || defined(UFS922) \
  || defined(UFC960) \

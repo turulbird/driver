@@ -109,7 +109,7 @@ extern void fe_core_register_frontend(struct dvb_adapter *dvb_adap);
  || defined(CUBEREVO_MINI_FTA) \
  || defined(CUBEREVO_3000HD)
 extern void socket_register_adapter(struct dvb_adapter *dvb_adap);
-#elif defined(OCTAGON1008) \
+#elif defined(HS9510) \
  ||   defined(OPT9600)
 extern void avl2108_register_frontend(struct dvb_adapter *dvb_adap);
 extern void avl2108_register_frontend(struct dvb_adapter *dvb_adap);
@@ -397,7 +397,7 @@ static int convert_source(const dmx_source_t source)
 	{
 		case DMX_SOURCE_FRONT0:  // handle FRONT0
 #if defined(UFS910) \
- || defined(OCTAGON1008) \
+ || defined(HS9510) \
  || defined(UFS912) \
  || defined(ADB_BOX) \
  || defined(SPARK) \
@@ -615,7 +615,7 @@ void ptiInit(struct DeviceContext_s *pContext)
  ||   defined(CUBEREVO_MINI_FTA) \
  ||   defined(CUBEREVO_3000HD)
 		socket_register_adapter(&pContext->DvbContext->DvbAdapter);
-#elif defined(OCTAGON1008) \
+#elif defined(HS9510) \
  ||   defined(OPT9600)
 		avl2108_register_frontend(&pContext->DvbContext->DvbAdapter);
 #elif defined(HS8200)

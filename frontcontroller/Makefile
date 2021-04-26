@@ -72,7 +72,7 @@ ifdef SPARK7162
 obj-y += aotom_spark/
 endif
 
-ifdef OCTAGON1008
+ifdef HS9510
 obj-y += nuvoton/
 endif
 

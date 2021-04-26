@@ -88,7 +88,7 @@ Date Modification Name
 #if defined(__TDT__) \
  && (defined(UFS910) \
  || defined(FORTIS_HDBOX) \
- || defined(OCTAGON1008) \
+ || defined(HS9510) \
  || defined(HL101) \
  || defined(VIP1_V1) \
  || defined(TF7700) \
@@ -117,7 +117,7 @@ Date Modification Name
 #if defined(__TDT__) \
  && (defined(UFS910) \
  || defined(FORTIS_HDBOX) \
- || defined(OCTAGON1008) \
+ || defined(HS9510) \
  || defined(HL101) \
  || defined(VIP1_V1) \
  || defined(TF7700) \

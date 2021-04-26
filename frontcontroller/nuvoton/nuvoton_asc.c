@@ -75,7 +75,7 @@ unsigned int ASCXBaseAddress = ASC2BaseAddress;
 
 void serial_init(void)
 {
-#if defined(OCTAGON1008) //|| defined(HS7420) || defined(HS7429)
+#if defined(HS9510) //|| defined(HS7420) || defined(HS7429)
 	/* Configure the PIO pins */
 	stpio_request_pin(4, 3,  "ASC_TX", STPIO_ALT_OUT); /* Tx */
 	stpio_request_pin(4, 2,  "ASC_RX", STPIO_IN);      /* Rx */

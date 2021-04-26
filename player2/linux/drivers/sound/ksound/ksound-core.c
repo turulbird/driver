@@ -718,7 +718,7 @@ static inline snd_pcm_uframes_t _ksnd_pcm_avail_update(snd_pcm_substream_t
  || defined(VIP1_V1) \
  || defined(VIP1_V2) \
  || defined(VIP2) \
- || defined(OCTAGON1008) \
+ || defined(HS9510) \
  || defined(IPBOX9900) \
  || defined(IPBOX99) \
  || defined(IPBOX55) \
@@ -799,7 +799,7 @@ int ksnd_pcm_htimestamp(ksnd_pcm_t *kpcm, snd_pcm_uframes_t *avail, struct times
  || defined(VIP1_V1) \
  || defined(VIP1_V2) \
  || defined(VIP2) \
- || defined(OCTAGON1008) \
+ || defined(HS9510) \
  || defined(IPBOX9900) \
  || defined(IPBOX99) \
  || defined(IPBOX55) \

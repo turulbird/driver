@@ -80,11 +80,11 @@ static struct platform_frontend_s avl2108_config =
 		},
 	},
 };
-#elif defined(OCTAGON1008)
+#elif defined(HS9510)
 static struct avl_private_data_s avl_tuner_priv =
 {
 	.ref_freq         = 1,
-	.demod_freq       = 11200, /* fixme: the next three could be determined by the pll config!!! */
+	.demod_freq       = 11200,  /* fixme: the next three could be determined by the pll config!!! */
 	.fec_freq         = 16800,
 	.mpeg_freq        = 22400,
 	.i2c_speed_khz    = TUNER_I2C_CLK,

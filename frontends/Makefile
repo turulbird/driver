@@ -279,7 +279,7 @@ cx24116-objs += cx24116_dvbapi5/cx24116.o
 obj-m += cx24116.o
 endif
 
-ifdef OCTAGON1008
+ifdef HS9510
 avl2108-objs += avl2108/avl2108.o
 avl2108-objs += avl2108/stv6110a.o
 avl2108-objs += avl2108/stv6306.o

@@ -1,5 +1,5 @@
 /*
- * @brief octagon1008_platform.c
+ * @brief hs9510_platform.c
  *
  * @author konfetti
  *
@@ -22,8 +22,8 @@
 
 /* fixme: untested stuff */
 
-#ifndef _octagon1008_123
-#define _octagon1008_123
+#ifndef _hs9510_123
+#define _hs9510_123
 
 #include <linux/version.h>
 #include <linux/dvb/version.h>
@@ -69,7 +69,7 @@ struct platform_frontend_config_s avl2108_frontend =
 	.private          = &avl_tuner_priv,
 };
 
-struct tunersocket_s octagon1008_socket =
+struct tunersocket_s hs9510_socket =
 {
 	.numSockets = 1,
 	.socketList = (struct socket_s[])
@@ -85,12 +85,12 @@ struct tunersocket_s octagon1008_socket =
 	},
 };
 
-struct platform_device octagon1008_socket_device =
+struct platform_device hs9510_socket_device =
 {
 	.name    = "socket",
 	.id      = -1,
 	.dev     = {
-		.platform_data = &octagon1008_socket,
+		.platform_data = &hs9510_socket,
 	},
 	.num_resources        = 0,
 	.resource             = NULL,
@@ -110,7 +110,7 @@ struct platform_device avl2108_frontend_device =
 struct platform_device *platform[] __initdata =
 {
 	&avl2108_frontend_device,
-	&octagon1008_socket_device,
+	&hs9510_socket_device,
 };
 
 #endif

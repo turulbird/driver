@@ -598,7 +598,7 @@ void stm_tsm_init(int use_cimax)
  && !defined(UFS912) \
  && !defined(UFS913) \
  && !defined(SPARK) \
- && !defined(OCTAGON1008) \
+ && !defined(HS9510) \
  && !defined(HS8200) \
  && !defined(HS7110) \
  && !defined(HS7810A) \
@@ -684,7 +684,7 @@ void stm_tsm_init(int use_cimax)
 		}
 		else
 			printk("[TSM] skip stpio stuff in reinit\n");
-#elif defined(OCTAGON1008)
+#elif defined(HS9510)
 		if (!reinit)
 		{
 			struct stpio *stream2_pin = stpio_request_pin(1, 3, "STREAM2", STPIO_OUT);
@@ -735,7 +735,7 @@ void stm_tsm_init(int use_cimax)
 		 * pri = 3 (binaer 11)
 		 */
 		printk("Routing streams through cimax\n");
-#if defined(OCTAGON1008)
+#if defined(HS9510)
 		/* smartcard settings */
 		ret = ctrl_inl(reg_sys_config + SYS_CFG7);
 		ctrl_outl(ret | 0x1b0, reg_sys_config + SYS_CFG7);
@@ -782,7 +782,7 @@ void stm_tsm_init(int use_cimax)
 		ctrl_outl(0x0, reg_sys_config + 0x1c0); /* sys_cfg48 */
 		ctrl_outl(0x0, reg_sys_config + 0x1c4); /* sys_cfg49 */
 		ctrl_outl(0x4, reg_sys_config + SYS_CFG0); /* tsin2 ->tsin0 mux */
-#elif defined(OCTAGON1008)
+#elif defined(HS9510)
 		ctrl_outl(0x6, reg_sys_config + SYS_CFG0);
 #else
 		/*
@@ -996,7 +996,7 @@ void stm_tsm_init(int use_cimax)
 		/* configure streams: */
 		/* add tag bytes to stream + stream priority */
 #if defined(FORTIS_HDBOX) \
- || defined(OCTAGON1008) \
+ || defined(HS9510) \
  || defined(CUBEREVO) \
  || defined(CUBEREVO_MINI2) \
  || defined(CUBEREVO_MINI) \
@@ -1026,7 +1026,7 @@ void stm_tsm_init(int use_cimax)
 		ctrl_outl(0x0, tsm_io + 0x18 /* reserved ??? */);
 		/* add tag bytes to stream + stream priority */
 #if defined(FORTIS_HDBOX) \
- || defined(OCTAGON1008) \
+ || defined(HS9510) \
  || defined(HS8200)
 		ret = ctrl_inl(tsm_io + TSM_STREAM1_CFG);
 		ctrl_outl(ret | (0x40020), tsm_io + TSM_STREAM1_CFG);
@@ -1038,7 +1038,7 @@ void stm_tsm_init(int use_cimax)
 		ctrl_outl(0x0, tsm_io + 0x38 /* reserved ??? */);
 		/* add tag bytes to stream + stream priority */
 #if defined(FORTIS_HDBOX) \
- || defined(OCTAGON1008) \
+ || defined(HS9510) \
  || defined(HS8200)
 		ret = ctrl_inl(tsm_io + TSM_STREAM2_CFG);
 		ctrl_outl(ret | (0x40020), tsm_io + TSM_STREAM2_CFG);
@@ -1059,7 +1059,7 @@ void stm_tsm_init(int use_cimax)
 		ctrl_outl(0x0, tsm_io + 0x58 /* reserved ??? */);
 		/* add tag bytes to stream + stream priority */
 #if defined(FORTIS_HDBOX) \
- || defined(OCTAGON1008)
+ || defined(HS9510)
 		ret = ctrl_inl(tsm_io + TSM_STREAM3_CFG);
 		ctrl_outl(ret | (0x40020), tsm_io + TSM_STREAM3_CFG);
 #elif defined(UFS912) \
@@ -1157,7 +1157,7 @@ void stm_tsm_init(int use_cimax)
  && !defined(UFS912) \
  && !defined(UFS913) \
  && !defined(SPARK) \
- && !defined(OCTAGON1008) \
+ && !defined(HS9510) \
  && !defined(CUBEREVO) \
  && !defined(CUBEREVO_MINI2) \
  && !defined(CUBEREVO_MINI) \
@@ -1304,7 +1304,7 @@ void stm_tsm_init(int use_cimax)
 		ctrl_outl(0x0001804c ,tsm_io + TS_1394_CFG);
 		ret = ctrl_inl(tsm_io + TSM_1394_DEST);
 		ctrl_outl(ret | 0x1 , tsm_io + TSM_1394_DEST);*/
-#elif defined(OCTAGON1008) \
+#elif defined(HS9510) \
  ||   defined(OPT9600)
 		/* route stream 1 to PTI */
 		ret = ctrl_inl(tsm_io + TSM_PTI_SEL);

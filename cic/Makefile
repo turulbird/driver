@@ -41,7 +41,7 @@ obj-m += starci.o
 starci-objs:= starci2win/starci2win.o
 endif
 
-ifdef OCTAGON1008
+ifdef HS9510
 cimax-objs += cimax/cimax.o
 obj-m += cimax.o
 endif

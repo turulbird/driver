@@ -46,7 +46,7 @@ extern short paramDebug;
 
 /****************************************************************************************/
 
-#if defined(OCTAGON1008) \
+#if defined(HS9510) \
  || defined(HS7420) \
  || defined(HS7429)
 #define DISP_SIZE 8
@@ -119,7 +119,7 @@ extern tFrontPanelOpen FrontPanelOpen[LASTMINOR];
 #define VFDSETTIMEFORMAT      0xc0425b04 // added by audioniek
 
 #if defined(FORTIS_HDBOX) \
- || defined(OCTAGON1008)
+ || defined(HS9510)
 #define RESELLER_OFFSET 0x000000f0  // offset to 32 bit word in mtd0 that holds the resellerID & loader version
 #elif defined(HS8200) \
  ||  defined(HS7110) \
@@ -136,7 +136,7 @@ extern tFrontPanelOpen FrontPanelOpen[LASTMINOR];
  * Icon definitions.
  *
  ***************************************************************************/
-#if defined(OCTAGON1008)
+#if defined(HS9510)
 enum  // HS9510 icon numbers and their names
 {
 	ICON_MIN,     // 00
@@ -359,7 +359,7 @@ enum //HS8200 icon numbers and their names
                                       //        6:bitmask for on/off (start reg + 4)
                                       //        NOTE: only works after SOP 0xc2 0x10 0x00 EOP is sent
 
-#if defined(OCTAGON1008) || defined(HS7420) || defined(HS7429)
+#if defined(HS9510) || defined(HS7420) || defined(HS7429)
 #define cCommandSetVFD           0xc4 // 05     1:digit#, 2:data, 3:data, 4:data         nothing
 #else
 #define cCommandSetVFDI          0xcc // 12     1:0x11 2-12:11 characters                nothing
@@ -491,7 +491,7 @@ struct saved_data_s
 };
 extern struct saved_data_s lastdata;
 
-#if defined(OCTAGON1008) \
+#if defined(HS9510) \
  || defined(HS7420) \
  || defined(HS7429)
 struct vfd_buffer

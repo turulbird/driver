@@ -39,7 +39,7 @@ endif
 ifdef VIP2
  PART1=1
 endif
-ifdef OCTAGON1008
+ifdef HS9510
  PART1=1
 endif
 ifdef CUBEREVO

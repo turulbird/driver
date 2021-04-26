@@ -107,10 +107,10 @@
  *               The FS9200 is completely hardware compatible with the FS9000
  *               and does not have a separate designation. In Germany this
  *               model was sold as Astro ASR1200.
- * OCTAGON1008:  The HS9510 and its variants. In Germany sold as
+ * HS9510:       The HS9510 and its variants. In Germany sold as
  *               Octagon SF1008P, Octagon SF1008SE, Atevio AV700 and
  *               Astro ASR1100.
- * HS8200:   The HS8200. In Germany sold as Octagon SF1028, Atevio AV7500,
+ * HS8200:       The HS8200. In Germany sold as Octagon SF1028, Atevio AV7500,
  *               Atemio AV7600 and Opticum Actus Duo.
  * All other Fortis models are designated by the internal Fortis model
  * number that can be found on the component side of the main board, usually
@@ -171,7 +171,7 @@ u8 regs[0x100];  // array with copy values of FP registers
  *
  ***************************************************************************/
 
-#if defined(OCTAGON1008) \
+#if defined(HS9510) \
  || defined(HS7420) \
  || defined(HS7429)
 /***************************************************************************
@@ -416,7 +416,7 @@ static int _7seg_fonts[] =
  * Icon definitions.
  *
  ***************************************************************************/
-#if defined(OCTAGON1008)
+#if defined(HS9510)
 /***************************************************************************
  *
  * Icons for HS9510
@@ -718,7 +718,7 @@ int nuvotonWriteCommand(char *buffer, int len, int needAck)
  *                 display.
  *
  */
-#if defined (OCTAGON1008) \
+#if defined (HS9510) \
  || defined(HS7420) \
  || defined(HS7429)
 int nuvotonSetIcon(int which, int on)
@@ -1069,7 +1069,7 @@ int nuvotonSetLED(int which, int level)
 
 	dprintk(100, "%s > %d, %d\n", __func__, which, level);
 
-#if defined(OCTAGON1008) \
+#if defined(HS9510) \
  || defined(HS7420) \
  || defined(HS7429) \
  || defined(HS7810A) \
@@ -1142,7 +1142,7 @@ EXPORT_SYMBOL(nuvotonSetLED);
  *
  */
 #if defined(FORTIS_HDBOX) \
- || defined(OCTAGON1008) \
+ || defined(HS9510) \
  || defined(HS8200) \
  || defined(HS7420) \
  || defined(HS7429)  // VFD models
@@ -1467,7 +1467,7 @@ int nuvotonSetTimeFormat(char format)
  *
  */
 #if defined(FORTIS_HDBOX) \
- || defined(OCTAGON1008) \
+ || defined(HS9510) \
  || defined(HS8200) \
  || defined(HS7420) \
  || defined(HS7429)  // VFD models
@@ -1945,7 +1945,7 @@ int nuvotonWriteString(unsigned char *aBuf, int len)
 	dprintk(100, "%s <\n", __func__);
 	return res;
 }
-#elif defined(OCTAGON1008) \
+#elif defined(HS9510) \
  || defined(HS7420) \
  || defined(HS7429)
 // 8 character 15-segment VFD with icons
@@ -2110,7 +2110,7 @@ int nuvotonWriteString(unsigned char *aBuf, int len)
 	dprintk(100, "%s <\n", __func__);
 	return res;
 }
-#else  // not HS7119, HS7420, HS7429, HS7810A, HS7819, OCTAGON1008, FORTIS_HDBOX or HS8200 -> HS7110
+#else  // not HS7119, HS7420, HS7429, HS7810A, HS7819, HS9510, FORTIS_HDBOX or HS8200 -> HS7110
 int nuvotonWriteString(unsigned char *aBuf, int len)
 {
 	dprintk(100, "%s >\n", __func__);
@@ -2163,7 +2163,7 @@ int nuvoton_init_func(void)
 	char init7[] = {SOP, cCommandSetLed, 0x01, 0x00, 0x08, EOP};                 // power LED (red) off, deep standby brightness 8
 	char init8[] = {SOP, cCommandSetLed, 0xf2, 0x08, 0x00, EOP};                 // blue LED plus cross brightness 8, deep standby off
 
-#elif defined(OCTAGON1008)
+#elif defined(HS9510)
 /* Shortened essential factory sequence HS9510
  *
  * SOP c4 00 00 00 00 03     cCommandSetVFD           -
@@ -2316,7 +2316,7 @@ int nuvoton_init_func(void)
 	lastdata.brightness = 7;
 	sema_init(&write_sem, 1);
 
-#if defined(OCTAGON1008)
+#if defined(HS9510)
 	printk("Fortis HS9510");
 #elif defined(FORTIS_HDBOX)
 	printk("Fortis FS9000/9200");
@@ -2356,7 +2356,7 @@ int nuvoton_init_func(void)
 	res |= nuvotonWriteCommand(init4, sizeof(init4), 0);
  	res |= nuvotonWriteCommand(init5, sizeof(init5), 0);
 #if defined(FORTIS_HDBOX) \
- || defined(OCTAGON1008) \
+ || defined(HS9510) \
  || defined(HS8200) \
  || defined(HS7420) \
  || defined(HS7429) \
@@ -2366,14 +2366,14 @@ int nuvoton_init_func(void)
 	res |= nuvotonWriteCommand(init6, sizeof(init6), 0);
 #endif
 #if defined(FORTIS_HDBOX) \
- || defined(OCTAGON1008) \
+ || defined(HS9510) \
  || defined(HS8200) \
  || defined(HS7420) \
  || defined(HS7429)
 	res |= nuvotonWriteCommand(init7, sizeof(init7), 0);
 	res |= nuvotonWriteCommand(init8, sizeof(init8), 0);
 #endif
-#if defined(OCTAGON1008) \
+#if defined(HS9510) \
  || defined(HS7420) \
  || defined(HS7429)
 	res |= nuvotonWriteCommand(init9, sizeof(init9), 0);
@@ -2832,7 +2832,7 @@ static int NUVOTONdev_ioctl(struct inode *Inode, struct file *File, unsigned int
 						icon_nr = ICON_PLAY;
 						break;
 					}
-#elif defined(OCTAGON1008)
+#elif defined(HS9510)
 					case 0x13:  // crypted
 					{
 						icon_nr = ICON_CRYPTED;

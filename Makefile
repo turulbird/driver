@@ -15,8 +15,8 @@ include $(DRIVER_TOPDIR)/kernel.make
 else
 CCFLAGSY += -D__TDT__ -D__LINUX__ -D__SH4__ -D__KERNEL__ -DMODULE -DEXPORT_SYMTAB -Wframe-larger-than=2048
 
-ifdef OCTAGON1008
-CCFLAGSY += -DOCTAGON1008
+ifdef HS9510
+CCFLAGSY += -DHS9510
 endif
 
 ifdef UFS910
@@ -312,7 +312,7 @@ obj-y += dvbt/as102/
 obj-y += dvbt/siano/
 endif
 
-ifdef OCTAGON1008
+ifdef HS9510
 obj-y += smartcard/
 endif
 

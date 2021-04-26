@@ -43,8 +43,8 @@ short paramDebug = 0;  // debug print level is zero as default (0=nothing, 1= er
 #if defined(HS8200)
 #include "hs8200_platform.h"
 
-#elif defined(OCTAGON1008)
-#include "octagon1008_platform.h"
+#elif defined(HS9510)
+#include "hs9510_platform.h"
 
 #elif defined(UFS922)
 #include "ufs922_platform.h"

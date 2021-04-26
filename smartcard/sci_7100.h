@@ -23,9 +23,9 @@
 #undef IPBOX
 #endif
 
-/* Hellmaster1024 Octagon1008 and Fortis HDBOX need these defines, maybe other sti7100/sti7101 based STB need this defines too
+/* Hellmaster1024 HS9510 and Fortis HDBOX need these defines, maybe other sti7100/sti7101 based STB need this defines too
 */
-#if defined(OCTAGON1008) \
+#if defined(HS9510) \
  || defined(FORTIS_HDBOX) \
  || defined(CUBEBOX) \
  || defined(IPBOX)

@@ -25,7 +25,7 @@
  *
  ****************************************************
  *
- * Note: used only by UFS910, VIP1_V1, VIP1_V2, Octagon1008, HL101
+ * Note: used only by UFS910, VIP1_V1, VIP1_V2, Fortis HS9510, Fulan HL101
  *
  */
 
@@ -87,7 +87,7 @@ short paramDebug = 0;  // debug print level is zero as default (0=nothing, 1= er
 #if defined(HL101) \
  || defined(VIP1_V1) \
  || defined(VIP1_V2) \
- || defined(OCTAGON1008)
+ || defined(HS9510)
 struct stpio_pin *cic_enable_pin;
 struct stpio_pin *module_pin[2];
 #endif
@@ -95,7 +95,7 @@ struct stpio_pin *module_pin[2];
 /* konfetti: EMI ************************* */
 unsigned long reg_config = 0;
 unsigned long reg_buffer = 0;
-#if defined(OCTAGON1008)
+#if defined(HS9510)
 static unsigned char *slot_membase[2];
 #elif defined(HL101) \
  ||   defined(VIP1_V1) \
@@ -221,7 +221,7 @@ static int cimax_read_attribute_mem(struct dvb_ca_en50221 *ca, int slot, int add
 #if defined(HL101) \
  || defined(VIP1_V1) \
  || defined(VIP1_V2) \
- || defined(OCTAGON1008)
+ || defined(HS9510)
 static int cimax_writeregN (struct cimax_state *state, u8 * data, u16 len)
 {
 	int ret = -EREMOTEIO;
@@ -416,7 +416,7 @@ void setDestination(struct cimax_state *state, int slot)
 
 	dprintk(150, "%s > slot = %d\n", __func__, slot);
 
-#if !defined(OCTAGON1008)
+#if !defined(HS9510)
 	if (slot == 0)
 	{
 		/* read destination register */
@@ -503,7 +503,7 @@ static int cimax_poll_slot_status(struct dvb_ca_en50221 *ca, int slot, int open)
 		}
 		else if (state->module_status[slot] & SLOTSTATUS_NONE)
 		{
-#if defined(OCTAGON1008)
+#if defined(HS9510)
 			stpio_set_pin(module_pin[slot], 1);
 #endif
 			dprintk(20, "CI Module present now\n");
@@ -514,7 +514,7 @@ static int cimax_poll_slot_status(struct dvb_ca_en50221 *ca, int slot, int open)
 	{
 		if (!(state->module_status[slot] & SLOTSTATUS_NONE))
 		{
-#if defined(OCTAGON1008)
+#if defined(HS9510)
 			stpio_set_pin (module_pin[slot], 0);
 #endif
 			dprintk(20, "CI Module not present now\n");
@@ -556,7 +556,7 @@ static int cimax_slot_reset(struct dvb_ca_en50221 *ca, int slot)
 			dprintk(20, "%s: result = 0x%02x\n", __func__, result);
 			cimax_writereg(state, 0x00, result | 0x80);
 
-#if !defined(OCTAGON1008)
+#if !defined(HS9510)
 			cimax_writereg(state, 0x17, 0x0);
 #endif
 			msleep(60);
@@ -579,7 +579,7 @@ static int cimax_slot_reset(struct dvb_ca_en50221 *ca, int slot)
 			dprintk(20, "%s: result = 0x%02x\n", __func__, result);
 			cimax_writereg(state, 0x09, result | 0x80);
 			
-#if !defined(OCTAGON1008)
+#if !defined(HS9510)
 			cimax_writereg(state, 0x17, 0x0);
 #endif
 			msleep(60);
@@ -611,7 +611,7 @@ static int cimax_read_attribute_mem(struct dvb_ca_en50221 *ca, int slot, int add
 			cimax_writereg(state, 0x00, (result & ~0xC));
 		}
 		setDestination(state, slot);
-#if defined(OCTAGON1008)
+#if defined(HS9510)
 		res = slot_membase[slot][address];
 #elif defined(HL101) \
  ||   defined(VIP1_V1) \
@@ -632,7 +632,7 @@ static int cimax_read_attribute_mem(struct dvb_ca_en50221 *ca, int slot, int add
 			cimax_writereg(state, 0x09, (result & ~0xC));
 		}
 		setDestination(state, slot);
-#if defined(OCTAGON1008)
+#if defined(HS9510)
 		res = slot_membase[slot][address];
 #elif defined(HL101) \
  ||   defined(VIP1_V1) \
@@ -677,7 +677,7 @@ static int cimax_write_attribute_mem(struct dvb_ca_en50221 *ca, int slot, int ad
 			cimax_writereg(state, 0x00, (result & ~0xC));
 		}
 		setDestination(state, slot);
-#if defined(OCTAGON1008)
+#if defined(HS9510)
 		slot_membase[slot][address] = value;
 #elif defined(HL101) \
  ||   defined(VIP1_V1) \
@@ -696,7 +696,7 @@ static int cimax_write_attribute_mem(struct dvb_ca_en50221 *ca, int slot, int ad
 			cimax_writereg(state, 0x09, (result & ~0xC));
 		}
 		setDestination(state, slot);
-#if defined(OCTAGON1008)
+#if defined(HS9510)
 		slot_membase[slot][address] = value;
 #elif defined(HL101) \
  ||   defined(VIP1_V1) \
@@ -729,7 +729,7 @@ static int cimax_read_cam_control(struct dvb_ca_en50221 *ca, int slot, u8 addres
 		}
 		setDestination(state, slot);
 
-#if defined(OCTAGON1008)
+#if defined(HS9510)
 		res = slot_membase[slot][address];
 #elif defined(HL101) \
  ||   defined(VIP1_V1) \
@@ -750,7 +750,7 @@ static int cimax_read_cam_control(struct dvb_ca_en50221 *ca, int slot, u8 addres
 			cimax_writereg(state, 0x09, (result & ~0xC) | 0x4);
 		}
 		setDestination(state, slot);
-#if defined(OCTAGON1008)
+#if defined(HS9510)
 		res = slot_membase[slot][address];
 #elif defined(HL101) \
  ||   defined(VIP1_V1) \
@@ -763,7 +763,7 @@ static int cimax_read_cam_control(struct dvb_ca_en50221 *ca, int slot, u8 addres
 	}
 	if (address <= 2)
 	{
-#if defined(OCTAGON1008)
+#if defined(HS9510)
 	// do nothing
 #elif defined(HL101) \
  ||   defined(VIP1_V1) \
@@ -796,7 +796,7 @@ static int cimax_write_cam_control(struct dvb_ca_en50221 *ca, int slot, u8 addre
 
 	if (address <= 2)
 	{
-#if defined(OCTAGON1008)
+#if defined(HS9510)
 		// do nothing
 #elif defined(HL101) \
  ||   defined(VIP1_V1) \
@@ -817,7 +817,7 @@ static int cimax_write_cam_control(struct dvb_ca_en50221 *ca, int slot, u8 addre
 			cimax_writereg(state, 0x00, (result & ~0xC) | 0x4);
 		}
 		setDestination(state, slot);
-#if defined(OCTAGON1008)
+#if defined(HS9510)
 		slot_membase[slot][address] = value;
 #elif defined(HL101) \
  ||   defined(VIP1_V1) \
@@ -838,7 +838,7 @@ static int cimax_write_cam_control(struct dvb_ca_en50221 *ca, int slot, u8 addre
 			cimax_writereg(state, 0x09, (result & ~0xC) | 0x4);
 		}
 		setDestination(state, slot);
-#if defined(OCTAGON1008)
+#if defined(HS9510)
 		slot_membase[slot][address] = value;
 #elif defined(HL101) \
  ||   defined(VIP1_V1) \
@@ -871,10 +871,10 @@ static int cimax_slot_ts_enable(struct dvb_ca_en50221 *ca, int slot)
 		/* das read back der register ist gleichzeitig unser sleep! */	
 		int result = cimax_readreg(state, 0x00);
 
-#if !defined(OCTAGON1008)
+#if !defined(HS9510)
 		cimax_writereg(state, 0x00, 0x23);
 		dprintk(70, "%s: writing 0x%x\n", __func__, 0x23);
-//#elif !defined(OCTAGON1008)
+//#elif !defined(HS9510)
 		cimax_writereg(state, 0x00, result | 0x20);  // fs9000
 #else
 		cimax_writereg(state, 0x00, result | 0x21);  // octagon
@@ -894,10 +894,10 @@ static int cimax_slot_ts_enable(struct dvb_ca_en50221 *ca, int slot)
 	else
 	{
 		int result = cimax_readreg(state, 0x09);
-#if !defined(OCTAGON1008)
+#if !defined(HS9510)
 		cimax_writereg(state, 0x09, 0x23);
 		dprintk(70, "%s: writing 0x%02x\n", __func__, 0x23);
-//#elif !defined(OCTAGON1008)
+//#elif !defined(HS9510)
 		cimax_writereg(state, 0x09, result | 0x20);
 #else
 		cimax_writereg(state, 0x09, result | 0x21);  // octagon
@@ -933,7 +933,7 @@ int init_ci_controller(struct dvb_adapter* dvb_adap)
 		0x01
 	};
 
-#elif defined(OCTAGON1008)
+#elif defined(HS9510)
 	u8 sequence[33] =
 	{
 		0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x44, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x02, 0x44,
@@ -949,13 +949,13 @@ int init_ci_controller(struct dvb_adapter* dvb_adap)
  || defined(VIP1_V1) \
  || defined(VIP1_V2)
 	state->i2c = i2c_get_adapter(2);
-#elif defined(OCTAGON1008)
+#elif defined(HS9510)
 	state->i2c = i2c_get_adapter(1);
 #else
 	state->i2c = i2c_get_adapter(0);
 #endif
 
-#if defined(OCTAGON1008)
+#if defined(HS9510)
 	state->i2c_addr = 0x43;
 #else
 	state->i2c_addr = 0x40;
@@ -989,7 +989,7 @@ int init_ci_controller(struct dvb_adapter* dvb_adap)
 	dprintk(20, "ioremap 0x%.8x -> 0x%.8lx\n", EMIBufferBaseAddress, reg_buffer);
 	dprintk(10, "Allocating PIO pins\n");	
 
-#if defined(OCTAGON1008)
+#if defined(HS9510)
 	cic_enable_pin = stpio_request_pin (3, 6, "StarCI", STPIO_OUT);
 	stpio_set_pin (cic_enable_pin, 1);
 	msleep(250);
@@ -1036,11 +1036,11 @@ int init_ci_controller(struct dvb_adapter* dvb_adap)
 #if defined(HL101) \
  || defined(VIP1_V1) \
  || defined(VIP1_V2) \
- || defined(OCTAGON1008)
+ || defined(HS9510)
 	cimax_writeregN(state, sequence, sizeof(sequence));
 #endif
  
-#if !defined(OCTAGON1008)
+#if !defined(HS9510)
 	/* Module A auto activation */	
 	cimax_writereg(state, 0x00, 0x02);
 
@@ -1051,7 +1051,7 @@ int init_ci_controller(struct dvb_adapter* dvb_adap)
 	cimax_writereg(state, 0x09, 0x00);
 #endif
 
-#if defined(OCTAGON1008)
+#if defined(HS9510)
 	/* Powercontrol: VCLVL ->VCC pin active-low (LOCK muss 0 sein) */
 	cimax_writereg(state, 0x18, 0x21);
 #else
@@ -1059,7 +1059,7 @@ int init_ci_controller(struct dvb_adapter* dvb_adap)
 	cimax_writereg(state, 0x18, 0x40);	
 #endif
 
-#if !defined(OCTAGON1008)
+#if !defined(HS9510)
 	/* Destination Select: Select module A */
 	cimax_writereg(state, 0x17, 0x02);
 
@@ -1112,7 +1112,7 @@ int init_ci_controller(struct dvb_adapter* dvb_adap)
 	cimax_writereg(state, 0x1f, 0x01);
 #endif /* !octagon  */
 
-#if defined(OCTAGON1008)
+#if defined(HS9510)
 	/* POWER ON */
 	cimax_writereg(state, 0x18, 0x21);
 #else
@@ -1121,7 +1121,7 @@ int init_ci_controller(struct dvb_adapter* dvb_adap)
 #endif
 	ctrl_outl(0x0, reg_config + EMI_LCK);
 	ctrl_outl(0x0, reg_config + EMI_GEN_CFG);
-#if defined(OCTAGON1008)
+#if defined(HS9510)
 	ctrl_outl(0x8486d9, reg_config + EMIBank1 + EMI_CFG_DATA0);
 	ctrl_outl(0x9d220000, reg_config + EMIBank1 + EMI_CFG_DATA1);
 	ctrl_outl(0x9d220000, reg_config + EMIBank1 + EMI_CFG_DATA2);
@@ -1151,8 +1151,8 @@ int init_ci_controller(struct dvb_adapter* dvb_adap)
 #endif
 	ctrl_outl(0x1, reg_config + EMI_CLK_EN);
 
-#if defined(OCTAGON1008)
-// #if defined(OCTAGON1008)
+#if defined(HS9510)
+// #if defined(HS9510)
 	slot_membase[0] = (unsigned long) 0xa2000000;
 // #else
 //	slot_membase[0] = (unsigned long) ioremap(0xa3000000, 0x1000);  // TF7700
@@ -1162,7 +1162,7 @@ int init_ci_controller(struct dvb_adapter* dvb_adap)
 		result = 1;
 		goto error;
 	}
-#if defined(OCTAGON1008)
+#if defined(HS9510)
 	slot_membase[1] = (unsigned long) 0xa2010000;
 #else
 	slot_membase[1] = (unsigned long) ioremap(0xa3010000, 0x1000);
