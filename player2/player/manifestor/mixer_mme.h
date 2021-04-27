@@ -68,7 +68,7 @@ Date Modification Name
  */
 #if (defined(CONFIG_KERNELVERSION) || LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,32)) \
  &&  defined(__TDT__)
- #if (defined(FORTIS_HDBOX) \
+ #if (defined(FS9000) \
   || defined(HS9510))
   #define MIXER_NUM_PERIODS 3
  #elif defined(UFS922)
@@ -86,7 +86,7 @@ Date Modification Name
   #define MIXER_NUM_PERIODS 3
  #endif
 #elif defined(__TDT__) \
- && (defined(FORTIS_HDBOX) \
+ && (defined(FS9000) \
  || defined(UFS922) \
  || defined(HL101) \
  || defined(VIP1_V1) \

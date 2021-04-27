@@ -1,5 +1,5 @@
 /*
-    StarCI2Win driver for TF7700, FORTIS HDBOX.
+    StarCI2Win driver for TF7700, Fortis FS9000.
 
     Copyright (C) 2007 konfetti <konfetti@ufs910.de>
 	many thanx to jolt for good support
@@ -51,7 +51,7 @@ static int debug;
 		if (debug) printk (args); \
 	} while (0)
 
-#ifdef FORTIS_HDBOX
+#ifdef FS9000
 struct stpio_pin*	cic_enable_pin;
 struct stpio_pin*	module_A_pin;
 struct stpio_pin*	module_B_pin;
@@ -88,7 +88,7 @@ unsigned char default_values[33] =
   0x00, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
   0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x00
 };
-#elif defined (FORTIS_HDBOX)
+#elif defined (FS9000)
 unsigned char default_values[33] =
 {
   0x00, /* register address for block transfer */
@@ -102,7 +102,7 @@ unsigned char default_values[33] =
 /* EMI configuration */
 unsigned long reg_config = 0;
 unsigned long reg_buffer = 0;
-#if defined(FORTIS_HDBOX)
+#if defined(FS9000)
 static unsigned char *slot_membase[2];
 #else
 /* for whatever reason the access has to be done though a short pointer */
@@ -650,7 +650,7 @@ int init_ci_controller(struct dvb_adapter* dvb_adap)
   mutex_init (&starci_mutex);
 
   state->dvb_adap = dvb_adap;
-#if defined(FORTIS_HDBOX)
+#if defined(FS9000)
   state->i2c = i2c_get_adapter(2);
 #else
   state->i2c = i2c_get_adapter(0);
@@ -686,7 +686,7 @@ int init_ci_controller(struct dvb_adapter* dvb_adap)
   dprintk (KERN_ERR "ioremap 0x%.8x -> 0x%.8lx\n", EMIConfigBaseAddress, reg_config);	
   dprintk (KERN_ERR "ioremap 0x%.8x -> 0x%.8lx\n", EMIBufferBaseAddress, reg_buffer);	
 
-#if defined(FORTIS_HDBOX)
+#if defined(FS9000)
   cic_enable_pin = stpio_request_pin (3, 6, "StarCI", STPIO_OUT);
   stpio_set_pin (cic_enable_pin, 1);
   msleep(250);
@@ -712,8 +712,8 @@ int init_ci_controller(struct dvb_adapter* dvb_adap)
   ctrl_outl(0x0, reg_config + EMI_LCK);
   ctrl_outl(0x0, reg_config + EMI_GEN_CFG);
 
-#if defined(FORTIS_HDBOX)
-/* fixme: this is mysterious on HDBOX! there is no lock setting EMI_LCK and there is
+#if defined(FS9000)
+/* fixme: this is mysterious on FS9000! there is no lock setting EMI_LCK and there is
 * no EMI_CLK_EN, so the settings cant get into effect?
 */
   ctrl_outl(0x8486d9,reg_config + EMIBank1 + EMI_CFG_DATA0);
@@ -753,7 +753,7 @@ int init_ci_controller(struct dvb_adapter* dvb_adap)
 #endif
   ctrl_outl(0x1, reg_config + EMI_CLK_EN);
 
-#if defined(FORTIS_HDBOX)
+#if defined(FS9000)
 //is [0] = top slot?
   slot_membase[0] = ioremap( 0xa2000000, 0x1000 );
 #else
@@ -766,7 +766,7 @@ int init_ci_controller(struct dvb_adapter* dvb_adap)
   }
 #if defined(TF7700)
   slot_membase[1] = ioremap( 0xa3400000, 0x1000 );
-#elif defined(FORTIS_HDBOX)
+#elif defined(FS9000)
 //is [1] = bottom slot?
   slot_membase[1] = ioremap( 0xa2010000, 0x1000 );
 #else

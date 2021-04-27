@@ -327,8 +327,8 @@ static int info_model_read(char *page, char **start, off_t off, int count, int *
 	int len = sprintf(page, "spark\n");
 #elif defined(SPARK7162)
 	int len = sprintf(page, "spark7162\n");
-#elif defined(FORTIS_HDBOX)
-	int len = sprintf(page, "hdbox\n");
+#elif defined(FS9000)
+	int len = sprintf(page, "fs9000\n");
 #elif defined(HS9510)
 	int len = sprintf(page, "hs9510\n");
 #elif defined(HS8200)
@@ -680,7 +680,7 @@ static int info_chipset_read(char *page, char **start, off_t off, int count, int
  || defined(SAGEMCOM88) \
  || defined(PACE7241)
 	int len = sprintf(page, "STi7105\n");
-#elif defined(FORTIS_HDBOX) \
+#elif defined(FS9000) \
  || defined(HL101) \
  || defined(HS9510) \
  || defined(TF7700) \
@@ -985,7 +985,7 @@ struct ProcStructure_s e2Proc[] =
 #if defined(ADB_BOX)
 	{cProcEntry, "stb/info/adb_variant",                                             NULL, NULL, NULL, NULL, ""},
 #endif
-#if defined(FORTIS_HDBOX) \
+#if defined(FS9000) \
  || defined(HS9510) \
  || defined(HS8200) \
  || defined(HS7110) \
@@ -1016,7 +1016,7 @@ struct ProcStructure_s e2Proc[] =
 	{cProcEntry, "stb/lcd/final_scroll_delay",                                       NULL, info_final_scroll_delay_read, info_final_scroll_delay_write, NULL, ""},
 
 #if defined(ADB_BOX) \
- || defined(FORTIS_HDBOX) \
+ || defined(FS9000) \
  || defined(HS8200) \
  || defined(SPARK7162) \
  || defined(TF7700) \
@@ -1036,7 +1036,7 @@ struct ProcStructure_s e2Proc[] =
 	{cProcEntry, "stb/lcd/symbol_hdd",                                               NULL, NULL, NULL, NULL, ""},
 #endif
 #if defined(ADB_BOX) \
- || defined(FORTIS_HDBOX) \
+ || defined(FS9000) \
  || defined(HS8200) \
  || defined(CUBEREVO) \
  || defined(CUBEREVO_MINI) \
@@ -1116,7 +1116,7 @@ struct ProcStructure_s e2Proc[] =
 	{cProcEntry, "stb/fp/wakeup_time",                                               NULL, wakeup_time_read, wakeup_time_write, NULL, ""},
 	{cProcEntry, "stb/fp/was_timer_wakeup",                                          NULL, NULL, NULL, NULL, ""},
 
-#if defined(FORTIS_HDBOX) \
+#if defined(FS9000) \
  || defined(HS9510) \
  || defined(HS8200) \
  || defined(HS7110) \
@@ -1241,7 +1241,7 @@ struct ProcStructure_s e2Proc[] =
 	{cProcEntry, "stb/cec/send",                                                     NULL, NULL, NULL, NULL, ""},
 #endif
 	/* dagobert: the dei settings can be used for all 7109 architectures to affect the de-interlacer */
-#if defined(FORTIS_HDBOX) \
+#if defined(FS9000) \
  || defined(HL101) \
  || defined(HS9510) \
  || defined(TF7700) \

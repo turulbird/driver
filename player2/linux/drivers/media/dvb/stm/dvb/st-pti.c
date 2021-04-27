@@ -76,7 +76,7 @@ extern void cx24116_register_frontend(struct dvb_adapter *dvb_adap);
 extern void avl2108_register_frontend(struct dvb_adapter *dvb_adap);
 #elif defined(UFC960)
 extern void fe_core_register_frontend(struct dvb_adapter *dvb_adap);
-#elif defined(FORTIS_HDBOX) \
+#elif defined(FS9000) \
  || defined(UFS912) \
  || defined(SPARK) \
  || defined(HS7110) \
@@ -557,7 +557,7 @@ void ptiInit(struct DeviceContext_s *pContext)
  || defined(TF7700) \
  || defined(UFS922) \
  || defined(UFC960) \
- || defined(FORTIS_HDBOX) \
+ || defined(FS9000) \
  || defined(VIP2) \
  || defined(CUBEREVO) \
  || defined(CUBEREVO_MINI2) \
@@ -582,7 +582,7 @@ void ptiInit(struct DeviceContext_s *pContext)
 #else
 		pti_hal_init(&pti, &pContext->DvbDemux, demultiplexDvbPackets, 1);
 #endif
-#if defined(FORTIS_HDBOX) \
+#if defined(FS9000) \
  || defined(UFS912) \
  || defined(SPARK) \
  || defined(HS7110) \

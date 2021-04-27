@@ -157,7 +157,7 @@ static struct stmcore_display_pipeline_data platform_data[] =
 		.hdmi_i2c_adapter_id      = 1,
 #endif
 #endif
-#if defined(FORTIS_HDBOX) \
+#if defined(FS9000) \
  || defined(HS9510)
 		.hdmi_i2c_adapter_id      = 2,
 #endif
@@ -258,7 +258,7 @@ static const int chromaScale = 112500; // 112.500%, from DENC validation report
  ||   defined(VIP1_V1) \
  ||   defined(VIP1_V2) \
  ||   defined(VIP2) \
- ||   defined(FORTIS_HDBOX) \
+ ||   defined(FS9000) \
  || defined(HS9510)
 #define GPIO_PIN_HOTPLUG stm_gpio(4,7)
 #elif defined(OPT9600) 
@@ -356,7 +356,7 @@ int __init stmcore_probe_device(struct stmcore_display_pipeline_data **pd,
  || defined(VIP1_V1) \
  || defined(VIP1_V2) \
  || defined(VIP2) \
- || defined(FORTIS_HDBOX) \
+ || defined(FS9000) \
  || defined(HS9510) \
  || defined(OPT9600)
 			gpio_direction_input(GPIO_PIN_HOTPLUG);

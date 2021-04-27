@@ -12,7 +12,7 @@ struct dvb_ca_state
 	struct i2c_adapter      *i2c;
 	int                     i2c_addr;
 	int                     module_ready[2];
-#if defined(HS8200) || defined(FORTIS_HDBOX)
+#if defined(HS8200) || defined(FS9000)
 	int                     module_present[2];
 #endif
 	unsigned long           detection_timeout[2];

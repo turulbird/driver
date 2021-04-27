@@ -4,6 +4,8 @@
  * (c) 2009 Dagobert@teamducktales
  * (c) 2010 Schischu & konfetti: Add irq handling
  *
+ * Frontpanel driver for Fortis 1st, 2nd and 3rd generation HD receivers
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
@@ -30,13 +32,13 @@
  * 20131008 Audioniek       SetLED command, setPwrLED is now obsolete as it
  *                          is a subset of SetLED.
  * 20131008 Audioniek       Beginning of Octagon1008 lower case characters.
- * 20131015 Audioniek       VFDDISPLAYWRITEONOFF made functional on HDBOX.
+ * 20131015 Audioniek       VFDDISPLAYWRITEONOFF made functional on FS9000.
  * 20131026 Audioniek       Octagon1008 lower case characters completed.
  * 20131126 Audioniek       Start of adding text scrolling.
  * 20131128 Audioniek       Text scroll on /dev/vfd working: text scrolls
  *                          once if text is longer than display size,
  * 20131224 Audioniek       except on HS7119, HS7810A & HS7819.
- * 20131205 Audioniek       Errors and doubles corrected in HDBOX icon table.
+ * 20131205 Audioniek       Errors and doubles corrected in FS9000 icon table.
  * 20131220 Audioniek       Start of work on HS8200 (Fortis HS8200).
  * 20131224 Audioniek       nuvotonWriteString on HS7119/HS7810A/HS7819
  *                          completely rewritten including special handling
@@ -94,27 +96,6 @@
  * 20200104 Audioniek       Improve nuvotonGetVersion return value
  *                          determination.
  *
- *****************************************************************************
- *
- * Note on model designations: Three Fortis models have historically been
- * indicated by a reseller model number instead of the generic internal Fortis
- * model designation:
- *
- * FORTIS_HDBOX: Strictly speaking the FS9000. The chosen name is confusing,
- *               as HDBOX is one of the resellers selling Fortis receivers.
- *               In Germany the FS9000 was sold as Octagon SF1018 and
- *               Atevio AV7000.
- *               The FS9200 is completely hardware compatible with the FS9000
- *               and does not have a separate designation. In Germany this
- *               model was sold as Astro ASR1200.
- * HS9510:       The HS9510 and its variants. In Germany sold as
- *               Octagon SF1008P, Octagon SF1008SE, Atevio AV700 and
- *               Astro ASR1100.
- * HS8200:       The HS8200. In Germany sold as Octagon SF1028, Atevio AV7500,
- *               Atemio AV7600 and Opticum Actus Duo.
- * All other Fortis models are designated by the internal Fortis model
- * number that can be found on the component side of the main board, usually
- * near the front panel.
  */
 
 
@@ -143,7 +124,7 @@
 #include "nuvoton_asc.h"
 #include "nuvoton_utf.h"
 
-#if defined(FORTIS_HDBOX)
+#if defined(FS9000)
 tIconState spinner_state;
 #elif defined(HS8200)
 tIconState spinner_state;
@@ -510,7 +491,7 @@ struct iconToInternal
 	{ "ICON_COLON3", ICON_COLON3, 0x02, 0x00, 0x80, 0x00 },  // 04
 };
 
-#elif defined(FORTIS_HDBOX)
+#elif defined(FS9000)
 /***************************************************************************
  *
  * Icons for FS9000/9200
@@ -785,7 +766,7 @@ int nuvotonSetIcon(int which, int on)
 	return res;
 }
 
-#elif defined(FORTIS_HDBOX)
+#elif defined(FS9000)
 /* ****************************************************************************
  *
  * nuvotonSetIcon, using both cCommandSetIconI and cCommandSetIconII opcodes
@@ -1080,7 +1061,7 @@ int nuvotonSetLED(int which, int level)
                      // RC feedback (green, on HS78XX) seems to be not controllable
 
 #define MAX_BRIGHT 7
-#elif defined(FORTIS_HDBOX) \
+#elif defined(FS9000) \
  || defined(HS8200)                    
 #define MAX_LED 255  // LED number is a bit mask: bit 0 (  1) = red power
                      //                           bit 1 (  2) = blue power
@@ -1141,7 +1122,7 @@ EXPORT_SYMBOL(nuvotonSetLED);
  * nuvotonSetBrightness: sets brightness of front panel display.
  *
  */
-#if defined(FORTIS_HDBOX) \
+#if defined(FS9000) \
  || defined(HS9510) \
  || defined(HS8200) \
  || defined(HS7420) \
@@ -1466,7 +1447,7 @@ int nuvotonSetTimeFormat(char format)
  *                         LED states and icon states
  *
  */
-#if defined(FORTIS_HDBOX) \
+#if defined(FS9000) \
  || defined(HS9510) \
  || defined(HS8200) \
  || defined(HS7420) \
@@ -1495,7 +1476,7 @@ int nuvotonSetDisplayOnOff(char level)
 				res |= nuvotonSetIcon(i, 0);
 				lastdata.icon_state[i] = ibuf[i];
 		}
-#if defined(FORTIS_HDBOX)
+#if defined(FS9000)
 		if (spinner_state.state)
 		{
 			lastdata.icon_state[ICON_SPINNER] = 1;
@@ -1521,7 +1502,7 @@ int nuvotonSetDisplayOnOff(char level)
 				res |= nuvotonSetIcon(i, 1);
 			}
 		}
-#if defined(FORTIS_HDBOX) \
+#if defined(FS9000) \
  || defined(HS8200)
 		if (lastdata.icon_state[ICON_SPINNER] != 0)
 		{
@@ -1993,10 +1974,10 @@ int nuvotonWriteString(unsigned char *aBuf, int len)
 	return res;
 }
 #elif defined(HS8200) \
- || defined(FORTIS_HDBOX)
+ || defined(FS9000)
 // HS8200  : 13 character dot matrix VFD without colons or icons,
 //               leftmost character used as icon display
-// FORTIS_HDBOX: 12 character dot matrix VFD with colons and icons
+// FS9000: 12 character dot matrix VFD with colons and icons
 int nuvotonWriteString(unsigned char *aBuf, int len)
 {
 	unsigned char bBuf[128];
@@ -2110,7 +2091,7 @@ int nuvotonWriteString(unsigned char *aBuf, int len)
 	dprintk(100, "%s <\n", __func__);
 	return res;
 }
-#else  // not HS7119, HS7420, HS7429, HS7810A, HS7819, HS9510, FORTIS_HDBOX or HS8200 -> HS7110
+#else  // not HS7119, HS7420, HS7429, HS7810A, HS7819, HS9510, FS9000 or HS8200 -> HS7110
 int nuvotonWriteString(unsigned char *aBuf, int len)
 {
 	dprintk(100, "%s >\n", __func__);
@@ -2133,7 +2114,7 @@ int nuvoton_init_func(void)
 	char standby_disable[] = {SOP, cCommandPowerOffReplay, 0x02, EOP};
 
 	//FP commands per model
-#if defined(FORTIS_HDBOX)
+#if defined(FS9000)
 /* Shortened essential factory sequence FS9000/9200
  *
  * SOP ce 10 20 20 20 20 20 20 20 20 20 20 20 20 20 EOP blank display
@@ -2228,7 +2209,7 @@ int nuvoton_init_func(void)
 	char initD[] = {SOP, cCommandSetLed, 0x01, 0x00, 0x08, EOP};        // power LED (red) off, deep standby brightness 8
 	char initE[] = {SOP, cCommandSetLed, 0x02, 0x03, 0x00, EOP};        // logo brightness 3, deep standby off
 
-#elif defined(HS8200)  // sequence is identical to HDBOX
+#elif defined(HS8200)  // sequence is identical to FS9000
 /* Shortened essential factory sequence HS8200
  *
  * SOP ce 10 20 20 20 20 20 20 20 20 20 20 20 20 20 EOP blank display
@@ -2318,7 +2299,7 @@ int nuvoton_init_func(void)
 
 #if defined(HS9510)
 	printk("Fortis HS9510");
-#elif defined(FORTIS_HDBOX)
+#elif defined(FS9000)
 	printk("Fortis FS9000/9200");
 #elif defined(HS8200)
 	printk("Fortis HS8200");
@@ -2355,7 +2336,7 @@ int nuvoton_init_func(void)
 	msleep(1);
 	res |= nuvotonWriteCommand(init4, sizeof(init4), 0);
  	res |= nuvotonWriteCommand(init5, sizeof(init5), 0);
-#if defined(FORTIS_HDBOX) \
+#if defined(FS9000) \
  || defined(HS9510) \
  || defined(HS8200) \
  || defined(HS7420) \
@@ -2365,7 +2346,7 @@ int nuvoton_init_func(void)
  || defined(HS7819)
 	res |= nuvotonWriteCommand(init6, sizeof(init6), 0);
 #endif
-#if defined(FORTIS_HDBOX) \
+#if defined(FS9000) \
  || defined(HS9510) \
  || defined(HS8200) \
  || defined(HS7420) \
@@ -2798,7 +2779,7 @@ static int NUVOTONdev_ioctl(struct inode *Inode, struct file *File, unsigned int
 			{
 				switch (icon_nr)
 				{
-#if defined(FORTIS_HDBOX) \
+#if defined(FS9000) \
  || defined(HS8200)
 					case 0x13:  // crypted
 					{
@@ -2871,7 +2852,7 @@ static int NUVOTONdev_ioctl(struct inode *Inode, struct file *File, unsigned int
 			// Part two: decide wether one icon, all or spinner
 			switch (icon_nr)
 			{
-#if defined(FORTIS_HDBOX) \
+#if defined(FS9000) \
  || defined(HS8200)
 				case ICON_SPINNER:
 				{
@@ -2885,7 +2866,7 @@ static int NUVOTONdev_ioctl(struct inode *Inode, struct file *File, unsigned int
 					}
 					spinner_state.state = on;
 					lastdata.icon_state[ICON_SPINNER] = on;
-#if defined(FORTIS_HDBOX)
+#if defined(FS9000)
 					if (on)
 					{
 						if (on == 1)
@@ -2970,7 +2951,7 @@ static int NUVOTONdev_ioctl(struct inode *Inode, struct file *File, unsigned int
 							lastdata.icon_state[i] = on;
 					}
 					break;
-#elif defined(FORTIS_HDBOX)
+#elif defined(FS9000)
 					if (spinner_state.state == 1)  // switch spinner off if on
 					{
 						dprintk(50, "%s Stop spinner\n", __func__);
@@ -3012,7 +2993,7 @@ static int NUVOTONdev_ioctl(struct inode *Inode, struct file *File, unsigned int
 							res = nuvotonSetIcon(icon_nr, 0);
 						}
 					}
-#elif defined(FORTIS_HDBOX)
+#elif defined(FS9000)
 					if (spinner_state.state == 1 && icon_nr >= ICON_Circ0 && icon_nr <= ICON_Circ8)
 					{
 						dprintk(50, "%s Stop spinner\n", __func__);

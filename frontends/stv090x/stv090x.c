@@ -30,7 +30,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
-#if !defined(FORTIS_HDBOX) \
+#if !defined(FS9000) \
  && !defined(HS7110) \
  && !defined(HS7119) \
  && !defined(HS7420) \
@@ -2999,7 +2999,7 @@ static int stv090x_delivery_search(struct stv090x_state *state)
 			{
 				goto err;
 			}
-#ifndef FORTIS_HDBOX
+#ifndef FS9000
 			if (stv090x_vitclk_ctl(state, 0) < 0)
 			{
 				goto err;
@@ -5257,7 +5257,7 @@ static int stv090x_optimize_track(struct stv090x_state *state)
 			{
 				goto err;
 			}
-#ifndef FORTIS_HDBOX
+#ifndef FS9000
 			if (state->device == STX7111)
 			{
 				if (STV090x_WRITE_DEMOD(state, ERRCTRL1, 0x73) < 0)
@@ -5374,7 +5374,7 @@ static int stv090x_optimize_track(struct stv090x_state *state)
 			{
 				goto err;
 			}
-#ifndef FORTIS_HDBOX
+#ifndef FS9000
 			if (state->frame_len == STV090x_LONG_FRAME)
 			{
 				reg = STV090x_READ_DEMOD(state, DMDMODCOD);
@@ -5600,7 +5600,7 @@ static int stv090x_optimize_track(struct stv090x_state *state)
 	{
 		goto err;
 	}
-#ifndef FORTIS_HDBOX
+#ifndef FS9000
 	/* AUTO tracking MODE */
 	if (STV090x_WRITE_DEMOD(state, SFRUP1, 0x80) < 0)
 	{
@@ -6015,7 +6015,7 @@ static enum stv090x_signal_state stv090x_algo(struct stv090x_state *state)
 		{
 			goto err;
 		}
-#ifndef FORTIS_HDBOX
+#ifndef FS9000
 		if (state->device != STX7111)
 		{
 			if (state->srate < 2000000)
@@ -6094,7 +6094,7 @@ static enum stv090x_signal_state stv090x_algo(struct stv090x_state *state)
 			low_sr = 1;
 		}
 	}
-#ifndef FORTIS_HDBOX
+#ifndef FS9000
 	if (state->config->tuner_set_bbgain)
 	{
 		reg = state->config->tuner_bbgain;
@@ -6274,7 +6274,7 @@ static enum stv090x_signal_state stv090x_algo(struct stv090x_state *state)
 
 		if (state->dev_ver >= 0x20)
 		{
-#ifdef FORTIS_HDBOX
+#ifdef FS9000
 			reg = stv090x_read_reg(state, STV090x_TSTRES0);
 			STV090x_SETFIELD(reg, FRESFEC_FIELD, 0x1);
 			if (stv090x_write_reg(state, STV090x_TSTRES0, reg) < 0)
@@ -6303,7 +6303,7 @@ static enum stv090x_signal_state stv090x_algo(struct stv090x_state *state)
 			{
 				goto err;
 			}
-#ifdef FORTIS_HDBOX
+#ifdef FS9000
 			reg = stv090x_read_reg(state, STV090x_TSTRES0);
 			STV090x_SETFIELD(reg, FRESFEC_FIELD, 0x0);
 			if (stv090x_write_reg(state, STV090x_TSTRES0, reg) < 0)
@@ -7958,7 +7958,7 @@ static int stv090x_setup(struct dvb_frontend *fe)
 		/* we shouldn't bail out from here */
 		printk("INFO: Cut: 0x%02x probably incomplete support!\n", state->dev_ver);
 	}
-#ifndef FORTIS_HDBOX
+#ifndef FS9000
 	/* ADC1 range */
 	reg = stv090x_read_reg(state, STV090x_TSTTNR1);
 	STV090x_SETFIELD(reg, ADC1_INMODE_FIELD, (config->adc1_range == STV090x_ADC_1Vpp) ? 0 : 1);
@@ -8090,8 +8090,8 @@ static int stv090x_get_property(struct dvb_frontend *fe, struct dtv_property *tv
 }
 #endif
 
-#if defined(FORTIS_HDBOX)
-static int hdbox_set_voltage(struct dvb_frontend *fe, enum fe_sec_voltage voltage)
+#if defined(FS9000)
+static int fs9000_set_voltage(struct dvb_frontend *fe, enum fe_sec_voltage voltage)
 {
 	struct stv090x_state *state = fe->demodulator_priv;
 
@@ -8309,7 +8309,7 @@ static struct dvb_frontend_ops stv090x_ops =
 	.init                    = stv090x_init,
 
 // workaround for tuner failed, a frontend open does not always wakeup the tuner
-#ifndef FORTIS_HDBOX
+#ifndef FS9000
 	.sleep                       = stv090x_sleep,
 #endif
 	.get_frontend_algo           = stv090x_frontend_algo,
@@ -8331,8 +8331,8 @@ static struct dvb_frontend_ops stv090x_ops =
 	.get_property                = stv090x_get_property,
 #endif
 
-#if defined(FORTIS_HDBOX)
-	.set_voltage                 = hdbox_set_voltage,
+#if defined(FS9000)
+	.set_voltage                 = fs9000_set_voltage,
 #elif defined(HS7110) \
  || defined(HS7119) \
  || defined(HS7420) \

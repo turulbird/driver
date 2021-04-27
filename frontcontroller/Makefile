@@ -76,7 +76,7 @@ ifdef HS9510
 obj-y += nuvoton/
 endif
 
-ifdef FORTIS_HDBOX
+ifdef FS9000
 obj-y += nuvoton/
 endif
 

@@ -106,7 +106,7 @@ static unsigned short normal_i2c[] =
  || defined(CUBEREVO_2000HD)
 	0x4a, /* stv6412" */
 #elif defined(UFC960) \
- || defined(FORTIS_HDBOX) \
+ || defined(FS9000) \
  || defined(TF7700) \
  || defined(HL101) \
  || defined(VIP1_V1) \

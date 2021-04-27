@@ -1,7 +1,7 @@
 /*
  * nuvoton.h
  *
- * Frontpanel driver for Fortis HDBOX and Octagon 1008
+ * Frontpanel driver for Fortis 1st, 2nd and 3rd generation HD receivers
  *
  * (c) 2009 Dagobert@teamducktales
  * (c) 2010 Schischu & konfetti: Add irq handling
@@ -50,7 +50,7 @@ extern short paramDebug;
  || defined(HS7420) \
  || defined(HS7429)
 #define DISP_SIZE 8
-#elif defined(FORTIS_HDBOX) \
+#elif defined(FS9000) \
  || defined(HS8200)
 #define DISP_SIZE 12
 #elif defined(HS7810A) \
@@ -78,7 +78,7 @@ extern tFrontPanelOpen FrontPanelOpen[LASTMINOR];
 #define SOP                   0x02
 #define EOP                   0x03
 
-#if defined(FORTIS_HDBOX) \
+#if defined(FS9000) \
  || defined(HS8200)
 #define ICON_THREAD_STATUS_RUNNING 0
 #define ICON_THREAD_STATUS_STOPPED 1
@@ -90,7 +90,7 @@ extern tFrontPanelOpen FrontPanelOpen[LASTMINOR];
 /* ioctl numbers ->hacky */
 #define VFDDISPLAYCHARS       0xc0425a00
 #define VFDBRIGHTNESS         0xc0425a03
-//#define VFDPWRLED             0xc0425a04 /* added by zeroone, also used in fp_control/global.h ; set PowerLed Brightness on HDBOX*/
+//#define VFDPWRLED             0xc0425a04 /* added by zeroone, also used in fp_control/global.h ; set PowerLed Brightness on FS9000*/
 #define VFDDISPLAYWRITEONOFF  0xc0425a05
 #define VFDDRIVERINIT         0xc0425a08
 #define VFDICONDISPLAYONOFF   0xc0425a0a
@@ -118,7 +118,7 @@ extern tFrontPanelOpen FrontPanelOpen[LASTMINOR];
 #define VFDGETWAKEUPTIME      0xc0425b03 // added by audioniek, unused, used by other boxes
 #define VFDSETTIMEFORMAT      0xc0425b04 // added by audioniek
 
-#if defined(FORTIS_HDBOX) \
+#if defined(FS9000) \
  || defined(HS9510)
 #define RESELLER_OFFSET 0x000000f0  // offset to 32 bit word in mtd0 that holds the resellerID & loader version
 #elif defined(HS8200) \
@@ -218,7 +218,7 @@ enum //HS7810A/7819 icon numbers and their names
 	ICON_MAX        // 05
 };
 
-#elif defined(FORTIS_HDBOX)
+#elif defined(FS9000)
 /***************************************************************************
  *
  * Icons for FS9000/9200
@@ -502,7 +502,7 @@ struct vfd_buffer
 };
 #endif
 
-#if defined(FORTIS_HDBOX) \
+#if defined(FS9000) \
  || defined(HS8200)
 typedef struct
 {
@@ -520,7 +520,7 @@ extern void copyData(unsigned char *data, int len);
 extern void getRCData(unsigned char *data, int *len);
 extern int nuvotonSetIcon(int which, int on);
 extern int nuvotonWriteCommand(char *buffer, int len, int needAck);
-#if defined(FORTIS_HDBOX)
+#if defined(FS9000)
 extern tIconState spinner_state;
 #endif
 #if defined(HS8200)

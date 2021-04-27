@@ -79,8 +79,8 @@
  *
  *  /proc/stb/lcd/
  *             |
- *             +--- symbol_circle (rw)       Control of spinner (FORTIS_HDBOX & HS8200 only)
- *             +--- symbol_timeshift (rw)    Control of timeshift icon (FORTIS_HDBOX & HS8200 only)
+ *             +--- symbol_circle (rw)       Control of spinner (FS9000 & HS8200 only)
+ *             +--- symbol_timeshift (rw)    Control of timeshift icon (FS9000 & HS8200 only)
  */
 
 /* from e2procfs */
@@ -105,7 +105,7 @@ extern int nuvotonSetWakeUpTime(char *time);
 
 /* Globals */
 static int progress = 0;
-#if defined(FORTIS_HDBOX) \
+#if defined(FS9000) \
  || defined(HS8200)
 static int symbol_circle = 0;
 static int timeshift = 0;
@@ -158,7 +158,7 @@ static int progress_read(char *page, char **start, off_t off, int count, int *eo
 	return len;
 }	
 
-#if defined(FORTIS_HDBOX) \
+#if defined(FS9000) \
  || defined(HS8200)
 static int symbol_circle_write(struct file *file, const char __user *buf, unsigned long count, void *data)
 {
@@ -214,7 +214,7 @@ static int symbol_circle_write(struct file *file, const char __user *buf, unsign
 				{
 					spinner_state.period = symbol_circle * 10;  // set user specified speed
 				}
-#else  // (FORTIS_HDBOX)
+#else  // (FS9000)
 				if (symbol_circle == 1)  // handle special value 1
 				{
 					spinner_state.period = 1000;
@@ -758,7 +758,7 @@ static int led_pattern_write(struct file *file, const char __user *buf, unsigned
 			}
 			else if (pattern == 0xffffffff)
 			{
-#if defined(FORTIS_HDBOX) || defined(HS8200)
+#if defined(FS9000) || defined(HS8200)
 				nuvotonSetLED(which + 1, 31);
 #else
 				nuvotonSetLED(which+ 1 , 7);
@@ -1141,7 +1141,7 @@ struct fp_procs
 	{ "stb/fp/was_timer_wakeup", was_timer_wakeup_read, NULL },
 	{ "stb/fp/version", fp_version_read, NULL },
 	{ "stb/fp/resellerID", fp_reseller_read, NULL },
-#if defined(FORTIS_HDBOX) \
+#if defined(FS9000) \
  || defined(HS8200)
 	{ "stb/lcd/symbol_circle", symbol_circle_read, symbol_circle_write },
 	{ "stb/lcd/symbol_timeshift", timeshift_read, timeshift_write }

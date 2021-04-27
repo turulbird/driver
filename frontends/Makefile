@@ -237,7 +237,7 @@ obj-m += stv090x.o
 obj-y += lnb/
 endif 
 
-ifdef FORTIS_HDBOX
+ifdef FS9000
 stv090x-objs += stv090x/stv090x.o
 stv090x-objs += stv090x/stv6110x.o
 stv090x-objs += stv090x/ix7306.o

@@ -20,7 +20,7 @@ static struct core *core[MAX_DVB_ADAPTERS];
 
 static struct stv090x_config tt1600_stv090x_config =
 {
-#if defined(FORTIS_HDBOX)
+#if defined(FS9000)
 	.device         = STV0903,
 	.demod_mode     = STV090x_DUAL	/*STV090x_SINGLE*/,
 	.xtal           = 8000000,
@@ -120,7 +120,7 @@ static struct dvb_frontend *frontend_init(struct core_config *cfg, int i)
 
 		switch (tunerType)
 		{
-#if !defined(FORTIS_HDBOX)
+#if !defined(FS9000)
 			case SHARP7306:
 			{
 				ctl = dvb_attach(ix7306_attach, frontend, &bs2s7hz7306a_config, cfg->i2c_adap);
@@ -267,7 +267,7 @@ error:
 
 struct plat_tuner_config tuner_resources[] =
 {
-#if defined(FORTIS_HDBOX)
+#if defined(FS9000)
 	[0] =
 	{
 		.adapter = 0,

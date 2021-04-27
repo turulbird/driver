@@ -36,7 +36,7 @@ ufs913_cic-objs += ufs9xx_cic/ufs9xx_cic.o
 obj-m += ufs913_cic.o
 endif
 
-ifdef FORTIS_HDBOX
+ifdef FS9000
 obj-m += starci.o
 starci-objs:= starci2win/starci2win.o
 endif

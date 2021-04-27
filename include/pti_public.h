@@ -9,7 +9,7 @@
 	maybe other boxes have the same problems*/
 	#define NUMBER_OF_DESCRAMBLERS 4
 #else
-	/*quack: 6 is the max for HDBOX maybe other values have to be chosen for other boxes*/
+	/*quack: 6 is the max for FS9000 maybe other values have to be chosen for other boxes*/
 	#define NUMBER_OF_DESCRAMBLERS 6
 #endif
 

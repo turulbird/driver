@@ -653,7 +653,7 @@ static int stmhdmi_read_extension_blocks(struct stm_hdmi *hdmi)
   msgs[2].flags = (hdmi->edid_client->flags & I2C_M_TEN) | I2C_M_RD;
   msgs[2].len   = sizeof(edid_block_t)*2;
 
-#ifdef FORTIS_HDBOX
+#ifdef FS9000
   /* without this the reading from i2c is not able */
   ctrl_outb(0x00, 0xa2800000);
   ctrl_outb(0x40, 0xa2800000);
@@ -819,7 +819,7 @@ int stmhdmi_read_edid(struct stm_hdmi *hdmi)
   msgs[1].len   = sizeof(edid_block_t)*2;
   msgs[1].buf = &(hdmi->edid_info.raw[0][0]);
 
-#ifdef FORTIS_HDBOX
+#ifdef FS9000
   /* without this the reading from i2c is not able */
   ctrl_outb(0x00, 0xa2800000);
   ctrl_outb(0x40, 0xa2800000);

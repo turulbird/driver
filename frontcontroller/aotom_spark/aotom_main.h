@@ -69,7 +69,7 @@ extern short paramDebug;  // debug print level is zero as default (0=nothing, 1=
 
 #define VFDDISPLAYCHARS               0xc0425a00
 #define VFDBRIGHTNESS                 0xc0425a03
-#define VFDPWRLED                     0xc0425a04 // unused in aotom, reserved and deprecated for Fortis HDBOX
+#define VFDPWRLED                     0xc0425a04 // unused in aotom, reserved and deprecated for Fortis FS9000
 #define VFDDISPLAYWRITEONOFF          0xc0425a05
 #define VFDDRIVERINIT                 0xc0425a08
 #define VFDICONDISPLAYONOFF           0xc0425a0a

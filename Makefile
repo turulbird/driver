@@ -89,8 +89,8 @@ ifdef SPARK7162
 CCFLAGSY+=-DSPARK7162
 endif
 
-ifdef FORTIS_HDBOX
-CCFLAGSY += -DFORTIS_HDBOX
+ifdef FS9000
+CCFLAGSY += -DFS9000
 endif
 ifdef HS8200
 CCFLAGSY += -DHS8200
@@ -316,7 +316,7 @@ ifdef HS9510
 obj-y += smartcard/
 endif
 
-ifdef FORTIS_HDBOX
+ifdef FS9000
 obj-y += smartcard/
 endif
 

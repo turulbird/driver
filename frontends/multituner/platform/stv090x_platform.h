@@ -6,7 +6,7 @@
 enum stv090x_alternative
 {
 	cNONE,
-	cHDBOX,
+	cFS9000,
 };
 
 
@@ -73,7 +73,7 @@ struct stv090x_private_data_s
 	u32                      usedLNB;
 	u32                      usedTuner;
 
-	u32                      alternativePath; /* for e.g. fortis hdbox */
+	u32                      alternativePath; /* for e.g. fortis fs9000 */
 	u32                      shouldSleep;     /* some tuner frozes when they sleep */
 
 	enum stv090x_device      device;

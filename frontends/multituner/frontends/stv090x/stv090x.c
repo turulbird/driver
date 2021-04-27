@@ -2665,7 +2665,7 @@ static int stv090x_delivery_search(struct stv090x_state *state)
 			}
 			else
 			{
-				/* for fortis hdbox handling */
+				/* for fortis fs9000 handling */
 				reg = stv090x_read_reg(state, STV090x_TSTRES0);
 				STV090x_SETFIELD(reg, FRESFEC_FIELD, 0x0);
 				if (stv090x_write_reg(state, STV090x_TSTRES0, reg) < 0)
@@ -4670,7 +4670,7 @@ static int stv090x_optimize_track(struct stv090x_state *state)
 			}
 			else
 			{
-				/* for fortis hdbox handling */
+				/* for fortis fs9000 handling */
 				reg = STV090x_READ_DEMOD(state, DMDMODCOD);
 				modcod = STV090x_GETFIELD_Px(reg, DEMOD_MODCOD_FIELD);
 				pilots = STV090x_GETFIELD_Px(reg, DEMOD_TYPE_FIELD) & 0x01;
@@ -5321,7 +5321,7 @@ static enum stv090x_signal_state stv090x_algo(struct stv090x_state *state)
 
 		if (state->dev_ver >= 0x20)
 		{
-			if (state->config->alternativePath == cHDBOX)
+			if (state->config->alternativePath == cFS9000)
 			{
 				reg = stv090x_read_reg(state, STV090x_TSTRES0);
 				STV090x_SETFIELD(reg, FRESFEC_FIELD, 0x1);
@@ -5348,7 +5348,7 @@ static enum stv090x_signal_state stv090x_algo(struct stv090x_state *state)
 			if (STV090x_WRITE_DEMOD(state, TSCFGH, reg) < 0)
 				goto err;
 
-			if (state->config->alternativePath == cHDBOX)
+			if (state->config->alternativePath == cFS9000)
 			{
 				reg = stv090x_read_reg(state, STV090x_TSTRES0);
 				STV090x_SETFIELD(reg, FRESFEC_FIELD, 0x0);

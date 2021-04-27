@@ -49,7 +49,7 @@ static int extmoduldetect = 0;
 		if (debug) printk (args); \
 	} while (0)
 
-#if defined(FORTIS_HDBOX) \
+#if defined(FS9000) \
  || defined(HS8200) \
  || defined(HS7110) \
  || defined(HS7119) \
@@ -119,7 +119,7 @@ unsigned char default_values[33] =
 /* 0x18  0x19  0x1a  0x1b  0x1c  0x1d  0x1e  0x1f */
 	0xc0, 0x00, 0x00, 0x00, 0x00, 0x02, 0x03, 0x00
  };
-#elif defined (FORTIS_HDBOX)
+#elif defined (FS9000)
 unsigned char default_values[33] =
 {
 	0x00, /* register address for block transfer */
@@ -176,7 +176,7 @@ unsigned long reg_buffer = 0;
 unsigned long reg_sysconfig = 0;
 #endif
 
-#if defined(FORTIS_HDBOX) \
+#if defined(FS9000) \
  || defined(HS8200) \
  || defined(HS7110) \
  || defined(HS7119) \
@@ -467,7 +467,7 @@ int setCiSource(int slot, int source)
 		/* send stream A through module B and stream B through module A */
 #if defined(TF7700) \
  || defined(HS8200) \
- || defined(FORTIS_HDBOX)
+ || defined(FS9000)
 		val |= 0x20;
 #else
 		val &= ~0x20;
@@ -479,7 +479,7 @@ int setCiSource(int slot, int source)
 		/* send stream A through module A and stream B through module B */
 #if defined(TF7700) \
  || defined(HS8200) \
- || defined(FORTIS_HDBOX)
+ || defined(FS9000)
 		val &= ~0x20;
 #else
 		val |= 0x20;
@@ -563,7 +563,7 @@ static int starci_poll_slot_status(struct dvb_ca_en50221 *ca, int slot, int open
 		else if (state->module_status[slot] & SLOTSTATUS_NONE)
 		{
 #if defined(HS8200) \
- || defined(FORTIS_HDBOX)
+ || defined(FS9000)
 			if (slot == 0)
 			{
 				stpio_set_pin(module_A_pin, 1);
@@ -582,7 +582,7 @@ static int starci_poll_slot_status(struct dvb_ca_en50221 *ca, int slot, int open
 		  if (!(state->module_status[slot] & SLOTSTATUS_NONE))
 		  {
 #if defined(HS8200) \
- || defined(FORTIS_HDBOX)
+ || defined(FS9000)
 			if (slot == 0)
 			{
 				stpio_set_pin(module_A_pin, 0);
@@ -649,7 +649,7 @@ static int starci_slot_reset(struct dvb_ca_en50221 *ca, int slot)
 
 		starci_writereg(state, DEST_SEL_REG, 0x0);
 #if defined(HS8200) \
- || defined(FORTIS_HDBOX) \
+ || defined(FS9000) \
  || defined(HS7110) \
  || defined(HS7119) \
  || defined(HS7420) \
@@ -831,7 +831,7 @@ static int starci_slot_ts_enable(struct dvb_ca_en50221 *ca, int slot)
 	result = starci_readreg(state, reg[slot]);
 
 #if !defined(HS8200) \
- && !defined(FORTIS_HDBOX) \
+ && !defined(FS9000) \
  && !defined(HS7110) \
  && !defined(HS7119) \
  && !defined(HS7420) \
@@ -869,7 +869,7 @@ int init_ci_controller(struct dvb_adapter* dvb_adap)
 	state->dvb_adap = dvb_adap;
 	state->i2c_addr = 0x40;
 
-#if defined(FORTIS_HDBOX) || defined(HS8200)
+#if defined(FS9000) || defined(HS8200)
 	state->i2c = i2c_get_adapter(2);
 #elif defined(HS7110) \
  || defined(HS7119) \
@@ -937,7 +937,7 @@ int init_ci_controller(struct dvb_adapter* dvb_adap)
 	dprintk (KERN_ERR "ioremap 0x%.8x -> 0x%.8lx\n", EMIBufferBaseAddress, reg_buffer);
 #endif
 
-#if defined(FORTIS_HDBOX)
+#if defined(FS9000)
 	cic_enable_pin = stpio_request_pin (3, 6, "StarCI", STPIO_OUT);
 	stpio_set_pin (cic_enable_pin, 1);
 	msleep(250);
@@ -1000,7 +1000,7 @@ int init_ci_controller(struct dvb_adapter* dvb_adap)
 		 other bits cannot be set when LOCK is = 1 */
 
 #if defined(HS8200) \
- || defined(FORTIS_HDBOX) \
+ || defined(FS9000) \
  || defined(HS7110) \
  || defined(HS7420) \
  || defined(HS7429) \
@@ -1014,7 +1014,7 @@ int init_ci_controller(struct dvb_adapter* dvb_adap)
 #endif
 
 #if !defined(HS8200) \
- && !defined(FORTIS_HDBOX) \
+ && !defined(FS9000) \
  && !defined(HS7110) \
  && !defined(HS7119) \
  && !defined(HS7420) \
@@ -1025,8 +1025,8 @@ int init_ci_controller(struct dvb_adapter* dvb_adap)
 	ctrl_outl(0x0, reg_config + EMI_GEN_CFG);
 #endif
 
-#if defined(FORTIS_HDBOX)
-/* fixme: this is mysterious on HDBOX! there is no lock setting EMI_LCK and there is
+#if defined(FS9000)
+/* fixme: this is mysterious on FS9000! there is no lock setting EMI_LCK and there is
 * no EMI_CLK_EN, so the settings cant get into effect?
 */
 	ctrl_outl(0x8486d9,reg_config + EMIBank1 + EMI_CFG_DATA0);
@@ -1083,11 +1083,11 @@ int init_ci_controller(struct dvb_adapter* dvb_adap)
 
 #endif
 
-#if !defined(HS8200) && !defined(FORTIS_HDBOX) && !defined(HS7110) && !defined(HS7119) && !defined(HS7810A) && !defined(HS7819)
+#if !defined(HS8200) && !defined(FS9000) && !defined(HS7110) && !defined(HS7119) && !defined(HS7810A) && !defined(HS7819)
 	ctrl_outl(0x1, reg_config + EMI_CLK_EN);
 #endif
 
-#if defined(FORTIS_HDBOX)
+#if defined(FS9000)
 //is [0] = top slot?
 	slot_membase[0] = ioremap( 0xa2000000, 0x1000 );
 #elif defined(HS8200)
@@ -1112,7 +1112,7 @@ int init_ci_controller(struct dvb_adapter* dvb_adap)
 	}
 #if defined(TF7700)
 	slot_membase[1] = ioremap( 0xa3400000, 0x1000 );
-#elif defined(FORTIS_HDBOX)
+#elif defined(FS9000)
 //is [1] = bottom slot?
 	slot_membase[1] = ioremap( 0xa2010000, 0x1000 );
 #elif defined(HS8200)
@@ -1140,7 +1140,7 @@ int init_ci_controller(struct dvb_adapter* dvb_adap)
 #if !defined(HS8200) \
  && !defined(HS7110) \
  && !defined(HS7119) \
- && !defined(FORTIS_HDBOX) \
+ && !defined(FS9000) \
  && !defined(HS7420) \
  && !defined(HS7429) \
  && !defined(HS7810A) \

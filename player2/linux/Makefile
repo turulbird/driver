@@ -24,7 +24,7 @@ endif
 ifdef TF7700
  PART1=1
 endif
-ifdef FORTIS_HDBOX
+ifdef FS9000
  PART1=1
 endif
 ifdef HL101

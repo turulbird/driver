@@ -19,7 +19,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
  *
- * Fortis HDBOX FS9000/9200 / HS8200 / HS9510 / HS8200 / HS7XXX Front panel driver.
+ * Fortis FS9000/9200 / HS8200 / HS9510 / HS8200 / HS7XXX Front panel driver.
  *
  * Devices:
  *  - /dev/vfd (vfd ioctls and read/write function)
@@ -39,7 +39,7 @@
  * 20170128 Audioniek       Spinner thread for HS8200 added.
  * 20170202 Audioniek       Icon thread for HS8200 added.
  * 20170417 Audioniek       GMT offset parameter added, default plus one hour.
- * 20190406 Audioniek       HDbox: spinner had inner circle missing.
+ * 20190406 Audioniek       FS9000: spinner had inner circle missing.
  *
  ****************************************************************************************/
 
@@ -142,7 +142,7 @@ int rtc_offset;
 #define cGetF9Size          13
 
 #if defined(HS8200) \
- || defined(FORTIS_HDBOX) \
+ || defined(FS9000) \
  || defined(HS9510)
 #define cMinimumSize         4
 #else
@@ -634,7 +634,7 @@ int nuvotonTask(void *dummy)
 
 //----------------------------------------------
 
-#if defined(FORTIS_HDBOX)
+#if defined(FS9000)
 /*********************************************************************
  *
  * spinner_thread: Thread to display the spinner on FS9000/9200.
@@ -1103,7 +1103,7 @@ static int __init nuvoton_init_module(void)
 		dprintk(1, "Unable to get major %d for VFD/NUVOTON\n", VFD_MAJOR);
 	}
 
-#if defined(FORTIS_HDBOX) \
+#if defined(FS9000) \
  || defined(HS8200)
 	spinner_state.state = 0;
 	spinner_state.period = 0;
@@ -1145,7 +1145,7 @@ static void __exit nuvoton_cleanup_module(void)
 	printk("[nuvoton] NUVOTON front processor module unloading\n");
 	remove_proc_fp();
 
-#if defined(FORTIS_HDBOX)
+#if defined(FS9000)
 	if (!(spinner_state.status == ICON_THREAD_STATUS_STOPPED) && spinner_state.task)
 	{
 		dprintk(50, "Stopping spinner thread\n");

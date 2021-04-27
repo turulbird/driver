@@ -72,7 +72,7 @@
 #if defined(HL101) \
  || defined(VIP1_V1) \
  || defined(HS8200) \
- || defined(FORTIS_HDBOX) \
+ || defined(FS9000) \
  || defined(CUBEREVO) \
  || defined(ADB_BOX) \
  || defined(SPARK7162) \
@@ -185,7 +185,7 @@
 
 /******* Char dev driver *******/
 #define DEVICE_NAME         "sc"
-#if defined(FORTIS_HDBOX)
+#if defined(FS9000)
 #define MAJOR_NUM           253 /**< Major num of char dev */
 #else
 #define MAJOR_NUM           169 /**< Major num of char dev */

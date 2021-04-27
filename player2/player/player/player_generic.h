@@ -87,7 +87,7 @@ Date Modification Name
 #define PLAYER_AUDIO_DEFAULT_CODED_FRAME_MAXIMUM_SIZE 0x40000
 #if defined(__TDT__) \
  && (defined(UFS910) \
- || defined(FORTIS_HDBOX) \
+ || defined(FS9000) \
  || defined(HS9510) \
  || defined(HL101) \
  || defined(VIP1_V1) \
@@ -116,7 +116,7 @@ Date Modification Name
 #define PLAYER_VIDEO_DEFAULT_CODED_FRAME_MAXIMUM_SIZE 0x100000
 #if defined(__TDT__) \
  && (defined(UFS910) \
- || defined(FORTIS_HDBOX) \
+ || defined(FS9000) \
  || defined(HS9510) \
  || defined(HL101) \
  || defined(VIP1_V1) \

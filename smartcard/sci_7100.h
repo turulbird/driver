@@ -23,10 +23,10 @@
 #undef IPBOX
 #endif
 
-/* Hellmaster1024 HS9510 and Fortis HDBOX need these defines, maybe other sti7100/sti7101 based STB need this defines too
+/* Hellmaster1024 HS9510 and FS9000 need these defines, maybe other sti7100/sti7101 based STB need this defines too
 */
 #if defined(HS9510) \
- || defined(FORTIS_HDBOX) \
+ || defined(FS9000) \
  || defined(CUBEBOX) \
  || defined(IPBOX)
 #define SUPPORT_NO_VOLTAGE
