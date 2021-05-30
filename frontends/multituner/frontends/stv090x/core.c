@@ -3,9 +3,11 @@
  *
  * @author konfetti
  *
- * 	Copyright (C) 2011 duckbox
+ *  Copyright (C) 2011 duckbox
  *
- *  core part for STM STV090x demodulator
+ *  Core part for STM STV090x demodulator
+ *
+ *  Version for Sharp BS2F7VZ0169 frontend (STM STV6110A + STV0903)
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -73,11 +75,10 @@ static void stv090x_register_frontend(struct dvb_adapter *dvb_adap, struct socke
 		dprintk(1, "Max number sockets reached ... cannot register\n");
 		return;
 	}
-
 	socketList[numSockets] = *socket;
 	numSockets++;
 
-	priv = (struct stv090x_private_data_s *) frontend_cfg->private;
+	priv = (struct stv090x_private_data_s *)frontend_cfg->private;
 
 	cfg = kmalloc(sizeof(struct stv090x_config), GFP_KERNEL);
 
@@ -153,7 +154,7 @@ static void stv090x_register_frontend(struct dvb_adapter *dvb_adap, struct socke
 
 	if (dvb_register_frontend(dvb_adap, frontend))
 	{
-		dprintk(1, "%s: Frontend registration failed !\n", __func__);
+		dprintk(1, "%s: Frontend registration failed\n", __func__);
 		if (frontend->ops.release)
 		{
 			frontend->ops.release(frontend);
@@ -314,3 +315,4 @@ MODULE_PARM_DESC(bbgain, "default=-1 (use default config = 10");
 MODULE_DESCRIPTION("Tunerdriver");
 MODULE_AUTHOR("Manu Abraham; adapted by TDT");
 MODULE_LICENSE("GPL");
+// vim:ts=4

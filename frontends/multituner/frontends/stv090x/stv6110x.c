@@ -344,7 +344,7 @@ static int stv6110x_get_frequency(struct dvb_frontend *fe, u32 *frequency)
 	*frequency = (MAKEWORD16(STV6110x_GETFIELD(TNG1_N_DIV_11_8, stv6110x->stv6110x_regs[STV6110x_TNG1]), STV6110x_GETFIELD(TNG0_N_DIV_7_0, stv6110x->stv6110x_regs[STV6110x_TNG0]))) * REFCLOCK_kHz;
 	*frequency /= (1 << (STV6110x_GETFIELD(TNG1_R_DIV, stv6110x->stv6110x_regs[STV6110x_TNG1]) + STV6110x_GETFIELD(TNG1_DIV4SEL, stv6110x->stv6110x_regs[STV6110x_TNG1])));
 	*frequency >>= 2;
-	dprintk(100, "%s < frequency = %d kHz\n", __func__, *frequency / 1000);
+	dprintk(100, "%s < Frequency = %d kHz\n", __func__, *frequency / 1000);
 	return 0;
 }
 
@@ -354,16 +354,16 @@ static int stv6110x_set_bandwidth(struct dvb_frontend *fe, u32 bandwidth)
 	u8 r8, ret = 0x04;
 	int i;
 
-	dprintk(100, "%s > bandwidth = %d\n", __func__, bandwidth);
-	if ((bandwidth / 2) > 36000000) /* BW / 2 max = 31 + 5 = 36 MHz for r8 = 31 */
+	dprintk(100, "%s > Bandwidth = %d kHz\n", __func__, bandwidth /1000);
+	if ((bandwidth / 2) > 36000000)  /* BW / 2 max = 31 + 5 = 36 MHz for r8 = 31 */
 	{
 		r8 = 31;
 	}
-	else if ((bandwidth / 2) < 5000000) /* BW / 2 min = 5 MHz for F = 0 */
+	else if ((bandwidth / 2) < 5000000)  /* BW / 2 min = 5 MHz for F = 0 */
 	{
 		r8 = 0;
 	}
-	else /* if 5 < BW / 2 < 36 */
+	else  /* if 5 < BW / 2 < 36 */
 	{
 		r8 = (bandwidth / 2) / 1000000 - 5;
 	}
@@ -399,7 +399,7 @@ static int stv6110x_get_bandwidth(struct dvb_frontend *fe, u32 *bandwidth)
 	dprintk(100, "%s: >\n", __func__);
 	stv6110x_read_reg(stv6110x, STV6110x_CTRL3, &stv6110x->stv6110x_regs[STV6110x_CTRL3]);
 	*bandwidth = (STV6110x_GETFIELD(CTRL3_CF, stv6110x->stv6110x_regs[STV6110x_CTRL3]) + 5) * 2000000;
-	dprintk(100, "%s < bandwidth = %d kHz\n", __func__, *bandwidth / 1000);
+	dprintk(100, "%s < Bandwidth = %d kHz\n", __func__, *bandwidth / 1000);
 	return 0;
 }
 
@@ -443,10 +443,10 @@ static int stv6110x_get_bbgain(struct dvb_frontend *fe, u32 *gain)
 {
 	struct stv6110x_state *stv6110x = fe->tuner_priv;
 
-	dprintk(100, "%s:  >\n", __func__);
+	dprintk(100, "%s >\n", __func__);
 	stv6110x_read_reg(stv6110x, STV6110x_CTRL2, &stv6110x->stv6110x_regs[STV6110x_CTRL2]);
 	*gain = STV6110x_GETFIELD(CTRL2_BBGAIN, stv6110x->stv6110x_regs[STV6110x_CTRL2]);
-	dprintk(100, "%s < gain = %d\n", __func__, *gain);
+	dprintk(100, "%s < Gain = %d\n", __func__, *gain);
 	return 0;
 }
 
@@ -454,11 +454,11 @@ static int stv6110x_set_bbgain(struct dvb_frontend *fe, u32 gain)
 {
 	struct stv6110x_state *stv6110x = fe->tuner_priv;
 
-	dprintk(100, "%s > gain = %d\n", __func__, gain);
+	dprintk(100, "%s > Gain = %d\n", __func__, gain);
 	STV6110x_SETFIELD(stv6110x->stv6110x_regs[STV6110x_CTRL2], CTRL2_BBGAIN, gain & 0xf);
 	stv6110x_write_reg(stv6110x, STV6110x_CTRL2, stv6110x->stv6110x_regs[STV6110x_CTRL2]);
 	stv6110x->gain = gain;
-	dprintk(100, "%s: <\n", __func__);
+	dprintk(100, "%s <\n", __func__);
 	return 0;
 }
 
@@ -491,7 +491,7 @@ static int stv6110x_set_mode(struct dvb_frontend *fe, enum tuner_mode mode)
 		dprintk(1, "%s I/O Error\n", __func__);
 		return -EIO;
 	}
-	dprintk(100, "%s: <\n", __func__);
+	dprintk(100, "%s <\n", __func__);
 	return 0;
 }
 
@@ -523,7 +523,7 @@ static int stv6110x_get_status(struct dvb_frontend *fe, u32 *status)
 	{
 		*status = 0;
 	}
-	dprintk(100, "%s > status = %d\n", __func__, *status);
+	dprintk(100, "%s < status = %d\n", __func__, *status);
 	return 0;
 }
 
@@ -614,16 +614,16 @@ static int stv6110x_release(struct dvb_frontend *fe)
 
 static struct dvb_tuner_ops stv6110x_ops =
 {
-	.info                =
+	.info               =
 	{
-		.name            = "STV6110(A) Silicon Tuner",
-		.frequency_min   =  950000,
-		.frequency_max   = 2150000,
-		.frequency_step  = 0,
+		.name           = "STV6110(A) Silicon Tuner",
+		.frequency_min  =  950000,
+		.frequency_max  = 2150000,
+		.frequency_step = 0,
 	},
-	.init                = stv6110x_init,
-	.sleep               = stv6110x_sleep,
-	.release             = stv6110x_release
+	.init               = stv6110x_init,
+	.sleep              = stv6110x_sleep,
+	.release            = stv6110x_release
 };
 
 static struct tuner_devctl stv6110x_ctl =

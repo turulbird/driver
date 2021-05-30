@@ -62,7 +62,7 @@ static int i2c_writereg(struct i2c_adapter *adapter, u8 addr, u8 reg, u8 data)
 	ret = i2c_transfer(adapter, &msg, 1);
 	if (ret != 1)
 	{
-		dprintk(1, "%s, writereg error (reg == 0x%02x, val == 0x%02x, ret == %i)\n", __func__, reg, data, ret);
+		dprintk(1, "%s: I/O error (reg == 0x%02x, val == 0x%02x, ret == %i)\n", __func__, reg, data, ret);
 	}
 	return (ret != 1) ? -EREMOTEIO : 0;
 }
@@ -76,10 +76,10 @@ static u8 i2c_readreg(struct i2c_adapter *adapter, u8 addr, u8 reg)
 	int ret;
 
 	ret = i2c_transfer(adapter, msg, 2);
-	
+
 	if (ret != 2) 
 	{
-		dprintk(1, "%s: readreg error (reg == 0x%02x, ret == %i)\n", __func__, reg, ret);
+		dprintk(1, "%s: I/O error (reg == 0x%02x, ret == %i)\n", __func__, reg, ret);
 	}
 	return b1[0];
 }
@@ -166,7 +166,7 @@ static int tda10023_demod_detect(struct socket_s *socket, struct frontend_s *fro
 {
 	int              ret = 0;
 	struct stpio_pin *pin = NULL;
-	
+
 	dprintk(100, "%s >\n", __func__);
 
 	if (socket->tuner_enable[0] != -1)
@@ -189,7 +189,7 @@ static int tda10023_demod_detect(struct socket_s *socket, struct frontend_s *fro
 	{
 		dprintk (70, "ret = %d\n", ret);
 		dprintk (1, "Invalid probe, probably not a TDA10023 device\n");
-	   
+
 		if (pin != NULL)
 		{
 			stpio_free_pin(pin);
@@ -234,10 +234,10 @@ static int tda10023_probe(struct platform_device *pdev)
 	frontend.demod_detect = tda10023_demod_detect;
 	frontend.demod_attach = tda10023_demod_attach;
 	frontend.name         = "tda10023";
-	
+
 	if (socket_register_frontend(&frontend) < 0)
 	{
-		dprintk(1, "Failed to register frontend\n");
+		dprintk(1, "%s: Failed to register frontend\n", __func__);
 	}
 	dprintk(100, "%s <\n", __func__);
 	return 0;

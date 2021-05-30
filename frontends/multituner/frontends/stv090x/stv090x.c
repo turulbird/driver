@@ -6,8 +6,8 @@
  *
  * Version for multituner platform, used in:
  * CubeRevo
- * CubeRevo mini FTA (200HD)
- * CubeRevo 250HD
+ * CubeRevo mini FTA (200HD, Sharp BS2F7VZ0169 frontend)
+ * CubeRevo 250HD (Sharp BS2F7VZ0169 frontend)
  * CubeRevo mini
  * CubeRevo mini II
  * CubeRevo 2000HD
@@ -8104,7 +8104,6 @@ int stv090x_set_voltage(struct dvb_frontend *fe, fe_sec_voltage_t voltage)
 	dprintk(100, "%s > (fe %p,  voltage %d)\n", __func__, fe, voltage);
 
 	ret = state->equipment.lnb_set_voltage(state->lnb_priv, fe, voltage);
-
 	return ret;
 }
 
@@ -8114,7 +8113,7 @@ static struct dvb_frontend_ops stv090x_ops =
 	{
 		.name                = "STV090x Multistandard",
 		.type                = FE_QPSK,
-		.frequency_min       = 950000,
+		.frequency_min       =  950000,
 		.frequency_max       = 2150000,
 		.frequency_stepsize  = 0,
 		.frequency_tolerance = 0,
@@ -8146,7 +8145,7 @@ static struct dvb_frontend_ops stv090x_ops =
 	.get_property            = stv090x_get_property,
 #endif
 
-	.set_voltage				= stv090x_set_voltage,
+	.set_voltage             = stv090x_set_voltage,
 };
 
 
