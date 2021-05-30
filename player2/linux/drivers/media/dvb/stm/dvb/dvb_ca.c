@@ -93,8 +93,6 @@ struct dvb_device *CaInit(struct DeviceContext_s *DeviceContext)
 	printk("[player2] %s >\n", __func__);
 	if (!caInitialized)
 	{
-		/* the following call creates ca0 associated with the cimax hardware */
-		printk("[player2] Initializing CI Controller\n");
 #if !defined(VIP2) \
  && !defined(SPARK) \
  && !defined(SPARK7162) \
@@ -104,6 +102,8 @@ struct dvb_device *CaInit(struct DeviceContext_s *DeviceContext)
  && !defined(CUBEREVO_250HD) \
  && !defined(SAGEMCOM88) \
  && !defined(PACE7241)
+		/* the following call creates ca0 associated with the cimax hardware */
+		printk("[player2] Initializing CI Controller\n");
 		init_ci_controller(&DeviceContext->DvbContext->DvbAdapter);
 #endif
 		caInitialized = 1;
