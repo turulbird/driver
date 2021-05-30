@@ -124,7 +124,6 @@
  *  |           |
  *  |           --------- led_pattern_speed
  *  |           |
- *  |           |
  *  |           --------- version
  *  |           |
  *  |           --------- wakeup_time <- dbox frontpanel wakeuptime
@@ -1108,7 +1107,10 @@ struct ProcStructure_s e2Proc[] =
 	{cProcEntry, "stb/fp/led3_pattern",                                              NULL, NULL, default_write_proc, NULL, ""},
 #endif
 	{cProcEntry, "stb/fp/led_pattern_speed",                                         NULL, NULL, default_write_proc, NULL, ""},
+#if !defined(CUBEREVO_250HD) \
+ && !defined(CUBEREVO_MINI_FTA)
 	{cProcEntry, "stb/fp/oled_brightness",                                           NULL, NULL, NULL, NULL, ""},
+#endif
 	{cProcEntry, "stb/fp/rtc",                                                       NULL, zero_read, default_write_proc, NULL, ""},
 	{cProcEntry, "stb/fp/rtc_offset",                                                NULL, zero_read, default_write_proc, NULL, ""},
 	{cProcEntry, "stb/fp/text",                                                      NULL, NULL, NULL, NULL, ""},
@@ -1284,7 +1286,6 @@ struct ProcStructure_s e2Proc[] =
 	{cProcEntry, "stb/fp/fan",                                                       NULL, NULL, NULL, NULL, ""},
 #endif
 #if defined(ADB_BOX) \
- || defined(CUBEREVO) \
  || defined(IPBOX9900) \
  || defined(IPBOX99)
 	{cProcEntry, "stb/fp/fan_pwm",                                                   NULL, NULL, NULL, NULL, ""},
