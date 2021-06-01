@@ -1,10 +1,42 @@
-#if defined(CUBEREVO) \
- || defined(CUBEREVO_MINI) \
- || defined(CUBEREVO_MINI2) \
- || defined(CUBEREVO_2000HD) \
- || defined(CUBEREVO_3000HD)
+/*
+ * cuberevo_micom_utf.h
+ *
+ * (c) 2019-2021 Audioniek
+ *
+ * Conversion tables for UTF-8 characters.
+ *
+ * On all models except mini and mini II, accented letters are replaced
+ * by their non-accented versions.
+ *
+ * On mini and mini II texts are displayed as intended with accents, as
+ * as far as the charactergenerator in the frontpanel provides them.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+ ****************************************************************************************
+ *
+ * Changes
+ *
+ * Date     By              Description
+ * --------------------------------------------------------------------------------------
+ * 20190215 Audioniek       Initial version.
+ *
+ ****************************************************************************************/
 unsigned char *UTF_Char_Table = NULL;
-unsigned char UTF_C2[64] =
+
+unsigned char UTF8_C2[64] =
 {
 	0x00,	//0x80, nonprintable control
 	0x00,	//0x81, nonprintable control
@@ -75,7 +107,7 @@ unsigned char UTF_C2[64] =
 	0x3f 	//0xbf, inverted question mark
 };
 
-unsigned char UTF_C3[64] =
+unsigned char UTF8_C3[64] =
 {
 	0x41,	//0x80, capital A with accent grave
 	0x41,	//0x81, capital A with accent acute
@@ -146,7 +178,7 @@ unsigned char UTF_C3[64] =
 	0x79 	//0xbf, small y with accent diaresis
 };
 
-unsigned char UTF_C4[64] =
+unsigned char UTF8_C4[64] =
 {
 	0x41,	//0x80, capital A with accent macron
 	0x61,	//0x81, small a with accent macron
@@ -217,7 +249,7 @@ unsigned char UTF_C4[64] =
 	0x4c 	//0xbf, capital L with middle dot
 };
 
-unsigned char UTF_C5[64] =
+unsigned char UTF8_C5[64] =
 {
 	0x6c,	//0x80, small l with middle dot
 	0x4c,	//0x81, capital L with stroke (polish accented L)
@@ -290,7 +322,7 @@ unsigned char UTF_C5[64] =
 
 #if 0
 // Cyrillic, not supported
-unsigned char UTF_D0[64] =
+unsigned char UTF8_D0[64] =
 {
 	0x40,	//0x80,
 	0x90,	//0x81,
@@ -361,7 +393,7 @@ unsigned char UTF_D0[64] =
 	0xe2 	//0xbf
 };
 
-unsigned char UTF_D1[64] =
+unsigned char UTF8_D1[64] =
 {
 	0x50,	//0x80,
 	0x43,	//0x81,
@@ -432,5 +464,82 @@ unsigned char UTF_D1[64] =
 	0x7f	//0xbf
 };
 #endif // Cyrillic
+
+#if defined(CUBEREVO_MINI) \
+ || defined(CUBEREVO_MINI2) \
+ || defined(CUBEREVO_2000HD) \
+ || defined(CUBEREVO_3000HD) \
+ || defined(CUBEREVO)
+// Note: table is based on character generator present in PT6302-003
+unsigned char UTF8_C2_mini[64] =
+{
+	0x00,	//0x80, nonprintable control
+	0x00,	//0x81, nonprintable control
+	0x00,	//0x82, nonprintable control
+	0x00,	//0x83, nonprintable control
+	0x00,	//0x84, nonprintable control
+	0x00,	//0x85, nonprintable control
+	0x00,	//0x86, nonprintable control
+	0x00,	//0x87, nonprintable control
+	0x00,	//0x88, nonprintable control
+	0x00,	//0x89, nonprintable control
+	0x00,	//0x8a, nonprintable control
+	0x00,	//0x8b, nonprintable control
+	0x00,	//0x8c, nonprintable control
+	0x00,	//0x8d, nonprintable control
+	0x00,	//0x8e, nonprintable control
+	0x00,	//0x8f, nonprintable control
+
+	0x00,	//0x90, nonprintable control
+	0x00,	//0x91, nonprintable control
+	0x00,	//0x92, nonprintable control
+	0x00,	//0x93, nonprintable control
+	0x00,	//0x94, nonprintable control
+	0x00,	//0x95, nonprintable control
+	0x00,	//0x96, nonprintable control
+	0x00,	//0x97, nonprintable control
+	0x00,	//0x98, nonprintable control
+	0x00,	//0x99, nonprintable control
+	0x00,	//0x9a, nonprintable control
+	0x00,	//0x9b, nonprintable control
+	0x00,	//0x9c, nonprintable control
+	0x00,	//0x9d, nonprintable control
+	0x00,	//0x9e, nonprintable control
+	0x00,	//0x9f, nonprintable control
+
+	0x20,	//0xa0, no break space
+	0x00,	//0xa1, inverted exclamation mark
+	0x00,	//0xa2, cent sign
+	0x80,	//0xa3, pound sign
+	0x8a,	//0xa4, currency sign
+	0x4c,	//0xa5, yen sign
+	0x6c,	//0xa6, broken bar
+	0x81,	//0xa7, section sign
+	0x00,	//0xa8, diaeresis
+	0x00,	//0xa9, copyright sign
+	0x00,	//0xaa, feminine ordinal indicator
+	0xdc,	//0xab, left pointing double angle quotation mark
+	0x00,	//0xac, not sign
+	0x2d,	//0xad, soft hyphen
+	0x72,	//0xae, registered sign
+	0xaf,	//0xaf, macron
+
+	0xcf,	//0xb0, degree sign
+	0x8e,	//0xb1, plus-minus sign
+	0x88,	//0xb2, superscript two
+	0x89,	//0xb3, superscript three
+	0x00,	//0xb4, acute accent
+	0x78,	//0xb5, micro sign
+	0x00,	//0xb6, pilcrow sign
+	0x95,	//0xb7, middle dot
+	0x0a,	//0xb8, cedilla
+	0x00,	//0xb9, superscript one
+	0x00,	//0xba, masculine ordinal indicator
+	0xdd,	//0xbb, right pointing double angle quotation mark
+	0x00,	//0xbc, vulgar fraction one quarter
+	0x8b,	//0xbd, vulgar fraction one half
+	0x00,	//0xbe, vulgar fraction three quarters
+	0x00 	//0xbf, inverted question mark
+};
 #endif
 // vim:ts=4
