@@ -42,6 +42,7 @@
  * 20190102 Audioniek       /proc/stb/lcd/symbol_circle support added.
  * 20191202 Audioniek       /proc/stb/lcd/symbol_timeshift support added.
  * 20210425 Audioniek       Fixed buildproblem with /proc/power/vfd.
+ * 20210601 Audioniek       Add /proc/stb/info/OEM, brand and model_name.
  * 
  ****************************************************************************/
 
@@ -76,6 +77,12 @@
  *             +--- led_patternspeed (rw)   Blink speed for pattern (not implemented)
  *             +--- oled_brightness (w)     Direct control of display brightness
  *             +--- text (w)                Direct writing of display text
+ *
+ *  /proc/stb/info
+ *             |
+ *             +--- OEM (r)                 Name of OEM manufacturer
+ *             +--- brand (r)               Name of reseller
+ *             +--- model_name (r)          Model name of reseller
  *
  *  /proc/stb/lcd/
  *             |
@@ -1121,14 +1128,13 @@ struct fp_procs
 } fp_procs[] =
 {
 	{ "progress", progress_read, progress_write },
-	{ "stb/info/OEM", oem_name_read, NULL },
-	{ "stb/info/brand", brand_name_read, NULL },
-	{ "stb/info/model_name", model_name_read, NULL },
-	{ "stb/fp/rtc", read_rtc, write_rtc },
-	{ "stb/fp/rtc_offset", read_rtc_offset, write_rtc_offset },
 	{ "stb/fp/led0_pattern", led0_pattern_read, led0_pattern_write },
 	{ "stb/fp/led1_pattern", led1_pattern_read, led1_pattern_write },
 	{ "stb/fp/led_pattern_speed", led_pattern_speed_read, led_pattern_speed_write },
+	{ "stb/fp/resellerID", fp_reseller_read, NULL },
+	{ "stb/fp/rtc", read_rtc, write_rtc },
+	{ "stb/fp/rtc_offset", read_rtc_offset, write_rtc_offset },
+	{ "stb/fp/version", fp_version_read, NULL },
 #if !defined(HS7110)
 	{ "stb/fp/oled_brightness", NULL, oled_brightness_write },
 	{ "stb/power/vfd", vfd_onoff_read, vfd_onoff_write },
@@ -1139,8 +1145,9 @@ struct fp_procs
 	{ "stb/fp/text", NULL, text_write },
 	{ "stb/fp/wakeup_time", wakeup_time_read, wakeup_time_write },
 	{ "stb/fp/was_timer_wakeup", was_timer_wakeup_read, NULL },
-	{ "stb/fp/version", fp_version_read, NULL },
-	{ "stb/fp/resellerID", fp_reseller_read, NULL },
+	{ "stb/info/OEM", oem_name_read, NULL },
+	{ "stb/info/brand", brand_name_read, NULL },
+	{ "stb/info/model_name", model_name_read, NULL },
 #if defined(FS9000) \
  || defined(HS8200)
 	{ "stb/lcd/symbol_circle", symbol_circle_read, symbol_circle_write },
