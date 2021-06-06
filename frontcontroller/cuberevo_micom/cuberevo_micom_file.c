@@ -48,7 +48,7 @@
  * 20190304 Audioniek       UTF8 support on Mini/Mini II/2000HD/3000HD added.
  * 20190306 Audioniek       Fix scrolling problem.
  * 20190308 Audioniek       Fix scrolling problem.
- * 20200524 Audioniek       UTF8 support on 13grid added.
+ * 20200524 Audioniek       UTF-8 support on 13grid added.
  * 20200524 Audioniek       Full ASCII display including lower case on
  *                          13grid added.
  * 20200620 Audioniek       Do not handle icons on 13grid
@@ -62,6 +62,9 @@
  *                          display.
  * 20210524 Audioniek       Time mode off restores previous display.
  * 20210530 Audioniek       Improve 13grid fonts.
+ * 20210604 Audioniek       Add 12dotmatrix lower case.
+ * 20210604 Audioniek       Add 12dotmatrix special characters -> now full ASCII.
+ * 20210604 Audioniek       Add 12dotmatrix UTF-8 support.
  */
 
 #include <asm/io.h>
@@ -84,16 +87,7 @@
 
 #include "cuberevo_micom.h"
 #include "cuberevo_micom_asc.h"
-#if defined(CUBEREVO) \
- || defined(CUBEREVO_MINI) \
- || defined(CUBEREVO_MINI2) \
- || defined(CUBEREVO_MINI_FTA) \
- || defined(CUBEREVO_250HD) \
- || defined(CUBEREVO_2000HD) \
- || defined(CUBEREVO_3000HD) \
- || defined(CUBEREVO_9500HD)
 #include "cuberevo_micom_utf.h"
-#endif
 
 extern const char *driver_version;
 extern void ack_sem_up(void);
@@ -184,9 +178,10 @@ static int special2seg_size;
  *
  ***************************************************************************/
 
+#if defined(CUBEREVO)
 /*******************************************
  *
- * 13 grid (Early CubeRevo and 9500HD)
+ * 13 grid (Early CubeRevo and possibly 9500HD)
  *
  * The 13 position VFD has 13 identical
  * 14 segment characters with a decimal 
@@ -342,16 +337,17 @@ special_char_t special2seg_13grid[] =
 	{ 0x7f, 0x3fff },  // 0x7f DEL
 	{ ' ',  0x0000 },  // space (EOT)
 };
+#endif
 
 #if defined(CUBEREVO) \
  || defined(CUBEREVO_9500HD)
-// 12 character dot matrix (Late CubeRevo and 9500HD)
+// 12 character dot matrix (Late CubeRevo and (all) 9500HD)
 // NOTE: tables are largely ASCII value minus 0x10 and can be calculated;
 //       The value for backslash seems to indicate that the frontpanel
 //       has a PT6302-003 driver, just as the 14 character models.
 //       If so, 12 and 14 dotmatrix versions can share code.
 unsigned short num2seg_12dotmatrix[] =
-{
+{  // table is ASCII minus 0x10
 	0x20,	// 0
 	0x21,	// 1
 	0x22,	// 2
@@ -365,7 +361,7 @@ unsigned short num2seg_12dotmatrix[] =
 };
 
 unsigned short Char2seg_12dotmatrix[] =
-{
+{  // table is ASCII minus 0x10
 	0x31,	// A
 	0x32,	// B
 	0x33,	// C
@@ -394,9 +390,8 @@ unsigned short Char2seg_12dotmatrix[] =
 	0x4a,	// Z
 };
 
-#if 0  // not tested
 unsigned short LowerChar2seg_12dotmatrix[] =
-{
+{  // table is ASCII minus 0x10
 	0x51,	// a
 	0x52,	// b
 	0x53,	// c
@@ -424,14 +419,139 @@ unsigned short LowerChar2seg_12dotmatrix[] =
 	0x69,	// y
 	0x6a,	// z
 };
-#endif
 
 special_char_t special2seg_12dotmatrix[] =
 {  // table is largely ASCII minus 0x10
-	{ '-',   0x1d },
-	{ '\'',  0x90 },  // 
-	{ '.',   0x1e },
-	{ ' ',   0x10 },
+	{ ' ',	0x10 },  // ->> ASCII - 0x10
+	{ '!',	0x11 },
+	{ '"',	0x12 },
+	{ '#',	0x13 },
+	{ '$',	0x14 },
+	{ '%',	0x15 },
+	{ '&',	0x16 },
+	{ 0x27,	0x17 },
+	{ '(',	0x18 },
+	{ ')',	0x19 },
+	{ '*',	0x1a },
+	{ '+',	0x1b },
+	{ ',',	0x1c },
+	{ '-',	0x1d },
+	{ '.',	0x1e },
+	{ '/',	0x1f },
+//	{ '0',	0x20 },
+//	{ '1',	0x21 },
+//	{ '2',	0x22 },
+//	{ '3',	0x23 },
+//	{ '4',	0x24 },
+//	{ '5',	0x25 },
+//	{ '6',	0x26 },
+//	{ '7',	0x27 },
+//	{ '8',	0x28 },
+//	{ '9',	0x29 },
+	{ ':',	0x2a },
+	{ ';',	0x2b },
+	{ '<',	0x2c },
+	{ '=',	0x2d },
+	{ '>',	0x2e },
+	{ '?',	0x2f },
+	{ '@',	0x30 },
+//	{ 'A',	0x31 }
+//	     |       
+//	{ 'Z',	0x4a },
+	{ '[',	0x4b },
+	{ 0x5c, 0x90 }, 
+	{ ']',	0x4d },
+	{ '^',	0x4e },
+	{ '_',	0x4f },
+
+	{ '`',	0x50 },  // back quote
+//	{ 'a',	0x51 },
+//	     |
+//	{ 'z',	0x6a },
+	{ '{',	0x6b },
+	{ '|',	0x6c },
+	{ '}',	0x6d },
+	{ '~',	0x6e },
+	{ 0x7f,	0x6f },  // DEL, full block  // end of ASCII - 0x10
+
+//	{ '?',  0x70 },  // large alpha
+//       |
+//	{ '?',	0x7e },  // large omega
+//	{ '?',	0x7f },  // large epsilon
+
+// Special characters, as present in PT6302-003
+// Uncommented ones are used in UTF-8 conversions
+	{ 0x80,	0x80 },  // pound sign
+	{ 0x81,	0x81 },  // paragraph
+//	{ '?',	0x82 },  // large IE diacritic
+//	{ '?',	0x83 },  // large IR diacritic
+//	{ '?',	0x84 },  // integral sign
+//	{ '?',	0x85 },  // invert x
+//	{ '?',	0x86 },  // A accent dot
+//	{ '?',	0x87 },  // power of -1
+	{ 0x88,	0x88 },  // power of 2
+	{ 0x89,	0x89 },  // power of 3
+//	{ '?',	0x8a },  // power of x
+//	{ '?',	0x8b },  // 1/2 -> c2 bd
+//	{ '?',	0x8c },  // 1/ 
+//	{ '?',	0x8d },  // square root
+	{ 0x8e,	0x8e },  // +/-
+//	{ '?',	0x8f },  // paragraph
+
+	{ '\'',	0x90 },
+//	{ '?',	0x91 },  // katakana
+//	     |
+//	{ '?',	0xce },  // katakana
+	{ 0xcf,	0xcf },  // degree sign
+//	{ '?',	0xd0 },  // arrow up
+//	{ '?',	0xd1 },  // arrow down
+//	{ '?',	0xd2 },  // arrow left
+//	{ '?',	0xd3 },  // arrow right
+//	{ '?',	0xd4 },  // arrow top left
+//	{ '?',	0xd5 },  // arrow top right
+//	{ '?',	0xd6 },  // arrow bottom right
+//	{ '?',	0xd7 },  // arrow bottom left
+//	{ '?',	0xd8 },  // left end measurement
+//	{ '?',	0xd9 },  // right end measurement
+//	{ '?',	0xda },  // superscript mu
+//	{ '?',	0xdb },  // inverted superscript mu
+	{ 0xdc,	0xdc },  // fat <
+	{ 0xdd,	0xdd },  // fat >
+//	{ '?',	0xde },  // three dots up
+//	{ '?',	0xdf },  // three dots down
+//	{ '?',	0xe0 },  // smaller or equal than
+//	{ '?',	0xe1 },  // greater or equal than
+//	{ '?',	0xe2 },  // unequal sign
+//	{ '?',	0xe3 },  // equal sign with dots
+//	{ '?',	0xe4 },  // two vertical bars
+//	{ '?',	0xe5 },  // single vertical bar
+//	{ '?',	0xe6 },  // inverted T
+//	{ '?',	0xe7 },  // infinite sign
+//	{ '?',	0xe8 },  // infinite sign open
+//	{ '?',	0xe9 },  // inverted tilde
+//	{ '?',	0xea },  // AC symbol
+//	{ '?',	0xeb },  // three horizontal lines
+//	{ '?',	0xec },  // Ground symbol inverted
+//	{ '?',	0xed },  // buzzer
+//	{ '?',	0xee },  // ?
+//	{ '?',	0xef },  // collapsed 8
+//	{ '?',	0xf0 },  // small 1
+//	{ '?',	0xf1 },  // small 2
+//	{ '?',	0xf2 },  // small 3
+//	{ '?',	0xf3 },  // small 4
+//	{ '?',	0xf4 },  // small 5
+//	{ '?',	0xf5 },  // small 6
+//	{ '?',	0xf6 },  // small 7
+//	{ '?',	0xf7 },  // small 8
+//	{ '?',	0xf8 },  // small 9
+//	{ '?',	0xf9 },  // small 10
+//	{ '?',	0xfa },  // small 11
+//	{ '?',	0xfb },  // small 12
+//	{ '?',	0xfc },  // small 13
+//	{ '?',	0xfd },  // small 14
+//	{ '?',	0xfe },  // small 15
+//	{ '?',	0xff },  // small 16
+	{ ' ',	0xff }   // space (EOT)
 };
 #endif
 
@@ -447,7 +567,7 @@ special_char_t special2seg_12dotmatrix[] =
  || defined(CUBEREVO_MINI2) \
  || defined(CUBEREVO_2000HD) \
  || defined(CUBEREVO_3000HD)
-// 14 character dot matrix (900HD / 910HD / 2000HD / 3000HD, late CubeRevo)
+// 14 character dot matrix (900HD / 910HD / 2000HD / 3000HD)
 unsigned short num2seg_14dotmatrix[] =
 {  // note: 0x10 lower than ASCII value
 	0x20,	// 0
@@ -461,7 +581,7 @@ unsigned short num2seg_14dotmatrix[] =
 	0x28,	// 8
 	0x29,	// 9
 };
-#endif
+
 unsigned short Char2seg_14dotmatrix[] =
 {  // note: 0x10 lower than ASCII value
 	0x31,	// A
@@ -532,10 +652,6 @@ unsigned short LowerChar2seg_14dotmatrix[] =
  * generator in PT6302-003 as present in
  * authors mini II test receiver.
  */
-#if defined(CUBEREVO_MINI) \
- || defined(CUBEREVO_MINI2) \
- || defined(CUBEREVO_2000HD) \
- || defined(CUBEREVO_3000HD)
 // non-alphanumeric
 special_char_t special2seg_14dotmatrix[] =
 {  // table is largely ASCII minus 0x10
@@ -546,7 +662,7 @@ special_char_t special2seg_14dotmatrix[] =
 	{ '$',	0x14 },
 	{ '%',	0x15 },
 	{ '&',	0x16 },
-	{ '#',	0x17 },
+	{ 0x27,	0x17 },
 	{ '(',	0x18 },
 	{ ')',	0x19 },
 	{ '*',	0x1a },
@@ -565,8 +681,8 @@ special_char_t special2seg_14dotmatrix[] =
 //	{ '7',	0x27 },
 //	{ '8',	0x28 },
 //	{ '9',	0x29 },
-//	{ ':',	0x2a },
-//	{ ';',	0x2b },
+	{ ':',	0x2a },
+	{ ';',	0x2b },
 	{ '<',	0x2c },
 	{ '=',	0x2d },
 	{ '>',	0x2e },
@@ -576,12 +692,12 @@ special_char_t special2seg_14dotmatrix[] =
 //	     |       
 //	{ 'Z',	0x4a },
 	{ '[',	0x4b },
-	{ 0x4c,	0x4c },  // yen sign -> c2 a5
-	{ '^',	0x4d },
-	{ ']',	0x4e },
+	{ 0x5c,	0x90 },
+	{ ']',	0x4d },
+	{ '^',	0x4e },
 	{ '_',	0x4f },
 
-//	{ '`',	0x50 },  // back quote
+	{ '`',	0x50 },  // back quote
 //	{ 'a',	0x51 },
 //	     |
 //	{ 'z',	0x6a },
@@ -589,7 +705,7 @@ special_char_t special2seg_14dotmatrix[] =
 	{ '|',	0x6c },
 	{ '}',	0x6d },
 	{ '~',	0x6e },
-	{ 0x7f,	0x6f },  //DEL, full block  // end of ASCII - 0x10
+	{ 0x7f,	0x6f },  // DEL, full block  // end of ASCII - 0x10
 
 //	{ '?',  0x70 },  // large alpha
 //       |
@@ -1711,24 +1827,24 @@ int micomGetVersion(void)
 	special2seg      = special2seg_14dotmatrix;
 	special2seg_size = ARRAY_SIZE(special2seg_14dotmatrix);
 #elif defined(CUBEREVO_9500)
-	if ((micom_ver == 8) && (micom_major == 4 || micom_major == 6))  // TODO: check values
-	{  // early
-		front_seg_num    = 14;
-		num2seg          = num2seg_14dotmatrix;
-		Char2seg         = Char2seg_14dotmatrix;
-		LowerChar2seg    = LowerChar2seg_14dotmatrix;
-		special2seg      = special2seg_14dotmatrix;
-		special2seg_size = ARRAY_SIZE(special2seg_14dotmatrix);
-	}
-	else if ((micom_ver == 8) && (micom_major == 3))  // TODO: check values
-	{  // late ?
+//	if ((micom_ver == 8) && (micom_major == 4 || micom_major == 6))  // TODO: check values
+//	{  // early
+//		front_seg_num    = 14;
+//		num2seg          = num2seg_14dotmatrix;
+//		Char2seg         = Char2seg_14dotmatrix;
+//		LowerChar2seg    = LowerChar2seg_14dotmatrix;
+//		special2seg      = special2seg_14dotmatrix;
+//		special2seg_size = ARRAY_SIZE(special2seg_14dotmatrix);
+//	}
+//	else if ((micom_ver == 8) && (micom_major == 3))  // TODO: check values
+//	{  // late ?
 		front_seg_num    = 12;
 		num2seg          = num2seg_12dotmatrix;
 		Char2seg         = Char2seg_12dotmatrix;
-		LowerChar2seg    = Char2seg_12dotmatrix;  // TODO: add lower case
+		LowerChar2seg    = LowerChar2seg_12dotmatrix;
 		special2seg      = special2seg_12dotmatrix;
 		special2seg_size = ARRAY_SIZE(special2seg_12dotmatrix);
-	}
+//	}
 #else  // CUBEREVO
 	if ((micom_ver == 7) && (micom_major == 7 || micom_major == 6))
 	{  // early, no icons
@@ -1739,12 +1855,12 @@ int micomGetVersion(void)
 		special2seg      = special2seg_13grid;
 		special2seg_size = ARRAY_SIZE(special2seg_13grid);
 	}
-	else // if ((micom_ver == 8) && (micom_major == 3))  // TODO: check values
-	{ // late
+	else if ((micom_ver == 8) && (micom_major == 3))
+	{ // late, version 2
 		front_seg_num    = 12;
 		num2seg          = num2seg_12dotmatrix;
 		Char2seg         = Char2seg_12dotmatrix;
-		LowerChar2seg    = Char2seg_12dotmatrix;  // TODO: add lower case
+		LowerChar2seg    = LowerChar2seg_12dotmatrix;
 		special2seg      = special2seg_12dotmatrix;
 		special2seg_size = ARRAY_SIZE(special2seg_12dotmatrix);
 	}
@@ -1908,13 +2024,13 @@ int micomWriteString(unsigned char *aBuf, int len)
 	/* The 14 character front processor cannot display accented letters.
 	 * The following code traces for UTF8 sequences for these and
 	 * replaces them with the corresponding letter without any accent;
-	 * In addition some UTF-8 ncoded characters are displayed correctly,
+	 * In addition some UTF-8 encoded characters are displayed correctly,
 	 * as far as the character generator in the PT6302-003 used in the
 	 * frontpanel provides them.
 	 * This is not perfect, but at least better than the old practice
 	 * of replacing them with spaces.
 	 */
-	dprintk(50, "%s UTF8 text: [%s], len = %d\n", __func__, aBuf, len);
+	dprintk(50, "%s UTF-8 text: [%s], len = %d\n", __func__, aBuf, len);
 	memset(bBuf, ' ', sizeof(bBuf));
 	j = 0;
 
@@ -2002,17 +2118,17 @@ int micomWriteString(unsigned char *aBuf, int len)
 	len = j;
 	bBuf[len] = '\0';  // terminate string
 	memcpy(aBuf, bBuf, len);
-	dprintk(50, "%s Non-UTF8 text: [%s], len = %d\n", __func__, bBuf, len);
+	dprintk(50, "%s Non-UTF-8 text: [%s], len = %d\n", __func__, bBuf, len);
 #elif defined(CUBEREVO)
 	if (front_seg_num == 13)
 	{
 		/* The 13 character front processor cannot display accented letters.
-		 * The following routine traces for UTF8 sequences for these and
+		 * The following routine traces for UTF-8 sequences for these and
 		 * replaces them with the corresponding letter without any accent.
 		 * This is not perfect, but at least better than the old practice
 		 * of replacing them with spaces.
 		 */
-		dprintk(50, "%s UTF8 text: [%s], len = %d\n", __func__, aBuf, len);
+		dprintk(50, "%s UTF-8 text: [%s], len = %d\n", __func__, aBuf, len);
 		memset(bBuf, ' ', sizeof(bBuf));
 		j = 0;
 
@@ -2065,7 +2181,7 @@ int micomWriteString(unsigned char *aBuf, int len)
 					}
 					else
 					{
-						dprintk(1, "%s UTF8 character is unprintable, ignore.\n", __func__);
+						dprintk(1, "%s UTF-8 character is unprintable, ignore.\n", __func__);
 						i++;  //skip character
 					}
 				}
@@ -2095,12 +2211,103 @@ int micomWriteString(unsigned char *aBuf, int len)
 		len = j;
 		bBuf[len] = '\0';  // terminate string
 		memcpy(aBuf, bBuf, len);
-		dprintk(50, "%s Non-UTF8 text: [%s], len = %d\n", __func__, bBuf, len);
+		dprintk(50, "%s Non-UTF-8 text: [%s], len = %d\n", __func__, bBuf, len);
 	}
-	else
+	else  // 12dotmatrix (note: same as 14grid)
 	{
-		// TODO: add 12 character dotmatrix support
-		dprintk(50, "%s UTF8 text: [%s], len = %d\n", __func__, aBuf, len);
+		/* The 12 character front processor cannot display accented letters.
+		 * The following routine traces for UTF-8 sequences for these and
+		 * replaces them with the corresponding letter without any accent.
+		 * In addition some UTF-8 encoded characters are displayed correctly,
+		 * as far as the character generator in the PT6302-003 used in the
+		 * frontpanel provides them.
+		 * This is not perfect, but at least better than the old practice
+		 * of replacing them with spaces.
+		 */
+		dprintk(50, "%s UTF-8 text: [%s], len = %d\n", __func__, aBuf, len);
+		memset(bBuf, ' ', sizeof(bBuf));
+		j = 0;
+
+		// process aBuf byte by byte
+		for (i = 0; i < len; i++)
+		{
+			if (aBuf[i] < 0x80)
+			{
+				bBuf[j] = aBuf[i];
+				j++;
+			}
+			else if (aBuf[i] < 0xd0)  // if between 0x80 and 0xcf
+			{
+				switch (aBuf[i])
+				{
+					case 0xc2:
+					{
+					UTF_Char_Table = UTF8_C2_mini;
+						break;
+					}
+					case 0xc3:
+					{
+						UTF_Char_Table = UTF8_C3;
+						break;
+					}
+					case 0xc4:
+					{
+						UTF_Char_Table = UTF8_C4;
+						break;
+					}
+					case 0xc5:
+					{
+						UTF_Char_Table = UTF8_C5;
+						break;
+					}
+					default:
+					{
+						dprintk(1, "%s Unsupported extension 0x%02x found\n", __func__, aBuf[i]);
+						UTF_Char_Table = NULL;
+					}
+				}
+				i++;  // skip lead in byte
+				if (UTF_Char_Table)  // if an applicable table there
+				{
+					if (UTF_Char_Table[aBuf[i] & 0x3f] != 0)  // if character is printable
+					{
+						bBuf[j] = UTF_Char_Table[aBuf[i] & 0x3f];  // get character from table
+//						dprintk(50, "%s character from table: %c\n", __func__, bBuf[j]);
+						j++;
+					}
+					else
+					{
+						dprintk(1, "%s UTF-8 character is unprintable, ignore.\n", __func__);
+						i++;  //skip character
+					}
+				}
+			}
+			else
+			{
+				if (aBuf[i] < 0xf0)  // if between 0xe0 and 0xef
+				{
+					i += 2;  // skip 2 bytes
+				}
+				else if (aBuf[i] < 0xf8)  // if between 0xf0 and 0xf7
+				{
+					i += 3;  // skip 3 bytes
+				}
+				else if (aBuf[i] < 0xfc)  // if between 0xf8 and 0xfb
+				{
+					i += 4;  // skip 4 bytes
+				}
+				else  // if between 0xfc and 0xff
+				{
+					i += 5;  // skip 5 bytes
+				}
+				bBuf[j] = 0x20;  // else put a space
+				j++;
+			}
+		}		
+		len = j;
+		bBuf[len] = '\0';  // terminate string
+		memcpy(aBuf, bBuf, len);
+		dprintk(50, "%s Non-UTF-8 text: [%s], len = %d\n", __func__, bBuf, len);
 	}
 #elif defined(CUBEREVO_MINI_FTA) \
  ||   defined(CUBEREVO_250HD)
@@ -2110,7 +2317,7 @@ int micomWriteString(unsigned char *aBuf, int len)
 	 * This is not perfect, but at least better than the old practice
 	 * of replacing them with spaces.
 	 */
-	dprintk(50, "%s UTF8 text: [%s], len = %d\n", __func__, aBuf, len);
+	dprintk(50, "%s UTF-8 text: [%s], len = %d\n", __func__, aBuf, len);
 	memset(bBuf, ' ', sizeof(bBuf));
 	j = 0;
 
@@ -2163,7 +2370,7 @@ int micomWriteString(unsigned char *aBuf, int len)
 				}
 				else
 				{
-					dprintk(1, "%s UTF8 character is unprintable, ignore.\n", __func__);
+					dprintk(1, "%s UTF-8 character is unprintable, ignore.\n", __func__);
 					i++;  //skip character
 				}
 			}
@@ -2193,10 +2400,10 @@ int micomWriteString(unsigned char *aBuf, int len)
 	len = j;
 	bBuf[len] = '\0';  // terminate string
 	memcpy(aBuf, bBuf, len);
-	dprintk(50, "%s Non-UTF8 text: [%s], len = %d\n", __func__, bBuf, len);
+	dprintk(50, "%s Non-UTF-8 text: [%s], len = %d\n", __func__, bBuf, len);
 #elif defined(CUBEREVO_9500HD)
 	// TODO: add 12 character dot matrix support
-	dprintk(50, "%s UTF8 text: [%s], len = %d\n", __func__, aBuf, len);
+	dprintk(50, "%s UTF-8 text: [%s], len = %d\n", __func__, aBuf, len);
 #endif
 	memset(buffer, 0, sizeof(buffer));
 	buffer[0] = VFD_SETCLEARTEXT;
