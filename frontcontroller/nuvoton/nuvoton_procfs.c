@@ -1007,6 +1007,7 @@ static int model_name_read(char *page, char **start, off_t off, int count, int *
 	unsigned char reseller4;
 	unsigned char **table = NULL;
 	
+	dprintk(50, "%s >\n", __func__);
 	len = nuvotonGetVersion(data);
 	if (len == 0)
 	{
@@ -1104,12 +1105,14 @@ static int model_name_read(char *page, char **start, off_t off, int count, int *
 	else
 	{
 		dprintk(1, "Get version failed (ret = %d).\n", len);
+		dprintk(50, "%s < -1\n", __func__);
 		return -1;
 	}
 	if (NULL != page)
 	{
 		len = sprintf(page, "%s\n", table[reseller2]);
 	}
+	dprintk(50, "%s < %d\n", __func__, len);
 	return len;
 }
 

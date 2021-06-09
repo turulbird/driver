@@ -1015,6 +1015,8 @@ struct ProcStructure_s e2Proc[] =
 	{cProcEntry, "stb/lcd/final_scroll_delay",                                       NULL, info_final_scroll_delay_read, info_final_scroll_delay_write, NULL, ""},
 
 #if defined(ADB_BOX) \
+ || defined(CUBEREVO) \
+ || defined(CUBEREVO_9500HD) \
  || defined(FS9000) \
  || defined(HS8200) \
  || defined(SPARK7162) \
