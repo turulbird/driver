@@ -1,4 +1,5 @@
-/*
+/****************************************************************************
+ *
  * cuberevo_micom.h
  *
  * This program is free software; you can redistribute it and/or modify
@@ -47,6 +48,15 @@ extern tFrontPanelOpen FrontPanelOpen[LASTMINOR];
 
 #define VFD_MAJOR            147
 
+#if defined(CUBEREVO) \
+ || defined(CUBEREVO_9500HD)
+#define SPINNER_THREAD_STATUS_RUNNING 0
+#define SPINNER_THREAD_STATUS_STOPPED 1
+#define SPINNER_THREAD_STATUS_INIT    2
+#define SPINNER_THREAD_STATUS_HALTED  3  // (semaphore down)
+//#define SPINNER_THREAD_STATUS_PAUSED  4  // (state == 0)
+#endif  // CUBEREVO
+
 /* IOCTL numbers -> hacky! */
 #define VFDDISPLAYCHARS      0xc0425a00
 #define VFDBRIGHTNESS        0xc0425a03
@@ -56,7 +66,7 @@ extern tFrontPanelOpen FrontPanelOpen[LASTMINOR];
 #define VFDICONDISPLAYONOFF  0xc0425a0a
 // comment next line to leave VFDTEST capabilities out
 //#define VFDTEST              0xc0425af0  // added by audioniek
-#define VFDCLEARICONS	     0xc0425af6
+#define VFDCLEARICONS        0xc0425af6
 #define VFDSETRF             0xc0425af7
 #define VFDSETFAN            0xc0425af8
 #define VFDGETWAKEUPMODE     0xc0425af9
@@ -75,9 +85,9 @@ extern tFrontPanelOpen FrontPanelOpen[LASTMINOR];
 #define VFDLEDBRIGHTNESS     0xc0425b05  /* Cuberevo/micom specific */
 
 // comment next line if you want left aligned text display
-//#define CENTERED_DISPLAY
+#define CENTERED_DISPLAY
 
-#if defined CENTERED_DISPLAY
+#if defined(CENTERED_DISPLAY)
 #if defined(CUBEREVO_250HD) \
  || defined(CUBEREVO_MINI_FTA)
 #undef CENTERED_DISPLAY  // never center on LED models
@@ -85,6 +95,42 @@ extern tFrontPanelOpen FrontPanelOpen[LASTMINOR];
 #endif
 
 #define cNumberSymbols      8
+
+/* commands to the fp */
+#define VFD_GETA0              0xA0
+#define VFD_GETWAKEUPSTATUS    0xA1
+#define VFD_GETA2              0xA2
+#define VFD_GETRAM             0xA3
+#define VFD_GETDATETIME        0xA4
+#define VFD_GETMICOM           0xA5
+#define VFD_GETWAKEUP          0xA6  /* wakeup time */
+#define VFD_SETWAKEUPDATE      0xC0
+#define VFD_SETWAKEUPTIME      0xC1
+#define VFD_SETDATETIME        0xC2
+#define VFD_SETBRIGHTNESS      0xC3
+#define VFD_SETVFDTIME         0xC4
+#define VFD_SETLED             0xC5
+#define VFD_SETLEDSLOW         0xC6
+#define VFD_SETLEDFAST         0xC7
+#define VFD_SETSHUTDOWN        0xC8
+#define VFD_SETRAM             0xC9
+#define VFD_SETTIME            0xCA
+#define VFD_SETCB              0xCB
+#define VFD_SETFANON           0xCC
+#define VFD_SETFANOFF          0xCD
+#define VFD_SETRFMODULATORON   0xCE
+#define VFD_SETRFMODULATOROFF  0xCF
+#define VFD_SETCHAR            0xD0
+#define VFD_SETDISPLAYTEXT     0xD1
+#define VFD_SETD2              0xD2
+#define VFD_SETD3              0xD3
+#define VFD_SETD4              0xD4
+#define VFD_SETCLEARTEXT       0xD5
+#define VFD_SETD6              0xD6
+#define VFD_SETMODETIME        0xD7
+#define VFD_SETSEGMENTI        0xD8
+#define VFD_SETSEGMENTII       0xD9
+#define VFD_SETCLEARSEGMENTS   0xDA
 
 /***************************************************************************
  *
@@ -95,44 +141,57 @@ extern tFrontPanelOpen FrontPanelOpen[LASTMINOR];
  || defined(CUBEREVO_9500HD) 
 enum  // for 12 character dot matrix
 {
-	ICON_MIN = 0,  // 0
-	ICON_STANDBY,
-	ICON_SAT,
-	ICON_REC,
-	ICON_TIMESHIFT,
-	ICON_TIMER,    // 5
-	ICON_HD,
-	ICON_USB,
-	ICON_SCRAMBLED,
-	ICON_DOLBY,
-	ICON_MUTE,     // 10
-	ICON_TUNER1,
-	ICON_TUNER2,
-	ICON_MP3,
-	ICON_REPEAT,
-	ICON_PLAY,     // 15
-	ICON_TER,
-	ICON_FILE,
-	ICON_480i,
-	ICON_480p,
-	ICON_576i,     // 20
-	ICON_576p,
-	ICON_720p,
-	ICON_1080i,
-	ICON_1080p,
-	ICON_PLAY_1,   // 25
-	ICON_RADIO,
-	ICON_TV,
-	ICON_PAUSE,
-	ICON_MAX       // 29
+	ICON_MIN = 0,    // 00
+	ICON_STANDBY,    // 01
+	ICON_SAT,        // 02
+	ICON_REC,        // 03
+	ICON_TIMESHIFT,  // 04
+	ICON_TIMER,      // 05
+	ICON_HD,         // 06
+	ICON_USB,        // 07
+	ICON_SCRAMBLED,  // 08
+	ICON_DOLBY,      // 09
+	ICON_MUTE,       // 10
+	ICON_TUNER1,     // 11
+	ICON_TUNER2,     // 12
+	ICON_MP3,        // 13
+	ICON_REPEAT,     // 14
+	ICON_PLAY,       // 15
+	ICON_Circ0,      // 16
+	ICON_Circ1,      // 17
+	ICON_Circ2,      // 18
+	ICON_Circ3,      // 19
+	ICON_Circ4,      // 20
+	ICON_Circ5,      // 21
+	ICON_Circ6,      // 22
+	ICON_Circ7,      // 23
+	ICON_Circ8,      // 24
+	ICON_FILE,       // 25
+	ICON_TER,        // 26
+	ICON_480i,       // 27
+	ICON_480p,       // 28
+	ICON_576i,       // 29
+	ICON_576p,       // 30
+	ICON_720p,       // 31
+	ICON_1080i,      // 32
+	ICON_1080p,      // 33
+//	ICON_COLON1,     // (34)
+//	ICON_COLON2,     // (35)
+//	ICON_COLON3,     // (36)
+	ICON_TV,         // 34 (37)
+	ICON_RADIO,      // 35 (38)
+	ICON_MAX,        // 36 (39)
+	ICON_SPINNER     // 37 (40)
 };
-#elif defined(CUBEREVO_MINI) \
- ||   defined(CUBEREVO_MINI2) \
- ||   defined(CUBEREVO_2000HD) \
- ||   defined(CUBEREVO_3000HD)
+#endif  // CUBEREVO
+
+#if defined(CUBEREVO_MINI) \
+ || defined(CUBEREVO_MINI2) \
+ || defined(CUBEREVO_2000HD) \
+ || defined(CUBEREVO_3000HD)
 enum  // for 14 character dot matrix
 {
-	ICON_MIN,  // 0
+	ICON_MIN = 0,  // 0
 	ICON_REC,
 	ICON_TIMER,  // 2
 	ICON_TIMESHIFT,
@@ -150,7 +209,13 @@ struct iconToInternal
 	u16 icon;
 	u8 codemsb;
 	u8 codelsb;
-	u8 segment;
+	u8 sgm;
+#if defined(CUBEREVO) \
+ || defined(CUBEREVO_9500HD) 
+	u8 codemsb2;
+	u8 codelsb2;
+	u8 sgm2;
+#endif
 };
 
 struct set_test_s
@@ -255,15 +320,36 @@ struct vfd_ioctl_data
 
 struct saved_data_s
 {
-	int   length;  // length of last string written to fp display
-	char  data[128];  // last string written to fp display
-	int   fan;  // fan state
+	int  length;  // length of last string written to fp display
+	char data[128];  // last string written to fp display
+//	int  brightness;  // display on/off seems to retain previous brigtness
+	int  display_on;
+	int  time_mode;
+#if !defined(CUBEREVO_250HD) \
+ && !defined(CUBEREVO_MINI_FTA)
+	int  fan;  // fan state
+	int  icon_state[ICON_MAX + 2];
+#endif
 };
+
+#if defined(CUBEREVO) \
+ || defined(CUBEREVO_9500HD)
+typedef struct
+{
+	int state;
+	int period;
+	int status;
+	int enable;
+	struct task_struct *task;
+	struct semaphore sem;
+} tSpinnerState;
+#endif
 
 void dumpValues(void);
 extern int micom_init_func(void);
 extern void copyData(unsigned char *data, int len);
 extern void getRCData(unsigned char *data, int *len);
+extern int micomWriteCommand(char *buffer, int len, int needAck);
 
 extern int errorOccured;
 extern char *gmt_offset;  // module param, string
@@ -275,6 +361,12 @@ extern int front_seg_num;
 extern struct file_operations vfd_fops;
 
 extern struct saved_data_s lastdata;
+
+#if defined(CUBEREVO) \
+ || defined(CUBEREVO_9500HD)
+extern tSpinnerState spinner_state;
+extern struct iconToInternal micomIcons[];
+#endif
 
 #endif  // _cuberevo_micom_h
 // vim:ts=4
