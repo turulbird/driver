@@ -53,7 +53,7 @@
 
 #include "kathrein_micom.h"
 #include "kathrein_micom_asc.h"
-#include "../vfd/utf.h"
+#include "../ufs910_fp/utf.h"
 
 /* Global declarations */
 #if defined(UFI510) || defined(UFC960)
@@ -619,15 +619,7 @@ int errorOccured = 0;
 char ioctl_data[8];
 tFrontPanelOpen FrontPanelOpen [LASTMINOR];
 
-struct saved_data_s
-{
-	int           length;
-	char          data[20];
-	unsigned char brightness;
-	unsigned char ledbrightness;
-};
-
-static struct saved_data_s lastdata;
+struct saved_data_s lastdata;
 
 /* start of code */
 
@@ -977,7 +969,7 @@ int micomSetDisplayOnOff(unsigned char level)
 	res = micomSetBrightness(level);
 
 	res |= micomSetLedBrightness(llevel);
-
+	lastdata.display_on = (level ? 2 : 0);
 	dprintk(100, "%s <\n", __func__);
 	return res;
 }
