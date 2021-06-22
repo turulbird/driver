@@ -120,8 +120,8 @@ enum cmds
 	CMD_UPDFWVERS   = 0x35,
 	CMD_TUNERSLEEP  = 0x36,
 	CMD_AGCCONTROL  = 0x3b,
-	CMD_U1		= 0x16,
-	CMD_U2		= 0x17,
+	CMD_U1          = 0x16,
+	CMD_U2          = 0x17,
 	CMD_MAX         = 0xFF
 };
 
@@ -129,31 +129,31 @@ enum cmds
 struct cx24116_cmd
 {
 	enum cmds id;
-	u8 len;
-	u8 args[0x1e];
+	u8   len;
+	u8   args[0x1e];
 };
 
 struct cx24116_state
 {
-	struct dvb_frontend_ops 		ops;
-	struct dvb_frontend 			frontend;
+	struct dvb_frontend_ops ops;
+	struct dvb_frontend     frontend;
 
-	const struct cx24116_config 		*config;
+	const struct cx24116_config   *config;
 
-	struct cx24116_tuning 			dcur;
-	struct cx24116_tuning 			dnxt;
+	struct cx24116_tuning   dcur;
+	struct cx24116_tuning   dnxt;
 
-	struct semaphore			fw_load_sem;
+	struct semaphore        fw_load_sem;
 	/* FIXME: remove thread_id if not using loader thread */
-	int					thread_id;
+	int                     thread_id;
 
-	struct cx24116_cmd 			dsec_cmd;
+	struct cx24116_cmd      dsec_cmd;
 
-	int				       	not_responding;
+	int                     not_responding;
 
 #if defined(TUNER_PROCFS)
-	struct proc_dir_entry			*proc_tuner;
-	u8					value[5];
+	struct proc_dir_entry   *proc_tuner;
+	u8                      value[5];
 #endif
 };
 

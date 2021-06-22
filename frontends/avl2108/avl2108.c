@@ -3,24 +3,24 @@
  *
  * @author Pedro Aguilar <pedro@duolabs.com>
  *
- * @brief Availink avl2108 - DVBS/S2 Satellite demod driver with Sharp BS2S7HZ6360 tuner
+ * @brief Availink avl2108 - DVBS/S2 Satellite demod driver
  *
  * 	Copyright (C) 2009-2010 Duolabs Spa
- *                2011 adapted by konfetti for use with ufs922, hs9510 and hs8200
+ *                2011 adapted by konfetti for use with ufs922 & hs9510
  *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
  *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
 #include <linux/slab.h>
@@ -45,46 +45,49 @@
 
 #include "avl2108_platform.h"
 
-#define AVL2108_DEMOD_FW "dvb-fe-avl2108.fw" /*< Demod fw used for locking */
-
-#define I2C_MAX_READ	64
-#define I2C_MAX_WRITE	64
-
-/*< Format */
-#define format_addr(X, Y)		\
-	do {						\
-		Y[0] =(u8)((X) >> 16);	\
-		Y[1] =(u8)((X) >> 8);	\
-		Y[2] =(u8)(X);			\
-	} while (0)
-
-/*< Create a formatted 16 bit array */
-#define format_16(X, Y)			\
-	do {						\
-		Y[0] =(u8)((X) >> 8);	\
-		Y[1] =(u8)((X) & 0xFF);	\
-	} while (0)
-
-/*< Create a formatted 32 bit array */
-#define format_32(X, Y)			\
-	do {						\
-		Y[0] =(u8)((X) >> 24);	\
-		Y[1] =(u8)((X) >> 16);	\
-		Y[2] =(u8)((X) >> 8);	\
-		Y[3] =(u8)((X) & 0xFF);	\
-	} while (0)
-
-short paramDebug = 50;
+short paramDebug = 0;
+#if defined TAGDEBUG
+#undef TAGDEBUG
+#endif
 #define TAGDEBUG "[avl2108] "
 
 #define dprintk(level, x...) \
 do \
 { \
-	if ((paramDebug) && (paramDebug > level)) \
+	if ((paramDebug == 0) || (paramDebug > level)) \
 	{ \
 		printk(TAGDEBUG x); \
 	} \
 } while (0)
+
+#define AVL2108_DEMOD_FW "dvb-fe-avl2108.fw" /*< Demod fw used for locking */
+
+#define I2C_MAX_READ 64
+#define I2C_MAX_WRITE 64
+
+/*< Format */
+#define format_addr(X, Y) \
+	do { \
+		Y[0] =(u8)((X) >> 16); \
+		Y[1] =(u8)((X) >> 8); \
+		Y[2] =(u8)(X); \
+	} while (0)
+
+/*< Create a formatted 16 bit array */
+#define format_16(X, Y) \
+	do { \
+		Y[0] =(u8)((X) >> 8); \
+		Y[1] =(u8)((X) & 0xFF); \
+	} while (0)
+
+/*< Create a formatted 32 bit array */
+#define format_32(X, Y) \
+	do { \
+		Y[0] =(u8)((X) >> 24); \
+		Y[1] =(u8)((X) >> 16); \
+		Y[2] =(u8)((X) >> 8); \
+		Y[3] =(u8)((X) & 0xFF); \
+	} while (0)
 
 struct avl2108_diseqc_tx_status
 {
@@ -94,53 +97,53 @@ struct avl2108_diseqc_tx_status
 
 struct avl2108_ver_info
 {
-	u8 	major;
-	u8 	minor;
+	u8  major;
+	u8  minor;
 	u16 build;
-	u8 	patch_major;
-	u8 	patch_minor;
+	u8  patch_major;
+	u8  patch_minor;
 	u16 patch_build;
 };
 
 struct avl2108_tuning
 {
 	u32 frequency;
-	u32 symbol_rate;	/* In Hz */
-	u8 lock_mode;		/* 0 = channel lock mode is set to fixed, 1 = channel lock mode is set to adaptive */
-	u8 auto_iq_swap;	/* Enable/Disable the automatic IQ swap feature */
+	u32 symbol_rate;  /* In Hz */
+	u8 lock_mode;     /* 0 = channel lock mode is set to fixed, 1 = channel lock mode is set to adaptive */
+	u8 auto_iq_swap;  /* Enable/Disable the automatic IQ swap feature */
 	u8 delsys;
-	u8 iq_swap;			/* If auto_iq_swap is enabled and this field is set to 0, the demod doesn't swap the IQ signals */
+	u8 iq_swap;       /* If auto_iq_swap is enabled and this field is set to 0, the demod doesn't swap the IQ signals */
 	/* If auto_iq_swap is disabled and this field is set to 1, the demod swaps the IQ signals */
 };
 
 struct avl2108_pllconf
 {
-	u16 m_r1;		/*< PLL register r1 */
-	u16 m_r2;		/*< PLL register r2 */
-	u16 m_r3;		/*< PLL register r3 */
-	u16 m_r4;		/*< PLL register r4 */
-	u16 m_r5;		/*< PLL register r5 */
-	u16 ref_freq;	/*< Reference clock in kHz */
-	u16 demod_freq;	/*< Demod clock in 10kHz */
-	u16 fec_freq;	/*< FEC clock in 10kHz */
-	u16 mpeg_freq;	/*< MPEG clock in 10kHz */
+	u16 m_r1;        /*< PLL register r1 */
+	u16 m_r2;        /*< PLL register r2 */
+	u16 m_r3;        /*< PLL register r3 */
+	u16 m_r4;        /*< PLL register r4 */
+	u16 m_r5;        /*< PLL register r5 */
+	u16 ref_freq;    /*< Reference clock in kHz */
+	u16 demod_freq;  /*< Demod clock in 10kHz */
+	u16 fec_freq;    /*< FEC clock in 10kHz */
+	u16 mpeg_freq;   /*< MPEG clock in 10kHz */
 };
 
 const struct avl2108_pllconf pll_conf[] =
 {
 	/* For all parallel modes and all serial modes below 30M (symbol rate) */
-	{10, 0, 335, 6, 5, 4000, 11200, 16800, 19200},	/*< Reference clock 4M;   --> 112, 168, 192 */
-	{10, 0, 299, 6, 5, 4500, 11250, 16875, 19286},	/*< Reference clock 4.5M; --> 112.5, 168.75, 192.86 */
-	{10, 1, 269, 6, 5, 10000, 11250, 16875, 19286},	/*< Reference clock 10M;  --> 112.5, 168.75, 192.86 */
-	{10, 0, 83, 6, 5, 16000, 11200, 16800, 19200},	/*< Reference clock 16M;  --> 112, 168, 192 */
-	{10, 0, 49, 6, 5, 27000, 11250, 16875, 19286},	/*< Reference clock 27M;  --> 112.5, 168.75, 192.86 */
+	{ 10, 0, 335, 6, 5,  4000, 11200, 16800, 19200 },  /*< Reference clock 4M;   --> 112, 168, 192 */
+	{ 10, 0, 299, 6, 5,  4500, 11250, 16875, 19286 },  /*< Reference clock 4.5M; --> 112.5, 168.75, 192.86 */
+	{ 10, 1, 269, 6, 5, 10000, 11250, 16875, 19286 },  /*< Reference clock 10M;  --> 112.5, 168.75, 192.86 */
+	{ 10, 0,  83, 6, 5, 16000, 11200, 16800, 19200 },  /*< Reference clock 16M;  --> 112, 168, 192 */
+	{ 10, 0,  49, 6, 5, 27000, 11250, 16875, 19286 },  /*< Reference clock 27M;  --> 112.5, 168.75, 192.86 */
 
 	/* for all modes */
-	{10, 0, 335, 6, 4, 4000, 11200, 16800, 22400},	/*< Reference clock 4M;   --> 112, 168, 224 */
-	{10, 0, 299, 6, 4, 4500, 11250, 16875, 22500},	/*< Reference clock 4.5M; --> 112.5, 168.75, 225 */
-	{10, 1, 269, 6, 4, 10000, 11250, 16875, 22500},	/*< Reference clock 10M;  --> 112.5, 168.75, 225 */
-	{10, 0, 83, 6, 4, 16000, 11200, 16800, 22400},	/*< Reference clock 16M;  --> 112, 168, 224 */
-	{10, 0, 49, 6, 4, 27000, 11250, 16875, 22500}	/*< Reference clock 27M;  --> 112.5, 168.75, 225 */
+	{ 10, 0, 335, 6, 4,  4000, 11200, 16800, 22400 },  /*< Reference clock 4M;   --> 112, 168, 224 */
+	{ 10, 0, 299, 6, 4,  4500, 11250, 16875, 22500 },  /*< Reference clock 4.5M; --> 112.5, 168.75, 225 */
+	{ 10, 1, 269, 6, 4, 10000, 11250, 16875, 22500 },  /*< Reference clock 10M;  --> 112.5, 168.75, 225 */
+	{ 10, 0,  83, 6, 4, 16000, 11200, 16800, 22400 },  /*< Reference clock 16M;  --> 112, 168, 224 */
+	{ 10, 0,  49, 6, 4, 27000, 11250, 16875, 22500 }   /*< Reference clock 27M;  --> 112.5, 168.75, 225 */
 };
 
 const unsigned short pll_array_size = sizeof(pll_conf) / sizeof(struct avl2108_pllconf);
@@ -155,26 +158,27 @@ static struct platform_frontend_config_s *frontendList = NULL;
 
 static u16 avl2108_i2c_writereg(struct avl2108_state *state, u8 *data, u16 *size)
 {
-	struct i2c_msg msg = { .addr = state->config->demod_address,
-		       .flags = 0, .buf = data, .len = *size
-	};
+	struct i2c_msg msg =
+	{ .addr = state->config->demod_address, .flags = 0, .buf = data, .len = *size };
 	int err;
 
 	{
 		u8 i;
 		u8 dstr[512];
+
 		dstr[0] = '\0';
 		for (i = 0; i < *size; i++)
-			sprintf(dstr, "%s 0x%02x", dstr, data[i]);
-		dprintk(200, "%s(): %u b: %s\n", __func__, *size, dstr);
+		{
+			sprintf(dstr, "%s: 0x%02x", dstr, data[i]);
+		}
+		dprintk(200, "%s: %u b: %s\n", __func__, *size, dstr);
 	}
 
 	if ((err = i2c_transfer(state->i2c, &msg, 1)) != 1)
 	{
-		eprintk("%s(): error: %i, size %d\n", __func__, err, *size);
+		dprintk(1, "%s: Error: %i, size %d\n", __func__, err, *size);
 		return AVL2108_ERROR_I2C; //return -EREMOTEIO;
 	}
-
 	return AVL2108_OK;
 }
 
@@ -200,16 +204,14 @@ static u16 avl2108_i2c_readreg(struct avl2108_state *state, u8 *data, u16 *size)
 	}
 	else
 	{
-		eprintk("%s(): Unsupported data size: %d\n", __func__, *size);
+		dprintk(1, "%s: Unsupported data size: %d\n", __func__, *size);
 		return AVL2108_ERROR_I2C;
 	}
-
 	if ((ret = i2c_transfer(state->i2c, &msg, 1)) != 1)
 	{
-		eprintk("%s(): error: %i\n", __func__, ret);
+		dprintk(1, "%s: Error: %i\n", __func__, ret);
 		return AVL2108_ERROR_I2C; //return -EREMOTEIO;
 	}
-
 	if (*size == 2)
 	{
 		data[0] = res2[0];
@@ -228,7 +230,6 @@ static u16 avl2108_i2c_readreg(struct avl2108_state *state, u8 *data, u16 *size)
 		dprintk(10, "%s(): 0x%02x 0x%02x 0x%02x 0x%02x\n", __func__, res4[0], res4[1], res4[2], res4[3]);
 #endif
 	}
-
 	return AVL2108_OK;
 }
 
@@ -245,10 +246,13 @@ static u16 avl2108_i2c_read(struct avl2108_state *state, u32 offset, u8 *buf, u1
 	if (ret == AVL2108_OK)
 	{
 		if (buf_size & 1)
+		{
 			size = buf_size - 1;
+		}
 		else
+		{
 			size = buf_size;
-
+		}
 		while (size > I2C_MAX_READ)
 		{
 			x1 = I2C_MAX_READ;
@@ -258,8 +262,9 @@ static u16 avl2108_i2c_read(struct avl2108_state *state, u32 offset, u8 *buf, u1
 		}
 
 		if (size != 0)
+		{
 			ret |= avl2108_i2c_readreg(state, buf + x2, &size);
-
+		}
 		if (buf_size & 1)
 		{
 			x1 = 2;
@@ -267,7 +272,6 @@ static u16 avl2108_i2c_read(struct avl2108_state *state, u32 offset, u8 *buf, u1
 			buf[buf_size - 1] = buf_tmp[0];
 		}
 	}
-
 	return ret;
 }
 
@@ -280,8 +284,9 @@ static u16 avl2108_i2c_write(void *_state, u8 *buf, u16 buf_size)
 	u32 addr;
 
 	if (buf_size < 3)
+	{
 		return (AVL2108_ERROR_GENERIC);
-
+	}
 	/* Actual data size */
 	buf_size -= 3;
 	/* Dump address */
@@ -292,10 +297,13 @@ static u16 avl2108_i2c_write(void *_state, u8 *buf, u16 buf_size)
 	addr += buf[2];
 
 	if (buf_size & 1)
+	{
 		size = buf_size - 1;
+	}
 	else
+	{
 		size = buf_size;
-
+	}
 	tmp = (I2C_MAX_WRITE - 3) & 0xfffe; /* How many bytes data we can transfer every time */
 
 	x2 = 0;
@@ -317,7 +325,6 @@ static u16 avl2108_i2c_write(void *_state, u8 *buf, u16 buf_size)
 		x2 += tmp;
 		size -= tmp;
 	}
-
 	x1 = size + 3;
 	/* Save the data */
 	buf_tmp[0] = buf[x2];
@@ -344,7 +351,6 @@ static u16 avl2108_i2c_write(void *_state, u8 *buf, u16 buf_size)
 		x1 = 5;
 		ret |= avl2108_i2c_writereg(state, buf_tmp, &x1);
 	}
-
 	return ret;
 }
 
@@ -356,8 +362,9 @@ static u16 avl2108_i2c_read16(void *_state, u32 addr, u16 *data)
 
 	ret = avl2108_i2c_read(state, addr, buf, 2);
 	if (ret == AVL2108_OK)
+	{
 		*data = extract_16(buf);
-
+	}
 	return ret;
 }
 
@@ -368,8 +375,9 @@ static u16 avl2108_i2c_read32(struct avl2108_state *state, u32 addr, u32 *data)
 
 	ret = avl2108_i2c_read(state, addr, buf, 4);
 	if (ret == AVL2108_OK)
+	{
 		*data = extract_32(buf);
-
+	}
 	return ret;
 }
 
@@ -414,7 +422,9 @@ static u16 avl2108_i2c_repeater_get_status(struct avl2108_state *state)
 	if (ret == AVL2108_OK)
 	{
 		if (buf[1] != 0)
+		{
 			ret = AVL2108_ERROR_PREV;
+		}
 	}
 	return ret;
 }
@@ -423,6 +433,7 @@ static u16 avl2108_i2c_repeater_exec(struct avl2108_state *state, u8 *buf, u8 si
 {
 	u16 ret = AVL2108_OK;
 	u32 i = 0;
+	u32 cnt = 20;
 
 	while (avl2108_i2c_repeater_get_status(state) != AVL2108_OK)
 	{
@@ -435,9 +446,10 @@ static u16 avl2108_i2c_repeater_exec(struct avl2108_state *state, u8 *buf, u8 si
 	}
 
 	if (ret == AVL2108_OK)
+	{
 		ret = avl2108_i2c_write(state, buf, size);
-
-	dprintk(50, "Leaving %s() with status %u\n", __func__, ret);
+	}
+	dprintk(100, "%s < status = %u\n", __func__, ret);
 	return ret;
 }
 
@@ -451,16 +463,18 @@ static u16 avl2108_i2c_repeater_send(void *_state, u8 *buf, u16 size)
 	memset(tmp_buf, 0, I2C_CMD_LEN + 3);
 
 	if (size > I2C_CMD_LEN - 3)
+	{
 		return AVL2108_ERROR_GENERIC;
-
+	}
 	cmd_size = ((size + 3) % 2) + 3 + size;
 	format_addr(REG_I2C_CMD + I2C_CMD_LEN - cmd_size, tmp_buf);
 
-	i = 3 + ((3 + size) % 2);	  /* skip one byte if the size +3 is odd */
+	i = 3 + ((3 + size) % 2);  /* skip one byte if the size +3 is odd */
 
 	for (j = 0; j < size; j++)
+	{
 		tmp_buf[i++] = buf[j];
-
+	}
 	tmp_buf[i++] = (u8)size;
 	tmp_buf[i++] = state->config->tuner_address;
 	tmp_buf[i++] = I2C_WRITE;
@@ -476,8 +490,9 @@ static u16 avl2108_i2c_repeater_recv(void *_state, u8 *buf, u16 size)
 	u8 tmp_buf[I2C_RSP_LEN];
 
 	if (size > I2C_RSP_LEN)
+	{
 		return AVL2108_ERROR_GENERIC;
-
+	}
 	format_addr(REG_I2C_CMD + I2C_CMD_LEN - 4, tmp_buf);
 	tmp_buf[3] = 0x0;
 	tmp_buf[4] = (u8)size;
@@ -498,9 +513,7 @@ static u16 avl2108_i2c_repeater_recv(void *_state, u8 *buf, u16 size)
 		}
 		ret = avl2108_i2c_read(state, REG_I2C_RSP, buf, size);
 	}
-
-	dprintk(50, "Leaving %s() with status %u\n", __func__, ret);
-
+	dprintk(100, "%s < status = %u\n", __func__, ret);
 	return ret;
 }
 
@@ -515,7 +528,7 @@ static u16 avl2108_i2c_repeater_init(u16 bus_clk, struct avl2108_state *state)
 	buf[4] = I2C_INIT;
 	ret |= avl2108_i2c_repeater_exec(state, buf, 5);
 
-	dprintk(50, "Leaving %s() with status %u\n", __func__, ret);
+	dprintk(100, "%s < status = %u\n", __func__, ret);
 	return ret;
 }
 
@@ -533,9 +546,11 @@ static u16 avl2108_get_op_status(void *_state)
 	if (ret == AVL2108_OK)
 	{
 		if (buf[1] != 0)
+		{
 			ret = AVL2108_ERROR_PREV;
+		}
 	}
-	dprintk(50, "Leaving %s() with status buf[0]: 0x%02x, buf[1]: 0x%02x\n", __func__, buf[0], buf[1]);
+	dprintk(100, "%s < buf[0]: 0x%02x, buf[1]: 0x%02x\n", __func__, buf[0], buf[1]);
 	return ret;
 }
 
@@ -570,12 +585,16 @@ u16 avl2108_cpu_halt(struct dvb_frontend *fe)
 		{
 			ret = avl2108_get_op_status(state);
 			if (ret == AVL2108_OK)
+			{
 				break;
+			}
 			else
+			{
 				mdelay(/* 10 */ 2);
+			}
 		}
 	}
-	dprintk(50, "Leaving %s() with status %u\n", __func__, ret);
+	dprintk(100, "%s < status = %u\n", __func__, ret);
 	return ret;
 }
 
@@ -597,10 +616,8 @@ static u16 avl2108_setup_pll(struct avl2108_state *state, const struct avl2108_p
 	ret |= avl2108_i2c_write32(state, (PLL_R1), pll_ptr->m_r1);
 	ret |= avl2108_i2c_write32(state, (PLL_R4), pll_ptr->m_r4);
 	ret |= avl2108_i2c_write32(state, (PLL_R5), pll_ptr->m_r5);
-
 	ret |= avl2108_i2c_write32(state, (PLL_SOFTVALUE_EN), 1);
 	ret |= avl2108_i2c_write32(state, (REG_RESET), 0);
-
 	/* Reset */
 	avl2108_i2c_write32(state, (REG_RESET), 1);
 	return ret;
@@ -618,15 +635,13 @@ static int avl2108_load_firmware(struct dvb_frontend *fe)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,32)
 	u8 *buffer;
 #endif
-
 	u32 buf_size, data_size;
 	u32 i = 4;
 	u16 ret;
 	int fw_ret;
 
-	dprintk(5, "%s()\n", __func__);
+	dprintk(100, "%s >\n", __func__);
 	ret = avl2108_i2c_write32(state, REG_CORE_RESET_B, 0);
-
 	dprintk(10, "%s(): Uploading demod firmware (%s)...\n", __func__, AVL2108_DEMOD_FW);
 	fw_ret = request_firmware(&fw, AVL2108_DEMOD_FW, &state->i2c->dev);
 	if (fw_ret)
@@ -634,22 +649,17 @@ static int avl2108_load_firmware(struct dvb_frontend *fe)
 		printk("%s(): Firmware upload failed. Timeout or file not found \n", __func__);
 		return AVL2108_ERROR_GENERIC;
 	}
-
-	printk("firmware download done successfull\n");
-
+	printk("firmware download done successful\n");
 	data_size = extract_32(fw->data);
-
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,32)
-	buffer = kmalloc(fw->size , GFP_KERNEL);
+	buffer = kmalloc(fw->size, GFP_KERNEL);
 	memcpy(buffer, fw->data, fw->size);
 #endif
-
 	printk("data_size %d\n", data_size);
 	while (i < data_size)
 	{
 		buf_size = extract_32(fw->data + i);
 		i += 4;
-
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,32)
 		/* need write access here, which is permitted under stm24 */
 		ret |= avl2108_i2c_write(state, buffer + i + 1, (u16)(buf_size + 3));
@@ -658,20 +668,16 @@ static int avl2108_load_firmware(struct dvb_frontend *fe)
 #endif
 		i += 4 + buf_size;
 	}
-	printk("out loop\n");
-
+	dprintk(70, "out loop\n");
 	ret |= avl2108_i2c_write32(state, 0x00000000, 0x00003ffc);
 	ret |= avl2108_i2c_write16(state, REG_CORE_RDY_WORD, 0x0000);
 	ret |= avl2108_i2c_write32(state, REG_ERROR_MSG, 0x00000000);
 	ret |= avl2108_i2c_write32(state, REG_ERROR_MSG + 4, 0x00000000);
-
 	ret |= avl2108_i2c_write32(state, REG_CORE_RESET_B, 1);
-
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,32)
 	kfree(buffer);
 #endif
-	dprintk(10, "Leaving %s() with status %u\n", __func__, ret);
-
+	dprintk(100, "%s( < status = %u\n", __func__, ret);
 	return ret;
 }
 
@@ -680,9 +686,8 @@ static u16 avl2108_get_mode(struct avl2108_state *state, u8 *pFunctionalMode)
 	u16 ret;
 	u16 x1;
 
-	ret =  avl2108_i2c_read16(state, REG_FUNCTIONAL_MODE, &x1);
+	ret = avl2108_i2c_read16(state, REG_FUNCTIONAL_MODE, &x1);
 	*pFunctionalMode = (u8)(x1 & 0x1);
-
 	return ret;
 }
 
@@ -704,43 +709,45 @@ static u16 avl2108_channel_lock(struct dvb_frontend *fe, struct avl2108_tuning *
 	{
 		if ((tuning->symbol_rate > 800000) && (tuning->symbol_rate < 50000000))
 		{
-
 			if (tuning->lock_mode == LOCK_MODE_ADAPTIVE)
 			{
-
-				/* fixme: hs8200 sets here 0. nevertheless 1 is the correct
-				 * value and seems to work.
-				 */
 				ret |= avl2108_i2c_write16(state, REG_LOCK_MODE, 1);
-
 				if (tuning->symbol_rate < 3000000)
+				{
 					ret |= avl2108_i2c_write16(state, REG_CARRIER_FREQ_HALF_RANGE_MHZ, 300);
+				}
 				else
+				{
 					ret |= avl2108_i2c_write16(state, REG_CARRIER_FREQ_HALF_RANGE_MHZ, 500);
+				}
 			}
 			else
+			{
 				ret |= avl2108_i2c_write16(state, REG_LOCK_MODE, 0);
-
+			}
 			ret |= avl2108_i2c_write32(state, REG_SPEC_INV, tuning->iq_swap);
 			Standard = (u16)(tuning->delsys);
 			autoIQ_Detect = tuning->auto_iq_swap;
 
 			if ((Standard == CI_FLAG_DVBS2_UNDEF) || (autoIQ_Detect == 1))
+			{
 				Standard = 0x14;
-
+			}
 			ret |= avl2108_i2c_write16(state, REG_DECODE_MODE, Standard);
 			ret |= avl2108_i2c_write16(state, REG_IQ_SWAP_MODE, (u16)autoIQ_Detect);
 			ret |= avl2108_i2c_write32(state, REG_SRATE_HZ, tuning->symbol_rate);
 			ret |= avl2108_send_op(DEMOD_OP_INIT_GO, state);
 		}
 		else
+		{
 			ret = AVL2108_ERROR_GENERIC;
+		}
 	}
 	else
+	{
 		ret = AVL2108_ERROR_GENERIC;
-
+	}
 	dprintk(10, "Leaving %s() with status %u\n", __func__, ret);
-
 	return ret;
 }
 
@@ -753,7 +760,7 @@ static int avl2108_get_demod_status(struct dvb_frontend *fe)
 {
 	struct avl2108_state *state = fe->demodulator_priv;
 	u16 r;
-	u8	buf[2];
+	u8  buf[2];
 	u32 x1 = 0;
 
 	dprintk(5, "%s()\n", __func__);
@@ -762,7 +769,9 @@ static int avl2108_get_demod_status(struct dvb_frontend *fe)
 	if ((AVL2108_OK == r))
 	{
 		if ((x1 == 0) || (buf[0] != 0x5a) || (buf[1] != 0xa5))
+		{
 			r = AVL2108_ERROR_GENERIC;
+		}
 	}
 	dprintk(10, "Leaving %s() with status %u\n", __func__, r);
 	return r;
@@ -787,15 +796,15 @@ static int avl2108_demod_init(struct dvb_frontend *fe)
 	/* Set AGC polarization */
 	ret |= avl2108_i2c_write32(state, REG_RF_AGC_POL, state->config->agc_polarization);
 	if (state->config->agc_ref > 0)
+	{
 		ret |= avl2108_i2c_write16(state, REG_AAGC_REF, state->config->agc_ref);
-
+	}
 	dprintk(10, "%s: agc_pol %d, agc_ref %d\n", __func__, state->config->agc_polarization, state->config->agc_ref);
 
 	/* Set MPEG data */
 	ret |= avl2108_i2c_write32(state, REG_MPEG_MODE, state->config->mpeg_mode);
 	ret |= avl2108_i2c_write16(state, REG_MPEG_SERIAL, state->config->mpeg_serial);
 	ret |= avl2108_i2c_write16(state, REG_MPEG_POS_EDGE, state->config->mpeg_clk_mode);
-
 	dprintk(10, "%s: mpeg_mode %d, mpeg_serial %d, mpeg_clk_mode %d\n", __func__,
 		state->config->mpeg_mode,
 		state->config->mpeg_serial,
@@ -803,7 +812,6 @@ static int avl2108_demod_init(struct dvb_frontend *fe)
 
 	/* Enable MPEG output */
 	/*ret |= avl2108_i2c_write32(state, REG_MPEG_OUTPUT, 2);*/
-
 	/* Disable MPEG persistent clock mode */
 	/* This setting has no effect on AVL2108LG */
 	ret |= avl2108_i2c_write16(state, REG_MPEG_PERSISTENT_CLK_MODE, mpeg_data_clk);
@@ -842,8 +850,7 @@ u16 avl2108_save_config(struct dvb_frontend *fe, u32 *buf32, u16 *buf16)
 	ret |= avl2108_i2c_read16(state, 1536, buf16++);
 	ret |= avl2108_i2c_read16(state, REG_MPEG_PERSISTENT_CLK_MODE, buf16++);
 	ret |= avl2108_i2c_read16(state, REG_BLIND_SCAN_CARIER_FREQ_TO_KHZ, buf16);
-
-	dprintk(10, "Leaving %s() with status %u\n", __func__, ret);
+	dprintk(100, "%s < status = %u\n", __func__, ret);
 	return ret;
 }
 
@@ -877,13 +884,12 @@ u16 avl2108_restore_config(struct dvb_frontend *fe, u32 *buf32, u16 *buf16)
 	ret |= avl2108_i2c_write16(state, 1536, *buf16++);
 	ret |= avl2108_i2c_write16(state, REG_MPEG_PERSISTENT_CLK_MODE, *buf16++);
 	ret |= avl2108_i2c_write16(state, REG_BLIND_SCAN_CARIER_FREQ_TO_KHZ, *buf16);
-
-	dprintk(10, "Leaving %s() with status %u\n", __func__, ret);
+	dprintk(100, "%s < status = %u\n", __func__, ret);
 	return ret;
 }
 
 /**
- * @brief The AVL2108 can have two funcitonal modes: blidn scan or 'normal' mode
+ * @brief The AVL2108 can have two functional modes: blind scan or 'normal' mode
  */
 u16 avl2108_set_functional_mode(struct dvb_frontend *fe)
 {
@@ -897,31 +903,32 @@ u16 avl2108_set_functional_mode(struct dvb_frontend *fe)
 	ret = avl2108_i2c_read16(state, REG_I2C_SPEED_KHZ, &speed);
 	ret |= avl2108_save_config(fe, x1, x2);
 	if (ret == AVL2108_OK)
+	{
 		ret = avl2108_load_firmware(fe);
-
+	}
 	if (ret == AVL2108_OK)
 	{
-		do  		//wait for AVL2108 boot up.
+		do  //wait for AVL2108 boot up.
 		{
 			mdelay(/* 10 */ 5);
 
 			ret = avl2108_get_demod_status(fe);
 			if (tmp++ > 20)
+			{
 				break;
+			}
 		}
 		while (ret != AVL2108_OK);
 
-		ret |= avl2108_i2c_write16(state, REG_DMD_CLK_MHZ,  state->config->demod_freq);
+		ret |= avl2108_i2c_write16(state, REG_DMD_CLK_MHZ, state->config->demod_freq);
 		ret |= avl2108_i2c_write16(state, REG_FEC_CLK_MHZ, state->config->fec_freq);
 		ret |= avl2108_i2c_write32(state, REG_FORMAT, 1);
 		/* Use external control */
 		ret |= avl2108_i2c_write16(state, REG_TUNER_USE_INTERNAL_CTRL, 0);
-
 		ret |= avl2108_restore_config(fe, x1, x2);
-
 		ret |= avl2108_i2c_repeater_init(speed, state);
 	}
-	dprintk(10, "Leaving %s() with status %u\n", __func__, ret);
+	dprintk(100, "%s < status = %u\n", __func__, ret);
 	return ret;
 }
 
@@ -935,7 +942,7 @@ u16 avl2108_get_version(struct avl2108_state *state, struct avl2108_ver_info *ve
 	u8 buf[4];
 	u16 ret;
 
-	ret =  avl2108_i2c_read32(state, REG_ROM_VER, &tmp);
+	ret = avl2108_i2c_read32(state, REG_ROM_VER, &tmp);
 	if (ret == AVL2108_OK)
 	{
 		format_32(tmp, buf);
@@ -944,14 +951,14 @@ u16 avl2108_get_version(struct avl2108_state *state, struct avl2108_ver_info *ve
 		version->build = buf[2];
 		version->build = ((u16)((version->build) << 8)) + buf[3];
 	}
-
 	tmp = 0;
-	ret =  avl2108_i2c_read32(state, REG_MPEG_OUTPUT, &tmp);
+	ret = avl2108_i2c_read32(state, REG_MPEG_OUTPUT, &tmp);
 	tmp &= 0x00000001;
 	if (tmp != 0)
+	{
 		version->minor++;
-
-	ret =  avl2108_i2c_read32(state, REG_PATCH_VER, &tmp);
+	}
+	ret = avl2108_i2c_read32(state, REG_PATCH_VER, &tmp);
 	if (ret == AVL2108_OK)
 	{
 		format_32(tmp, buf);
@@ -960,8 +967,7 @@ u16 avl2108_get_version(struct avl2108_state *state, struct avl2108_ver_info *ve
 		version->patch_build = buf[2];
 		version->patch_build = ((u16)((version->patch_build) << 8)) + buf[3];
 	}
-
-	dprintk(10, "Leaving %s() with status %u\n", __func__, ret);
+	dprintk(100, "%s < status = %u\n", __func__, ret);
 	return ret;
 }
 
@@ -970,10 +976,8 @@ int avl2108_set_voltage(struct dvb_frontend *fe, fe_sec_voltage_t voltage)
 	struct avl2108_state *state = fe->demodulator_priv;
 	int ret = 0;
 
-	dprintk(10, "%s(%p, %d)\n", __FUNCTION__, fe, voltage);
-
+	dprintk(100, "%s(%p, %d) >\n", __func__, fe, voltage);
 	ret = state->equipment.lnb_set_voltage(state->lnb_priv, fe, voltage);
-
 	return ret;
 }
 
@@ -997,38 +1001,33 @@ static int avl2108_diseqc_init(struct dvb_frontend *fe)
 
 	ret |= avl2108_i2c_write32(state, REG_DISEQC_SRST, 1);
 
-	ret |= avl2108_i2c_write32(state, REG_DISEQC_SAMP_FRAC_N, 200);	/* 2M = 200 * 10kHz */
+	ret |= avl2108_i2c_write32(state, REG_DISEQC_SAMP_FRAC_N, 200);  /* 2M = 200 * 10kHz */
 	ret |= avl2108_i2c_write32(state, REG_DISEQC_SAMP_FRAC_D, state->config->demod_freq);
-
 	ret |= avl2108_i2c_write32(state, REG_DISEQC_TONE_FRAC_N, ((DISEQC_TONE_FREQ) << 1));
 	ret |= avl2108_i2c_write32(state, REG_DISEQC_TONE_FRAC_D, state->config->demod_freq * 10);
-
 	/* Initialize the tx_control */
 	ret |= avl2108_i2c_read32(state, REG_DISEQC_TX_CTRL, &x1);
 	x1 &= 0x00000300;
-	x1 |= 0x20;		/* Reset tx_fifo */
+	x1 |= 0x20;  /* Reset tx_fifo */
 	x1 |= ((u32)(diseqc_info & 0x000F) << 6);
 	x1 |= ((u32)(diseqc_info & 0x0F00 >> 8) << 4);
-	x1 |= (1 << 3);			/* Enable tx gap */
+	x1 |= (1 << 3);  /* Enable tx gap */
 	ret |= avl2108_i2c_write32(state, REG_DISEQC_TX_CTRL, x1);
-	x1 &= ~(0x20);	/* Release tx_fifo reset */
+	x1 &= ~(0x20);  /* Release tx_fifo reset */
 	ret |= avl2108_i2c_write32(state, REG_DISEQC_TX_CTRL, x1);
-
 	/* Initialize the rx_control */
 	x1 = ((u32)(diseqc_info & 0x0F00 >> 8) << 2);
-	x1 |= (1 << 1);	/* Activate the receiver */
-	x1 |= (1 << 3);	/* Envelop high when tone present */
+	x1 |= (1 << 1);  /* Activate the receiver */
+	x1 |= (1 << 3);  /* Envelop high when tone present */
 	ret |= avl2108_i2c_write32(state, REG_DISEQC_RX_CTRL, x1);
 	x1 = (u32)(diseqc_info & 0xF000 >> 12);
 	ret |= avl2108_i2c_write32(state, REG_DISEQC_RX_MSG_TMR, x1);
-
 	ret |= avl2108_i2c_write32(state, REG_DISEQC_SRST, 0);
-
 	if (ret == AVL2108_OK)
+	{
 		state->diseqc_status = DISEQC_STATUS_INIT;
-
-	dprintk(10, "Leaving %s() with status %u\n", __func__, ret);
-
+	}
+	dprintk(100, "%s < status = %u\n", __func__, ret);
 	return 0;
 }
 
@@ -1047,20 +1046,26 @@ u16 avl2108_diseqc_switch_mode(struct dvb_frontend *fe)
 	{
 		case DISEQC_STATUS_MOD:
 		case DISEQC_STATUS_TONE:
+		{
 			ret |= avl2108_i2c_read32(state, REG_DISEQC_TX_ST, &x1);
 			if (((x1 & 0x00000040) >> 6) != 1)
+			{
 				ret |= AVL2108_ERROR_PREV;
+			}
 			break;
+		}
 		case DISEQC_STATUS_CONTINUOUS:
 		case DISEQC_STATUS_INIT:
+		{
 			break;
+		}
 		default:
+		{
 			ret |= AVL2108_ERROR_GENERIC;
 			break;
+		}
 	}
-
-	dprintk(10, "Leaving %s() with status %u\n", __func__, ret);
-
+	dprintk(100, "%s < status  = %u\n", __func__, ret);
 	return ret;
 }
 
@@ -1464,8 +1469,7 @@ static struct dvb_frontend_ops avl2108_ops;
  *		  including our slot number.
  * @return A ptr to a DVB API struct dvb_frontend
  */
-struct dvb_frontend *avl2108_attach(const struct avl2108_config *config,
-				    struct i2c_adapter *i2c)
+struct dvb_frontend *avl2108_attach(struct avl2108_config *config, struct i2c_adapter *i2c)
 {
 	struct avl2108_state *state = NULL;
 	struct avl2108_ver_info version;
@@ -1494,26 +1498,25 @@ struct dvb_frontend *avl2108_attach(const struct avl2108_config *config,
 
 		struct i2c_msg msg[] =
 		{
-			{.addr = config->demod_address, .flags = 0, .buf = b0, .len = 1},
-			{.addr = config->demod_address, .flags = I2C_M_RD, .buf = b1, .len = 1}
+			{ .addr = config->demod_address, .flags = 0,        .buf = b0, .len = 1 },
+			{ .addr = config->demod_address, .flags = I2C_M_RD, .buf = b1, .len = 1 }
 		};
-
 		ret = i2c_transfer(state->i2c, msg, 2);
 
 		if (ret != 2)
 		{
-			printk("%s(): i2c-error: %i\n", __func__, ret);
-
+			dprintk(1, "%s: i2c-error: %i\n", __func__, ret);
 			kfree(state);
 			return NULL;
 		}
-
 		if (b1[0] == 0x99)
 		{
 			printk("avl2108: Detected SP2237\n");
 		}
 		else
+		{
 			printk("avl2108: No SP2237\n");
+		}
 	}
 #endif
 
@@ -1526,12 +1529,9 @@ struct dvb_frontend *avl2108_attach(const struct avl2108_config *config,
 	}
 	else
 	{
-		printk("AVL2108: Chip version: %u.%u.%u\n",
-		       version.major, version.minor, version.build);
-		dprintk(10, "Patch version: %u.%u.%u\n",
-			version.patch_major, version.patch_minor, version.patch_build);
+		dprintk(20, "AVL2108: Chip version: %u.%u.%u\n", version.major, version.minor, version.build);
+		dprintk(50, "Patch version: %u.%u.%u\n", version.patch_major, version.patch_minor, version.patch_build);
 	}
-
 	state->equipment.demod_i2c_repeater_send    = avl2108_i2c_repeater_send;
 	state->equipment.demod_i2c_repeater_recv    = avl2108_i2c_repeater_recv;
 	state->equipment.demod_i2c_write            = avl2108_i2c_write;
@@ -1543,27 +1543,28 @@ struct dvb_frontend *avl2108_attach(const struct avl2108_config *config,
 
 	if (config->usedTuner == cTUNER_EXT_STV6306)
 	{
-		printk("using external control (no tuner fw; tuner stv6306)\n");
-		stv6306_attach(&state->frontend, state, &state->equipment, 0 /* internal = false */, i2c);
+		dprintk(20, "Using external control (no tuner fw; tuner stv6306)\n");
+		stv6306_attach(&state->frontend, state, &state->equipment, 0  /* internal = false */, i2c);
 	}
 	else if (config->usedTuner == cTUNER_EXT_STV6110A)
 	{
-		printk("using external control (no tuner fw; tuner stv6110A)\n");
+		dprintk(20, "Using external control (no tuner fw; tuner stv6110A)\n");
 		/* fixme make mclk configurable via platform */
 		stv6110a_attach(&state->frontend, state, &state->equipment, 16, state->config->max_lpf);
 	}
 	else
 	{
-		printk("using internal control (tuner fw)\n");
-		stv6306_attach(&state->frontend, state, &state->equipment, 1 /* internal = true */, i2c);
-
+		dprintk(20, "Using internal control (tuner fw)\n");
+		stv6306_attach(&state->frontend, state, &state->equipment, 1  /* internal = true */, i2c);
 	}
-
 	if (config->usedLNB == cLNB_LNBH221)
+	{
 		state->lnb_priv = lnbh221_attach(state->config->lnb, &state->equipment);
+	}
 	else if (config->usedLNB == cLNB_PIO)
+	{
 		state->lnb_priv = lnb_pio_attach(state->config->lnb, &state->equipment);
-
+	}
 	memcpy(&state->frontend.ops, &avl2108_ops, sizeof(struct dvb_frontend_ops));
 	state->frontend.demodulator_priv = state;
 	return &state->frontend;

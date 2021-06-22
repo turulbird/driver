@@ -165,15 +165,14 @@ struct avl2108_state
 	struct avl2108_equipment_s   equipment;
 };
 
-struct dvb_frontend *avl2108_attach(const struct avl2108_config *config,
-				    struct i2c_adapter *i2c);
+struct dvb_frontend *avl2108_attach(struct avl2108_config *config, struct i2c_adapter *i2c);
 int avl2108_set_tone(struct dvb_frontend *fe, fe_sec_tone_mode_t tone);
 int avl2108_set_voltage(struct dvb_frontend *fe, fe_sec_voltage_t voltage);
 
 extern int stv6306_attach(struct dvb_frontend *fe, void *demod_priv, struct avl2108_equipment_s *equipment, u8 internal, struct i2c_adapter *i2c);
 extern int stv6110a_attach(struct dvb_frontend *fe, void *demod_priv, struct avl2108_equipment_s *equipment, u32 mclk, u32 max_lfp);
 
-extern void *lnb_pio_attach(u32 *lnb, struct avl2108_equipment_s *equipment);
-extern void *lnbh221_attach(u32 *lnb, struct avl2108_equipment_s *equipment);
+extern void *lnb_pio_attach(const u32 *lnb, struct avl2108_equipment_s *equipment);
+extern void *lnbh221_attach(const u32 *lnb, struct avl2108_equipment_s *equipment);
 
 #endif /* _AVL2108_H */

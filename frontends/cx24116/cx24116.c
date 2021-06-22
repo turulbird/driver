@@ -83,9 +83,13 @@ static short useUnknown = 1;
 static short paramDebug = 0;
 #define TAGDEBUG "[cx24116] "
 
-#define dprintk(level, x...) do { \
-		if (paramDebug > level) printk(TAGDEBUG x); \
-	} while (0)
+#define dprintk(level, x...) do \
+{ \
+	if ((paramDebug > level) || (paramDebug == 0)) \
+	{ \
+		printk(TAGDEBUG x); \
+	} \
+} while (0)
 
 #if !defined(ARIVALINK200) \
  && !defined(UFS922)
@@ -156,22 +160,21 @@ struct firmware_cmd
 
 cx24116_COMMANDS[] =
 {
-	{ CMD_SET_VCO, 0x0A, "CMD_SET_VCO"},
-	{ CMD_TUNEREQUEST, 0x13, "CMD_TUNEREQUEST"},
-	{ CMD_MPEGCONFIG, 0x06, "CMD_MPEGCONFIG"},
-	{ CMD_TUNERINIT, 0x03, "CMD_TUNERINIT"},
-	{ CMD_BANDWIDTH, 0x02, "CMD_BANDWIDTH"},
-	{ CMD_LNBCONFIG, 0x08, "CMD_LNBCONFIG"},
-	{ CMD_LNBSEND, 0x0c, "CMD_LNBSEND"},
-	{ CMD_SET_TONEPRE, 0x02, "CMD_SET_TONEPRE"},
-	{ CMD_SET_TONE, 0x04, "CMD_SET_TONE"},
-	{ CMD_TUNERSLEEP, 0x02, "CMD_TUNERSLEEP"},
-	{ CMD_U1, 0x01, "CMD_U1"},
-	{ CMD_U2, 0x0A, "CMD_U2"},
-	{ CMD_GETAGC, 0x01, "CMD_GETAGC"},
-	{ CMD_MAX, 0x00, "CMD_MAX"}
+	{ CMD_SET_VCO, 0x0A, "CMD_SET_VCO" },
+	{ CMD_TUNEREQUEST, 0x13, "CMD_TUNEREQUEST" },
+	{ CMD_MPEGCONFIG, 0x06, "CMD_MPEGCONFIG" },
+	{ CMD_TUNERINIT, 0x03, "CMD_TUNERINIT" },
+	{ CMD_BANDWIDTH, 0x02, "CMD_BANDWIDTH" },
+	{ CMD_LNBCONFIG, 0x08, "CMD_LNBCONFIG" },
+	{ CMD_LNBSEND, 0x0c, "CMD_LNBSEND" },
+	{ CMD_SET_TONEPRE, 0x02, "CMD_SET_TONEPRE" },
+	{ CMD_SET_TONE, 0x04, "CMD_SET_TONE" },
+	{ CMD_TUNERSLEEP, 0x02, "CMD_TUNERSLEEP" },
+	{ CMD_U1, 0x01, "CMD_U1" },
+	{ CMD_U2, 0x0A, "CMD_U2" },
+	{ CMD_GETAGC, 0x01, "CMD_GETAGC" },
+	{ CMD_MAX, 0x00, "CMD_MAX" }
 };
-
 
 /* A table of modulation, fec and configuration bytes for the demod.
  * Not all S2 mmodulation schemes are support and not all rates with
@@ -1164,8 +1167,7 @@ cx24116_wait_for_lnb(struct dvb_frontend *fe)
 	return -ETIMEDOUT;            /* -EBUSY ? */
 }
 
-static int cx24116_load_firmware(struct dvb_frontend *fe,
-				 const struct firmware *fw);
+static int cx24116_load_firmware(struct dvb_frontend *fe, const struct firmware *fw);
 
 #ifdef EARLY_FW_DOWNLOAD
 static void cx24116_load_fw(const struct firmware *fw, void *context)
@@ -1420,7 +1422,7 @@ cx24116_load_firmware(struct dvb_frontend *fe, const struct firmware *fw)
 	cx24116_writereg(state, 0xF6, 0x00);
 
 	/* write the entire firmware as one transaction */
-	cx24116_writeregN(state, 0xF7, fw->data, fw->size);
+	cx24116_writeregN(state, 0xF7, (u8 *)fw->data, fw->size);
 
 	cx24116_writereg(state, 0xF4, 0x10);
 	cx24116_writereg(state, 0xF0, 0x00);
