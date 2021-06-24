@@ -104,11 +104,11 @@ static u32 led1_pattern = 0;
 static int led_pattern_speed = 20;
 static int vfd_on = 1;
 #if defined(CUBEREVO_MINI) \
- ||   defined(CUBEREVO_MINI2) \
- ||   defined(CUBEREVO_2000HD) \
- ||   defined(CUBEREVO_3000HD) \
- ||   defined(CUBEREVO) \
- ||   defined(CUBEREVO_9500)
+ || defined(CUBEREVO_MINI2) \
+ || defined(CUBEREVO_2000HD) \
+ || defined(CUBEREVO_3000HD) \
+ || defined(CUBEREVO) \
+ || defined(CUBEREVO_9500)
 static int timeshift = 0;
 static int spinner_speed = 0;
 #endif
