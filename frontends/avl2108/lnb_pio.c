@@ -5,6 +5,8 @@
  *
  * 	Copyright (C) 2011 duckbox
  *
+ *  Used by Fortis HS9510
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -37,7 +39,7 @@ extern short paramDebug;
 #define dprintk(level, x...) \
 do \
 { \
-	if ((paramDebug == 0) || (paramDebug > level)) \
+	if (((paramDebug) && (paramDebug > level)) || level == 0) \
 	{ \
 		printk(TAGDEBUG x); \
 	} \
@@ -45,10 +47,10 @@ do \
 
 struct lnb_state
 {
-	struct stpio_pin *lnb_pin;
-	struct stpio_pin *lnb_enable_pin;
+	struct stpio_pin	*lnb_pin;
+	struct stpio_pin	*lnb_enable_pin;
 
-	u32              lnb[6];
+	u32                 lnb[6];
 };
 
 u16 lnb_pio_set_voltage(void *_state, struct dvb_frontend *fe, fe_sec_voltage_t voltage)
@@ -56,12 +58,13 @@ u16 lnb_pio_set_voltage(void *_state, struct dvb_frontend *fe, fe_sec_voltage_t 
 	struct lnb_state *state = (struct lnb_state *) _state;
 	u16 ret = 0;
 
-	dprintk(100, "%s(%p, %d) >\n", __func__, fe, voltage);
+	dprintk(100, "%s(%p, %d) > \n", __func__, fe, voltage);
 
 	switch (voltage)
 	{
 		case SEC_VOLTAGE_OFF:
 		{
+			dprintk(10, "Switch LNB voltage off\n");
 			if (state->lnb_enable_pin)
 			{
 				stpio_set_pin(state->lnb_enable_pin, !state->lnb[2]);
@@ -70,20 +73,24 @@ u16 lnb_pio_set_voltage(void *_state, struct dvb_frontend *fe, fe_sec_voltage_t 
 		}
 		case SEC_VOLTAGE_13: //vertical
 		{
+			dprintk(10, "Set LNB voltage 13V (vertical)\n");
 			if (state->lnb_enable_pin)
 			{
 				stpio_set_pin(state->lnb_enable_pin, state->lnb[2]);
 			}
 			stpio_set_pin(state->lnb_pin, state->lnb[5]);
+//			dprintk(10, "%s: v %p %d\n", __func__, state->lnb_pin, state->lnb[5]);
 			break;
 		}
 		case SEC_VOLTAGE_18: //horizontal
 		{
+			dprintk(10, "Set LNB voltage 18V (horizontal)\n");
 			if (state->lnb_enable_pin)
 			{
 				stpio_set_pin(state->lnb_enable_pin, state->lnb[2]);
 			}
 			stpio_set_pin(state->lnb_pin, !state->lnb[5]);
+//			dprintk(10, "%s: h %p %d\n", __func__, state->lnb_pin, !state->lnb[5]);
 			break;
 		}
 		default:
@@ -94,17 +101,17 @@ u16 lnb_pio_set_voltage(void *_state, struct dvb_frontend *fe, fe_sec_voltage_t 
 	return ret;
 }
 
-void *lnb_pio_attach(const u32 *lnb, struct avl2108_equipment_s *equipment)
+void *lnb_pio_attach(u32 *lnb, struct avl2108_equipment_s *equipment)
 {
 	struct lnb_state *state = kmalloc(sizeof(struct lnb_state), GFP_KERNEL);
 
 	memcpy(state->lnb, lnb, sizeof(state->lnb));
 	equipment->lnb_set_voltage = lnb_pio_set_voltage;
 	state->lnb_enable_pin = stpio_request_pin(lnb[0], lnb[1], "lnb_enab", STPIO_OUT);
-
-	dprintk(20, "lnb_enable_pin %p\n", state->lnb_enable_pin);
+	dprintk(20, "lnb_enable_pin %p (PIO %d.%d)\n", state->lnb_enable_pin, lnb[0], lnb[1]);
 	stpio_set_pin(state->lnb_enable_pin, lnb[2]);
 	state->lnb_pin = stpio_request_pin(lnb[3], lnb[4], "lnb_sel", STPIO_OUT);
+	dprintk(20, "lnb_sel_pin %p (PIO %d.%d)\n", state->lnb_pin, lnb[3], lnb[4]);
 	return state;
 }
 // vim:ts=4

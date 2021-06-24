@@ -6,30 +6,7 @@
  * Copyright (C) 2006 Georg Acher (acher(at)baycom(dot)de) for Reel Multimedia
  *                    Added DiSEqC, auto pilot tuning and hack for old DVB-API
  *
- * Version for Kathrein UFS-922 (early production with two ... frontends and
- *                               STM LNBH221 LNB power controller)
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * TODO:
- * - add clean-up code
- * - add support for multiple adapters (low priority)
- *
- * Copyright (C) 2006 Steven Toth <stoth@hauppauge.com>
- * Copyright (C) 2006 Georg Acher (acher (at) baycom (dot) de) for Reel Multimedia
- *                    Added Diseqc, auto pilot tuning and hack for old DVB-API
+ * Version for Kathrein UFS-922
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -61,11 +38,8 @@
 #include <linux/interrupt.h>
 #include <linux/i2c.h>
 #include <linux/i2c-algo-bit.h>
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,17)
 #include <linux/stm/pio.h>
-#else
-#include <linux/stpio.h>
-#endif
+
 #include <asm/system.h>
 #include <asm/io.h>
 #include <linux/dvb/dmx.h>
@@ -86,7 +60,7 @@ static short paramDebug = 0;
 #define dprintk(level, x...) \
 do \
 { \
-	if ((paramDebug > level) || (level == 0)) \
+	if ((paramDebug > level) || level == 0) \
 	{ \
 		printk(TAGDEBUG x); \
 	} \
@@ -128,7 +102,7 @@ do \
 #define CX24116_FEC_FECMASK   (0x1f)
 
 /* arg buffer size */
-#define CX24116_ARGLEN (0x1e)
+#define CX24116_ARGLEN        (0x1e)
 
 /* DiSEqC strategy (0=HACK, 1=CACHE) */
 static int dsec = 0;
@@ -159,21 +133,22 @@ struct firmware_cmd
 
 cx24116_COMMANDS[] =
 {
-	{ CMD_SET_VCO,     0x0A, "CMD_SET_VCO" },
+	{ CMD_SET_VCO, 0x0A, "CMD_SET_VCO" },
 	{ CMD_TUNEREQUEST, 0x13, "CMD_TUNEREQUEST" },
-	{ CMD_MPEGCONFIG,  0x06, "CMD_MPEGCONFIG" },
-	{ CMD_TUNERINIT,   0x03, "CMD_TUNERINIT" },
-	{ CMD_BANDWIDTH,   0x02, "CMD_BANDWIDTH" },
-	{ CMD_LNBCONFIG,   0x08, "CMD_LNBCONFIG" },
-	{ CMD_LNBSEND,     0x0c, "CMD_LNBSEND" },
+	{ CMD_MPEGCONFIG, 0x06, "CMD_MPEGCONFIG" },
+	{ CMD_TUNERINIT, 0x03, "CMD_TUNERINIT" },
+	{ CMD_BANDWIDTH, 0x02, "CMD_BANDWIDTH" },
+	{ CMD_LNBCONFIG, 0x08, "CMD_LNBCONFIG" },
+	{ CMD_LNBSEND, 0x0c, "CMD_LNBSEND" },
 	{ CMD_SET_TONEPRE, 0x02, "CMD_SET_TONEPRE" },
-	{ CMD_SET_TONE,    0x04, "CMD_SET_TONE" },
-	{ CMD_TUNERSLEEP,  0x02, "CMD_TUNERSLEEP" },
-	{ CMD_U1,          0x01, "CMD_U1" },
-	{ CMD_U2,          0x0A, "CMD_U2" },
-	{ CMD_GETAGC,      0x01, "CMD_GETAGC" },
-	{ CMD_MAX,         0x00, "CMD_MAX" }
+	{ CMD_SET_TONE, 0x04, "CMD_SET_TONE" },
+	{ CMD_TUNERSLEEP, 0x02, "CMD_TUNERSLEEP" },
+	{ CMD_U1, 0x01, "CMD_U1" },
+	{ CMD_U2, 0x0A, "CMD_U2" },
+	{ CMD_GETAGC, 0x01, "CMD_GETAGC" },
+	{ CMD_MAX, 0x00, "CMD_MAX" }
 };
+
 
 /* A table of modulation, fec and configuration bytes for the demod.
  * Not all S2 mmodulation schemes are support and not all rates with
@@ -385,7 +360,7 @@ static const struct dvbfe_info dvbs2_info =
 };
 #endif
 
-static int lnbh221_writereg_lnb_supply(struct cx24116_state *state, char data);
+static int lnbh23_writereg_lnb_supply(struct cx24116_state *state, char data);
 
 struct config_entry
 {
@@ -427,7 +402,7 @@ static int cx24116_reset(struct cx24116_state *state)
 {
 	const struct cx24116_config *cfg = state->config;
 
-	dprintk(100, "%s: > \n", __func__);
+	dprintk(5, "%s: > \n", __func__);
 
 	if (cfg->tuner_enable_pin != NULL)
 	{
@@ -436,7 +411,7 @@ static int cx24116_reset(struct cx24116_state *state)
 	}
 
 	/* set to horizontal by default */
-	lnbh221_writereg_lnb_supply(state, 0xdc);
+	lnbh23_writereg_lnb_supply(state, 0xdc);
 	dprintk(10, "%s: < \n", __func__);
 	return 0;
 }
@@ -462,9 +437,10 @@ static int cx24116_writereg(struct cx24116_state *state, int reg, int data)
 	return err;
 }
 
-/* *****************************************************************
+/* *******************************************
  *  Bulk byte writes to a single I2C address, for 32k firmware load
  */
+
 static int cx24116_writeregN(const struct cx24116_state *state, int reg, const u8 *data, u16 len)
 {
 	int ret = -EREMOTEIO;
@@ -521,6 +497,7 @@ error:
 /* ******************************************
  *
  */
+
 static int cx24116_readreg(struct cx24116_state *state, u8 reg)
 {
 	int ret;
@@ -528,11 +505,11 @@ static int cx24116_readreg(struct cx24116_state *state, u8 reg)
 	u8 b1[] = { 0 };
 	struct i2c_msg msg[] =
 	{
-		{ .addr = state->config->i2c_addr, .flags = 0,        .buf = b0, .len = 1 },
-		{ .addr = state->config->i2c_addr, .flags = I2C_M_RD, .buf = b1, .len = 1 }
+		{.addr = state->config->i2c_addr, .flags = 0, .buf = b0, .len = 1 },
+		{.addr = state->config->i2c_addr, .flags = I2C_M_RD, .buf = b1, .len = 1 }
 	};
 
-	dprintk(50, "%s: i2c_addr = 0x%02x\n", __func__, state->config->i2c_addr);
+	dprintk(50, "%s: i2c_addr=0x%02x\n", __func__, state->config->i2c_addr);
 	dprintk(100, "%s: flag = %d\n", __func__, I2C_M_RD);
 	ret = i2c_transfer(state->config->i2c_adap, msg, 2);
 
@@ -638,7 +615,7 @@ static int cx24116_read_snr(struct dvb_frontend *fe, u16 *snr)
 	struct cx24116_state *state = fe->demodulator_priv;
 
 	u8 snr_reading;
-	static const u32 snr_tab[] =  /* 10 x Table (rounded up) */
+	static const u32 snr_tab[] =    /* 10 x Table (rounded up) */
 	{
 		0x00000, 0x0199A, 0x03333, 0x04ccD,
 		0x06667, 0x08000, 0x0999A, 0x0b333,
@@ -710,151 +687,94 @@ static enum dvbfe_fec cx24116_convert_oldfec_to_new(enum fe_code_rate c)
 	switch (c)
 	{
 		case FEC_NONE:
-		{
 			fec = DVBFE_FEC_NONE;
 			break;
-		}
 		case FEC_1_2:
-		{
 			fec = DVBFE_FEC_1_2;
 			break;
-		}
 		case FEC_2_3:
-		{
 			fec = DVBFE_FEC_2_3;
 			break;
-		}
 		case FEC_3_4:
-		{
 			fec = DVBFE_FEC_3_4;
 			break;
-		}
 		case FEC_4_5:
-		{
 			fec = DVBFE_FEC_4_5;
 			break;
-		}
 		case FEC_5_6:
-		{
 			fec = DVBFE_FEC_5_6;
 			break;
-		}
 		case FEC_6_7:
-		{
 			fec = DVBFE_FEC_6_7;
 			break;
-		}
 		case FEC_7_8:
-		{
 			fec = DVBFE_FEC_7_8;
 			break;
-		}
 		case FEC_8_9:
-		{
 			fec = DVBFE_FEC_8_9;
 			break;
-		}
 		case FEC_AUTO:
-		{
 			fec = DVBFE_FEC_AUTO;
 			break;
-		}
+
 //enigma2
 		case FEC_S2_QPSK_1_2:
-		{
 			fec = DVBFE_FEC_1_2;
 			break;
-		}
 		case FEC_S2_QPSK_2_3:
-		{
 			fec = DVBFE_FEC_2_3;
 			break;
-		}
 		case FEC_S2_QPSK_3_4:
-		{
 			fec = DVBFE_FEC_3_4;
 			break;
-		}
 		case FEC_S2_QPSK_5_6:
-		{
 			fec = DVBFE_FEC_5_6;
 			break;
-		}
 		case FEC_S2_QPSK_7_8:
-		{
 			fec = DVBFE_FEC_7_8;
 			break;
-		}
 		case FEC_S2_QPSK_8_9:
-		{
 			fec = DVBFE_FEC_8_9;
 			break;
-		}
 		case FEC_S2_QPSK_3_5:
-		{
 			fec = DVBFE_FEC_3_5;
 			break;
-		}
 		case FEC_S2_QPSK_4_5:
-		{
 			fec = DVBFE_FEC_4_5;
 			break;
-		}
 		case FEC_S2_QPSK_9_10:
-		{
 			fec = DVBFE_FEC_9_10;
 			break;
-		}
 		case FEC_S2_8PSK_1_2:
-		{
 			fec = DVBFE_FEC_1_2;
 			break;
-		}
 		case FEC_S2_8PSK_2_3:
-		{
 			fec = DVBFE_FEC_2_3;
 			break;
-		}
 		case FEC_S2_8PSK_3_4:
-		{
 			fec = DVBFE_FEC_3_4;
 			break;
-		}
 		case FEC_S2_8PSK_5_6:
-		{
 			fec = DVBFE_FEC_5_6;
 			break;
-		}
 		case FEC_S2_8PSK_7_8:
-		{
 			fec = DVBFE_FEC_7_8;
 			break;
-		}
 		case FEC_S2_8PSK_8_9:
-		{
 			fec = DVBFE_FEC_8_9;
 			break;
-		}
 		case FEC_S2_8PSK_3_5:
-		{
 			fec = DVBFE_FEC_3_5;
 			break;
-		}
 		case FEC_S2_8PSK_4_5:
-		{
 			fec = DVBFE_FEC_4_5;
 			break;
-		}
 		case FEC_S2_8PSK_9_10:
-		{
 			fec = DVBFE_FEC_9_10;
 			break;
-		}
 		default:
-		{
 			fec = FEC_NONE;
 			break;
-		}
 	}
 	return fec;
 }
@@ -1041,7 +961,7 @@ static enum dvbfe_fec cx24116_convert_newfec_to_old(enum dvbfe_fec c, enum dvbfe
 	return fec;
 }
 
-// Hack
+//Hack
 static enum dvbfe_modulation cx24116_get_modulation_from_fec(enum fe_code_rate c)
 {
 	switch (c)
@@ -1119,18 +1039,18 @@ static int cx24116_create_new_qpsk_feparams(struct dvb_frontend *fe, struct dvb_
 	{
 		switch (pFrom->inversion & 0xc)
 		{
-			default:  // unknown rolloff
-			case 0:   // 0.35
+			default:                   // unknown rolloff
+			case 0:                    // 0.35
 			{
 				rolloff = 0;
 				break;
 			}
-			case 4:   // 0.25
+			case 4:                    // 0.25
 			{
 				rolloff = 1;
 				break;
 			}
-			case 8:   // 0.20
+			case 8:                    // 0.20
 			{
 				rolloff = 2;
 				break;
@@ -1140,17 +1060,17 @@ static int cx24116_create_new_qpsk_feparams(struct dvb_frontend *fe, struct dvb_
 		{
 			switch (pFrom->inversion & 0x30)
 			{
-				case 0:     // pilot off
+				case 0:                  // pilot off
 				{
 					pilot = 0;
 					break;
 				}
-				case 0x10:  // pilot on
+				case 0x10:               // pilot on
 				{
 					pilot = 1;
 					break;
 				}
-				case 0x20:  // pilot auto
+				case 0x20:               // pilot auto
 				{
 					pilot = 2;
 					break;
@@ -1463,7 +1383,7 @@ static int cx24116_load_firmware(struct dvb_frontend *fe, const struct firmware 
 	cx24116_writereg(state, 0xF6, 0x00);
 
 	/* write the entire firmware as one transaction */
-	cx24116_writeregN(state, 0xF7, (u8 *)fw->data, fw->size);
+	cx24116_writeregN(state, 0xF7, fw->data, fw->size);
 
 	cx24116_writereg(state, 0xF4, 0x10);
 	cx24116_writereg(state, 0xF0, 0x00);
@@ -1741,7 +1661,7 @@ static int cx24116_sleep(struct dvb_frontend *fe)
 	struct cx24116_state *state = fe->demodulator_priv;
 	struct cx24116_cmd cmd;
 
-	dprintk(100, "%s >\n", __func__);
+	dprintk(20, "%s >\n", __func__);
 
 	cmd.id = CMD_TUNERSLEEP;
 	cmd.args[1] = 1;
@@ -1758,7 +1678,7 @@ static void cx24116_release(struct dvb_frontend *fe)
 {
 	struct cx24116_state *state = fe->demodulator_priv;
 
-	dprintk(100, "%s. >\n", __func__);
+	dprintk(10, "%s\n", __func__);
 
 	if (state->config != NULL)
 	{
@@ -1802,7 +1722,7 @@ static int cx24116_set_inversion(struct cx24116_state *state, fe_spectral_invers
 		}
 		default:
 		{
-			dprintk(1, "%s: < ret=-EINVAL\n", __func__);
+			printk("%s: ret einval\n", __func__);
 			return -EINVAL;
 		}
 	}
@@ -1815,7 +1735,7 @@ static int cx24116_set_fec(struct cx24116_state *state, struct dvbfe_params *p)
 {
 	int ret = -1;
 
-	dprintk(100, "%s >\n", __func__);
+	dprintk(10, "%s()\n", __func__);
 
 	switch (p->delivery)
 	{
@@ -1851,7 +1771,7 @@ static int cx24116_set_symbolrate(struct cx24116_state *state, struct dvbfe_para
 {
 	int ret = 0;
 
-	dprintk(100, "%s >\n", __func__);
+	dprintk(10, "%s()\n", __func__);
 
 #ifdef __TDT__
 	switch (p->delivery)
@@ -1865,9 +1785,7 @@ static int cx24116_set_symbolrate(struct cx24116_state *state, struct dvbfe_para
 				ret = -EOPNOTSUPP;
 			}
 			else
-			{
 				state->dnxt.symbol_rate = p->delsys.dvbs.symbol_rate;
-			}
 			break;
 		case DVBFE_DELSYS_DVBS2:
 			/*  check if symbol rate is within limits */
@@ -1878,16 +1796,13 @@ static int cx24116_set_symbolrate(struct cx24116_state *state, struct dvbfe_para
 				ret = -EOPNOTSUPP;
 			}
 			else
-			{
 				state->dnxt.symbol_rate = p->delsys.dvbs2.symbol_rate;
-			}
 			break;
 		default:
-		{
-			dprintk(1, "%s < (return -ENOTSUPP)\n", __func__);
-		}
+			printk("%s(return enotsupp)\n", __func__);
 			ret = -EOPNOTSUPP;
 	}
+
 	dprintk(10, "%s() symbol_rate = %u\n", __func__, state->dnxt.symbol_rate);
 #else
 
@@ -1900,13 +1815,11 @@ static int cx24116_set_symbolrate(struct cx24116_state *state, struct dvbfe_para
 			state->dnxt.symbol_rate = p->delsys.dvbs2.symbol_rate;
 			break;
 		default:
-		{
-			dprintk(1, "%s <(return -ENOTSUPP)\n", __func__);
+			printk("%s(return enotsupp)\n", __func__);
 			ret = -EOPNOTSUPP;
-		}
 	}
 
-	dprintk(10, "%s symbol_rate = %d\n", __func__, state->dnxt.symbol_rate);
+	dprintk(10, "%s() symbol_rate = %d\n", __func__, state->dnxt.symbol_rate);
 
 	/*  check if symbol rate is within limits */
 	if ((state->dnxt.symbol_rate > state->frontend.ops.info.symbol_rate_max)
@@ -2066,8 +1979,8 @@ static int cx24116_set_params(struct dvb_frontend *fe, struct dvbfe_params *p)
 		cmd.args[0x0e] = 0x04;
 		cmd.args[0x0f] = 0x00;
 		cmd.args[0x10] = 0x01;
-		cmd.args[0x11] = 0x77;  /* 0xEC */
-		cmd.args[0x12] = 0x36;  /* 0xFA */
+		cmd.args[0x11] = 0x77; /* 0xEC */
+		cmd.args[0x12] = 0x36; /* 0xFA */
 
 		/* Set Reset unknown */
 		cx24116_writereg(state, 0xF9, 0x01);  /* DVB S1/2 Mode */
@@ -2081,8 +1994,8 @@ static int cx24116_set_params(struct dvb_frontend *fe, struct dvbfe_params *p)
 
 		if (useUnknown == 0)
 		{
-			cmd.args[0x11] = 0xFA;  /* 0xEC */
-			cmd.args[0x12] = 0x24;  /* 0xFA */
+			cmd.args[0x11] = 0xFA; /* 0xEC */
+			cmd.args[0x12] = 0x24; /* 0xFA */
 		}
 		else
 		{
@@ -2486,8 +2399,8 @@ static int cx24116_set_frontend(struct dvb_frontend *fe, struct dvb_frontend_par
 
 		if (useUnknown == 0)
 		{
-			cmd.args[0x11] = 0xFA;  /* 0xEC */
-			cmd.args[0x12] = 0x24;  /* 0xFA */
+			cmd.args[0x11] = 0xFA; /* 0xEC */
+			cmd.args[0x12] = 0x24; /* 0xFA */
 		}
 		else
 		{
@@ -2675,46 +2588,31 @@ static int cx24116_fe_init(struct dvb_frontend *fe)
 }
 
 /*
- * LNBH221 register description:
- * I2C bus 0 and 1, addr 0x08
+ * LNBH221 write function:
+ * i2c bus 0 and 1, addr 0x08
  * seen values: 0xd4 (vertical) 0xdc (horizontal), 0xd0 shutdown
  * 0xd8 ??? fixme ->was genau heisst das, nochmal lesen besonders
  * mit den "is controlled by dsqin pin" ...
  *
- * Audioniek added:
- * 0xd4 -> 11010100 -> PCL=1, TTX=1, TEN=0, LLC=1, VSEL=0, EN=1 -> Vout=14.25V
- * 0xdc -> 11011100 -> PCL=1, TTX=1, TEN=0, LLC=1, VSEL=1, EN=1 -> Vout=19.5V
- * 0xd0 -> 11010000 -> PCL=1, TTX=1, TEN=0, LLC=1, VSEL=0, EN=0 -> Vout=0V
- * 0xd8 -> 11011000 -> PCL=1, TTX=1, TEN=0, LLC=1, VSEL=1, EN=0 -> Vout=0V
- * therefore: 0xd0 and 0xd8 are both valid for Vout=0
- *
  * From Documentation (can be downloaded on st.com):
+
+PCL TTX TEN LLC VSEL EN OTF OLF Function
+             0    0   1  X    X V OUT=13.25V, VUP=15.25V
+             0    1   1  X    X VOUT=18V, VUP=20V
+             1    0   1  X    X VOUT=14.25V, VUP=16.25V
+             1    1   1  X    X VOUT=19.5V, VUP=21.5V
+          0           1  X    X 22KHz tone is controlled by DSQIN pin
+          1           1  X    X 22KHz tone is ON, DSQIN pin disabled
+       0              1  X    X VORX output is ON, output voltage controlled by VSEL and LLC
+       1              1  X    X VOTX output is ON, 22KHz controlled by DSQIN or TEN,
+                                output voltage level controlled by VSEL and LLC
+  0                   1  X    X Pulsed (dynamic) current limiting is selected
+  1                   1  X    X Static current limiting is selected
+  X    X   X X    X   0  X    X Power blocks disabled
+
  *
- * System register, write
- * MSB                         LSB
- * PCL TTX TEN LLC VSEL EN OTF OLF Function
- *              0    0   1  X   X Vout=13.25V, Vup=15.25V
- *              0    1   1  X   X Vout=18V, Vup=20V
- *              1    0   1  X   X Vout=14.25V, Vup=16.25V
- *              1    1   1  X   X Vout=19.5V, Vup=21.5V
- *          0            1  X   X 22kHz tone is controlled by DSQIN pin
- *          1            1  X   X 22kHz tone is ON, DSQIN pin disabled
- *      0                1  X   X VoRX output is ON, output voltage controlled by VSEL and LLC
- *      1                1  X   X VoTX output is ON, 22kHz controlled by DSQIN or TEN,
- *                                output voltage level controlled by VSEL and LLC
- *  0                    1  X   X Pulsed (dynamic) current limiting is selected
- *  1                    1  X   X Static current limiting is selected
- *  X   X   X   X    X   0  X   X Power blocks disabled
- *
- * System register, read
- * MSB                         LSB (Note: S means read back as written)
- * PCL TTX TEN LLC VSEL EN OTF OLF Function
- *  S   S   S   S    S   S  0   X  Tj < 140 degrees C (normal operation)
- *  S   S   S   S    S   S  1   X  Tj > 150 degrees C (power blocks disabled)
- *  S   S   S   S    S   S  X   0  Io < Iomax (normal operation)
- *  S   S   S   S    S   S  X   1  Io > Iomax (Overload protection triggered)
  */
-static int lnbh221_writereg_lnb_supply(struct cx24116_state *state, char data)
+static int lnbh23_writereg_lnb_supply(struct cx24116_state *state, char data)
 {
 	int ret = -EREMOTEIO;
 	struct i2c_msg msg;
@@ -2727,7 +2625,7 @@ static int lnbh221_writereg_lnb_supply(struct cx24116_state *state, char data)
 	msg.buf = &buf;
 	msg.len = 1;
 
-	dprintk(20, "%s: write 0x%02x to I2C address 0x%02x\n", __func__, data & 0xff, msg.addr & 0xff);
+	dprintk(20, "%s: write 0x%02x to I2C address 0x%02xx\n", __func__, data & 0xff, msg.addr & 0xff);
 
 	if ((ret = i2c_transfer(state->config->i2c_adap, &msg, 1)) != 1)
 	{
@@ -2756,19 +2654,19 @@ int set_voltage(struct dvb_frontend *fe, fe_sec_voltage_t voltage)
 		case SEC_VOLTAGE_OFF:
 		{
 			dprintk(20, "Switch LNB voltage off\n");
-			lnbh221_writereg_lnb_supply(state, 0xd0);
+			lnbh23_writereg_lnb_supply(state, 0xd0);
 			break;
 		}
 		case SEC_VOLTAGE_13:
 		{
 			dprintk(20, "Set LNB voltage to 13V (vertical)\n");
-			lnbh221_writereg_lnb_supply(state, 0xd4);
+			lnbh23_writereg_lnb_supply(state, 0xd4);
 			break;
 		}
 		case SEC_VOLTAGE_18:
 		{
 			dprintk(20, "Set LNB voltage to 18V (horizontal)\n");
-			lnbh221_writereg_lnb_supply(state, 0xdc);
+			lnbh23_writereg_lnb_supply(state, 0xdc);
 			break;
 		}
 		default:
@@ -2854,7 +2752,7 @@ struct dvb_frontend *cx24116_fe_qpsk_attach(struct cx24116_config *config)
 
 	/* check if the demod is present */
 	ret = (cx24116_readreg(state, 0xFF) << 8) | cx24116_readreg(state, 0xFE);
-	if (ret != 0x0501)
+	if ((ret != 0x0501)
 	{
 		dprintk(50, "ret = %04x\n", ret & 0xffff);
 		dprintk(20, "Invalid probe, probably not a CX24116 device\n");
@@ -3199,7 +3097,8 @@ struct plat_tuner_config tuner_resources[] =
 		.i2c_addr = 0x0a >> 1,
 		.tuner_enable = { 2, 4, 1 },
 		.lnb_enable = { -1, -1, -1 },
-		.lnb_vsel = { 0x08, 0xd4, 0xdc },
+//		.lnb_vsel = { 0x08, 0xd4, 0xdc },  // LNBH221 values, UFS922 has two LNBH23's
+		.lnb_vsel = { 0x0a, 0xd4, 0xdc },
 	},
 	[1] =
 	{
@@ -3208,7 +3107,8 @@ struct plat_tuner_config tuner_resources[] =
 		.i2c_addr = 0x0a >> 1,
 		.tuner_enable = { 2, 5, 1 },
 		.lnb_enable = { -1, -1, -1 },
-		.lnb_vsel = { 0x08, 0xd4, 0xdc },
+//		.lnb_vsel = { 0x08, 0xd4, 0xdc },  // LNBH221 values, UFS922 has two LNBH23's
+		.lnb_vsel = { 0x0a, 0xd4, 0xdc },
 	},
 };
 

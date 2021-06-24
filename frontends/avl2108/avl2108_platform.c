@@ -5,6 +5,11 @@
  *
  * 	Copyright (C) 2011 duckbox
  *
+ *  Version for:
+ *  - Kathrein UFS-922
+ *  - Fortis HS9510
+ *  Note: Fortis HS8200 was removed, as it uses multituner now.
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -59,6 +64,14 @@ static struct platform_frontend_s avl2108_config =
 			.name         = "avl2108-1",
 
 			.tuner_enable = { 2, 2, 1 },
+			/*
+			 *  - pio port (enable pin)
+			 *  - pio pin  (enable pin)
+			 *  - active low/high (polarity)
+			 *  - pio port (v/h sel pin)
+			 *  - pio pin  (v/h sel pin)
+			 *  - pin state for vertical
+			 */
 			.lnb          = { 1, 6, 0, 1, 4, 1 },
 			.i2c_bus      = 0,
 
@@ -72,7 +85,7 @@ static struct platform_frontend_s avl2108_config =
 static struct avl_private_data_s avl_tuner_priv =
 {
 	.ref_freq         = 1,
-	.demod_freq       = 11200, /* fixme: the next three could be determined by the pll config!!! */
+	.demod_freq       = 11200,  /* fixme: the next three could be determined by the pll config!!! */
 	.fec_freq         = 16800,
 	.mpeg_freq        = 19200,
 	.i2c_speed_khz    = TUNER_I2C_CLK,
@@ -83,7 +96,7 @@ static struct avl_private_data_s avl_tuner_priv =
 	.max_lpf          = 340,
 	.pll_config       = 3,
 	.usedTuner        = cTUNER_EXT_STV6110A,
-	.usedLNB          = cLNB_LNBH221,
+	.usedLNB          = cLNB_LNBH23,
 	.lpf              = 340,
 	.lock_mode        = LOCK_MODE_FIXED,
 	.iq_swap          = CI_FLAG_IQ_NO_SWAPPED,
@@ -101,6 +114,13 @@ static struct platform_frontend_s avl2108_config =
 			.name         = "avl2108-1",
 
 			.tuner_enable = { 2, 4, 1 },
+			/*	- i2c-bus
+			 *  - i2c address
+			 *  - alternative i2c address (hacky: support for LNBH221)
+			 *  - voltage off
+			 *  - vsel
+			 *  - hsel
+			 */
 			.lnb          = { 0, 0x0a, 0x08, 0xc0, 0xc4, 0xcc },
 			.i2c_bus      = 0,
 
@@ -128,9 +148,9 @@ static struct platform_frontend_s avl2108_config =
 
 static struct platform_device avl2108_device =
 {
-	.name    = "avl2108",
-	.id      = -1,
-	.dev     =
+	.name          = "avl2108",
+	.id            = -1,
+	.dev           =
 	{
 		.platform_data = &avl2108_config,
 	},

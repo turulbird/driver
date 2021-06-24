@@ -3,24 +3,24 @@
  *
  * @author Pedro Aguilar <pedro@duolabs.com>
  *
- * @brief Availink avl2108 - DVBS/S2 Satellite demod driver
+ * @brief Availink avl2108 - DVB-S(2) Satellite tuner driver for Sharp BS2F7VZ7702 frontend
  *
- * Copyright (C) 2009-2010 Duolabs Spa
- *                2011 adapted by konfetti for use with ufs922 & hs9510
+ * 	Copyright (C) 2009-2010 Duolabs Spa
+ *                2011 adapted by konfetti for use with hs9510
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
 #define STV6306_DEMOD_FW "dvb-fe-stv6306.fw" /*< Tuner fw used for working in internal mode */
@@ -36,7 +36,7 @@ extern short paramDebug;
 #define dprintk(level, x...) \
 do \
 { \
-	if ((paramDebug == 0) || (paramDebug > level)) \
+	if (((paramDebug) && (paramDebug > level)) || level == 0) \
 	{ \
 		printk(TAGDEBUG x); \
 	} \
@@ -46,7 +46,7 @@ struct stv6306_state
 {
 	struct avl2108_equipment_s equipment;
 	u8                         internal;
-	struct i2c_adapter         *i2c;
+	struct i2c_adapter        *i2c;
 };
 
 /* *********** external tuner ************** */
@@ -184,18 +184,16 @@ static u16 stv6306_tuner_lock_ext(struct dvb_frontend *fe, u32 freq, u32 srate, 
 	{
 		return ret;
 	}
-	msleep(/* 12*/ 3);
+	msleep(12);
 
 	/* Set LPF */
-	l_lpf = ((lpf / 10) - 10) / 2 + 3 ;
+	l_lpf = ((lpf / 10) - 10) / 2 + 3;
 	data[2] |= (((l_lpf >> 1) & 0x1) << 3);
 	data[2] |= (((l_lpf >> 0) & 0x1) << 4);
 	data[3] |= (((l_lpf >> 3) & 0x1) << 2);
 	data[3] |= (((l_lpf >> 2) & 0x1) << 3);
-
 	ret = state->equipment.demod_i2c_repeater_send(fe->demodulator_priv, data + 2, 2);
-
-	dprintk(50, "%s < status = %u\n", __func__, ret);
+	dprintk(100, "%s < status = %u\n", __func__, ret);
 	return ret;
 }
 
@@ -213,7 +211,7 @@ static u16 stv6306_tuner_lock_status_ext(struct dvb_frontend *fe)
 			ret = AVL2108_ERROR_PREV;
 		}
 	}
-	dprintk(50, "%s < lock status: %u, buf: 0x%X\n", __func__, ret, buf);
+	dprintk(100, "%s < lock status = %u, buf: 0x%02X\n", __func__, ret, buf);
 	return ret;
 }
 
@@ -231,21 +229,21 @@ static u16 stv6306_load_firmware(struct dvb_frontend *fe)
 	u32 i = 4;
 	int fw_ret;
 
-	dprintk(50, "%s: Uploading tuner firmware (%s)...\n", __func__, STV6306_DEMOD_FW);
+	dprintk(20, "%s: Uploading tuner firmware (%s)...\n", __func__, STV6306_DEMOD_FW);
 	fw_ret = request_firmware(&fw, STV6306_DEMOD_FW, &state->i2c->dev);
 	if (fw_ret)
 	{
 		dprintk(1, "%s: Firmware upload failed. Timeout or file not found \n", __func__);
 		return AVL2108_ERROR_GENERIC;
 	}
-	dprintk(20, "Firmware download done successful\n");
+	dprintk(20, "Firmware download successfully completed\n");
 	data_size = extract_32(fw->data);
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,32)
 	buffer = kmalloc(fw->size, GFP_KERNEL);
 	memcpy(buffer, fw->data, fw->size);
 #endif
-	dprintk(50, "Data_size %d\n", data_size);
+	dprintk(20, "Firmware data_size: %d bytes\n", data_size);
 	while (i < data_size)
 	{
 		buf_size = extract_32(fw->data + i);
@@ -258,7 +256,7 @@ static u16 stv6306_load_firmware(struct dvb_frontend *fe)
 		ret |= state->equipment.demod_i2c_write(fe->demodulator_priv, fw->data + i + 1, (u16)(buf_size + 3));
 #endif
 		i += 4 + buf_size;
-		printk("i %d\n", i);
+//		printk("i %d\n", i);
 	}
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,32)
 	kfree(buffer);
@@ -272,7 +270,7 @@ static u16 stv6306_tuner_lock_int(struct dvb_frontend *fe, u32 freq, u32 lpf)
 	struct stv6306_state *state = fe->tuner_priv;
 	u16 ret;
 	u16 timeout = 0;
-	u16 max_tries = 10;  /* 10 times */
+	const u16 max_tries = 40;  /* 40 times */
 
 	dprintk(10, "%s: freq: %u, lpf: %u\n", __func__, freq, lpf);
 
@@ -290,7 +288,7 @@ static u16 stv6306_tuner_lock_int(struct dvb_frontend *fe, u32 freq, u32 lpf)
 			ret |= AVL2108_ERROR_TIMEOUT;
 			break;
 		}
-		mdelay(/* 100 */ 20);
+		mdelay(100);
 	}
 	return ret;
 }
@@ -301,7 +299,7 @@ static u16 stv6306_tuner_lock_status_int(struct dvb_frontend *fe)
 	u16 ret;
 	u16 tmp;
 	u16 timeout = 0;
-	u16 max_tries = /* 10 */ 15;
+	const u16 max_tries = 15;
 
 	ret = state->equipment.demod_send_op(DEMOD_OP_TUNER_LOCK_ST, fe->demodulator_priv);
 	if (ret == AVL2108_OK)
@@ -310,10 +308,10 @@ static u16 stv6306_tuner_lock_status_int(struct dvb_frontend *fe)
 		{
 			if ((++timeout) >= max_tries)
 			{
-				dprintk(1, "%s(): %u: Timeout!\n", __func__, timeout);
+				dprintk(1, "%s: %u: Timeout!\n", __func__, timeout);
 				return (AVL2108_ERROR_TIMEOUT);
 			}
-			mdelay(/* 100 */ /* 5 */ 3);
+			mdelay(100);
 		}
 		ret |= state->equipment.demod_i2c_read16(fe->demodulator_priv, REG_TUNER_STATUS, &tmp);
 		if (ret == AVL2108_OK)
@@ -328,8 +326,7 @@ static u16 stv6306_tuner_lock_status_int(struct dvb_frontend *fe)
 			}
 		}
 	}
-
-	dprintk(100, "%s < lock status: %u\n", __func__, ret);
+	dprintk(100, "%s < lock status = %u\n", __func__, ret);
 	return ret;
 }
 
@@ -353,7 +350,7 @@ static u16 stv6306_tuner_lock(struct dvb_frontend *fe, u32 freq, u32 srate, u32 
 {
 	struct stv6306_state *state = fe->tuner_priv;
 
-	dprintk(20, "%s: freq %d, srate %d, lpf %d\n", __func__, freq, srate, lpf);
+	dprintk(100, "%s > freq %d, srate %d, lpf %d\n", __func__, freq, srate, lpf);
 
 	if (state->internal)
 	{
@@ -371,7 +368,6 @@ static u16 stv6306_tuner_init(struct dvb_frontend *fe)
 
 	dprintk(100, "%s >\n", __func__);
 	/* nothing to do here ? */
-
 	dprintk(100, "%s < status = %u\n", __func__, ret);
 	return ret;
 }
@@ -396,7 +392,6 @@ int stv6306_attach(struct dvb_frontend *fe, void *demod_priv, struct avl2108_equ
 	equipment->tuner_init        = stv6306_tuner_init;
 	equipment->tuner_lock        = stv6306_tuner_lock;
 	equipment->tuner_lock_status = stv6306_tuner_lock_status;
-
 	return 0;
 }
 // vim:ts=4
