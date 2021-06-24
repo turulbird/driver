@@ -112,7 +112,6 @@ extern void socket_register_adapter(struct dvb_adapter *dvb_adap);
 #elif defined(HS9510) \
  ||   defined(OPT9600)
 extern void avl2108_register_frontend(struct dvb_adapter *dvb_adap);
-extern void avl2108_register_frontend(struct dvb_adapter *dvb_adap);
 #elif defined(HS8200)
 extern void socket_register_adapter(struct dvb_adapter *dvb_adap);
 #elif defined(SPARK7162)
@@ -626,6 +625,7 @@ void ptiInit(struct DeviceContext_s *pContext)
 		fe_core_register_frontend(&pContext->DvbContext->DvbAdapter);
 #elif defined(UFS922)
 		cx24116_register_frontend(&pContext->DvbContext->DvbAdapter);
+		avl2108_register_frontend(&pContext->DvbContext->DvbAdapter);
 #elif defined(UFS913)
 		socket_register_adapter(&pContext->DvbContext->DvbAdapter);
 #else
