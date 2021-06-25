@@ -41,7 +41,6 @@
  * 20170313 Audioniek       Display on/off implemented.
  * 20170313 Audioniek       Texts longer than the displaylength are scrolled
  *                          once (/dev/vfd only).
- * 20210624 Audioniek       Add VFDSETLED mode 0.
  */
 
 #include <asm/io.h>
@@ -76,7 +75,15 @@ int errorOccured = 0;
 char ioctl_data[8];
 tFrontPanelOpen FrontPanelOpen [LASTMINOR];
 
-struct saved_data_s lastdata;
+struct saved_data_s
+{
+	int           length;
+	char          data[20];
+	unsigned char brightness;
+	unsigned char ledbrightness;
+};
+
+static struct saved_data_s lastdata;
 
 /***************************************************************************
  *
@@ -499,7 +506,7 @@ unsigned char VFD_CHARTABLE[256] =
 	0x7d,  // 0x7d, }
 	0x7e,  // 0x7e, ~
 	0x7f,  // 0x7f, <DEL>--> all segments on
-	// Table values seem to match PT6302-005 character generator
+
 	0x84,  // 0x80, a-umlaut
 	0x94,  // 0x81, o-umlaut
 	0x81,  // 0x82, u-umlaut
@@ -806,7 +813,7 @@ int micomSetLED(int which, int on)
 #endif
 	if (which < ledmin || which > ledmax)
 	{
-		dprintk(1, "LED number %d out of range (%d..%d)\n", which, ledmin, ledmax);
+		dprintk(1, "LED number %d out of range (1..6)\n", which);
 		return -EINVAL;
 	}
 	memset(buffer, 0, sizeof(buffer));
@@ -868,13 +875,13 @@ int micomSetLedBrightness(unsigned char level)
 	unsigned char buffer[8];
 	int  res = 0;
 
-	dprintk(10, "%s > level %d\n", __func__, level);
+	dprintk(100, "%s > level %d\n", __func__, level);
 
-	if (level < 0 || level > 7)
-	{
-		dprintk(1, "LED brightness %d out of range (valid 0-7)\n", (int)level);
-		return -EINVAL;
-	}
+//	if (level < 0 || level > 0xff)
+//	{
+//		dprintk(1, "LED brightness %d out of range (valid 0-255)\n", (int)level);
+//		return -EINVAL;
+//	}
 	if (level != 0)
 	{
 		lastdata.ledbrightness = level;
@@ -882,7 +889,8 @@ int micomSetLedBrightness(unsigned char level)
 	memset(buffer, 0, sizeof(buffer));
 	buffer[0] = level;
 	res = micomWriteCommand(CmdSetLEDBrightness, buffer, 7, NEED_ACK);
-	dprintk(10, "%s <\n", __func__);
+
+	dprintk(100, "%s <\n", __func__);
 	return res;
 }
 /* export for later use in e2_proc */
@@ -1057,9 +1065,6 @@ int micomSetTime(char *time)
  *
  * micomSetDisplayOnOff: switch entire display on or off.
  *
- * Note: display off is achieved by setting brightness of
- *       display and LEDs to zero.
- *
  */
 int micomSetDisplayOnOff(unsigned char level)
 {
@@ -1067,7 +1072,7 @@ int micomSetDisplayOnOff(unsigned char level)
 //	char          buffer[6];
 	unsigned char llevel = 0;
 
-	dprintk(10, "%s >\n", __func__);
+	dprintk(100, "%s >\n", __func__);
 
 	if (level != 0)
 	{
@@ -1077,8 +1082,8 @@ int micomSetDisplayOnOff(unsigned char level)
 	res = micomSetBrightness(level);
 
 	res |= micomSetLedBrightness(llevel);
-	lastdata.display_on = (level ? 1 : 0);
-	dprintk(10, "%s <\n", __func__);
+
+	dprintk(100, "%s <\n", __func__);
 	return res;
 }
 
@@ -1182,7 +1187,6 @@ int micomGetWakeUpMode(unsigned char *mode)
 {
 	char buffer[8];
 	int  res = 0;
-	unsigned char *wakeupreason[8] = { "Unknown", "Power on", "From deep standby", "Timer", "Power switch", "Unknown", "Unknown", "Unknown" };
 
 	dprintk(100, "%s >\n", __func__);
 
@@ -1204,42 +1208,13 @@ int micomGetWakeUpMode(unsigned char *mode)
 	{
 //		/* wakeup reason received ->noop here */
 //		dprintk(1, "wakeup reason received\n");
-		/* 0xc1 = rcu power key
-		 * 0xc2 = front power key
-		 * 0xc3 = timer
-		 * 0xc4 = ac power on???
+		/* 0xc1 = rcu
+		 * 0xc2 = front
+		 * 0xc3 = time
+		 * 0xc4 = ac ???
 		 */
-		dprintk(10, "Wakeup reason: 0x%02x (0x%02x, 0x%02x)\n", (int)ioctl_data[0], (int)ioctl_data[1], (int)ioctl_data[2]);
-#if 0
-		switch (ioctl_data[0])
-		{
-			case 0xc1:  // RC power key
-			case 0xc2:  // front panel
-			{
-				*mode = 4;
-				break;
-			}
-			case 0xc3:  // timer
-			{
-				*mode = 3;
-				break;
-			}
-			case 0xc4:  // AC power on
-			default:
-			{
-				*mode = 1;
-				break;
-			}
-			default:
-			{
-				*mode = 0;  // Unknown
-				break;
-			}
-		}
-		dprintk(20, "Wake up: %s\n", wakeupreason[*mode]);
-#else
+		dprintk(10, "Wakeup reason: %02x (%02x, %02x)\n", (int)ioctl_data[0], (int)ioctl_data[1], (int)ioctl_data[2]);
 		*mode = ioctl_data[0]; // TODO: convert to standard values
-#endif
 	}
 	dprintk(100, "%s <\n", __func__);
 	return res;
@@ -1443,7 +1418,6 @@ int micomWriteString(unsigned char *aBuf, int len)
 int micom_init_func(void)
 {
 	int vLoop;
-	int res = 0;
 
 	dprintk(100, "%s >\n", __func__);
 
@@ -1466,18 +1440,12 @@ int micom_init_func(void)
 	micomInitialize();
 #endif
 	msleep(10);
-	res = micomSetBrightness(7);
+	micomSetBrightness(7);
 
 	msleep(10);
-	res |= micomSetLedBrightness(7);
+	micomSetLedBrightness(0x50);
 
 	msleep(10);
-#if defined(UFS922)
-	res |= micomSetLED(3, 0);  // power LED off
-	res |= micomSetLED(1, 1);  // AUX key on
-	res |= micomSetLED(4, 1);  // TV/R key on
-#endif
-
 //#if VFD_LENGTH < 16
 //	micomWriteString(" T D T  ", strlen(" T D T  "));
 //#else
@@ -1485,12 +1453,14 @@ int micom_init_func(void)
 //#endif
 //	msleep(10);
 
+//#if defined(UFS922) || defined(UFC960)
 	for (vLoop = ICON_MIN + 1; vLoop < ICON_MAX; vLoop++)
 	{
-		res |= micomSetIcon(vLoop, 0);
+		micomSetIcon(vLoop, 0);
 	}
+//#endif
 	dprintk(100, "%s <\n", __func__);
-	return res;
+	return 0;
 }
 
 /****************************************
@@ -1538,9 +1508,10 @@ static ssize_t MICOMdev_write(struct file *filp, const char *buff, size_t len, l
 
 	if (minor == -1)
 	{
-		dprintk(1, "Error: Bad Minor\n");
+		printk("Error: Bad Minor\n");
 		return -1; //FIXME
 	}
+
 	dprintk(70, "minor = %d\n", minor);
 
 	/* do not write to the remote control */
@@ -1552,7 +1523,7 @@ static ssize_t MICOMdev_write(struct file *filp, const char *buff, size_t len, l
 
 	if (kernel_buf == NULL)
 	{
-		dprintk(1, "%s returns no mem <\n", __func__);
+		printk("[micom] %s returns no mem <\n", __func__);
 		return -ENOMEM;
 	}
 
@@ -1578,7 +1549,7 @@ static ssize_t MICOMdev_write(struct file *filp, const char *buff, size_t len, l
 		llen--;
 	}
 
-	if (llen <= VFD_LENGTH)  // no scroll
+	if (llen <= VFD_LENGTH) //no scroll
 	{
 		res = micomWriteString(kernel_buf, llen);
 	}
@@ -1608,6 +1579,7 @@ static ssize_t MICOMdev_write(struct file *filp, const char *buff, size_t len, l
 				msleep(300);
 			}
 		}
+
 		res |= clear_display();
 
 		if (llen > 0)
@@ -1739,6 +1711,7 @@ int MICOMdev_open(struct inode *inode, struct file *filp)
 	FrontPanelOpen[minor].fp = filp;
 	FrontPanelOpen[minor].read = 0;
 	up(&write_sem);
+
 	dprintk(100, "%s <\n", __func__);
 	return 0;
 }
@@ -1760,6 +1733,7 @@ int MICOMdev_close(struct inode *inode, struct file *filp)
 	}
 	FrontPanelOpen[minor].fp = NULL;
 	FrontPanelOpen[minor].read = 0;
+
 	dprintk(100, "%s <\n", __func__);
 	return 0;
 }
@@ -1768,8 +1742,7 @@ int MICOMdev_close(struct inode *inode, struct file *filp)
  *
  * IOCTL handling.
  *
- */
-static int MICOMdev_ioctl(struct inode *Inode, struct file *File, unsigned int cmd, unsigned long arg)
+ */static int MICOMdev_ioctl(struct inode *Inode, struct file *File, unsigned int cmd, unsigned long arg)
 {
 	static int mode = 0;
 	struct micom_ioctl_data *micom = (struct micom_ioctl_data *)arg;
@@ -1791,16 +1764,7 @@ static int MICOMdev_ioctl(struct inode *Inode, struct file *File, unsigned int c
 		}
 		case VFDSETLED:
 		{
-			if (mode == 0)
-			{
-//				dprintk(1, "VFDSETLED (mode 0): set LED %d to %s\n", data->start_address, (data->data[3] == 0 ? "Off" : "on"));
-				res = micomSetLED(data->start_address, data->data[3]);
-			}
-			else
-			{
-				res = micomSetLED(micom->u.led.led_nr, micom->u.led.on);
-			}
-			mode = 0;
+			res = micomSetLED(micom->u.led.led_nr, micom->u.led.on);
 			break;
 		}
 		case VFDBRIGHTNESS:
@@ -1809,6 +1773,10 @@ static int MICOMdev_ioctl(struct inode *Inode, struct file *File, unsigned int c
 			{
 				int level = data->start_address;
 
+//				/* scale level from 0 - 7 to a range from 5 - 1 (5 is off) */
+//				level = 7 - level;
+//
+//				level = ((level * 100) / 7 * 5) / 100 + 1;
 				res = micomSetBrightness(level);
 			}
 			else
@@ -1945,11 +1913,11 @@ static int MICOMdev_ioctl(struct inode *Inode, struct file *File, unsigned int c
 			if (mode == 0)
 			{
 				res = micomWriteString(data->data, data->length);
-			}
+//			}
 //			else
 //			{
-//				// not supported
-//			}
+//				//not supported
+			}
 			mode = 0;
 			break;
 		}
@@ -1963,11 +1931,11 @@ static int MICOMdev_ioctl(struct inode *Inode, struct file *File, unsigned int c
 				{
 					res = micomSetRCcode(rc_code);
 				}
-			}
+//			}
 //			else
 //			{
-//				// not supported
-//			}
+//				//not supported
+			}
 			mode = 0;
 			break;
 		}
@@ -1978,14 +1946,12 @@ static int MICOMdev_ioctl(struct inode *Inode, struct file *File, unsigned int c
 			break;
 		}
 		case 0x5305:
-		case VFDCGRAMWRITE1:
-		case VFDCGRAMWRITE2:
 		{
 			break;
 		}
 		default:
 		{
-			dprintk(0, "Unknown IOCTL 0x%x\n", cmd);
+			printk("VFD/MICOM: unknown IOCTL 0x%x\n", cmd);
 			mode = 0;
 			break;
 		}

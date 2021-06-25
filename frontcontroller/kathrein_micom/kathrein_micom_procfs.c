@@ -83,9 +83,7 @@ extern int micomSetIcon(int which, int on);
 extern int micomSetDisplayOnOff(unsigned char level);
 
 /* Globals */
-static int rtc_offset = 3600;
-//static int progress = 0;
-//static int progress_done = 0;
+extern int rtc_offset;
 static u32 led0_pattern = 0;
 static u32 led1_pattern = 0;
 static int led_pattern_speed = 20;
@@ -191,7 +189,7 @@ static int vfd_onoff_read(char *page, char **start, off_t off, int count, int *e
 
 	if (NULL != page)
 	{
-		len = sprintf(page,"%d", lastdata.display_on);
+		len = sprintf(page, "%d", lastdata.display_on);
 	}
 	return len;
 }
@@ -221,22 +219,24 @@ static int text_write(struct file *file, const char __user *buf, unsigned long c
 
 /* Time subroutines */
 /*
-struct tm {
-int	tm_sec      //seconds after the minute 0-61*
-int	tm_min      //minutes after the hour   0-59
-int	tm_hour     //hours since midnight     0-23
-int	tm_mday     //day of the month         1-31
-int	tm_mon      //months since January     0-11
-int	tm_year     //years since 1900
-int	tm_wday     //days since Sunday        0-6
-int	tm_yday   	//days since January 1     0-365
+struct tm
+{
+	int	tm_sec      //seconds after the minute 0-61*
+	int	tm_min      //minutes after the hour   0-59
+	int	tm_hour     //hours since midnight     0-23
+	int	tm_mday     //day of the month         1-31
+	int	tm_mon      //months since January     0-11
+	int	tm_year     //years since 1900
+	int	tm_wday     //days since Sunday        0-6
+	int	tm_yday   	//days since January 1     0-365
+	* leap second is provided for
 }
 
-time_t long seconds //UTC since epoch  
+time_t long seconds // UTC since epoch  
 */
 
 time_t calcGetMicomTime(char *time)
-{ //mjd hh:mm:ss -> seconds since epoch
+{  // mjd hh:mm:ss -> seconds since epoch
 	unsigned int    mjd     = ((time[1] & 0xff) * 256) + (time[2] & 0xff);
 	unsigned long   epoch   = ((mjd - 40587) * 86400);
 	unsigned int    hour    = time[3] & 0xff;
@@ -244,7 +244,7 @@ time_t calcGetMicomTime(char *time)
 	unsigned int    sec     = time[5] & 0xff;
 
 	epoch += (hour * 3600 + min * 60 + sec);
-	dprintk(10, "Converting time (MJD=) %d - %02d:%02d:%02d to %d seconds\n", (time[1] & 0xff) * 256 + (time[2] & 0xff),
+	dprintk(20, "Converting time (MJD=) %d - %02d:%02d:%02d to %d seconds\n", (time[1] & 0xff) * 256 + (time[2] & 0xff),
 				time[3], time[4], time[5], epoch);
 	return epoch;
 }
@@ -287,7 +287,6 @@ static struct tm * gmtime(register const time_t time)
 	fptime.tm_mday = dayno;
 //	fptime.tm_isdst = -1;
 //	dprintk(10, "%s < Converted time: %02d:%02d:%02d %02d-%02d-%04d\n", __func__, fptime.tm_hour, fptime.tm_min, fptime.tm_sec, fptime.tm_mday, fptime.tm_mon + 1, fptime.tm_year + 1900);
-
 	return &fptime;
 }
 
@@ -309,13 +308,12 @@ int getMJD(struct tm *theTime)
 	}
 	mjd += theTime->tm_yday;
 	mjd += 40587;  // mjd starts on midnight 17-11-1858 which is 40587 days before unix epoch
-//	dprintk(10, "%s < MJD = %d\n", __func__, mjd);
-
+//	dprintk(100, "%s < MJD = %d\n", __func__, mjd);
 	return mjd;
 }
 
 void calcSetMicomTime(time_t theTime, char *destString)
-{ //seconds since epoch -> mjd h:m:s
+{  // seconds since epoch -> mjd h:m:s
 	struct tm *now_tm;
 	int mjd;
 
@@ -385,7 +383,7 @@ static int write_rtc(struct file *file, const char __user *buffer, unsigned long
 out:
 	free_page((unsigned long)page);
 	kfree(myString);
-	dprintk(10, "%s <\n", __func__);
+	dprintk(100, "%s <\n", __func__);
 	return ret;
 }
 
@@ -427,7 +425,7 @@ static int write_rtc_offset(struct file *file, const char __user *buffer, unsign
 out:
 	free_page((unsigned long)page);
 	kfree(myString);
-	dprintk(10, "%s <\n", __func__);
+	dprintk(100, "%s <\n", __func__);
 	return ret;
 }
 
@@ -452,7 +450,7 @@ static int wakeup_time_write(struct file *file, const char __user *buffer, unsig
 		}
 		strncpy(myString, page, count);
 		myString[count] = '\0';
-		dprintk(10, "%s > %s\n", __func__, myString);
+		dprintk(100, "%s > %s\n", __func__, myString);
 
 		test = sscanf(myString, "%u", (unsigned int *)&wakeup_time);
 
@@ -468,7 +466,7 @@ static int wakeup_time_write(struct file *file, const char __user *buffer, unsig
 out:
 	free_page((unsigned long)page);
 	kfree(myString);
-	dprintk(10, "%s <\n", __func__);
+	dprintk(100, "%s <\n", __func__);
 	return ret;
 }
 
@@ -486,7 +484,7 @@ static int wakeup_time_read(char *page, char **start, off_t off, int count, int 
 		w_time = calcGetMicomTime(wtime);
 
 //		len = sprintf(page, "%u\n", w_time - rtc_offset);
-		len = sprintf(page, "%u\n", w_time); //Micom FP uses UTC
+		len = sprintf(page, "%u\n", w_time);  // Micom FP uses UTC
 	}
 	return len;
 }
@@ -504,8 +502,8 @@ static int was_timer_wakeup_read(char *page, char **start, off_t off, int count,
 
 		if (res == 0)
 		{
-			dprintk(10, "%s > wakeup_mode= %02x\n", __func__, ioctl_data[1] & 0xff);
-			if (ioctl_data[1] & 0xff == 0xc3) // if timer wakeup
+			dprintk(10, "%s > wakeup_mode= 0x%02x\n", __func__, ioctl_data[1] & 0xff);
+			if (ioctl_data[1] & 0x0f == 0x03)  // if timer wakeup
 			{
 				wakeup_mode = 1;
 			}
@@ -559,10 +557,8 @@ static int led_pattern_write(struct file *file, const char __user *buf, unsigned
 			{
 				led0_pattern = pattern;
 			}
-
 //TODO: Not implemented completely; only the cases 0 and 0xffffffff (ever off/on) are handled
-//Other patterns are blink patterned in time, so handling those should be done in a timer
-
+//Other patterns are blink patterned in time, so handling those should be done in a timed thread
 			if (pattern == 0)
 			{
 				micomSetLED(which + 2, 0);

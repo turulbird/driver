@@ -78,8 +78,6 @@ extern tFrontPanelOpen FrontPanelOpen[LASTMINOR];
 #define VFD_MAJOR            147
 
 /* ioctl numbers ->hacky */
-#define VFDCGRAMWRITE1		 0xc0425a01
-#define VFDCGRAMWRITE2		 0x40425a01
 #define VFDBRIGHTNESS        0xc0425a03
 #define VFDDRIVERINIT        0xc0425a08
 #define VFDICONDISPLAYONOFF  0xc0425a0a
@@ -189,15 +187,6 @@ struct vfd_ioctl_data
 	unsigned char length;
 };
 
-struct saved_data_s
-{
-	int           length;
-	char          data[20];
-	unsigned char brightness;
-	unsigned char ledbrightness;
-	int           display_on;
-};
-
 #if defined(UFS922)
 enum
 {
@@ -271,8 +260,5 @@ enum
 #define VFD_CHARSIZE 1
 #endif
 
-extern struct saved_data_s lastdata;
-extern int rtc_offset;
-
 #endif  // _kathrein_micom_h
-//vim:ts=4
+ //vim:ts=4
