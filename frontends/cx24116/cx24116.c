@@ -6,8 +6,10 @@
  * Copyright (C) 2006 Georg Acher (acher(at)baycom(dot)de) for Reel Multimedia
  *                    Added DiSEqC, auto pilot tuning and hack for old DVB-API
  *
- * Version for Kathrein UFS-922 (early production with two ... frontends and
- *                               STM LNBH221 LNB power controller)
+ * Version for Kathrein UFS-922 (early production with two Sharp BS2F7VZ0165
+ *                               frontends and two STM LNBH23L LNB power
+ *                               controllers; CX24118 tuner I2C connected to
+ *                               I2C repeater in CX24116 demodulator)
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -47,9 +49,23 @@
  *
  * TODO:
  * - add clean-up code
- * - add support for miltiple adapters (low priority)
+ * - add support for multiple adapters (low priority)
+ *
+ **************************************************************************
+ *
+ * Changes
+ *
+ * Date     By              Description
+ * --------------------------------------------------------------------------
+ * 20210630 Audioniek       Added value for LNB power off.
+ * 20210630 Audioniek       As driver is currently only used on UFS922,
+ *                          removed/commented out everything relating to the
+ *                          STM LNBH221 LNB power controller.
+ * 20210630 Audioniek       Everything pertaining to DVB_API_VERSION < 5
+ *                          commented out.
+ * 20210630 Audioniek       Added more dprintk diagnostics, to do: 2nd tuner
+ *                          does not work on UFS922.
  */
-
 #include <linux/slab.h>
 #include <linux/kernel.h>
 #include <linux/version.h>
@@ -86,7 +102,7 @@ static short paramDebug = 0;
 #define dprintk(level, x...) \
 do \
 { \
-	if ((paramDebug > level) || (level == 0)) \
+	if ((paramDebug >= level) || (level == 0)) \
 	{ \
 		printk(TAGDEBUG x); \
 	} \
@@ -128,7 +144,7 @@ do \
 #define CX24116_FEC_FECMASK   (0x1f)
 
 /* arg buffer size */
-#define CX24116_ARGLEN (0x1e)
+#define CX24116_ARGLEN        (0x1e)
 
 /* DiSEqC strategy (0=HACK, 1=CACHE) */
 static int dsec = 0;
@@ -176,8 +192,9 @@ cx24116_COMMANDS[] =
 };
 
 /* A table of modulation, fec and configuration bytes for the demod.
- * Not all S2 mmodulation schemes are support and not all rates with
- * a scheme are support. Especially, no auto detect when in S2 mode.
+ * Not all S2 mmodulation schemes are supported and not all rates
+ * with a scheme are supported; especially, no auto detect when in
+ * S2 mode.
  */
 struct cx24116_modfec
 {
@@ -190,22 +207,22 @@ struct cx24116_modfec
 	fe_modulation_t       modulation;
 	fe_code_rate_t        fec;
 #endif
-	u8 mask;  /* In DVBS mode this is used to autodetect */
+	u8 mask;  /* In DVB-S mode this is used to autodetect */
 	u8 val;   /* Passed to the firmware to indicate mode selection */
 } cx24116_MODFEC_MODES[] =
 {
 #if 0 //DVB_API_VERSION < 5
 	/* QPSK. For unknown rates we set to hardware to to detect 0xfe 0x30 */
-	{ DVBFE_DELSYS_DVBS, DVBFE_MOD_QPSK, DVBFE_FEC_NONE, 0xfe, 0x30 },
-	{ DVBFE_DELSYS_DVBS, DVBFE_MOD_QPSK, DVBFE_FEC_1_2,  0x02, 0x2e },
-	{ DVBFE_DELSYS_DVBS, DVBFE_MOD_QPSK, DVBFE_FEC_2_3,  0x04, 0x2f },
-	{ DVBFE_DELSYS_DVBS, DVBFE_MOD_QPSK, DVBFE_FEC_3_4,  0x08, 0x30 },
-	{ DVBFE_DELSYS_DVBS, DVBFE_MOD_QPSK, DVBFE_FEC_4_5,  0xfe, 0x30 },
-	{ DVBFE_DELSYS_DVBS, DVBFE_MOD_QPSK, DVBFE_FEC_5_6,  0x20, 0x31 },
-	{ DVBFE_DELSYS_DVBS, DVBFE_MOD_QPSK, DVBFE_FEC_6_7,  0xfe, 0x30 },
-	{ DVBFE_DELSYS_DVBS, DVBFE_MOD_QPSK, DVBFE_FEC_7_8,  0x80, 0x32 },
-	{ DVBFE_DELSYS_DVBS, DVBFE_MOD_QPSK, DVBFE_FEC_8_9,  0xfe, 0x30 },
-	{ DVBFE_DELSYS_DVBS, DVBFE_MOD_QPSK, DVBFE_FEC_AUTO, 0xfe, 0x30 },
+	{ DVBFE_DELSYS_DVBS,  DVBFE_MOD_QPSK, DVBFE_FEC_NONE, 0xfe, 0x30 },
+	{ DVBFE_DELSYS_DVBS,  DVBFE_MOD_QPSK, DVBFE_FEC_1_2,  0x02, x2e },
+	{ DVBFE_DELSYS_DVBS,  DVBFE_MOD_QPSK, DVBFE_FEC_2_3,  0x04, 0x2f },
+	{ DVBFE_DELSYS_DVBS,  DVBFE_MOD_QPSK, DVBFE_FEC_3_4,  0x08, 0x30 },
+	{ DVBFE_DELSYS_DVBS,  DVBFE_MOD_QPSK, DVBFE_FEC_4_5,  0xfe, 0x30 },
+	{ DVBFE_DELSYS_DVBS,  DVBFE_MOD_QPSK, DVBFE_FEC_5_6,  0x20, 0x31 },
+	{ DVBFE_DELSYS_DVBS,  DVBFE_MOD_QPSK, DVBFE_FEC_6_7,  0xfe, 0x30 },
+	{ DVBFE_DELSYS_DVBS,  DVBFE_MOD_QPSK, DVBFE_FEC_7_8,  0x80, 0x32 },
+	{ DVBFE_DELSYS_DVBS,  DVBFE_MOD_QPSK, DVBFE_FEC_8_9,  0xfe, 0x30 },
+	{ DVBFE_DELSYS_DVBS,  DVBFE_MOD_QPSK, DVBFE_FEC_AUTO, 0xfe, 0x30 },
 	/* NBC-QPSK */
 	{ DVBFE_DELSYS_DVBS2, DVBFE_MOD_QPSK, DVBFE_FEC_1_2,  0x00, 0x04 },
 	{ DVBFE_DELSYS_DVBS2, DVBFE_MOD_QPSK, DVBFE_FEC_3_5,  0x00, 0x05 },
@@ -221,44 +238,38 @@ struct cx24116_modfec
 	{ DVBFE_DELSYS_DVBS2, DVBFE_MOD_8PSK, DVBFE_FEC_3_4,  0x00, 0x0e },
 	{ DVBFE_DELSYS_DVBS2, DVBFE_MOD_8PSK, DVBFE_FEC_5_6,  0x00, 0x0f },
 	{ DVBFE_DELSYS_DVBS2, DVBFE_MOD_8PSK, DVBFE_FEC_8_9,  0x00, 0x10 },
-	{
-		DVBFE_DELSYS_DVBS2, DVBFE_MOD_8PSK, DVBFE_FEC_9_10, 0x00,
-		/*0x11 pvrmain sets: */ 0x0b
-	},
+	{ DVBFE_DELSYS_DVBS2, DVBFE_MOD_8PSK, DVBFE_FEC_9_10, 0x00, /*0x11 pvrmain sets: */ 0x0b },
 	/* : redirect AUTO for test */
 	{ DVBFE_DELSYS_DVBS2, DVBFE_MOD_8PSK, DVBFE_FEC_AUTO, 0x00, 0x0b },
 };
 #else
 	/* QPSK. For unknown rates we set to hardware to to detect 0xfe 0x30 */
-	{ SYS_DVBS, QPSK, FEC_NONE, 0xfe, 0x30 },
-	{ SYS_DVBS, QPSK, FEC_1_2,  0x02, 0x2e },
-	{ SYS_DVBS, QPSK, FEC_2_3,  0x04, 0x2f },
-	{ SYS_DVBS, QPSK, FEC_3_4,  0x08, 0x30 },
-	{ SYS_DVBS, QPSK, FEC_4_5,  0xfe, 0x30 },
-	{ SYS_DVBS, QPSK, FEC_5_6,  0x20, 0x31 },
-	{ SYS_DVBS, QPSK, FEC_6_7,  0xfe, 0x30 },
-	{ SYS_DVBS, QPSK, FEC_7_8,  0x80, 0x32 },
-	{ SYS_DVBS, QPSK, FEC_8_9,  0xfe, 0x30 },
-	{ SYS_DVBS, QPSK, FEC_AUTO, 0xfe, 0x30 },
+	{ SYS_DVBS,  QPSK,  FEC_NONE, 0xfe, 0x30 },
+	{ SYS_DVBS,  QPSK,  FEC_1_2,  0x02, 0x2e },
+	{ SYS_DVBS,  QPSK,  FEC_2_3,  0x04, 0x2f },
+	{ SYS_DVBS,  QPSK,  FEC_3_4,  0x08, 0x30 },
+	{ SYS_DVBS,  QPSK,  FEC_4_5,  0xfe, 0x30 },
+	{ SYS_DVBS,  QPSK,  FEC_5_6,  0x20, 0x31 },
+	{ SYS_DVBS,  QPSK,  FEC_6_7,  0xfe, 0x30 },
+	{ SYS_DVBS,  QPSK,  FEC_7_8,  0x80, 0x32 },
+	{ SYS_DVBS,  QPSK,  FEC_8_9,  0xfe, 0x30 },
+	{ SYS_DVBS,  QPSK,  FEC_AUTO, 0xfe, 0x30 },
 	/* NBC-QPSK */
-	{ SYS_DVBS2, QPSK, FEC_1_2,  0x00, 0x04 },
-	{ SYS_DVBS2, QPSK, FEC_3_5,  0x00, 0x05 },
-	{ SYS_DVBS2, QPSK, FEC_2_3,  0x00, 0x06 },
-	{ SYS_DVBS2, QPSK, FEC_3_4,  0x00, 0x07 },
-	{ SYS_DVBS2, QPSK, FEC_4_5,  0x00, 0x08 },
-	{ SYS_DVBS2, QPSK, FEC_5_6,  0x00, 0x09 },
-	{ SYS_DVBS2, QPSK, FEC_8_9,  0x00, 0x0a },
-	{ SYS_DVBS2, QPSK, FEC_9_10, 0x00, 0x0b },
+	{ SYS_DVBS2, QPSK,  FEC_1_2,  0x00, 0x04 },
+	{ SYS_DVBS2, QPSK,  FEC_3_5,  0x00, 0x05 },
+	{ SYS_DVBS2, QPSK,  FEC_2_3,  0x00, 0x06 },
+	{ SYS_DVBS2, QPSK,  FEC_3_4,  0x00, 0x07 },
+	{ SYS_DVBS2, QPSK,  FEC_4_5,  0x00, 0x08 },
+	{ SYS_DVBS2, QPSK,  FEC_5_6,  0x00, 0x09 },
+	{ SYS_DVBS2, QPSK,  FEC_8_9,  0x00, 0x0a },
+	{ SYS_DVBS2, QPSK,  FEC_9_10, 0x00, 0x0b },
 	/* 8PSK */
-	{ SYS_DVBS2, PSK_8, FEC_3_5, 0x00, 0x0c },
-	{ SYS_DVBS2, PSK_8, FEC_2_3, 0x00, 0x0d },
-	{ SYS_DVBS2, PSK_8, FEC_3_4, 0x00, 0x0e },
-	{ SYS_DVBS2, PSK_8, FEC_5_6, 0x00, 0x0f },
-	{ SYS_DVBS2, PSK_8, FEC_8_9, 0x00, 0x10 },
-	{
-		SYS_DVBS2, PSK_8, FEC_9_10, 0x00,
-		/*0x11 pvrmain sets: */ 0x0b
-	},
+	{ SYS_DVBS2, PSK_8, FEC_3_5,  0x00, 0x0c },
+	{ SYS_DVBS2, PSK_8, FEC_2_3,  0x00, 0x0d },
+	{ SYS_DVBS2, PSK_8, FEC_3_4,  0x00, 0x0e },
+	{ SYS_DVBS2, PSK_8, FEC_5_6,  0x00, 0x0f },
+	{ SYS_DVBS2, PSK_8, FEC_8_9,  0x00, 0x10 },
+	{ SYS_DVBS2, PSK_8, FEC_9_10, 0x00, /*0x11 pvrmain sets: */ 0x0b },
 	/* : redirect AUTO for test */
 	{ SYS_DVBS2, PSK_8, FEC_AUTO, 0x00, 0x0b },
 };
@@ -385,7 +396,7 @@ static const struct dvbfe_info dvbs2_info =
 };
 #endif
 
-static int lnbh221_writereg_lnb_supply(struct cx24116_state *state, char data);
+static int lnbh23_writereg_lnb_supply(struct cx24116_state *state, char data);
 
 struct config_entry
 {
@@ -432,12 +443,15 @@ static int cx24116_reset(struct cx24116_state *state)
 	if (cfg->tuner_enable_pin != NULL)
 	{
 		stpio_set_pin(cfg->tuner_enable_pin, !cfg->tuner_enable_act);
+		msleep(1);
 		stpio_set_pin(cfg->tuner_enable_pin, cfg->tuner_enable_act);
 	}
-
+	dprintk(20, "Frontend with I2C bus %d has been reset\n", cfg->i2c_bus);
 	/* set to horizontal by default */
-	lnbh221_writereg_lnb_supply(state, 0xdc);
-	dprintk(10, "%s: < \n", __func__);
+	// TODO: set LNB power off by default
+//	lnbh23_writereg_lnb_supply(state, cfg->disabled);
+	lnbh23_writereg_lnb_supply(state, cfg->horizontal);
+	dprintk(100, "%s: < \n", __func__);
 	return 0;
 }
 
@@ -554,7 +568,7 @@ static int cx24116_read_status(struct dvb_frontend *fe, fe_status_t *status)
 
 	int lock = cx24116_readreg(state, CX24116_REG_STATUS);
 
-	dprintk(20, "%s: status = 0x%02x\n", __func__, lock);
+	dprintk(100, "%s: status = 0x%02x\n", __func__, lock);
 
 	*status = 0;
 
@@ -572,6 +586,7 @@ static int cx24116_read_status(struct dvb_frontend *fe, fe_status_t *status)
 	}
 	if (lock & 0x08)
 	{
+		dprintk(20, "Demodulator is locked\n");
 		*status |= FE_HAS_SYNC | FE_HAS_LOCK;
 	}
 	return 0;
@@ -615,8 +630,7 @@ static int cx24116_get_tune_settings(struct dvb_frontend *fe, struct dvb_fronten
 /* **********************************************
  *
  */
-static int
-cx24116_read_ber(struct dvb_frontend *fe, u32 *ber)
+static int cx24116_read_ber(struct dvb_frontend *fe, u32 *ber)
 {
 	struct cx24116_state *state = fe->demodulator_priv;
 
@@ -670,11 +684,11 @@ static int cx24116_read_ucblocks(struct dvb_frontend *fe, u32 *ucblocks)
 {
 	struct cx24116_state *state = fe->demodulator_priv;
 
-	dprintk(100, "%s > \n", __func__);
+	dprintk(100, "%s >\n", __func__);
 
 	*ucblocks = (cx24116_readreg(state, CX24116_REG_UCB8) << 8)
 	          |  cx24116_readreg(state, CX24116_REG_UCB0);
-	dprintk(100, "%s < %d \n", __func__, *ucblocks);
+	dprintk(100, "%s < ucblocks = %d\n", __func__, *ucblocks);
 	return 0;
 }
 
@@ -1284,7 +1298,7 @@ static int cx24116_firmware_ondemand(struct dvb_frontend *fe)
 	gotreset = cx24116_readreg(state, 0x20);  // implicit watchdog
 	syschipid = cx24116_readreg(state, 0x94);
 
-	dprintk(70, "gotreset %d, syschipid %d\n", gotreset, syschipid);
+	dprintk(70, "gotreset %d, syschipid 0x%02x\n", gotreset, syschipid);
 
 	if ((gotreset || syschipid != 5) && (state->not_responding <= cMaxError))
 	{
@@ -1402,8 +1416,8 @@ static int cx24116_read_signal_strength(struct dvb_frontend *fe, u16 *signal_str
 
 	if (useUnknown == 1)
 	{
-		/* Dagobert: fixme: this does not work currently. Dont know why, but
-		 * register 0x9d is always 0x2f and 0x9e is always 0x00. Mysterious
+		/* Dagobert: fixme: this does not work currently. Do not know why, but
+		 * register 0x9d is always 0x2f and 0x9e is always 0x00. Mysteriously,
 		 * on ufs922 this works great and using the orig soft the regs
 		 * have correct values ...
 		 */
@@ -1735,7 +1749,6 @@ static int cx24116_diseqc_send_burst(struct dvb_frontend *fe, fe_sec_mini_cmd_t 
 	return cx24116_cmd_execute(fe, &state->dsec_cmd);
 }
 
-
 static int cx24116_sleep(struct dvb_frontend *fe)
 {
 	struct cx24116_state *state = fe->demodulator_priv;
@@ -1758,7 +1771,7 @@ static void cx24116_release(struct dvb_frontend *fe)
 {
 	struct cx24116_state *state = fe->demodulator_priv;
 
-	dprintk(100, "%s. >\n", __func__);
+	dprintk(100, "%s >\n", __func__);
 
 	if (state->config != NULL)
 	{
@@ -1781,22 +1794,25 @@ static void cx24116_release(struct dvb_frontend *fe)
 
 static int cx24116_set_inversion(struct cx24116_state *state, fe_spectral_inversion_t inversion)
 {
-	dprintk(10, "%s(%d)\n", __func__, inversion);
+	dprintk(100, "%s >\n", __func__);
 
 	switch (inversion)
 	{
 		case INVERSION_OFF:
 		{
+			dprintk(20, "Inversion is off\n");
 			state->dnxt.inversion_val = 0x00;
 			break;
 		}
 		case INVERSION_ON:
 		{
+			dprintk(20, "Inversion is on\n");
 			state->dnxt.inversion_val = 0x04;
 			break;
 		}
 		case INVERSION_AUTO:
 		{
+			dprintk(20, "Inversion is automatic\n");
 			state->dnxt.inversion_val = 0x0C;
 			break;
 		}
@@ -1843,7 +1859,7 @@ static int cx24116_set_fec(struct cx24116_state *state, struct dvbfe_params *p)
 		state->dnxt.fec_numb = ret;
 		ret = 0;
 	}
-	dprintk(10, "%s(ret =%d)\n", __func__, ret);
+	dprintk(100, "%s(ret =%d)\n", __func__, ret);
 	return ret;
 }
 
@@ -1857,11 +1873,12 @@ static int cx24116_set_symbolrate(struct cx24116_state *state, struct dvbfe_para
 	switch (p->delivery)
 	{
 		case DVBFE_DELSYS_DVBS:
+		{
 			/*  check if symbol rate is within limits */
-			if ((p->delsys.dvbs.symbol_rate > state->frontend.ops.info.symbol_rate_max) ||
-					(p->delsys.dvbs.symbol_rate < state->frontend.ops.info.symbol_rate_min))
+			if ((p->delsys.dvbs.symbol_rate > state->frontend.ops.info.symbol_rate_max)
+			||  (p->delsys.dvbs.symbol_rate < state->frontend.ops.info.symbol_rate_min))
 			{
-				printk("%s symbol rate %u not in range (%u/%u)\n", __func__, p->delsys.dvbs.symbol_rate, state->frontend.ops.info.symbol_rate_min, state->frontend.ops.info.symbol_rate_max);
+				dprintk(1, "%s symbol rate %u not in range (%u/%u)\n", __func__, p->delsys.dvbs.symbol_rate, state->frontend.ops.info.symbol_rate_min, state->frontend.ops.info.symbol_rate_max);
 				ret = -EOPNOTSUPP;
 			}
 			else
@@ -1869,12 +1886,14 @@ static int cx24116_set_symbolrate(struct cx24116_state *state, struct dvbfe_para
 				state->dnxt.symbol_rate = p->delsys.dvbs.symbol_rate;
 			}
 			break;
+		}
 		case DVBFE_DELSYS_DVBS2:
+		{
 			/*  check if symbol rate is within limits */
-			if ((p->delsys.dvbs2.symbol_rate > state->frontend.ops.info.symbol_rate_max) ||
-					(p->delsys.dvbs2.symbol_rate < state->frontend.ops.info.symbol_rate_min))
+			if ((p->delsys.dvbs2.symbol_rate > state->frontend.ops.info.symbol_rate_max)
+			||  (p->delsys.dvbs2.symbol_rate < state->frontend.ops.info.symbol_rate_min))
 			{
-				printk("%s symbol rate %u not in range (%u/%u)\n", __func__, p->delsys.dvbs.symbol_rate, state->frontend.ops.info.symbol_rate_min, state->frontend.ops.info.symbol_rate_max);
+				dprintk(1, "%s symbol rate %u not in range (%u/%u)\n", __func__, p->delsys.dvbs.symbol_rate, state->frontend.ops.info.symbol_rate_min, state->frontend.ops.info.symbol_rate_max);
 				ret = -EOPNOTSUPP;
 			}
 			else
@@ -1886,27 +1905,29 @@ static int cx24116_set_symbolrate(struct cx24116_state *state, struct dvbfe_para
 		{
 			dprintk(1, "%s < (return -ENOTSUPP)\n", __func__);
 		}
-			ret = -EOPNOTSUPP;
+		ret = -EOPNOTSUPP;
 	}
-	dprintk(10, "%s() symbol_rate = %u\n", __func__, state->dnxt.symbol_rate);
+	dprintk(100, "%s() symbol_rate = %u\n", __func__, state->dnxt.symbol_rate);
 #else
-
 	switch (p->delivery)
 	{
 		case DVBFE_DELSYS_DVBS:
+		{
 			state->dnxt.symbol_rate = p->delsys.dvbs.symbol_rate;
 			break;
+		}
 		case DVBFE_DELSYS_DVBS2:
+		{
 			state->dnxt.symbol_rate = p->delsys.dvbs2.symbol_rate;
 			break;
+		}
 		default:
 		{
 			dprintk(1, "%s <(return -ENOTSUPP)\n", __func__);
 			ret = -EOPNOTSUPP;
 		}
 	}
-
-	dprintk(10, "%s symbol_rate = %d\n", __func__, state->dnxt.symbol_rate);
+	dprintk(20, "symbol_rate = %d\n", state->dnxt.symbol_rate);
 
 	/*  check if symbol rate is within limits */
 	if ((state->dnxt.symbol_rate > state->frontend.ops.info.symbol_rate_max)
@@ -1915,6 +1936,7 @@ static int cx24116_set_symbolrate(struct cx24116_state *state, struct dvbfe_para
 		ret = -EOPNOTSUPP;
 	}
 #endif
+	dprintk(100, "%s <\n", __func__);
 	return ret;
 }
 
@@ -1950,22 +1972,28 @@ static int cx24116_get_params(struct dvb_frontend *fe, struct dvbfe_params *p)
 	switch (p->delivery)
 	{
 		case DVBFE_DELSYS_DVBS2:
+		{
 			p->delsys.dvbs2.fec = state->dcur.fec;
 			p->delsys.dvbs2.symbol_rate = state->dcur.symbol_rate + sr_offset * 1000;
 			break;
+		}
 		case DVBFE_DELSYS_DVBS:
+		{
 			p->delsys.dvbs.fec = state->dcur.fec;
 			p->delsys.dvbs.symbol_rate = state->dcur.symbol_rate + sr_offset * 1000;
 			break;
+		}
 		default:
+		{
 			ret = -ENOTSUPP;
+		}
 	}
 	return ret;
 }
 
 /* Dagobert: enable highSR dynamically */
-#define TSMergerBaseAddress   	0x19242000
-#define TS_1394_CFG      	0x0810
+#define TSMergerBaseAddress 0x19242000
+#define TS_1394_CFG         0x0810
 
 unsigned long reg_tsm_config = 0;
 
@@ -2254,20 +2282,21 @@ static int cx24116_set_fec(struct cx24116_state *state, fe_delivery_system_t del
 
 	if (ret < 0)
 	{
-		dprintk(1, "%s failed\n", __func__);
+		dprintk(1, "%s lookup FEC failed\n", __func__);
 		return ret;
 	}
 	state->dnxt.fec = fec;
 	state->dnxt.fec_val = cx24116_MODFEC_MODES[ret].val;
 	state->dnxt.fec_mask = cx24116_MODFEC_MODES[ret].mask;
-	dprintk(20, "%s: mask/val = 0x%02x/0x%02x\n", __func__, state->dnxt.fec_mask, state->dnxt.fec_val);
+	dprintk(50, "%s: mask/val = 0x%02x/0x%02x\n", __func__, state->dnxt.fec_mask, state->dnxt.fec_val);
 	state->dnxt.fec_numb = ret;
 	return 0;
 }
 
 static int cx24116_set_symbolrate(struct cx24116_state *state, u32 rate)
 {
-	dprintk(10, "%s > (%d)\n", __func__, rate);
+	dprintk(100, "%s >\n", __func__);
+	dprintk(20, "Set symbol rate %d\n", __func__, rate);
 
 	/*  check if symbol rate is within limits */
 	if ((rate > state->frontend.ops.info.symbol_rate_max)
@@ -2427,11 +2456,11 @@ static int cx24116_set_frontend(struct dvb_frontend *fe, struct dvb_frontend_par
 
 	dprintk(10, "%s: delsys      = %d\n", __func__, state->dcur.delsys);
 	dprintk(10, "%s: modulation  = %d\n", __func__, state->dcur.modulation);
-	dprintk(10, "%s: frequency   = %d\n", __func__, state->dcur.frequency);
+	dprintk(10, "%s: frequency   = %d kHz\n", __func__, state->dcur.frequency);
 	dprintk(10, "%s: pilot       = %d (val = 0x%02x)\n", __func__, state->dcur.pilot, state->dcur.pilot_val);
 	dprintk(10, "%s: retune      = %d\n", __func__, retune);
 	dprintk(10, "%s: rolloff     = %d (val = 0x%02x)\n", __func__, state->dcur.rolloff, state->dcur.rolloff_val);
-	dprintk(10, "%s: symbol_rate = %d\n", __func__, state->dcur.symbol_rate);
+	dprintk(10, "%s: symbol_rate = %d MS/s\n", __func__, state->dcur.symbol_rate / 1000);
 	dprintk(10, "%s: FEC         = %d (mask/val = 0x%02x/0x%02x)\n", __func__, state->dcur.fec, state->dcur.fec_mask, state->dcur.fec_val);
 	dprintk(10, "%s: Inversion   = %d (val = 0x%02x)\n", __func__, state->dcur.inversion, state->dcur.inversion_val);
 
@@ -2496,7 +2525,7 @@ static int cx24116_set_frontend(struct dvb_frontend *fe, struct dvb_frontend_par
 		}
 
 		/* Set/Reset unknown */
-		cx24116_writereg(state, 0xF9, 0x00);  /* DVB S1/2 Mode */
+		cx24116_writereg(state, 0xF9, 0x00);  /* DVB-S1/2 Mode */
 		cx24116_writereg(state, 0xF3, 0x46);  /* Clock Devider */
 	}
 
@@ -2517,18 +2546,18 @@ static int cx24116_set_frontend(struct dvb_frontend *fe, struct dvb_frontend_par
 		{
 			if (cx24116_is_tuned(fe))
 			{
-				printk("tuned retune counte = %d\n", retune);
+				dprintk(20, "Tuned; retune count = %d\n", retune);
 				goto tuned;
 			}
 			msleep(10);
 		}
-		dprintk(20, "Retuned %d time(s)\n", retune);
+		dprintk(30, "Retuned %d time(s)\n", retune);
 
 		/* Toggle pilot bit when in auto-pilot */
 		if ((state->dcur.pilot == PILOT_AUTO) || (c->delivery_system == SYS_DVBS2))
 		{
 			cmd.args[0x07] ^= CX24116_PILOT_ON;
-			printk("toggle pilot\n");
+			dprintk(30, "Toggle pilot\n");
 		}
 		else if (c->delivery_system != SYS_DVBS2)
 		{
@@ -2675,14 +2704,12 @@ static int cx24116_fe_init(struct dvb_frontend *fe)
 }
 
 /*
- * LNBH221 register description:
- * I2C bus 0 and 1, addr 0x08
+ * LNBH23 register description:
+ * I2C bus 0 and 1, addr 0x0a (or 0x0b, with ADDR pin = H)
  * seen values: 0xd4 (vertical) 0xdc (horizontal), 0xd0 shutdown
- * 0xd8 ??? fixme ->was genau heisst das, nochmal lesen besonders
- * mit den "is controlled by dsqin pin" ...
  *
  * Audioniek added:
- * 0xd4 -> 11010100 -> PCL=1, TTX=1, TEN=0, LLC=1, VSEL=0, EN=1 -> Vout=14.25V
+ * 0xd4 -> 11010100 -> PCL=1, TTX=1, TEN=0, LLC=1, VSEL=0, EN=1 -> Vout=14.4V
  * 0xdc -> 11011100 -> PCL=1, TTX=1, TEN=0, LLC=1, VSEL=1, EN=1 -> Vout=19.5V
  * 0xd0 -> 11010000 -> PCL=1, TTX=1, TEN=0, LLC=1, VSEL=0, EN=0 -> Vout=0V
  * 0xd8 -> 11011000 -> PCL=1, TTX=1, TEN=0, LLC=1, VSEL=1, EN=0 -> Vout=0V
@@ -2691,30 +2718,32 @@ static int cx24116_fe_init(struct dvb_frontend *fe)
  * From Documentation (can be downloaded on st.com):
  *
  * System register, write
- * MSB                         LSB
- * PCL TTX TEN LLC VSEL EN OTF OLF Function
- *              0    0   1  X   X Vout=13.25V, Vup=15.25V
- *              0    1   1  X   X Vout=18V, Vup=20V
- *              1    0   1  X   X Vout=14.25V, Vup=16.25V
- *              1    1   1  X   X Vout=19.5V, Vup=21.5V
- *          0            1  X   X 22kHz tone is controlled by DSQIN pin
- *          1            1  X   X 22kHz tone is ON, DSQIN pin disabled
- *      0                1  X   X VoRX output is ON, output voltage controlled by VSEL and LLC
- *      1                1  X   X VoTX output is ON, 22kHz controlled by DSQIN or TEN,
- *                                output voltage level controlled by VSEL and LLC
- *  0                    1  X   X Pulsed (dynamic) current limiting is selected
- *  1                    1  X   X Static current limiting is selected
- *  X   X   X   X    X   0  X   X Power blocks disabled
+ * MSB                           LSB
+ * PCL TTX TEN LLC VSEL EN TEST4 TEST5 Function
+ *      0       0    0   1  0     0    Vout=13.4V, Vup=14.5V
+ *      0       0    1   1  0     0    Vout=18.4V, Vup=19.5V
+ *      0       1    0   1  0     0    Vout=14.4V, Vup=15.5V
+ *      0       1    1   1  0     0    Vout=19.5V, VUP=20.6V
+ *      0   0            1  0     0    22kHz tone is disabled, EXTM disabled
+ *      1   0            1  0     0    22kHz tone is controlled by DSQIN pin
+ *      1   1            1  0     0    22kHz tone is ON, DSQIN pin disabled
+ *      0                1  0     0    VoRX output is ON, VoTX tone generator is OFF
+ *      1                1  0     0    VoRX output is ON, VoTX tone generator is ON
+ *  0   X                1  0     0    Pulsed (dynamic) current limiting is selected
+ *  1   X                1  0     0    Static current limiting is selected
+ *  X   X   X   X    X   0  X     X    Power blocks disabled
  *
  * System register, read
- * MSB                         LSB (Note: S means read back as written)
- * PCL TTX TEN LLC VSEL EN OTF OLF Function
- *  S   S   S   S    S   S  0   X  Tj < 140 degrees C (normal operation)
- *  S   S   S   S    S   S  1   X  Tj > 150 degrees C (power blocks disabled)
- *  S   S   S   S    S   S  X   0  Io < Iomax (normal operation)
- *  S   S   S   S    S   S  X   1  Io > Iomax (Overload protection triggered)
+ * MSB                           LSB (Note: S means read back as written)
+ * TEST1 TEST2 TEST3 LLC VSEL EN OTF OLF Function
+ *                    S   S    S  0   X  Tj < 135 degrees C (normal operation)
+ *                    S   S    S  1   X  Tj > 150 degrees C (power blocks disabled)
+ *                    S   S    S  X   0  Io < Iomax (normal operation)
+ *                    S   S    S  X   1  Io > Iomax (Overload protection triggered)
+ *   X    X     X                        These bits must be ignored
+ *
  */
-static int lnbh221_writereg_lnb_supply(struct cx24116_state *state, char data)
+static int lnbh23_writereg_lnb_supply(struct cx24116_state *state, char data)
 {
 	int ret = -EREMOTEIO;
 	struct i2c_msg msg;
@@ -2728,10 +2757,12 @@ static int lnbh221_writereg_lnb_supply(struct cx24116_state *state, char data)
 	msg.len = 1;
 
 	dprintk(20, "%s: write 0x%02x to I2C address 0x%02x\n", __func__, data & 0xff, msg.addr & 0xff);
+	ret = i2c_transfer(state->config->i2c_adap, &msg, 1);
 
-	if ((ret = i2c_transfer(state->config->i2c_adap, &msg, 1)) != 1)
+	if ((ret != 1)
 	{
-		msg.addr = 0x0a;
+#if 0  // try LNB221 (other I2C address, but same (potentially erroneous) value)	
+		msg.addr = 0x08;  // get LNB221 I2C address
 		msg.flags = 0;
 		msg.buf = &buf;
 		msg.len = 1;
@@ -2740,6 +2771,9 @@ static int lnbh221_writereg_lnb_supply(struct cx24116_state *state, char data)
 			dprintk(1, "%s: writereg error(err == %i)\n", __func__, ret);
 			ret = -EREMOTEIO;
 		}
+#else
+		ret = -EREMOTEIO;
+#endif
 	}
 	return ret;
 }
@@ -2748,27 +2782,33 @@ int set_voltage(struct dvb_frontend *fe, fe_sec_voltage_t voltage)
 {
 	struct cx24116_state *state = fe->demodulator_priv;
 	int ret = 0;
+	int tuner_nr;
 
-	dprintk(100, "%s > (%p, %d)\n", __func__, fe, voltage);
+	dprintk(100, "%s >\n", __func__);
 
+#if defined(UFS922)
+	tuner_nr = (state->config->i2c_bus = 0 ? 0 : 1)
+#else
+	tuner_nr = 0;
+#endif
 	switch (voltage)
 	{
 		case SEC_VOLTAGE_OFF:
 		{
-			dprintk(20, "Switch LNB voltage off\n");
-			lnbh221_writereg_lnb_supply(state, 0xd0);
+			dprintk(20, "Tuner %d: switch LNB voltage off\n", tuner_nr);
+			lnbh23_writereg_lnb_supply(state, state->config->disable);
 			break;
 		}
 		case SEC_VOLTAGE_13:
 		{
-			dprintk(20, "Set LNB voltage to 13V (vertical)\n");
-			lnbh221_writereg_lnb_supply(state, 0xd4);
+			dprintk(20, "Tuner %d: set LNB voltage to 13V (vertical)\n", tuner_nr);
+			lnbh23_writereg_lnb_supply(state, state, state->config->vertical);
 			break;
 		}
 		case SEC_VOLTAGE_18:
 		{
-			dprintk(20, "Set LNB voltage to 18V (horizontal)\n");
-			lnbh221_writereg_lnb_supply(state, 0xdc);
+			dprintk(20, "Tuner %d: set LNB voltage to 18V (horizontal)\n", tuner_nr);
+			lnbh23_writereg_lnb_supply(state, state, state->config->horizontal);
 			break;
 		}
 		default:
@@ -2842,14 +2882,16 @@ struct dvb_frontend *cx24116_fe_qpsk_attach(struct cx24116_config *config)
 	state = kmalloc(sizeof(struct cx24116_state), GFP_KERNEL);
 	if (state == NULL)
 	{
+		dprintk(1, "%s: kmalloc failed\n", __func__);
 		return NULL;
 	}
+	dprintk(20, "Attaching frontend (I2C bus %d)\n", config->i2c_bus);
 
 	/* setup the state */
 	memcpy((void *)&state->ops, &cx24116_ops, sizeof(struct dvb_frontend_ops));
 
 	state->config = config;
-
+	dprintk(10, "Probing frontend with I2C bus %d, I2C address 0x%02x\n", config-> i2c_bus, config->i2c_addr); 
 	cx24116_reset(state);
 
 	/* check if the demod is present */
@@ -2857,7 +2899,7 @@ struct dvb_frontend *cx24116_fe_qpsk_attach(struct cx24116_config *config)
 	if (ret != 0x0501)
 	{
 		dprintk(50, "ret = %04x\n", ret & 0xffff);
-		dprintk(20, "Invalid probe, probably not a CX24116 device\n");
+		dprintk(5, "Invalid probe, probably not a CX24116 device\n");
 		kfree(state);
 		return NULL;
 	}
@@ -2926,7 +2968,6 @@ static int tuner_write_proc(struct file *file, const char __user *buf,  unsigned
 			goto out;
 		}
 		ret = count;
-
 	}
 
 out:
@@ -2967,12 +3008,22 @@ static struct dvb_frontend *init_cx24116_device(struct dvb_adapter *adapter, str
 	/* initialize the config data */
 	cfg->i2c_adap = i2c_get_adapter(tuner_cfg->i2c_bus);
 	cfg->i2c_bus = tuner_cfg->i2c_bus;
+#if defined(UFS922)
+	tuner_nr = (tuner_cfg->i2c_bus == 0 ? 0 : 1);
+#else
+	tuner_nr = 0;
+#endif
 	cfg->i2c_addr = tuner_cfg->i2c_addr;
+	dprintk(20, "Allocating PIO %d.%d as tuner enable\n", tuner_cfg->tuner_enable[0], tuner_cfg->tuner_enable[1]);
 	cfg->tuner_enable_pin = stpio_request_pin(tuner_cfg->tuner_enable[0], tuner_cfg->tuner_enable[1], "tuner enabl", STPIO_OUT);
-
+	if (cfg->tuner_enable_pin == NULL)
+	{
+		dprintk(1, "%s: Allocating tuner enable pin %d.%d failed for tuner %d\n", __func__, tuner_cfg->tuner_enable[0], tuner_cfg->tuner_enable[1], tuner_nr);
+	}
 	cfg->i2c_addr_lnb_supply = tuner_cfg->lnb_vsel[0];
 	cfg->vertical = tuner_cfg->lnb_vsel[1];
 	cfg->horizontal = tuner_cfg->lnb_vsel[2];
+	cfg->disable = tuner_cfg->lnb_vsel[3];
 
 	cfg->lnb_enable_pin = NULL;
 	cfg->lnb_vsel_pin = NULL;
@@ -2983,8 +3034,8 @@ static struct dvb_frontend *init_cx24116_device(struct dvb_adapter *adapter, str
 	{
 		dprintk(1, "%s: failed to allocate resources %x %p\n", __func__,cfg->i2c_addr_lnb_supply, cfg->i2c_adap);
 
-		dprintk(20, "%s: %x\n", __func__, cfg->i2c_addr_lnb_supply);
-		dprintk(20, "%s: %p\n", __func__, cfg->i2c_adap);
+		dprintk(20, "%s: I2C address LNB power controller 0x%02x\n", __func__, cfg->i2c_addr_lnb_supply);
+		dprintk(20, "%s: I2C adapter = %p\n", __func__, cfg->i2c_adap);
 
 		if (cfg->tuner_enable_pin != NULL)
 		{
@@ -3001,6 +3052,7 @@ static struct dvb_frontend *init_cx24116_device(struct dvb_adapter *adapter, str
 		kfree(cfg);
 		return NULL;
 	}
+	// set pin polarities
 	cfg->tuner_enable_act = tuner_cfg->tuner_enable[2];
 	cfg->lnb_enable_act = tuner_cfg->lnb_enable[2];
 	cfg->lnb_vsel_act = tuner_cfg->lnb_vsel[2];
@@ -3108,8 +3160,18 @@ static int cx24116_probe(struct device *dev)
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,32)
 	struct platform_device *pdev = to_platform_device(dev);
 #endif
+/*
+		.adapter = 0,
+		.i2c_bus = 1,
+		.i2c_addr = 0x05,
+		.tuner_enable = { 2, 5, 1 },
+		.lnb_enable = { -1, -1, -1 },
+		.lnb_vsel = { 0x0a, 0xc4, 0xcc, 0xc0 },
+ */
 	struct plat_tuner_data *plat_data = pdev->dev.platform_data;
 	int i;
+	int j;
+	int index;
 
 	dprintk(100, "> %s\n", __func__);
 
@@ -3118,6 +3180,7 @@ static int cx24116_probe(struct device *dev)
 		dprintk(1, "%s: No platform device data found\n");
 		return -1;
 	}
+	dprint(20, "Number of frontends = %d\n", plat_data->num_entries);
 	/* loop over the list of provided devices and add the new ones
 	   to the configuration array */
 	for (i = 0; i < plat_data->num_entries; i++)
@@ -3126,8 +3189,7 @@ static int cx24116_probe(struct device *dev)
 		&&  (plat_data->tuner_cfg[i].adapter < MAX_DVB_ADAPTERS))
 		{
 			/* check whether the configuration already exists */
-			int index = plat_data->tuner_cfg[i].adapter;
-			int j;
+			index = plat_data->tuner_cfg[i].adapter;  // get adapter number
 
 			for (j = 0; j < config_data[index].count; j++)
 			{
@@ -3143,7 +3205,7 @@ static int cx24116_probe(struct device *dev)
 			{
 				/* a new config entry */
 				dprintk(20, "%s: New device config i2c (I2C bus %d, I2C addr 0x%02x)\n", __func__, plat_data->tuner_cfg[i].i2c_bus, plat_data->tuner_cfg[i].i2c_addr);
-				config_data[index].tuner_cfg[j] = plat_data->tuner_cfg[i];
+				config_data[index].tuner_cfg[j] = plat_data->tuner_cfg[i];  // j?
 				config_data[index].count++;
 			}
 		}
@@ -3196,19 +3258,19 @@ struct plat_tuner_config tuner_resources[] =
 	{
 		.adapter = 0,
 		.i2c_bus = 0,
-		.i2c_addr = 0x0a >> 1,
+		.i2c_addr = 0x05,
 		.tuner_enable = { 2, 4, 1 },
 		.lnb_enable = { -1, -1, -1 },
-		.lnb_vsel = { 0x08, 0xd4, 0xdc },
+		.lnb_vsel = { 0x0a, 0xc4, 0xcc, 0xc0 },
 	},
 	[1] =
 	{
 		.adapter = 0,
 		.i2c_bus = 1,
-		.i2c_addr = 0x0a >> 1,
+		.i2c_addr = 0x05,
 		.tuner_enable = { 2, 5, 1 },
 		.lnb_enable = { -1, -1, -1 },
-		.lnb_vsel = { 0x08, 0xd4, 0xdc },
+		.lnb_vsel = { 0x0a, 0xc4, 0xcc, 0xc0 },
 	},
 };
 

@@ -79,18 +79,19 @@ struct cx24116_tuning
 
 struct cx24116_config
 {
-	struct i2c_adapter *i2c_adap; /* i2c bus of the tuner */
-	u8                 i2c_addr; /* i2c address of the tuner */
-	u8                 i2c_bus;
-	u8                 i2c_addr_lnb_supply; /* i2c address of the lnb_supply */
-	u8                 vertical; /* i2c value */
-	u8                 horizontal; /* i2c value */
+	struct i2c_adapter *i2c_adap;  /* i2c bus of the tuner */
+	u8                 i2c_addr;   /* i2c address of the demodulator */
+	u8                 i2c_bus;    /* bus of both the fontend and LNB power controller */
+	u8                 i2c_addr_lnb_supply; /* i2c address of the LNB power controller */
+	u8                 disable;    /* i2c value for LNB power off*/
+	u8                 vertical;   /* i2c value for LNB voltage 13V */
+	u8                 horizontal; /* i2c value for LNB voltage 18V */
 	struct stpio_pin   *tuner_enable_pin;
 	struct stpio_pin   *lnb_enable_pin;
 	struct stpio_pin   *lnb_vsel_pin;
 	u8                 tuner_enable_act; /* active state of the pin */
-	u8                 lnb_enable_act; /* active state of the pin */
-	u8                 lnb_vsel_act; /* active state of the pin */
+	u8                 lnb_enable_act;   /* active state of the pin */
+	u8                 lnb_vsel_act;     /* active state of the pin */
 };
 
 struct cx24116_core
