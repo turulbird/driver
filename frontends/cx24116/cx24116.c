@@ -2759,7 +2759,7 @@ static int lnbh23_writereg_lnb_supply(struct cx24116_state *state, char data)
 	dprintk(20, "%s: write 0x%02x to I2C address 0x%02x\n", __func__, data & 0xff, msg.addr & 0xff);
 	ret = i2c_transfer(state->config->i2c_adap, &msg, 1);
 
-	if ((ret != 1)
+	if (ret != 1)
 	{
 #if 0  // try LNB221 (other I2C address, but same (potentially erroneous) value)	
 		msg.addr = 0x08;  // get LNB221 I2C address
@@ -2787,7 +2787,7 @@ int set_voltage(struct dvb_frontend *fe, fe_sec_voltage_t voltage)
 	dprintk(100, "%s >\n", __func__);
 
 #if defined(UFS922)
-	tuner_nr = (state->config->i2c_bus = 0 ? 0 : 1)
+	tuner_nr = (state->config->i2c_bus = 0 ? 0 : 1);
 #else
 	tuner_nr = 0;
 #endif
@@ -2802,13 +2802,13 @@ int set_voltage(struct dvb_frontend *fe, fe_sec_voltage_t voltage)
 		case SEC_VOLTAGE_13:
 		{
 			dprintk(20, "Tuner %d: set LNB voltage to 13V (vertical)\n", tuner_nr);
-			lnbh23_writereg_lnb_supply(state, state, state->config->vertical);
+			lnbh23_writereg_lnb_supply(state, state->config->vertical);
 			break;
 		}
 		case SEC_VOLTAGE_18:
 		{
 			dprintk(20, "Tuner %d: set LNB voltage to 18V (horizontal)\n", tuner_nr);
-			lnbh23_writereg_lnb_supply(state, state, state->config->horizontal);
+			lnbh23_writereg_lnb_supply(state, state->config->horizontal);
 			break;
 		}
 		default:
@@ -2996,6 +2996,7 @@ static struct dvb_frontend *init_cx24116_device(struct dvb_adapter *adapter, str
 	struct cx24116_state *state;
 	struct dvb_frontend *frontend;
 	struct cx24116_config *cfg;
+	int tuner_nr;
 
 	dprintk(100, "%s > (%d)\n", __func__, tuner_cfg->i2c_bus);
 
@@ -3180,7 +3181,7 @@ static int cx24116_probe(struct device *dev)
 		dprintk(1, "%s: No platform device data found\n");
 		return -1;
 	}
-	dprint(20, "Number of frontends = %d\n", plat_data->num_entries);
+	dprintk(20, "Number of frontends = %d\n", plat_data->num_entries);
 	/* loop over the list of provided devices and add the new ones
 	   to the configuration array */
 	for (i = 0; i < plat_data->num_entries; i++)
