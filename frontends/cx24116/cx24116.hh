@@ -1,24 +1,29 @@
-/*
-    Conexant cx24116/cx24118 - DVBS/S2 Satellite demod/tuner driver
-
-    Copyright (C) 2006 Steven Toth <stoth@hauppauge.com>
-    Copyright (C) 2006 Georg Acher (acher (at) baycom (dot) de) for Reel Multimedia
-                       Added Diseqc, auto pilot tuning and hack for old DVB-API
-
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-*/
+/***************************************************************************
+ *
+ * Conexant cx24116/cx24118 - DVBS(2) Satellite demodulator/tuner driver
+ *
+ * Version for Kathrein UFS-922 (early production with two Sharp
+ *                               BS2F7VZ0165 frontends and two STM LNBH23L
+ *                               LNB power controllers)
+ *
+ * Copyright (C) 2006 Steven Toth <stoth@hauppauge.com>
+ * Copyright (C) 2006 Georg Acher (acher (at) baycom (dot) de) for Reel Multimedia
+ *                    Added DiSEqC, auto pilot tuning and hack for old DVB-API
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ */
 
 #ifndef _CX24116_H_
 #define _CX24116_H_
@@ -61,7 +66,7 @@ struct cx24116_tuning
 	fe_delivery_system_t    delsys;
 	fe_modulation_t         modulation;
 	fe_pilot_t              pilot;
-	fe_rolloff_t 	        rolloff;
+	fe_rolloff_t            rolloff;
 #endif
 
 	/* Demod values */
@@ -79,19 +84,19 @@ struct cx24116_tuning
 
 struct cx24116_config
 {
-	struct i2c_adapter *i2c_adap;            /* i2c bus of the tuner */
-	u8                 i2c_addr;             /* i2c address of the demodulator */
-	u8                 i2c_bus;              /* i2c bus of both the frontend and LNB power controller */
-	u8                 i2c_addr_lnb_supply;  /* i2c address of the LNB power controller */
-	u8                 disable;              /* i2c value for LNB power off   */
-	u8                 vertical;             /* i2c value for LNB voltage 13V */
-	u8                 horizontal;           /* i2c value for LNB voltage 18V */
+	struct i2c_adapter *i2c_adap;
+	u8                 i2c_addr;            /* i2c address of the tuner */
+	u8                 i2c_bus;             /* i2c bus of the tuner */
+	u8                 i2c_addr_lnb_supply; /* i2c address of the lnb_supply */
+	u8                 disable;             /* i2c value for LNB power off */
+	u8                 vertical;            /* i2c value for vertical */
+	u8                 horizontal;          /* i2c value for horizontal */
 	struct stpio_pin   *tuner_enable_pin;
 	struct stpio_pin   *lnb_enable_pin;
 	struct stpio_pin   *lnb_vsel_pin;
-	u8                 tuner_enable_act;     /* active state of the pin */
-	u8                 lnb_enable_act;       /* active state of the pin */
-	u8                 lnb_vsel_act;         /* active state of the pin */
+	u8                 tuner_enable_act;    /* active state of the pin */
+	u8                 lnb_enable_act;      /* active state of the pin */
+	u8                 lnb_vsel_act;        /* active state of the pin */
 };
 
 struct cx24116_core
@@ -135,9 +140,10 @@ struct cx24116_state
 
 	struct cx24116_config    *config;
 
+#if 1 //DVB_API_VERSION < 5
 	struct cx24116_tuning    dcur;
 	struct cx24116_tuning    dnxt;
-
+#endif
 	struct semaphore         fw_load_sem;
 	/* FIXME: remove thread_id if not using loader thread */
 	int                      thread_id;
