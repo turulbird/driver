@@ -240,10 +240,6 @@ obj-y += button/
 obj-y += led/
 endif
 
-ifdef UFS922
-obj-y += fan_ufs922/
-endif
-
 ifdef UFC960
 obj-y += smartcard/
 endif
