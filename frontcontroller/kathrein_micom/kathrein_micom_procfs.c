@@ -30,6 +30,7 @@
  * --------------------------------------------------------------------------
  * 20170313 Audioniek       Initial version based on tffpprocfs.c.
  * 20210614 Audioniek       Add /proc/stb/lcd/symbol_hdd.
+ * 20210703 Audioniek       Add /proc/stb/fp/fan and fan_pwm (ufs922 only).
  * 
  ****************************************************************************/
 
@@ -37,21 +38,25 @@
 #include <asm/uaccess.h>        /* copy_from_user */
 #include <linux/time.h>
 #include <linux/kernel.h>
+//#include <linux/version.h>
+#include <asm/io.h>
 #include "kathrein_micom.h"
 
 /*
  *  /proc/stb/fp
  *             |
- *             +--- version (r)             SW version of front processor (hundreds = major, ten/units = minor)
- *             +--- rtc (rw)                RTC time (UTC, seconds since Unix epoch))
- *             +--- rtc_offset (rw)         RTC offset in seconds from UTC
- *             +--- wakeup_time (rw)        Next wakeup time (absolute, local, seconds since Unix epoch)
- *             +--- was_timer_wakeup (r)    Wakeup reason (1 = timer, 0 = other)
+ *             +--- fan (rw)                Fan on/off (ufs922 only)
+ *             +--- fan_pwn (rw)            Fan speed (ufs922 only)
  *             +--- led0_pattern (rw)       Blink pattern for LED 1 (currently limited to on (0xffffffff) or off (0))
  *             +--- led1_pattern (rw)       Blink pattern for LED 2 (currently limited to on (0xffffffff) or off (0))
  *             +--- led_patternspeed (rw)   Blink speed for pattern (not implemented)
  *             +--- oled_brightness (w)     Direct control of display brightness
+ *             +--- rtc (rw)                RTC time (UTC, seconds since Unix epoch))
+ *             +--- rtc_offset (rw)         RTC offset in seconds from UTC
  *             +--- text (w)                Direct writing of display text
+ *             +--- version (r)             SW version of front processor (hundreds = major, ten/units = minor)
+ *             +--- wakeup_time (rw)        Next wakeup time (absolute, local, seconds since Unix epoch)
+ *             +--- was_timer_wakeup (r)    Wakeup reason (1 = timer, 0 = other)
  *
  *  /proc/stb/lcd/
  *             |
@@ -67,8 +72,6 @@ extern int install_e2_procs(char *name, read_proc_t *read_proc, write_proc_t *wr
 extern int remove_e2_procs(char *name, read_proc_t *read_proc, write_proc_t *write_proc);
 
 /* from other micom modules */
-//extern int micomSetIcon(int which, int on);
-//extern void VFD_set_all_icons(int onoff);
 extern int micomWriteString(char *buf, size_t len);
 extern int micomSetBrightness(int level);
 extern void clear_display(void);
@@ -84,6 +87,11 @@ extern int micomSetDisplayOnOff(unsigned char level);
 
 /* Globals */
 extern int rtc_offset;
+#if defined(UFS922)
+static u32 fan_onoff = 1;
+static u32 fan_pwm = 128;
+extern unsigned long fan_registers;
+#endif
 static u32 led0_pattern = 0;
 static u32 led1_pattern = 0;
 static int led_pattern_speed = 20;
@@ -664,6 +672,95 @@ static int oled_brightness_write(struct file *file, const char __user *buf, unsi
 	return ret;
 }
 
+#if defined(UFS922)
+static int fan_write(struct file *file, const char __user *buf, unsigned long count, void *data)
+{
+	char *page;
+	int ret = -ENOMEM;
+
+	page = (char *)__get_free_page(GFP_KERNEL);
+
+	if (page)
+	{
+		ret = -EFAULT;
+
+		if (copy_from_user(page, buf, count) == 0)
+		{
+			page[count - 1] = '\0';
+			fan_onoff = (int)simple_strtol(page, NULL, 10);
+
+			if (fan_onoff)
+			{
+				ctrl_outl(fan_pwm, fan_registers + 0x04);  // restore speed
+			}
+			else
+			{
+				ctrl_outl(0, fan_registers + 0x04);
+			}
+			ret = count;
+		}
+		free_page((unsigned long)page);
+	}
+	return ret;
+}
+
+static int fan_read(char *page, char **start, off_t off, int count, int *eof, void *data_unused)
+{
+	int len = 0;
+
+	if (NULL != page)
+	{
+		len = sprintf(page, "%d\n", fan_onoff);
+	}
+	return len;
+}
+
+static int fan_pwm_write(struct file *file, const char __user *buf, unsigned long count, void *data)
+{
+	char *page;
+	int ret = -ENOMEM;
+
+	page = (char *)__get_free_page(GFP_KERNEL);
+
+	if (page)
+	{
+		ret = -EFAULT;
+
+		if (copy_from_user(page, buf, count) == 0)
+		{
+			page[count - 1] = '\0';
+
+			fan_pwm = (int)simple_strtol(page, NULL, 10);
+			if (fan_pwm > 255)
+			{
+				fan_pwm = 255;
+			}
+			if (fan_pwm < 0)
+			{
+				fan_pwm = 0;
+			}
+			// fan stops at about pwm=128 so:
+			fan_pwm = (fan_pwm / 2) + 128;
+			ctrl_outl(fan_pwm, fan_registers + 0x04);
+			ret = count;
+		}
+		free_page((unsigned long)page);
+	}
+	return ret;
+}
+
+static int fan_pwm_read(char *page, char **start, off_t off, int count, int *eof, void *data_unused)
+{
+	int len = 0;
+
+	if (NULL != page)
+	{
+		len = sprintf(page, "%d\n", fan_pwm);
+	}
+	return len;
+}
+#endif
+
 /*
 static int null_write(struct file *file, const char __user *buf, unsigned long count, void *data)
 {
@@ -680,6 +777,10 @@ struct fp_procs
 {
 	{ "stb/fp/rtc", read_rtc, write_rtc },
 	{ "stb/fp/rtc_offset", read_rtc_offset, write_rtc_offset },
+#if defined(UFS922)
+	{ "stb/fp/fan", fan_read, fan_write },
+	{ "stb/fp/fan_pwm", fan_pwm_read, fan_pwm_write },
+#endif
 	{ "stb/fp/led0_pattern", led0_pattern_read, led0_pattern_write },
 	{ "stb/fp/led1_pattern", led1_pattern_read, led1_pattern_write },
 	{ "stb/fp/led_pattern_speed", led_pattern_speed_read, led_pattern_speed_write },

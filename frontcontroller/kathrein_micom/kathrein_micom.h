@@ -33,9 +33,10 @@
  * Changes
  *
  * Date     By              Description
- * Date     By              Description
  * ----------------------------------------------------------------------------
- * 20170312 Audioniek       Add spupport for dprintk(0,... (print always)
+ * 20170312 Audioniek       Add support for dprintk(0,... (print always).
+ * 20210703 Audioniek       Add support for VFDSETFAN (ufs922 only).
+ *
  */
 #ifndef _kathrein_micom_h
 #define _kathrein_micom_h
@@ -45,12 +46,13 @@ extern short paramDebug;
 #define TAGDEBUG "[kathrein micom] "
 
 #ifndef dprintk
-#define dprintk(level, x...) do { \
-		if (((paramDebug) && (paramDebug >= level)) || (level == 0)) \
-		{ \
-			printk(TAGDEBUG x); \
-		} \
-	} while (0)
+#define dprintk(level, x...) do \
+{ \
+	if (((paramDebug) && (paramDebug >= level)) || (level == 0)) \
+	{ \
+		printk(TAGDEBUG x); \
+	} \
+} while (0)
 #endif
 
 extern int micom_init_func(void);
@@ -78,16 +80,19 @@ extern tFrontPanelOpen FrontPanelOpen[LASTMINOR];
 #define VFD_MAJOR            147
 
 /* ioctl numbers ->hacky */
-#define VFDCGRAMWRITE1		 0xc0425a01
-#define VFDCGRAMWRITE2		 0x40425a01
+#define VFDDISPLAYCHARS      0xc0425a00
+#define VFDCGRAMWRITE1       0xc0425a01
+#define VFDCGRAMWRITE2       0x40425a01
 #define VFDBRIGHTNESS        0xc0425a03
+#define VFDDISPLAYWRITEONOFF 0xc0425a05
 #define VFDDRIVERINIT        0xc0425a08
 #define VFDICONDISPLAYONOFF  0xc0425a0a
-#define VFDDISPLAYWRITEONOFF 0xc0425a05
-#define VFDDISPLAYCHARS      0xc0425a00
 
+#define VFDSETRCCODE         0xc0425af5  // CAUTION: was 0xc0425af6
 //#define VFDSETPOWERONTIME    0xc0425af6
-#define VFDSETRCCODE         0xc0425af6
+#if defined(UFS922)
+#define VFDSETFAN            0xc0425af6
+#endif
 #define VFDGETVERSION        0xc0425af7
 #define VFDLEDBRIGHTNESS     0xc0425af8
 #define VFDGETWAKEUPMODE     0xc0425af9
@@ -110,6 +115,7 @@ extern tFrontPanelOpen FrontPanelOpen[LASTMINOR];
 #define CmdSetIcon          0x11  //  icon#      -      -    -     -     -     -     -      -
 #define CmdClearIcon        0x12  //  icon#      -      -    -     -     -     -     -      -
 #define CmdClearLED         0x22  //  LED#       -      -    -     -     -     -     -      -
+#define CmdSetVFDText       0x21  //  *text      #bytes -    -     -     -     -     -      -
 #define CmdSetVFDBrightness 0x25  //  brightness -      -    -     -     -     -     -      -
 #define CmdSetTime          0x31  //  mjdh       mjdL   hour min   sec   -     -     -      -
 #define CmdSetWakeUpTime    0x32  //  mjdh       mjdL   hour min   sec   -     -     -      -
@@ -142,6 +148,13 @@ struct set_light_s
 {
 	int onoff;
 };
+
+#if defined(UFS922)
+struct set_fan_s
+{
+	int speed;
+};
+#endif
 
 /* time must be given as follows:
  * time[0] & time[1] = MJD
@@ -179,6 +192,9 @@ struct micom_ioctl_data
 		struct set_mode_s mode;
 		struct set_standby_s standby;
 		struct set_time_s time;
+#if defined(UFS922)
+		struct set_fan_s fan;
+#endif
 	} u;
 };
 
@@ -275,4 +291,4 @@ extern struct saved_data_s lastdata;
 extern int rtc_offset;
 
 #endif  // _kathrein_micom_h
-//vim:ts=4
+// vim:ts=4

@@ -1,4 +1,5 @@
-/*
+﻿/*****************************************************************************
+ *
  * kathren_micom_main.c
  *
  * (c) 2009 Dagobert@teamducktales
@@ -36,6 +37,25 @@
  * two commands that are not implemented:
  * 0x55 -> no answer
  * 0x55 0x02 0xff 0x80 0x46 0x01 0x00 0x00
+ *
+ *****************************************************************************
+ *
+ * This driver covers the following models:
+ * 
+ * Kathrein UFS912
+ * Kathrein UFS913
+ * Kathrein UFS922
+ * Kathrein UFC960
+ *
+ ******************************************************************************
+ *
+ * Changes
+ *
+ * Date     By              Description
+ * ----------------------------------------------------------------------------
+ * 20210703 Audioniek       Added code for all icons on/off.
+ * 20210703 Audioniek       Add support for VFDSETFAN (ufs922 only).
+ *
  */
 
 #include <asm/io.h>
@@ -113,6 +133,14 @@ static int dataReady = 0;
 int waitTime = 1000;
 
 char *gmt_offset = "3600";  // GMT offset is plus one hour as default
+
+#if defined(UFS922)
+unsigned long fan_registers;
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,17)
+struct stpio_pin* fan_pin1;
+#endif
+struct stpio_pin* fan_pin;
+#endif
 
 #if defined CONFIG_RTC_CLASS
 int rtc_offset = 3600;
@@ -631,6 +659,58 @@ int micomTask(void *dummy)
 	return 0;
 }
 
+#if defined(UFS922)
+/******************************************************
+ *
+ * Fan speed code
+ *
+ * Code taken from fan_ufs922.c
+ *
+ */
+static int __init init_fan_module(void)
+{
+	fan_registers = (unsigned long)ioremap(0x18010000, 0x100);
+	dprintk(50, "fan_registers = 0x%.8lx\n", fan_registers);
+
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,17)
+	fan_pin1 = stpio_request_pin (4, 7, "fan ctrl", STPIO_ALT_OUT);
+	fan_pin = stpio_request_pin (4, 5, "fan ctrl", STPIO_OUT);
+	stpio_set_pin(fan_pin, 1);
+	dprintk(50, "fan pin %p\n", fan_pin);
+#else
+	fan_pin = stpio_request_pin (4, 7, "fan ctrl", STPIO_ALT_OUT);
+#endif
+
+	// not sure if first one is necessary
+	ctrl_outl(0x200, fan_registers + 0x50);
+	
+	// set a default speed, because default is zero
+	ctrl_outl(130, fan_registers + 0x4);
+	return 0;
+}
+
+static void __exit cleanup_fan_module(void)
+{
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,17) 
+	if (fan_pin1 != NULL)
+	{
+		stpio_free_pin (fan_pin1);
+	}
+	if (fan_pin != NULL)
+	{
+		stpio_set_pin(fan_pin, 0);
+		stpio_free_pin (fan_pin);
+	}	
+#else
+	if (fan_pin != NULL)
+	{
+		stpio_free_pin(fan_pin);
+	}
+#endif
+}
+// end of fan driver code
+#endif
+
 /*----- RTC driver -----*/
 #if defined CONFIG_RTC_CLASS
 /* struct rtc_time
@@ -924,6 +1004,10 @@ static int __init micom_init_module(void)
 		dprintk(1, "%s platform_device_register_simple failed: %ld\n", __func__, PTR_ERR(rtc_pdev));
 	}
 #endif
+#if defined(UFS922)
+	// fan driver
+	init_fan_module();
+#endif
 	create_proc_fp();
 	dprintk(100, "%s <\n", __func__);
 	return 0;
@@ -940,7 +1024,10 @@ static void __exit micom_cleanup_module(void)
 #endif
 
 	remove_proc_fp();
-
+#if defined(UFS922)
+	// fan driver
+	cleanup_fan_module();
+#endif
 	unregister_chrdev(VFD_MAJOR, "VFD");
 
 	free_irq(InterruptLine, NULL);

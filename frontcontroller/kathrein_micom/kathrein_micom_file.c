@@ -42,6 +42,7 @@
  * 20170313 Audioniek       Texts longer than the displaylength are scrolled
  *                          once (/dev/vfd only).
  * 20210624 Audioniek       Add VFDSETLED mode 0.
+ * 20210701 Audioniek       VFDSETFAN IOCTL on UFS922 added.
  */
 
 #include <asm/io.h>
@@ -77,6 +78,14 @@ char ioctl_data[8];
 tFrontPanelOpen FrontPanelOpen [LASTMINOR];
 
 struct saved_data_s lastdata;
+
+#if defined(UFS922)
+extern unsigned long fan_registers;
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,17)
+extern struct stpio_pin *fan_pin1;
+#endif
+extern struct stpio_pin *fan_pin;
+#endif
 
 /***************************************************************************
  *
@@ -239,7 +248,7 @@ unsigned int VFD_CHARTABLE[256] =
 	0x0000,  // 0x8c, reserved
 	0x0000,  // 0x8d, reserved
 	0x0000,  // 0x8e, reserved
-	0x0000,  // 0x8f,reserved
+	0x0000,  // 0x8f, reserved
 
 	0x0000,  // 0x90, reserved
 	0x0000,  // 0x91, reserved
@@ -716,11 +725,11 @@ int micomSetRCcode(int code)
 	buffer[2] = 0x80;
 	buffer[3] = 0x48;
 	buffer[4] = code & 0x07;  // RC code 1 to 4
-	res = micomWriteCommand(0x55, buffer, 7, NO_ACK);
+	res = micomWriteCommand(CmdSetRCcode, buffer, 7, NO_ACK);
 
 	memset(buffer, 0, sizeof(buffer));
 	buffer[0] = 0x2;
-	res = micomWriteCommand(0x03, buffer, 7, NO_ACK);
+	res = micomWriteCommand(CmdSetModelcode, buffer, 7, NO_ACK);
 	msleep(10);
 
 	dprintk(100, "%s <\n", __func__);
@@ -738,7 +747,7 @@ int micomSetIcon(int which, int on)
 	int  res = 0;
 
 	dprintk(100, "%s > Icon %d, state %s\n", __func__, which, on ? "on" : "off");
-	if (which < 1 || which > 16)
+	if (which < 1 || which > ICON_MAX - 1)
 	{
 		dprintk(1, "Icon number %d out of range (1..%d)\n", which, ICON_MAX - 1);
 		return -EINVAL;
@@ -748,11 +757,11 @@ int micomSetIcon(int which, int on)
 
 	if (on == 1)
 	{
-		res = micomWriteCommand(0x11, buffer, 7, NEED_ACK);
+		res = micomWriteCommand(CmdSetIcon, buffer, 7, NEED_ACK);
 	}
 	else
 	{
-		res = micomWriteCommand(0x12, buffer, 7, NEED_ACK);
+		res = micomWriteCommand(CmdClearIcon, buffer, 7, NEED_ACK);
 	}
 	dprintk(100, "%s <\n", __func__);
 	return res;
@@ -1188,7 +1197,7 @@ int micomGetWakeUpMode(unsigned char *mode)
 
 	memset(buffer, 0, sizeof(buffer));
 	errorOccured   = 0;
-	res = micomWriteCommand(0x43, buffer, 7, NEED_ACK);
+	res = micomWriteCommand(CmdGetWakeUpMode, buffer, 7, NEED_ACK);
 	if (res < 0)
 	{
 		dprintk(1, "%s < res %d\n", __func__, res);
@@ -1429,7 +1438,7 @@ int micomWriteString(unsigned char *aBuf, int len)
 		i++;
 		j = j + VFD_CHARSIZE;
 	}
-	res = micomWriteCommand(0x21, bBuf, VFD_LENGTH * VFD_CHARSIZE, NEED_ACK);
+	res = micomWriteCommand(CmdSetVFDText, bBuf, VFD_LENGTH * VFD_CHARSIZE, NEED_ACK);
 
 	dprintk(100, "%s <\n", __func__);
 	return res;
@@ -1977,6 +1986,26 @@ static int MICOMdev_ioctl(struct inode *Inode, struct file *File, unsigned int c
 			mode = 0;  // go back to vfd mode
 			break;
 		}
+#if defined(UFS922)
+		case VFDSETFAN:
+		{
+			if (micom->u.fan.speed > 255)
+			{
+				micom->u.fan.speed = 255;
+			}
+			if (micom->u.fan.speed < 0)
+			{
+				micom->u.fan.speed = 0;
+			}
+			// fan stops at about pwm=128 so:
+			micom->u.fan.speed = (micom->u.fan.speed / 2) + 128;
+//			dprintk(20, "Set fan speed to: %d\n", micom->u.fan.speed);
+			ctrl_outl(micom->u.fan.speed, fan_registers + 0x04);
+			res = 0;
+			mode = 0;
+			break;
+		}
+#endif
 		case 0x5305:
 		case VFDCGRAMWRITE1:
 		case VFDCGRAMWRITE2:
