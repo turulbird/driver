@@ -1285,6 +1285,7 @@ struct ProcStructure_s e2Proc[] =
 
 // Enigma2 implementation of fan control, doubles the historic various SH4 ones... (TODO: add these)
 #if defined(CUBEREVO) \
+ || defined(CUBEREVO_9500HD) \
  || defined(IPBOX9900) \
  || defined(IPBOX99) \
  || defined(ADB_BOX) \
@@ -1294,6 +1295,8 @@ struct ProcStructure_s e2Proc[] =
 	{cProcEntry, "stb/fp/fan",                                                       NULL, NULL, NULL, NULL, ""},
 #endif
 #if defined(ADB_BOX) \
+ || defined(CUBEREVO) \
+ || defined(CUBEREVO_9500HD) \
  || defined(IPBOX9900) \
  || defined(IPBOX99) \
  || defined(UFS922)
