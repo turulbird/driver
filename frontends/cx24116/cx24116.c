@@ -157,9 +157,9 @@ static int pilot = 0;
 
 /* arg offset for DiSEqC */
 #define CX24116_DISEQC_BURST  (1)
-#define CX24116_DISEQC_ARG2_2 (2)  /* unknown value=2 */
-#define CX24116_DISEQC_ARG3_0 (3)  /* unknown value=0 */
-#define CX24116_DISEQC_ARG4_0 (4)  /* unknown value=0 */
+#define CX24116_DISEQC_ARG2_2 (2)  /* unknown value = 2 */
+#define CX24116_DISEQC_ARG3_0 (3)  /* unknown value = 0 */
+#define CX24116_DISEQC_ARG4_0 (4)  /* unknown value = 0 */
 #define CX24116_DISEQC_MSGLEN (5)
 #define CX24116_DISEQC_MSGOFS (6)
 
@@ -193,7 +193,7 @@ cx24116_COMMANDS[] =
 };
 
 /* A table of modulation, fec and configuration bytes for the demod.
- * Not all S2 mmodulation schemes are supported and not all rates
+ * Not all S2 modulation schemes are supported and not all rates
  * with a scheme are supported; especially, no auto detect when in
  * S2 mode.
  */
@@ -215,7 +215,7 @@ struct cx24116_modfec
 #if 0 //DVB_API_VERSION < 5
 	/* QPSK. For unknown rates we set to hardware to to detect 0xfe 0x30 */
 	{ DVBFE_DELSYS_DVBS,  DVBFE_MOD_QPSK, DVBFE_FEC_NONE, 0xfe, 0x30 },
-	{ DVBFE_DELSYS_DVBS,  DVBFE_MOD_QPSK, DVBFE_FEC_1_2,  0x02, x2e },
+	{ DVBFE_DELSYS_DVBS,  DVBFE_MOD_QPSK, DVBFE_FEC_1_2,  0x02, 0x2e },
 	{ DVBFE_DELSYS_DVBS,  DVBFE_MOD_QPSK, DVBFE_FEC_2_3,  0x04, 0x2f },
 	{ DVBFE_DELSYS_DVBS,  DVBFE_MOD_QPSK, DVBFE_FEC_3_4,  0x08, 0x30 },
 	{ DVBFE_DELSYS_DVBS,  DVBFE_MOD_QPSK, DVBFE_FEC_4_5,  0xfe, 0x30 },
@@ -386,7 +386,7 @@ static const struct dvbfe_info dvbs2_info =
 		                   | DVBFE_FEC_4_5
 		                   | DVBFE_FEC_5_6
 		                   | DVBFE_FEC_8_9
-		                   | DVBFE_FEC_9_10,
+		                   | DVBFE_FEC_9_10
 	},
 	.frequency_min         =  950000,
 	.frequency_max         = 2150000,
@@ -415,8 +415,7 @@ static int cx24116_lookup_fecmod(struct cx24116_state *state, enum dvbfe_delsys 
 	unsigned int i;
 	int ret = -EOPNOTSUPP;
 
-	dprintk(5, "delsys %d, modulation %d, fec = %d\n", d, m, f);
-
+	dprintk(20, "delsys %d, modulation %d, fec = %d\n", d, m, f);
 	for (i = 0; i < sizeof(cx24116_MODFEC_MODES) / sizeof(struct cx24116_modfec); i++)
 	{
 		if ((d == cx24116_MODFEC_MODES[i].delsys)
@@ -427,7 +426,7 @@ static int cx24116_lookup_fecmod(struct cx24116_state *state, enum dvbfe_delsys 
 			break;
 		}
 	}
-	dprintk(5, "%s: ret = %d\n", __func__, ret);
+	dprintk(100, "%s < ret = %d\n", __func__, ret);
 	return ret;
 }
 #endif
@@ -444,7 +443,7 @@ static int cx24116_reset(struct cx24116_state *state)
 	int frontend_nr = 0;
 #endif
 
-	dprintk(100, "%s: >\n", __func__);
+	dprintk(100, "%s >\n", __func__);
 
 	if (cfg->tuner_enable_pin != NULL)
 	{
@@ -456,7 +455,7 @@ static int cx24116_reset(struct cx24116_state *state)
 
 	// Set LNB power off by default
 	lnbh23_writereg_lnb_supply(state, cfg->disable);
-	dprintk(100, "%s: <\n", __func__);
+	dprintk(100, "%s <\n", __func__);
 	return 0;
 }
 
@@ -520,13 +519,11 @@ static int cx24116_writeregN(const struct cx24116_state *state, int reg, const u
 	dprintk(20, "Old timeout %d\n", timeout);
 	state->config->i2c_adap->timeout = 20;
 #endif
-
 	if (ret != 1)
 	{
 		dprintk(1, "%s: writereg error(err == %i, reg == 0x%02x\n", __func__, ret, reg);
 		ret = -EREMOTEIO;
 	}
-
 #ifndef CONFIG_I2C_STM
 #else
 	state->config->i2c_adap->timeout = timeout;
@@ -622,7 +619,7 @@ static int cx24116_get_tune_settings(struct dvb_frontend *fe, struct dvb_fronten
 	/* FIXME: Hab das jetzt mal eingebaut, da bei SET_FRONTEND DVB-S2 nicht gehandelt wird.
 	 * Im Prinzip setze ich hier die Werte aus SET_FRONTEND (siehe dvb-core) mal von min_delay
 	 * abgesehen.
-	 * DIES MUSS MAL BEOBACHTETE WERDEN
+	 * DIES MUSS MAL BEOBACHTET WERDEN
 	 */
 	fetunesettings->step_size = state->dcur.symbol_rate / 16000;
 	fetunesettings->max_drift = state->dcur.symbol_rate / 2000;
@@ -675,7 +672,7 @@ static int cx24116_read_snr(struct dvb_frontend *fe, u16 *snr)
 	}
 	else
 	{
-		*snr = snr_tab[(snr_reading & 0xf0) >> 4]
+		*snr =  snr_tab[(snr_reading & 0xf0) >> 4]
 		     + (snr_tab[(snr_reading & 0x0f)] >> 4);
 	}
 	dprintk(100, "%s < SNR (raw / cooked) = (0x%02x / 0x%04x)\n", __func__, snr_reading, *snr);
@@ -878,12 +875,16 @@ static enum dvbfe_fec cx24116_convert_oldfec_to_new(enum fe_code_rate c)
 	return fec;
 }
 
+/* **********************************************
+ *
+ */
 /* Why isn't this a generic frontend core function? */
 static enum dvbfe_fec cx24116_convert_newfec_to_old(enum dvbfe_fec c, enum dvbfe_delsys d, enum dvbfe_modulation m)
 {
 	fe_code_rate_t fec;
 
-	dprintk(100, "%s > delsys %d, fec %d, mod %d\n", __func__, d, c, m);
+	dprintk(100, "%s >\n", __func__);
+	dprintk(50, "delsys %d, fec %d, mod %d\n", d, c, m);
 
 	if (d == DVBFE_DELSYS_DVBS)
 	{
@@ -1056,7 +1057,8 @@ static enum dvbfe_fec cx24116_convert_newfec_to_old(enum dvbfe_fec c, enum dvbfe
 			}
 		}
 	}
-	dprintk(100, "%s < fec = %d\n", __func__, fec);
+	dprintk(50, "%s: fec = %d\n", __func__, fec);
+	dprintk(100, "%s <\n", __func__);
 	return fec;
 }
 
@@ -1077,7 +1079,7 @@ static enum dvbfe_modulation cx24116_get_modulation_from_fec(enum fe_code_rate c
 		case FEC_AUTO:
 		{
 			return DVBFE_MOD_QPSK;
-			break;
+//			break;
 		}
 		case FEC_S2_QPSK_1_2:
 		case FEC_S2_QPSK_2_3:
@@ -1090,7 +1092,7 @@ static enum dvbfe_modulation cx24116_get_modulation_from_fec(enum fe_code_rate c
 		case FEC_S2_QPSK_9_10:
 		{
 			return DVBFE_MOD_QPSK;
-			break;
+//			break;
 		}
 		case FEC_S2_8PSK_1_2:
 		case FEC_S2_8PSK_2_3:
@@ -1103,12 +1105,12 @@ static enum dvbfe_modulation cx24116_get_modulation_from_fec(enum fe_code_rate c
 		case FEC_S2_8PSK_9_10:
 		{
 			return DVBFE_MOD_8PSK;
-			break;
+//			break;
 		}
 		default:
 		{
 			return DVBFE_MOD_QPSK;
-			break;
+//			break;
 		}
 	}
 }
@@ -1127,9 +1129,7 @@ static int cx24116_create_new_qpsk_feparams(struct dvb_frontend *fe, struct dvb_
 	dprintk(100, "%s >\n", __func__);
 
 	memset(pTo, 0, sizeof(struct dvbfe_params));
-
-	dprintk(10, "cx24116: (vor Umwandlung) FREQ %i SR %i FEC %x \n", pFrom->frequency, pFrom->u.qpsk.symbol_rate, pFrom->u.qpsk.fec_inner);
-
+	dprintk(20, "(vor Umwandlung) FREQ %i SR %i FEC %x \n", pFrom->frequency, pFrom->u.qpsk.symbol_rate, pFrom->u.qpsk.fec_inner);
 	pTo->frequency = pFrom->frequency;
 	// HACK from E2: Bits 2..3 are rolloff in DVB-S2; inversion can have normally values 0,1,2
 	pTo->inversion = pFrom->inversion & 3;
@@ -1144,12 +1144,12 @@ static int cx24116_create_new_qpsk_feparams(struct dvb_frontend *fe, struct dvb_
 				rolloff = 0;
 				break;
 			}
-			case 4:   // 0.25
+			case 4:  // 0.25
 			{
 				rolloff = 1;
 				break;
 			}
-			case 8:   // 0.20
+			case 8:  // 0.20
 			{
 				rolloff = 2;
 				break;
@@ -1159,7 +1159,7 @@ static int cx24116_create_new_qpsk_feparams(struct dvb_frontend *fe, struct dvb_
 		{
 			switch (pFrom->inversion & 0x30)
 			{
-				case 0:     // pilot off
+				case 0:  // pilot off
 				{
 					pilot = 0;
 					break;
@@ -1191,15 +1191,17 @@ static int cx24116_create_new_qpsk_feparams(struct dvb_frontend *fe, struct dvb_
 	pTo->delsys.dvbs.symbol_rate = pFrom->u.qpsk.symbol_rate;
 	pTo->delsys.dvbs.fec = cx24116_convert_oldfec_to_new(pFrom->u.qpsk.fec_inner & 255);
 
-	dprintk(10, "FREQ %i SR %i FEC %x FECN %08x MOD %i DS %i \n", pTo->frequency, pTo->delsys.dvbs.symbol_rate,
-		pFrom->u.qpsk.fec_inner, pTo->delsys.dvbs.fec, pTo->delsys.dvbs.modulation, pTo->delivery);
+	dprintk(20, "FREQ %i SR %i FEC %x FECN %08x MOD %i DS %i \n",
+		pTo->frequency, pTo->delsys.dvbs.symbol_rate,
+		pFrom->u.qpsk.fec_inner,
+		pTo->delsys.dvbs.fec, pTo->delsys.dvbs.modulation, pTo->delivery);
 
 	/* I guess we could do more validation on the old fe params and return error */
 	return ret;
 }
 
 /* Why isn't this a generic frontend core function? */
-static int x24116_create_old_qpsk_feparams(struct dvb_frontend *fe, struct dvbfe_params *pFrom, struct dvb_frontend_parameters *pTo)
+static int cx24116_create_old_qpsk_feparams(struct dvb_frontend *fe, struct dvbfe_params *pFrom, struct dvb_frontend_parameters *pTo)
 {
 	int ret = 0;
 
@@ -1428,7 +1430,7 @@ static int cx24116_read_signal_strength(struct dvb_frontend *fe, u16 *signal_str
 		/* Dagobert: fixme: this does not work currently. Do not know why, but
 		 * register 0x9d is always 0x2f and 0x9e is always 0x00. Mysteriously,
 		 * on ufs922 this works great and using the orig soft the regs
-		 * have correct values ...
+		 * have correct values...
 		 */
 		sig_reading = ((cx24116_readreg(state, CX24116_REG_STATUS) & 0xc0) << 8)
 		            |  (cx24116_readreg(state, CX24116_REG_SIGNAL) << 6);
@@ -1584,7 +1586,7 @@ static int cx24116_set_tone(struct dvb_frontend *fe, fe_sec_tone_mode_t tone)
 	struct cx24116_cmd cmd;
 	int ret;
 
-	dprintk(100, "%s > %d\n", __func__, tone);
+	dprintk(100, "%s > tone %s\n", __func__, tone ? "on" : "off");
 	if ((tone != SEC_TONE_ON) && (tone != SEC_TONE_OFF))
 	{
 		dprintk(1, "%s: Invalid value: tone = %d\n", __func__, tone);
@@ -1803,7 +1805,7 @@ static void cx24116_release(struct dvb_frontend *fe)
 
 static int cx24116_set_inversion(struct cx24116_state *state, fe_spectral_inversion_t inversion)
 {
-	dprintk(100, "%s >\n", __func__);
+	dprintk(100, "%s > (inversion=%d)\n", __func__, inversion);
 
 	switch (inversion)
 	{
@@ -1856,7 +1858,7 @@ static int cx24116_set_fec(struct cx24116_state *state, struct dvbfe_params *p)
 		}
 		default:
 		{
-			printk("%s(return enotsupp)\n", __func__);
+			dprintk(1, "%s < return -EOPNOTSUPP\n", __func__);
 			ret = -EOPNOTSUPP;
 		}
 	}
@@ -1865,10 +1867,11 @@ static int cx24116_set_fec(struct cx24116_state *state, struct dvbfe_params *p)
 		state->dnxt.fec_val = cx24116_MODFEC_MODES[ret].val;
 		state->dnxt.fec_mask = cx24116_MODFEC_MODES[ret].mask;
 		dprintk(20, "%s: fec/mask = 0x%02x/0x%02x\n", __func__, state->dnxt.fec_val, state->dnxt.fec_mask);
+
 		state->dnxt.fec_numb = ret;
 		ret = 0;
 	}
-	dprintk(100, "%s(ret =%d)\n", __func__, ret);
+	dprintk(100, "%s < ret = %d\n", __func__, ret);
 	return ret;
 }
 
@@ -1883,11 +1886,11 @@ static int cx24116_set_symbolrate(struct cx24116_state *state, struct dvbfe_para
 	{
 		case DVBFE_DELSYS_DVBS:
 		{
-			/*  check if symbol rate is within limits */
+			/* check if symbol rate is within limits */
 			if ((p->delsys.dvbs.symbol_rate > state->frontend.ops.info.symbol_rate_max)
 			||  (p->delsys.dvbs.symbol_rate < state->frontend.ops.info.symbol_rate_min))
 			{
-				dprintk(1, "%s symbol rate %u not in range (%u/%u)\n", __func__, p->delsys.dvbs.symbol_rate, state->frontend.ops.info.symbol_rate_min, state->frontend.ops.info.symbol_rate_max);
+				dprintk(1, "%s < symbol rate %u not in range (%u/%u)\n", __func__, p->delsys.dvbs.symbol_rate, state->frontend.ops.info.symbol_rate_min, state->frontend.ops.info.symbol_rate_max);
 				ret = -EOPNOTSUPP;
 			}
 			else
@@ -1898,11 +1901,11 @@ static int cx24116_set_symbolrate(struct cx24116_state *state, struct dvbfe_para
 		}
 		case DVBFE_DELSYS_DVBS2:
 		{
-			/*  check if symbol rate is within limits */
+			/* check if symbol rate is within limits */
 			if ((p->delsys.dvbs2.symbol_rate > state->frontend.ops.info.symbol_rate_max)
 			||  (p->delsys.dvbs2.symbol_rate < state->frontend.ops.info.symbol_rate_min))
 			{
-				dprintk(1, "%s symbol rate %u not in range (%u/%u)\n", __func__, p->delsys.dvbs.symbol_rate, state->frontend.ops.info.symbol_rate_min, state->frontend.ops.info.symbol_rate_max);
+				dprintk(1, "%s < symbol rate %u not in range (%u/%u)\n", __func__, p->delsys.dvbs.symbol_rate, state->frontend.ops.info.symbol_rate_min, state->frontend.ops.info.symbol_rate_max);
 				ret = -EOPNOTSUPP;
 			}
 			else
@@ -1913,10 +1916,10 @@ static int cx24116_set_symbolrate(struct cx24116_state *state, struct dvbfe_para
 		default:
 		{
 			dprintk(1, "%s < (return -ENOTSUPP)\n", __func__);
+			ret = -EOPNOTSUPP;
 		}
-		ret = -EOPNOTSUPP;
 	}
-	dprintk(100, "%s() symbol_rate = %u\n", __func__, state->dnxt.symbol_rate);
+	dprintk(20, "%s symbol_rate = %u\n", __func__, state->dnxt.symbol_rate);
 #else
 	switch (p->delivery)
 	{
@@ -1938,7 +1941,7 @@ static int cx24116_set_symbolrate(struct cx24116_state *state, struct dvbfe_para
 	}
 	dprintk(20, "symbol_rate = %d\n", state->dnxt.symbol_rate);
 
-	/*  check if symbol rate is within limits */
+	/* check if symbol rate is within limits */
 	if ((state->dnxt.symbol_rate > state->frontend.ops.info.symbol_rate_max)
 	||  (state->dnxt.symbol_rate < state->frontend.ops.info.symbol_rate_min))
 	{
@@ -2015,7 +2018,6 @@ static int cx24116_set_params(struct dvb_frontend *fe, struct dvbfe_params *p)
 
 	dprintk(100, "%s >\n", __func__);
 
-
 //FIXME: Das mit den cx24116_tunesettings dnxt und dcur ist doch auch
 //totaler quatsch. warum merke ich mir nicht dvbfe_params???
 
@@ -2048,8 +2050,7 @@ static int cx24116_set_params(struct dvb_frontend *fe, struct dvbfe_params *p)
 	}
 	/* discard the 'current' tuning parameters and prepare to tune */
 	memcpy(&state->dcur, &state->dnxt, sizeof(state->dcur));
-
-	dprintk (1, "%s: FREQ %i SR %i FECN %d DS %i INV = %d ROLL = %d INV_VAL = %d VAL/MASK %d/%d\n", __func__,
+	dprintk(20, "FREQ %i SR %i FECN %d DS %i INV = %d ROLL = %d INV_VAL = %d VAL/MASK %d/%d\n",
 		state->dcur.frequency, state->dcur.symbol_rate, state->dcur.fec,
 		state->dcur.delivery, state->dcur.inversion, state->dcur.rolloff,
 		state->dcur.inversion_val, state->dcur.fec_val, state->dcur.fec_mask);
@@ -2087,7 +2088,7 @@ static int cx24116_set_params(struct dvb_frontend *fe, struct dvbfe_params *p)
 	}
 	else
 	{
-		cmd.args[0x0c] = 0x02;      // 0.35
+		cmd.args[0x0c] = 0x02;  // 0.35
 	}
 	cmd.args[0x0d] = state->dcur.fec_mask;
 
@@ -2096,15 +2097,15 @@ static int cx24116_set_params(struct dvb_frontend *fe, struct dvbfe_params *p)
 	if (above30msps)
 	{
 		/* 2010/01/07: should be revised with new fw202rc !!!!!
-		 * currently I does not get channels with this
-		 * symbol rates so I cant test.
+		 * currently I do not get channels with these
+		 * symbol rates so I cannot test.
 		 *
 		 */
 		cmd.args[0x0e] = 0x04;
 		cmd.args[0x0f] = 0x00;
 		cmd.args[0x10] = 0x01;
-		cmd.args[0x11] = 0x77;  /* 0xEC */
-		cmd.args[0x12] = 0x36;  /* 0xFA */
+		cmd.args[0x11] = 0x77 /* 0xEC */ ;
+		cmd.args[0x12] = 0x36 /* 0xFA */ ;
 
 		/* Set Reset unknown */
 		cx24116_writereg(state, 0xF9, 0x01);  /* DVB S1/2 Mode */
@@ -2176,7 +2177,7 @@ static int cx24116_set_params(struct dvb_frontend *fe, struct dvbfe_params *p)
 	}
 	while (--retune);
 
-tuned:                         /* Set/Reset B/W */
+tuned:  /* Set/Reset B/W */
 	if (useUnknown == 1)
 	{
 		cmd.id = CMD_GETAGC;
@@ -2194,7 +2195,7 @@ tuned:                         /* Set/Reset B/W */
 	if (useUnknown == 1)
 	{
 		status = cx24116_readreg(state, CX24116_REG_FECSTATUS);
-		dprintk(1, "tuned fec=%02x new fec=%02x\n", state->dcur.fec_numb, status);
+		dprintk(20, "Tuned, fec=%02x new fec=%02x\n", state->dcur.fec_numb, status);
 		if ((state->dcur.fec_numb != (status & CX24116_FEC_FECMASK)) && (state->dcur.delivery == DVBFE_DELSYS_DVBS))
 		{
 			state->dcur.fec_numb = status & CX24116_FEC_FECMASK;
@@ -2233,16 +2234,17 @@ tuned:                         /* Set/Reset B/W */
 		cmd.args[9] = cx24116_U2_TABLE[ret].U2_9;
 
 		ret = cx24116_cmd_execute(fe, &cmd);
-
-		dprintk(70, "U2 data (pilot = %d): ", pilot);
-		for (i = 0; i < 10 ; i++)
+		if (paramDebug > 49)
 		{
-			printk("0x%02x ", cmd.args[i]);
+			dprintk(1, "U2 data (pilot = %d): ", pilot);
+			for (i = 0; i < 10 ; i++)
+			{
+				printk("0x%02x ", cmd.args[i]);
+			}
+			printk("\n");
 		}
-		printk("\n");
-
 	}
-	dprintk(100, "%s < %d\n", __func__, ret);
+	dprintk(100, "%s < ret = %d\n", __func__, ret);
 	return ret;
 }
 
@@ -2251,7 +2253,7 @@ static int cx24116_get_frontend(struct dvb_frontend *fe, struct dvb_frontend_par
 	struct dvbfe_params feparams;
 	int ret;
 
-	dprintk(100, "%s > \n", __func__);
+	dprintk(100, "%s >\n", __func__);
 
 	ret = cx24116_get_params(fe, &feparams);
 	if (ret != 0)
@@ -2266,7 +2268,7 @@ static int cx24116_lookup_fecmod(struct cx24116_state *state, fe_delivery_system
 {
 	int i, ret = -EOPNOTSUPP;
 
-	dprintk(100, "%s > (0x%02x, 0x%02x)\n", __func__, m, f);
+	dprintk(100, "%s > (modulation 0x%02x, coderate 0x%02x)\n", __func__, m, f);
 
 	for (i = 0; i < ARRAY_SIZE(cx24116_MODFEC_MODES); i++)
 	{
@@ -2285,28 +2287,28 @@ static int cx24116_set_fec(struct cx24116_state *state, fe_delivery_system_t del
 {
 	int ret = 0;
 
-	dprintk(100, "%s > (0x%02x,0x%02x)\n", __func__, mod, fec);
+	dprintk(100, "%s > mod=0x%02x, fec=0x%02x)\n", __func__, mod, fec);
 
 	ret = cx24116_lookup_fecmod(state, delsys, mod, fec);
 
 	if (ret < 0)
 	{
-		dprintk(1, "%s lookup FEC failed\n", __func__);
+		dprintk(1, "%s < lookup FEC failed\n", __func__);
 		return ret;
 	}
 	state->dnxt.fec = fec;
 	state->dnxt.fec_val = cx24116_MODFEC_MODES[ret].val;
 	state->dnxt.fec_mask = cx24116_MODFEC_MODES[ret].mask;
-	dprintk(50, "%s: mask/val = 0x%02x/0x%02x\n", __func__, state->dnxt.fec_mask, state->dnxt.fec_val);
+	dprintk(100, "%s < mask/val = 0x%02x/0x%02x\n", __func__, state->dnxt.fec_mask, state->dnxt.fec_val);
 	state->dnxt.fec_numb = ret;
 	return 0;
 }
 
 static int cx24116_set_symbolrate(struct cx24116_state *state, u32 rate)
 {
-	dprintk(100, "%s >\n", __func__);
+	dprintk(100, "%s > symbolrate = %d\n", __func__, rate);
 
-	/*  check if symbol rate is within limits */
+	/* check if symbol rate is within limits */
 	if ((rate > state->frontend.ops.info.symbol_rate_max)
 	||  (rate < state->frontend.ops.info.symbol_rate_min))
 	{
@@ -2325,7 +2327,7 @@ static int cx24116_set_frontend(struct dvb_frontend *fe, struct dvb_frontend_par
 	int ret = 0;
 	struct dvbfe_params newfe;
 
-	dprintk(100, "%s > \n", __func__);
+	dprintk(100, "%s >\n", __func__);
 
 	ret = cx24116_create_new_qpsk_feparams(fe, p, &newfe);
 
@@ -2352,7 +2354,7 @@ static int cx24116_set_frontend(struct dvb_frontend *fe, struct dvb_frontend_par
 			/* Only QPSK is supported for DVB-S */
 			if (c->modulation != QPSK)
 			{
-				dprintk(1, "%s: Unsupported modulation selected (%d)\n", __func__, c->modulation);
+				dprintk(1, "%s < Unsupported modulation selected (%d)\n", __func__, c->modulation);
 				return -EOPNOTSUPP;
 			}
 			/* Pilot doesn't exist in DVB-S, turn bit off */
@@ -2361,7 +2363,7 @@ static int cx24116_set_frontend(struct dvb_frontend *fe, struct dvb_frontend_par
 			/* DVB-S only supports 0.35 */
 			if (c->rolloff != ROLLOFF_35)
 			{
-				dprintk(1, "%s: Unsupported rolloff selected (%d)\n", __func__, c->rolloff);
+				dprintk(1, "%s < Unsupported rolloff selected (%d)\n", __func__, c->rolloff);
 				return -EOPNOTSUPP;
 			}
 			state->dnxt.rolloff_val = CX24116_ROLLOFF_035;
@@ -2376,7 +2378,7 @@ static int cx24116_set_frontend(struct dvb_frontend *fe, struct dvb_frontend_par
 			 */
 			if (c->modulation != PSK_8 && c->modulation != QPSK)
 			{
-				dprintk(1, "%s: Unsupported modulation selected (%d)\n", __func__, c->modulation);
+				dprintk(1, "%s < Unsupported modulation selected (%d)\n", __func__, c->modulation);
 				return -EOPNOTSUPP;
 			}
 
@@ -2403,7 +2405,7 @@ static int cx24116_set_frontend(struct dvb_frontend *fe, struct dvb_frontend_par
 				}
 				default:
 				{
-					dprintk(1, "%s: Unsupported pilot mode (%d) selected\n", __func__, c->pilot);
+					dprintk(1, "%s < Unsupported pilot mode selected (%d)\n", __func__, c->pilot);
 					return -EOPNOTSUPP;
 				}
 			}
@@ -2425,10 +2427,10 @@ static int cx24116_set_frontend(struct dvb_frontend *fe, struct dvb_frontend_par
 					state->dnxt.rolloff_val = CX24116_ROLLOFF_035;
 					break;
 				}
-				case ROLLOFF_AUTO:	/* Rolloff must be explicit */
+				case ROLLOFF_AUTO:  /* Rolloff must be explicit */
 				default:
 				{
-					dprintk(1, "%s: Unsupported rolloff (%d) selected\n", __func__, c->rolloff);
+					dprintk(1, "%s < Unsupported rolloff selected (%d)\n", __func__, c->rolloff);
 					return -EOPNOTSUPP;
 				}
 			}
@@ -2436,7 +2438,7 @@ static int cx24116_set_frontend(struct dvb_frontend *fe, struct dvb_frontend_par
 		}
 		default:
 		{
-			dprintk(1, "%s: Unsupported delivery system (%d) selected\n", __func__, c->delivery_system);
+			dprintk(1, "%s < Unsupported delivery system selected (%d)\n", __func__, c->delivery_system);
 			return -EOPNOTSUPP;
 		}
 	}
@@ -2453,12 +2455,12 @@ static int cx24116_set_frontend(struct dvb_frontend *fe, struct dvb_frontend_par
 	}
 	/* FEC_NONE/AUTO for DVB-S2 is not supported and detected here */
 	ret = cx24116_set_fec(state, c->delivery_system, c->modulation, c->fec_inner);
-	if (ret !=  0)
+	if (ret != 0)
 	{
 		return ret;
 	}
 	ret = cx24116_set_symbolrate(state, c->symbol_rate);
-	if (ret !=  0)
+	if (ret != 0)
 	{
 		return ret;
 	}
@@ -2565,7 +2567,8 @@ static int cx24116_set_frontend(struct dvb_frontend *fe, struct dvb_frontend_par
 		dprintk(30, "Retuned %d time(s)\n", retune);
 
 		/* Toggle pilot bit when in auto-pilot */
-		if ((state->dcur.pilot == PILOT_AUTO) || (c->delivery_system == SYS_DVBS2))
+		if ((state->dcur.pilot == PILOT_AUTO)
+		||  (c->delivery_system == SYS_DVBS2))
 		{
 			cmd.args[0x07] ^= CX24116_PILOT_ON;
 			dprintk(30, "Toggle pilot\n");
@@ -2609,11 +2612,15 @@ tuned:  /* Set/Reset B/W */
 		}
 		cmd.id = CMD_U1;
 		ret = cx24116_cmd_execute(fe, &cmd);
-		dprintk(70, "U1 data %02x ", cmd.args[0x07]);
-		for (i = 0; i < 6; i++)
+		if (paramDebug > 49)
 		{
-			state->dcur.U1[i] = cx24116_readreg(state, i + 1);
-			dprintk(70, " %02x", state->dcur.U1[i]);
+			dprintk(1, "U1 data %02x ", cmd.args[0x07]);
+			for (i = 0; i < 6; i++)
+			{
+				state->dcur.U1[i] = cx24116_readreg(state, i + 1);
+				printk(" %02x", state->dcur.U1[i]);
+			}
+			printk("\n");
 		}
 		ret = state->dcur.fec_numb * 2;
 
@@ -2691,7 +2698,7 @@ static int cx24116_get_property(struct dvb_frontend *fe, struct dtv_property *tv
 			}
 			default:
 			{
-				dprintk(1, "%s: EINVAL\n", __func__);
+				dprintk(1, "%s < EINVAL\n", __func__);
 				return -EINVAL;
 			}
 		}
@@ -2714,6 +2721,7 @@ static int cx24116_fe_init(struct dvb_frontend *fe)
 	cmd.id = CMD_TUNERSLEEP;
 	cmd.args[1] = 0;
 	cx24116_cmd_execute(fe, &cmd);
+
 	return cx24116_diseqc_init(fe);
 }
 
@@ -2836,7 +2844,7 @@ int set_voltage(struct dvb_frontend *fe, fe_sec_voltage_t voltage)
 #if 0 //DVB_API_VERSION < 5
 static int cx24116_get_info(struct dvb_frontend *fe, struct dvbfe_info *fe_info)
 {
-	dprintk(100, "%s\n", __func__);
+	dprintk(100, "%s >\n", __func__);
 
 	switch (fe_info->delivery)
 	{
@@ -3405,6 +3413,10 @@ static struct dvb_frontend_ops cx24116_ops =
 #endif
 };
 
+/* ******************************* */
+/* module functions                */
+/* ******************************* */
+
 int __init cx24116_init(void)
 {
 	dprintk(20, "Module cx24116 loaded\n");
@@ -3425,7 +3437,7 @@ MODULE_PARM_DESC(useUnknown, "Enable an unknown tuner command 0=disabled 1=enabl
 module_param(paramDebug, short, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
 MODULE_PARM_DESC(paramDebug, "Activates frontend debugging (default: 0)");
 
-MODULE_DESCRIPTION("DVB Frontend module for Conexant cx24116/cx24118 hardware");
+MODULE_DESCRIPTION("DVB Frontend module for Conexant CX24116/CX24118 hardware");
 MODULE_AUTHOR("Dagobert");
 MODULE_LICENSE("GPL");
 // vim:ts=4
