@@ -987,7 +987,7 @@ int micomSetIcon(int which, int on)
 	lastdata.icon_state[which] = on;
 #if defined(CUBEREVO) \
  || defined(CUBEREVO_9500HD)
-	dprintk(50, "Setting icon number %s (%d) to %s\n", micomIcons[which].name, which, (on ? "on" : "off"));
+	dprintk(50, "Setting icon %s (number %d) to %s\n", micomIcons[which].name, which, (on ? "on" : "off"));
 	if (which == ICON_PLAY)
 	{
 		/* handle play symbol */
@@ -1035,7 +1035,7 @@ int micomSetIcon(int which, int on)
  || defined(CUBEREVO_MINI2) \
  || defined(CUBEREVO_2000HD) \
  || defined(CUBEREVO_3000HD)
-	dprintk(50, "Setting icon number %s (%d) to %s\n", micom_14seg_Icons[which].name, which, (on ? "on" : "off"));
+	dprintk(50, "Setting icon %s (number %d) to %s\n", micom_14seg_Icons[which - 1].name, which, (on ? "on" : "off"));
 	for (vLoop = 0; vLoop < ARRAY_SIZE(micom_14seg_Icons); vLoop++)
 	{
 		if ((which & 0xff) == micom_14seg_Icons[vLoop].icon)
@@ -1958,7 +1958,10 @@ int micomWriteString(unsigned char *aBuf, int len, int center_flag)
 	if (center_flag)
 	{
 		pos /= 2;
-
+#if 0
+		memset(bBuf, ' ', front_seg_num);
+		memcpy(bBuf + pos, aBuf, len);
+#else
 		for (i = 0; i < pos; i++)
 		{
 			bBuf[i] = ' ';
@@ -1971,6 +1974,9 @@ int micomWriteString(unsigned char *aBuf, int len, int center_flag)
 		{
 			bBuf[i] = ' ';
 		}
+#endif
+		len = front_seg_num;
+		bBuf[front_seg_num] = '\0';  // terminate string
 	}
 	else
 #else
@@ -1978,13 +1984,12 @@ int micomWriteString(unsigned char *aBuf, int len, int center_flag)
 		// left aligned display
 		memset(bBuf, ' ', front_seg_num);
 		memcpy(bBuf, aBuf, len);
+		bBuf[len] = '\0';  // terminate string
 	}
 #endif
-	bBuf[front_seg_num] = '\0';  // terminate string
-	len = front_seg_num;
 
 	/* nonprintable chars will be replaced by spaces */
-#if 1
+#if 0
 	for (j = 0; j < special2seg_size; j++)
 	{
 		if (special2seg[j].ch == ' ')
@@ -1996,7 +2001,7 @@ int micomWriteString(unsigned char *aBuf, int len, int center_flag)
 #endif
 
 	/* set text character by character */
-	bBuf[len] = '\0';  // terminate string
+//	bBuf[len] = '\0';  // terminate string
 	dprintk(50, "Final text: [%s] (len = %d)\n", bBuf, len);
 
 	// save final text
@@ -2162,17 +2167,13 @@ int micom_init_func(void)
 //	res |= micomWriteString("T.Ducktales", strlen("T.Ducktales"), 0);
 
 	/* disable all icons at startup */
-#if defined(CUBEREVO_MINI) \
- || defined(CUBEREVO_MINI2) \
- || defined(CUBEREVO_2000HD) \
- || defined(CUBEREVO_3000HD) \
- || defined(CUBEREVO) \
- || defined(CUBEREVO_9500HD)
-	for (vLoop = ICON_MIN + 1; vLoop < ICON_MAX - 1; vLoop++)
+	if (front_seg_num != 13 && front_seg_num != 2)
 	{
-		micomSetIcon(vLoop, 0);
+		for (vLoop = ICON_MIN + 1; vLoop < ICON_MAX; vLoop++)
+		{
+			micomSetIcon(vLoop, 0);
+		}
 	}
-#endif
 
 	// Handle initial GMT offset (may be changed by writing to /proc/stb/fp/rtc_offset)
 	res = strict_strtol(gmt_offset, 10, (long *)&rtc_offset);
