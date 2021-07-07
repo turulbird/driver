@@ -26,16 +26,28 @@
  * Frontpanel river for Kathrein UFS910
  */
 
+extern short paramDebug;
+#define TAGDEBUG "[ufs910_fp] "
 
-#define VFD_MAJOR           147
+#ifndef dprintk
+#define dprintk(level, x...) do \
+{ \
+	if (((paramDebug) && (paramDebug >= level)) || level == 0) \
+	{ \
+		printk(TAGDEBUG x); \
+	} \
+} while (0)
+#endif
 
-#define SCP_TXD_BIT         6
-#define SCP_SCK_BIT         8
-#define SCP_ENABLE_BIT      5
-#define VFD_PORT            0
-#define SCP_DATA            3
-#define SCP_CLK             4
-#define SCP_CS              5
+#define VFD_MAJOR               147
+
+#define SCP_TXD_BIT             6
+#define SCP_SCK_BIT             8
+#define SCP_ENABLE_BIT          5
+#define VFD_PORT                0
+#define SCP_DATA                3
+#define SCP_CLK                 4
+#define SCP_CS                  5
 
 #define DCRAM_COMMAND           (0x20 & 0xf0)
 #define CGRAM_COMMAND           (0x40 & 0xf0)
