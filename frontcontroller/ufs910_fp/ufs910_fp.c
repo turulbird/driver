@@ -4,9 +4,13 @@
  *
  * 11. Nov 2007 - captaintrip
  *
- * Kathrein UFS910 VFD Kernelmodul
+ * Kathrein UFS910 VFD Kernel module
  * portiert aus den MARUSYS uboot sourcen
-
+ *
+ * The front panel display is based on an OKI ML9208 display driver
+ * connected to a 1x16 character VFD display tube with 16 icons.
+ * The ML9208 does not provide key scanning facilities.
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
@@ -23,7 +27,17 @@
  *
  *************************************************************************
  *
- * Frontpanel river for Kathrein UFS910
+ * Frontpanel driver for Kathrein UFS910
+ *
+ *************************************************************************
+ *
+ * Changes
+ *
+ * Date     By              Description
+ * -----------------------------------------------------------------------
+ * 20210707 Audioniek       Add standard dprintk debugging display.
+ *
+ *************************************************************************
  */
 
 #include <asm/io.h>
@@ -37,15 +51,7 @@
 #include "ufs910_fp.h"
 #include "utf.h"
 
-int debug = 0;
-#define dprintk(x...) \
-do \
-{ \
-	if (debug) \
-	{ \
-		printk(KERN_WARNING x); \
-	} \
-} while (0)
+short paramDebug = 0;
 
 /* konfetti: bugfix*/
 static struct vfd_ioctl_data lastdata;
@@ -68,30 +74,30 @@ void out_buf(unsigned char *buf, int len)
 	{
 		strncpy(str, buf, len);
 		str[len] = '\0';
-		dprintk("%s\n", str);
+		dprintk(20, "%s\n", str);
 	}
 	else
 	{
-		dprintk("overflow\n");
+		dprintk(1, "overflow\n");
 	}
 }
 
 static void Wait_Port_Ready(void)
 {
-	dprintk("%s >\n", __func__);
+	dprintk(100, "%s >\n", __func__);
 	while ((SCP_STATUS & 0x02)  == 0x02)
 	{
-		printk("Wait_Port_Ready::SCP_STATUS = %x\n", SCP_STATUS);
+		dprintk(70, "Wait_Port_Ready::SCP_STATUS = %x\n", SCP_STATUS);
 		udelay(1);
 	}
-	dprintk("%s <\n", __func__);
+	dprintk(100, "%s <\n", __func__);
 }
 
 static int VFD_Write_Char_ML9208(unsigned char data, int current__, int length)
 {
 	int ii = 0;
 
-	dprintk("%s >\n", __func__);
+	dprintk(100, "%s >\n", __func__);
 
 	if (current__ == 0) //start position
 	{
@@ -137,7 +143,7 @@ static int VFD_Write_Char_ML9208(unsigned char data, int current__, int length)
 		STPIO_SET_PIN(PIO_PORT(0), 5, 1);
 		udelay(50);
 	}
-	dprintk("%s <\n", __func__);
+	dprintk(100, "%s <\n", __func__);
 	return 0;
 }
 
@@ -145,7 +151,7 @@ static int VFD_Write_Chars(unsigned char *data, int  length)
 {
 	int i = 0;
 
-	dprintk("%s >\n", __func__);
+	dprintk(100, "%s >\n", __func__);
 
 	out_buf(data, length);
 
@@ -153,7 +159,7 @@ static int VFD_Write_Chars(unsigned char *data, int  length)
 	{
 		VFD_Write_Char_ML9208(data[i], i, length);
 	}
-	dprintk("%s <\n", __func__);
+	dprintk(100, "%s <\n", __func__);
 	return 0;
 }
 
@@ -163,7 +169,8 @@ static int VFD_DCRAM_Write(struct vfd_ioctl_data *data)
 	unsigned char write_data[0x31];
 	int i = 0;
 	int j = 0;
-	dprintk("%s >\n", __func__);
+
+	dprintk(100, "%s >\n", __func__);
 	memset(&write_data[1], ' ', 0x30);
 
 #ifdef DCRAM_INVERT
@@ -261,7 +268,7 @@ static int VFD_DCRAM_Write(struct vfd_ioctl_data *data)
 	lastdata = *data;
 	VFD_Write_Chars(write_data, 17);
 
-	dprintk("%s <\n", __func__);
+	dprintk(100, "%s <\n", __func__);
 	return 0;
 }
 
@@ -270,18 +277,18 @@ static int VFD_CGRAM_Write(struct vfd_ioctl_data *data)
 	unsigned char write_data[6];
 	int i = 0;
 
-	dprintk("%s >\n", __func__);
+	dprintk(100, "%s >\n", __func__);
 
 	write_data[0] = (data->start_address & 0x07) | CGRAM_COMMAND;
 	if (data->length < 5)
 	{
-		dprintk("%s 1<\n", __func__);
+		dprintk(1, "%s < Error: too litte data supplied\n", __func__);
 		return -1;
 	}
 
 	if (data->length > 5)
 	{
-		printk("VFD: Error Data to large <\n");
+		dprintk(1, "%s < Error: Too much data supplied\n");
 		return -1;
 	}
 
@@ -291,7 +298,7 @@ static int VFD_CGRAM_Write(struct vfd_ioctl_data *data)
 	}
 	VFD_Write_Chars(write_data, data->length + 1);
 
-	dprintk("%s <\n", __func__);
+	dprintk(100, "%s <\n", __func__);
 	return 0;
 }
 
@@ -312,7 +319,7 @@ static int VFD_ADRAM_Write(struct vfd_ioctl_data *data)
 	write_data[0] = (data->data[0] & 0x0f) | ADRAM_COMMAND;
 	write_data[1] = data->data[4];
 	//printk("ICON ON/OFF Data = %x, %x\n", write_data[0], write_data[1]);
-	dprintk("%s <>\n", __func__);
+	dprintk(100, "%s <>\n", __func__);
 	VFD_Write_Chars(write_data, 2);
 	return 0;
 }
@@ -322,7 +329,7 @@ static int VFD_Display_DutyCycle_Write(struct vfd_ioctl_data *data)
 	unsigned char write_data[17];
 	int ii = 0;
 
-	dprintk("%s >\n", __func__);
+	dprintk(100, "%s >\n", __func__);
 
 	write_data[0] = DIMMING_COMMAND;
 	write_data[1] = (data->start_address & 0x07) << 5 | 0xf;
@@ -340,7 +347,7 @@ static int VFD_Display_DutyCycle_Write(struct vfd_ioctl_data *data)
 		write_data[ii + 1] = 0x05;
 	}
 	VFD_Write_Chars(write_data, 17);
-	dprintk("%s <\n", __func__);
+	dprintk(100, "%s <\n", __func__);
 	return 0;
 }
 
@@ -348,13 +355,13 @@ static int VFD_Number_Of_Digit_Set(struct vfd_ioctl_data *data)
 {
 	unsigned char write_data[2];
 
-	dprintk("%s >\n", __func__);
+	dprintk(100, "%s >\n", __func__);
 
 	write_data[0] = NUM_DIGIT_COMMAND;
 	write_data[1] = 0x0f;
 	VFD_Write_Chars(write_data, 2);
 
-	dprintk("%s <\n", __func__);
+	dprintk(100, "%s <\n", __func__);
 	return 0;
 }
 
@@ -364,25 +371,25 @@ static int VFD_Display_Write_On_Off(struct vfd_ioctl_data *data)
 {
 	unsigned char write_data[1];
 
-	dprintk("%s >\n", __func__);
+	dprintk(100, "%s >\n", __func__);
 	if (data->start_address == 0x01)
 	{
-		data->start_address = 0x00; //light normal
+		data->start_address = 0x00;  // light normal
 	}
 	else
 	{
-		data->start_address = 0x02; //light off
+		data->start_address = 0x02;  // light off
 	}
 	write_data[0] = (data->start_address & 0x03) | LIGHT_ON_COMMAND;
 	if (data->length != 0)
 	{
-		dprintk("%s return on error <\n", __func__);
+		dprintk(1, "%s < return on error <\n", __func__);
 		return -1;
 	}
 	VFD_Write_Chars(write_data, data->length + 1);
 
 	// now standby mode setting
-	dprintk("%s <\n", __func__);
+	dprintk(100, "%s <\n", __func__);
 	return 0;
 }
 
@@ -392,24 +399,24 @@ static int VFD_TEST_Write(struct vfd_ioctl_data *data)
 	unsigned char write_data[5];
 	int i;
 
-	dprintk("%s >\n", __func__);
+	dprintk(100, "%s >\n", __func__);
 	write_data[0] = data->start_address;
 	for (i = 0 ; i < data->length; i++)
 	{
 		write_data[i + 1] = data->data[i];
 	}
 	VFD_Write_Chars(write_data, data->length + 1);
-	dprintk("%s <\n", __func__);
+	dprintk(100, "%s <\n", __func__);
 	return 0;
 }
 #endif
 
 static int VFD_Icon_Display_On_Off(struct vfd_ioctl_data *data)
 {
-	dprintk("%s >\n", __func__);
+	dprintk(100, "%s >\n", __func__);
 
 	VFD_ADRAM_Write(data);
-	dprintk("%s <\n", __func__);
+	dprintk(100, "%s <\n", __func__);
 	return 0;
 }
 
@@ -417,28 +424,27 @@ void DisplayVFDString(unsigned char *aBuf, int len)
 {
 	struct vfd_ioctl_data data;
 
-	dprintk("%s >\n", __func__);
+	dprintk(100, "%s >\n", __func__);
 	if (len > 63 || len < 0)
 	{
-		printk("VFD String Length value is over! %d\n", len);
+		dprintk(1, "%s < VFD String Length %d is too large\n", __func__, len);
 		return;
 	}
-
 	data.start_address = 0x00;
 	memset(data.data, ' ', 63);
 	memcpy(data.data, aBuf, len);
 	data.length = len;
 
 	VFD_DCRAM_Write(&data);
-	dprintk("%s <\n", __func__);
+	dprintk(100, "%s <\n", __func__);
 }
 
 int vfd_init_func(void)
 {
 	struct vfd_ioctl_data data;
 
-	dprintk("%s >\n", __func__);
-	printk("Kathrein UFS910 VFD module initializing\n");
+	dprintk(100, "%s >\n", __func__);
+	dprintk(0, "Kathrein UFS910 VFD module initializing\n");
 	SCP_PORT = 0;  // use serial controller port
 	ROM_Char_Table = ROM_KATHREIN;
 
@@ -461,7 +467,7 @@ int vfd_init_func(void)
 	DisplayVFDString("", 0);
 
 	// VFD_SetRemote();
-	dprintk("%s <\n", __func__);
+	dprintk(100, "%s <\n", __func__);
 	return 0;
 }
 
@@ -469,11 +475,11 @@ static ssize_t VFDdev_write(struct file *filp, const char *buff, size_t len, lof
 {
 	unsigned char *kernel_buf = kmalloc(len, GFP_KERNEL);
 
-	dprintk("%s > (len %d, offs %lld)\n", __func__, len, *off);
+	dprintk(100, "%s > (len %d, offs %lld)\n", __func__, len, *off);
 	/* konfetti */
 	if (kernel_buf == NULL)
 	{
-		dprintk("%s return no mem<\n", __func__);
+		dprintk(1, "%s < return -ENOMEM\n", __func__);
 		return -ENOMEM;
 	}
 	copy_from_user(kernel_buf, buff, len);
@@ -489,8 +495,7 @@ static ssize_t VFDdev_write(struct file *filp, const char *buff, size_t len, lof
 		DisplayVFDString(kernel_buf, len);
 	}
 	kfree(kernel_buf);
-
-	dprintk("%s <\n", __func__);
+	dprintk(100, "%s <\n", __func__);
 	return len;
 }
 
@@ -498,15 +503,15 @@ static ssize_t VFDdev_read(struct file *filp, char __user *buff, size_t len, lof
 {
 	/* ignore offset or reading of fragments */
 
-	dprintk("%s > (len %d, offs %lld)\n", __func__, len, *off);
+	dprintk(100, "%s > (len %d, offs %lld)\n", __func__, len, *off);
 	if (vOpen.fp != filp)
 	{
-		dprintk("%s return eusers<\n", __func__);
+		dprintk(1, "%s < return -EUSERS\n", __func__);
 		return -EUSERS;
 	}
 	if (down_interruptible(&vOpen.sem))
 	{
-		dprintk("%s return erestartsys<\n", __func__);
+		dprintk(1, "%s < return -ERESTARTSYS\n", __func__);
 		return -ERESTARTSYS;
 	}
 	if (vOpen.read == lastdata.length)
@@ -514,10 +519,9 @@ static ssize_t VFDdev_read(struct file *filp, char __user *buff, size_t len, lof
 		vOpen.read = 0;
 
 		up(&vOpen.sem);
-		dprintk("%s return 0<\n", __func__);
+		dprintk(1, "%s < return 0\n", __func__);
 		return 0;
 	}
-
 	if (len > lastdata.length)
 	{
 		len = lastdata.length;
@@ -531,43 +535,43 @@ static ssize_t VFDdev_read(struct file *filp, char __user *buff, size_t len, lof
 
 	up(&vOpen.sem);
 
-	dprintk("%s < (len %d)\n", __func__, len);
+	dprintk(100, "%s < (len %d)\n", __func__, len);
 	return len;
 }
 
 int VFDdev_open(struct inode *inode, struct file *filp)
 {
-	dprintk("%s >\n", __func__);
+	dprintk(100, "%s >\n", __func__);
 
 	if (vOpen.fp != NULL)
 	{
-		dprintk("%s eusers <\n", __func__);
+		dprintk(1, "%s < return -EUSERS\n", __func__);
 		return -EUSERS;
 	}
 	vOpen.fp = filp;
 	vOpen.read = 0;
 
-	dprintk("%s <\n", __func__);
+	dprintk(100, "%s <\n", __func__);
 	return 0;
 }
 
 int VFDdev_close(struct inode *inode, struct file *filp)
 {
-	dprintk("%s >\n", __func__);
+	dprintk(100, "%s >\n", __func__);
 
 	if (vOpen.fp == filp)
 	{
 		vOpen.fp = NULL;
 		vOpen.read = 0;
 	}
-	dprintk("%s <\n", __func__);
+	dprintk(100, "%s <\n", __func__);
 	return 0;
 }
 /* ende konfetti */
 
 static int VFDdev_ioctl(struct inode *Inode, struct file *File, unsigned int cmd, unsigned long arg)
 {
-	dprintk("%s > 0x%.8x\n", __func__, cmd);
+	dprintk(10, "%s > 0x%.8x\n", __func__, cmd);
 
 	switch (cmd)
 	{
@@ -612,11 +616,11 @@ static int VFDdev_ioctl(struct inode *Inode, struct file *File, unsigned int cmd
 		}
 		default:
 		{
-			printk("VFD: unknown IOCTL 0x%x\n", cmd);
+			dprintk(1, "%s: unknown IOCTL 0x%x\n", __func__, cmd);
 			break;
 		}
 	}
-	dprintk("%s <\n", __func__);
+	dprintk(100, "%s <\n", __func__);
 	return 0;
 }
 
@@ -632,11 +636,11 @@ static struct file_operations vfd_fops =
 
 static int __init vfd_init_module(void)
 {
-	dprintk("%s >\n", __func__);
+	dprintk(100, "%s >\n", __func__);
 
 	if (register_chrdev(VFD_MAJOR, "VFD", &vfd_fops))
 	{
-		printk("unable to get major %d for VFD\n", VFD_MAJOR);
+		dprintk(1, "%s: Unable to get major %d for VFD\n", __func__, VFD_MAJOR);
 	}
 	else
 	{
@@ -646,21 +650,23 @@ static int __init vfd_init_module(void)
 	vOpen.fp = NULL;
 	sema_init(&vOpen.sem, 1);
 
-	dprintk("%s <\n", __func__);
+	dprintk(100, "%s <\n", __func__);
 	return 0;
 }
 
 static void __exit vfd_cleanup_module(void)
 {
 	unregister_chrdev(VFD_MAJOR, "VFD");
-	printk("Kathrein UFS910 VFD module unloading\n");
+	dprintk(0, "Kathrein UFS910 VFD module unloading\n");
 }
-
 
 module_init(vfd_init_module);
 module_exit(vfd_cleanup_module);
 
+module_param(paramDebug, short, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
+MODULE_PARM_DESC(paramDebug, "Debug Output 0=disabled >0=enabled(debuglevel)");
+
 MODULE_DESCRIPTION("VFD module for Kathrein UFS910 (Q'n'D port from MARUSYS)");
-MODULE_AUTHOR("captaintrip");
+MODULE_AUTHOR("captaintrip, enhanced by Audioniek");
 MODULE_LICENSE("GPL");
 // vim:ts=4
