@@ -753,7 +753,7 @@ int micomSetIcon(int which, int on)
 		return -EINVAL;
 	}
 	memset(buffer, 0, sizeof(buffer));
-	buffer[0] = which;
+	buffer[0] = which - 1;  // icon 1 is on position 0
 
 	if (on == 1)
 	{
@@ -1642,7 +1642,7 @@ static ssize_t MICOMdev_write(struct file *filp, const char *buff, size_t len, l
 
 /****************************************
  *
- * code for reading from /dev/vfd
+ * Code for reading from /dev/vfd.
  *
  */
 static ssize_t MICOMdev_read(struct file *filp, char __user *buff, size_t len, loff_t *off)
@@ -1660,7 +1660,7 @@ static ssize_t MICOMdev_read(struct file *filp, char __user *buff, size_t len, l
 	}
 	if (minor == -1)
 	{
-		dprintk(1, "%s: Error Bad Minor\n", __func__);
+		dprintk(1, "%s: Error: Bad Minor\n", __func__);
 		return -EUSERS;
 	}
 	dprintk(70, "minor = %d\n", minor);
@@ -1693,7 +1693,7 @@ static ssize_t MICOMdev_read(struct file *filp, char __user *buff, size_t len, l
 	/* copy the current display string to the user */
 	if (down_interruptible(&FrontPanelOpen[minor].sem))
 	{
-		dprintk(1, "%s: res = erestartsys<\n", __func__);
+		dprintk(1, "%s < return = -ERESTARTSYS\n", __func__);
 		return -ERESTARTSYS;
 	}
 
@@ -1711,9 +1711,9 @@ static ssize_t MICOMdev_read(struct file *filp, char __user *buff, size_t len, l
 		len = lastdata.length;
 	}
 	/* fixme: needs revision because of utf8! */
-	if (len > 16)
+	if (len > VFD_LENGTH)
 	{
-		len = 16;
+		len = VFD_LENGTH;
 	}
 	FrontPanelOpen[minor].read = len;
 	copy_to_user(buff, lastdata.data, len);
@@ -1724,13 +1724,18 @@ static ssize_t MICOMdev_read(struct file *filp, char __user *buff, size_t len, l
 	return len;
 }
 
+/***********************************************************
+ *
+ * Open /dev/vfd.
+ *
+ */
 int MICOMdev_open(struct inode *inode, struct file *filp)
 {
 	int minor;
 
 	dprintk(100, "%s >\n", __func__);
 
-	/* needed! otherwise a racecondition can occur */
+	/* needed! otherwise a race condition can occur */
 	if (down_interruptible(&write_sem))
 	{
 		return -ERESTARTSYS;
@@ -1752,6 +1757,11 @@ int MICOMdev_open(struct inode *inode, struct file *filp)
 	return 0;
 }
 
+/***********************************************************
+ *
+ * Close /dev/vfd.
+ *
+ */
 int MICOMdev_close(struct inode *inode, struct file *filp)
 {
 	int minor;
@@ -1782,7 +1792,7 @@ static int MICOMdev_ioctl(struct inode *Inode, struct file *File, unsigned int c
 {
 	static int mode = 0;
 	struct micom_ioctl_data *micom = (struct micom_ioctl_data *)arg;
-	struct vfd_ioctl_data *data = (struct vfd_ioctl_data *) arg;
+	struct vfd_ioctl_data *data = (struct vfd_ioctl_data *)arg;
 	int res = 0;
 
 	dprintk(100, "%s > 0x%.8x\n", __func__, cmd);
@@ -1791,6 +1801,7 @@ static int MICOMdev_ioctl(struct inode *Inode, struct file *File, unsigned int c
 	{
 		return -ERESTARTSYS;
 	}
+
 	switch (cmd)
 	{
 		case VFDSETMODE:
@@ -1853,34 +1864,40 @@ static int MICOMdev_ioctl(struct inode *Inode, struct file *File, unsigned int c
 
 //			dprintk(10, "%s Set icon %d to %d (mode %d)\n", __func__, icon_nr, on, mode);
 
-			if (mode == 0)  // vfd mode
+			if (mode == 0 && icon_nr > 0xff)  // vfd mode
 			{
-				//  translate E2 icon numbers to own icon numbers (vfd mode only)	
+				//  Part one: translate E2 icon numbers to own icon numbers (vfd mode only)	
+				icon_nr >> 8;
 				switch (icon_nr)
 				{
-					case 0x13: // crypted
+					case 0x13:  // crypted
 					{
 						icon_nr = ICON_SCRAMBLED;
 						break;
 					}
-					case 0x17: // dolby
+					case 0x17:  // dolby
 					{
 						icon_nr = ICON_DOLBY;
 						break;
 					}
-					case 0x15: // MP3
+					case 0x15:  // MP3
 					{
 						icon_nr = ICON_MP3;
 						break;
 					}
-					case 0x11: // HD
+					case 0x11:  // HD
 					{
 						icon_nr = ICON_HD;
 						break;
 					}
-					case 0x1e: // record
+					case 0x1e:  // record
 					{
 						icon_nr = ICON_REC;
+						break;
+					}
+					case 0x1a:  // seekable (play)
+					{
+						icon_nr = ICON_PLAY;
 						break;
 					}
 					default:
@@ -1889,6 +1906,7 @@ static int MICOMdev_ioctl(struct inode *Inode, struct file *File, unsigned int c
 					}
 				}
 			}
+			// Part two: decide wether one icon or all
 			if (icon_nr == ICON_MAX)
 			{
 				int i;
