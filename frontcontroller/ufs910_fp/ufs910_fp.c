@@ -7,9 +7,15 @@
  * Kathrein UFS910 VFD Kernel module
  * portiert aus den MARUSYS uboot sourcen
  *
- * The front panel display is based on an OKI ML9208 display driver
- * connected to a 1x16 character VFD display tube with 16 icons.
- * The ML9208 does not provide key scanning facilities.
+ * The front panel display consist of a VFD tube Futaba 16-BT-136INK which
+ * has a 1x16 character VFD display with 16 icons and a built-in driver
+ * IC that seems to be highly compatible with the OKI ML9208.
+ * The built-in display controller does not provide key scanning
+ * facilities.
+ *
+ * The display controller shares its interface (3 PIO pins) with the
+ * frontpanel controller, which uses dummy commands not recognized by
+ * the display controller for its control.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -68,6 +74,11 @@ static tVFDOpen vOpen;
 
 unsigned char str[64];
 
+/***********************************************************
+ *
+ * Routines to communicate with the display controller.
+ *
+ */
 void out_buf(unsigned char *buf, int len)
 {
 	if (len < 64)
@@ -82,6 +93,11 @@ void out_buf(unsigned char *buf, int len)
 	}
 }
 
+/***********************************************************
+ *
+ * Wait for port ready.
+ *
+ */
 static void Wait_Port_Ready(void)
 {
 	dprintk(100, "%s >\n", __func__);
@@ -93,17 +109,22 @@ static void Wait_Port_Ready(void)
 	dprintk(100, "%s <\n", __func__);
 }
 
+/***********************************************************
+ *
+ * Write length bytes to display controller.
+ *
+ */
 static int VFD_Write_Char_ML9208(unsigned char data, int current__, int length)
 {
 	int ii = 0;
 
 	dprintk(100, "%s >\n", __func__);
 
-	if (current__ == 0) //start position
+	if (current__ == 0)  // start position
 	{
-		STPIO_SET_PIN(PIO_PORT(0), 5, 1);
+		STPIO_SET_PIN(PIO_PORT(0), 5, 1);  // toggle
 		udelay(10);
-		STPIO_SET_PIN(PIO_PORT(0), 5, 0);
+		STPIO_SET_PIN(PIO_PORT(0), 5, 0);  // xCS
 		udelay(10);
 	}
 
@@ -117,18 +138,18 @@ static int VFD_Write_Char_ML9208(unsigned char data, int current__, int length)
 	{
 		for (ii = 0 ; ii < 8 ; ii++)
 		{
-			STPIO_SET_PIN(PIO_PORT(0), 4, 0);
-			if ((data  & 0x01) == 0x01)
+			STPIO_SET_PIN(PIO_PORT(0), 4, 0);  // set clock pin low
+			if ((data  & 0x01) == 0x01)  // get one bit
 			{
-				STPIO_SET_PIN(PIO_PORT(0), 3, 1);
+				STPIO_SET_PIN(PIO_PORT(0), 3, 1);  // if one, raise data pin
 			}
 			else
 			{
-				STPIO_SET_PIN(PIO_PORT(0), 3, 0);
+				STPIO_SET_PIN(PIO_PORT(0), 3, 0);  // // else drop data pin
 			}
-			udelay(10);
+			udelay(10);  // wait 10 us
 			data = data >> 1;
-			STPIO_SET_PIN(PIO_PORT(0), 4, 1);
+			STPIO_SET_PIN(PIO_PORT(0), 4, 1);  // set clock pin high
 			udelay(10);
 		}
 	}
@@ -136,18 +157,23 @@ static int VFD_Write_Char_ML9208(unsigned char data, int current__, int length)
 	{
 		Wait_Port_Ready();
 	}
-	udelay(20); //next digit
+	udelay(20);  // next byte, wait 20 us
 	if (current__ == (length - 1))
 	{
 		udelay(40);
-		STPIO_SET_PIN(PIO_PORT(0), 5, 1);
+		STPIO_SET_PIN(PIO_PORT(0), 5, 1);  // raise xCS
 		udelay(50);
 	}
 	dprintk(100, "%s <\n", __func__);
 	return 0;
 }
 
-static int VFD_Write_Chars(unsigned char *data, int  length)
+/***********************************************************
+ *
+ * Write length bytes in data to the display controller.
+ *
+ */
+static int VFD_Write_Chars(unsigned char *data, int length)
 {
 	int i = 0;
 
@@ -155,7 +181,7 @@ static int VFD_Write_Chars(unsigned char *data, int  length)
 
 	out_buf(data, length);
 
-	for (i = 0 ; i < length ; i++)
+	for (i = 0; i < length; i++)
 	{
 		VFD_Write_Char_ML9208(data[i], i, length);
 	}
@@ -163,6 +189,12 @@ static int VFD_Write_Chars(unsigned char *data, int  length)
 	return 0;
 }
 
+
+/***********************************************************
+ *
+ * Write a text to the display.
+ *
+ */
 //#define DCRAM_INVERT
 static int VFD_DCRAM_Write(struct vfd_ioctl_data *data)
 {
@@ -272,6 +304,11 @@ static int VFD_DCRAM_Write(struct vfd_ioctl_data *data)
 	return 0;
 }
 
+/***********************************************************
+ *
+ * Define a CGRAM dot pattern.
+ *
+ */
 static int VFD_CGRAM_Write(struct vfd_ioctl_data *data)
 {
 	unsigned char write_data[6];
@@ -302,16 +339,26 @@ static int VFD_CGRAM_Write(struct vfd_ioctl_data *data)
 	return 0;
 }
 
+/***********************************************************
+ *
+ * Set RC code.
+ *
+ */
 static int VFD_SetRemote(void)
 {
 	unsigned char write_data[2];
 
-	write_data[0] = 0xe3;
-	write_data[1] = 0x0f;
+	write_data[0] = 0xe3;  // front controller command
+	write_data[1] = 0x0f;  // get RC code data
 	VFD_Write_Chars(write_data, 2);
 	return 0;
 }
 
+/***********************************************************
+ *
+ * (Re)Set an icon (write ADRAM).
+ *
+ */
 static int VFD_ADRAM_Write(struct vfd_ioctl_data *data)
 {
 	unsigned char write_data[16];
@@ -324,6 +371,11 @@ static int VFD_ADRAM_Write(struct vfd_ioctl_data *data)
 	return 0;
 }
 
+/***********************************************************
+ *
+ * Set brightness.
+ *
+ */
 static int VFD_Display_DutyCycle_Write(struct vfd_ioctl_data *data)
 {
 	unsigned char write_data[17];
@@ -332,7 +384,7 @@ static int VFD_Display_DutyCycle_Write(struct vfd_ioctl_data *data)
 	dprintk(100, "%s >\n", __func__);
 
 	write_data[0] = DIMMING_COMMAND;
-	write_data[1] = (data->start_address & 0x07) << 5 | 0xf;
+	write_data[1] = (data->start_address & 0x07) << 5 | 0xf;  // only use 8 steps, add 15
 	data->length = 1;
 	VFD_Write_Chars(write_data, data->length + 1);
 
@@ -351,6 +403,11 @@ static int VFD_Display_DutyCycle_Write(struct vfd_ioctl_data *data)
 	return 0;
 }
 
+/***********************************************************
+ *
+ * Set number of digits to 16.
+ *
+ */
 static int VFD_Number_Of_Digit_Set(struct vfd_ioctl_data *data)
 {
 	unsigned char write_data[2];
@@ -365,6 +422,11 @@ static int VFD_Number_Of_Digit_Set(struct vfd_ioctl_data *data)
 	return 0;
 }
 
+/***********************************************************
+ *
+ * Switch entire display on or off.
+ *
+ */
 //2 Turn ON : Turn on all vfd light and standby mode.
 //2 Turn OFF : Turn off all vfd ligth and go to standby mod.
 static int VFD_Display_Write_On_Off(struct vfd_ioctl_data *data)
@@ -411,6 +473,11 @@ static int VFD_TEST_Write(struct vfd_ioctl_data *data)
 }
 #endif
 
+/***********************************************************
+ *
+ * (Re)Set an icon.
+ *
+ */
 static int VFD_Icon_Display_On_Off(struct vfd_ioctl_data *data)
 {
 	dprintk(100, "%s >\n", __func__);
@@ -420,6 +487,17 @@ static int VFD_Icon_Display_On_Off(struct vfd_ioctl_data *data)
 	return 0;
 }
 
+/***********************************************************
+ *
+ * Routines for the IOCTL functions of the driver.
+ *
+ */
+
+/***********************************************************
+ *
+ * Display a text string.
+ *
+ */
 void DisplayVFDString(unsigned char *aBuf, int len)
 {
 	struct vfd_ioctl_data data;
@@ -439,6 +517,11 @@ void DisplayVFDString(unsigned char *aBuf, int len)
 	dprintk(100, "%s <\n", __func__);
 }
 
+/***********************************************************
+ *
+ * Initialize the driver.
+ *
+ */
 int vfd_init_func(void)
 {
 	struct vfd_ioctl_data data;
@@ -454,7 +537,7 @@ int vfd_init_func(void)
 	VFD_Display_Write_On_Off(&data);
 
 	// digit-set ->Dagobert ->Origsoft does this after VFD_Display_Write_On_Off
-	data.start_address = 0xE0;
+	data.start_address = NUM_DIGIT_COMMAND;
 	data.length = 0;
 	VFD_Number_Of_Digit_Set(&data);
 
@@ -471,6 +554,11 @@ int vfd_init_func(void)
 	return 0;
 }
 
+/***********************************************************
+ *
+ * Code for writing to /dev/vfd.
+ *
+ */
 static ssize_t VFDdev_write(struct file *filp, const char *buff, size_t len, loff_t *off)
 {
 	unsigned char *kernel_buf = kmalloc(len, GFP_KERNEL);
@@ -499,6 +587,11 @@ static ssize_t VFDdev_write(struct file *filp, const char *buff, size_t len, lof
 	return len;
 }
 
+/***********************************************************
+ *
+ * Code for reading from to /dev/vfd.
+ *
+ */
 static ssize_t VFDdev_read(struct file *filp, char __user *buff, size_t len, loff_t *off)
 {
 	/* ignore offset or reading of fragments */
@@ -539,6 +632,11 @@ static ssize_t VFDdev_read(struct file *filp, char __user *buff, size_t len, lof
 	return len;
 }
 
+/***********************************************************
+ *
+ * Open /dev/vfd.
+ *
+ */
 int VFDdev_open(struct inode *inode, struct file *filp)
 {
 	dprintk(100, "%s >\n", __func__);
@@ -555,6 +653,11 @@ int VFDdev_open(struct inode *inode, struct file *filp)
 	return 0;
 }
 
+/***********************************************************
+ *
+ * Close /dev/vfd.
+ *
+ */
 int VFDdev_close(struct inode *inode, struct file *filp)
 {
 	dprintk(100, "%s >\n", __func__);
@@ -569,6 +672,11 @@ int VFDdev_close(struct inode *inode, struct file *filp)
 }
 /* ende konfetti */
 
+/***********************************************************
+ *
+ * IOCTL code.
+ *
+ */
 static int VFDdev_ioctl(struct inode *Inode, struct file *File, unsigned int cmd, unsigned long arg)
 {
 	dprintk(10, "%s > 0x%.8x\n", __func__, cmd);

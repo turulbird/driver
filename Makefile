@@ -235,10 +235,10 @@ endif
 endif
 
 # Button and Led Driver only needed for old 14W Kathrein Ufs 910 boxes
-ifdef UFS910
-obj-y += button/
-obj-y += led/
-endif
+#ifdef UFS910
+#obj-y += button/
+#obj-y += led/
+#endif
 
 ifdef UFC960
 obj-y += smartcard/

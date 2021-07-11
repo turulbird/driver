@@ -16,6 +16,7 @@ endif
 
 ifdef UFS910
 obj-y += ufs910_fp/
+#obj-y += ufs910_fp_new/
 endif
 
 ifdef UFS912
