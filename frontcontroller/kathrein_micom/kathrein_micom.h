@@ -19,7 +19,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
- *****************************************************************************
+ *************************************************************************
  *
  * This driver covers the following models:
  * 
@@ -28,21 +28,21 @@
  * Kathrein UFS922
  * Kathrein UFC960
  *
- ******************************************************************************
+ *************************************************************************
  *
  * Changes
  *
  * Date     By              Description
- * ----------------------------------------------------------------------------
+ * -----------------------------------------------------------------------
  * 20170312 Audioniek       Add support for dprintk(0,... (print always).
  * 20210703 Audioniek       Add support for VFDSETFAN (ufs922 only).
  *
+ *************************************************************************
  */
 #ifndef _kathrein_micom_h
 #define _kathrein_micom_h
 
 extern short paramDebug;
-
 #define TAGDEBUG "[kathrein micom] "
 
 #ifndef dprintk
@@ -55,15 +55,9 @@ extern short paramDebug;
 } while (0)
 #endif
 
-extern int micom_init_func(void);
-extern void copyData(unsigned char *data, int len);
-extern void getRCData(unsigned char *data, int *len);
-void dumpValues(void);
-
-extern int errorOccured;
-extern char ioctl_data[8];
-
-extern struct file_operations vfd_fops;
+#define VFD_MAJOR           147
+#define FRONTPANEL_MINOR_RC 1
+#define LASTMINOR           2
 
 typedef struct
 {
@@ -72,12 +66,7 @@ typedef struct
 	struct semaphore sem;
 } tFrontPanelOpen;
 
-#define FRONTPANEL_MINOR_RC  1
-#define LASTMINOR            2
-
 extern tFrontPanelOpen FrontPanelOpen[LASTMINOR];
-
-#define VFD_MAJOR            147
 
 /* ioctl numbers ->hacky */
 #define VFDDISPLAYCHARS      0xc0425a00
@@ -172,8 +161,8 @@ struct set_time_s
 	char time[5];
 };
 
-/* this setups the mode temporarily (for one ioctl)
- * to the desired mode. currently the "normal" mode
+/* This will set the mode temporarily (for one ioctl)
+ * to the desired mode. Currently the "normal" mode
  * is the compatible vfd mode
  */
 struct set_mode_s
@@ -289,6 +278,14 @@ enum
 
 extern struct saved_data_s lastdata;
 extern int rtc_offset;
+extern int micom_init_func(void);
+extern void copyData(unsigned char *data, int len);
+extern void getRCData(unsigned char *data, int *len);
+void dumpValues(void);
 
+extern int errorOccured;
+extern char ioctl_data[8];
+
+extern struct file_operations vfd_fops;
 #endif  // _kathrein_micom_h
 // vim:ts=4

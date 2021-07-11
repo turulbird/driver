@@ -1,4 +1,4 @@
-﻿/*****************************************************************************
+﻿/****************************************************************************
  *
  * kathren_micom_main.c
  *
@@ -47,7 +47,7 @@
  * Kathrein UFS922
  * Kathrein UFC960
  *
- ******************************************************************************
+ *****************************************************************************
  *
  * Changes
  *
@@ -57,7 +57,6 @@
  * 20210703 Audioniek       Add support for VFDSETFAN (ufs922 only).
  *
  */
-
 #include <asm/io.h>
 #include <asm/uaccess.h>
 #include <asm/termbits.h>
@@ -99,8 +98,10 @@
 #define DATA_BTN_KEYCODE 1
 #define DATA_BTN_NEXTKEY 4
 
-//----------------------------------------------
+// defaults for module parameters
 short paramDebug = 0;
+int waitTime = 1000;
+char *gmt_offset = "3600";  // GMT offset is plus one hour as default
 
 static unsigned char expectEventData = 0;
 static unsigned char expectEventId = 1;
@@ -125,14 +126,11 @@ static int           KeyBufferStart = 0, KeyBufferEnd = 0;
 static unsigned char OutBuffer [BUFFERSIZE];
 static int           OutBufferStart = 0, OutBufferEnd = 0;
 
-static wait_queue_head_t   wq;
-static wait_queue_head_t   rx_wq;
-static wait_queue_head_t   ack_wq;
+static wait_queue_head_t wq;
+static wait_queue_head_t rx_wq;
+static wait_queue_head_t ack_wq;
 static int dataReady = 0;
 
-int waitTime = 1000;
-
-char *gmt_offset = "3600";  // GMT offset is plus one hour as default
 
 #if defined(UFS922)
 unsigned long fan_registers;
@@ -547,7 +545,7 @@ static void processResponse(void)
 			}
 			default: // Ignore Response
 			{
-				dprintk(1, "Invalid/unknown Response %02x\n", expectEventData);
+				dprintk(1, "Invalid/unknown Response 0x%02x\n", expectEventData);
 				dprintk(50, "Buffer start=%d, Buffer end=%d\n",  RCVBufferStart,  RCVBufferEnd);
 				dumpData();
 				/* discard all data, because this happens currently
@@ -558,6 +556,7 @@ static void processResponse(void)
 			}
 		}
 	}
+
 out_switch:
 	expectEventId = 1;
 	expectEventData = 0;
@@ -949,7 +948,7 @@ static int __init micom_init_module(void)
 
 	dprintk(100, "%s >\n", __func__);
 
-	//Disable all ASC 2 interrupts
+	//Disable all ASC interrupts
 	*ASC_X_INT_EN = *ASC_X_INT_EN & ~0x000001ff;
 
 	serial_init();
@@ -963,7 +962,7 @@ static int __init micom_init_module(void)
 		sema_init(&FrontPanelOpen[i].sem, 1);
 	}
 	kernel_thread(micomTask, NULL, 0);
-	//Enable the FIFO
+	// Enable the FIFO
 	*ASC_X_CTRL = *ASC_X_CTRL | ASC_CTRL_FIFO_EN;
 
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,17)
@@ -985,7 +984,7 @@ static int __init micom_init_module(void)
 
 	if (register_chrdev(VFD_MAJOR, "VFD", &vfd_fops))
 	{
-		dprintk(1, "Unable to get major %d\n", VFD_MAJOR);
+		dprintk(1, "%s: Unable to get major %d for VFD\n", __func__, VFD_MAJOR);
 	}
 
 #if defined CONFIG_RTC_CLASS
@@ -1045,7 +1044,7 @@ module_param(gmt_offset, charp, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
 MODULE_PARM_DESC(gmt_offset, "GMT offset (default=3600");
 
 module_param(paramDebug, short, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
-MODULE_PARM_DESC(paramDebug, "Debug Output 0=disabled >0=enabled(debuglevel)");
+MODULE_PARM_DESC(paramDebug, "Debug Output 0=disabled(default) >0=enabled(debuglevel)");
 
 MODULE_DESCRIPTION("MICOM frontcontroller module, Kathrein version");
 MODULE_AUTHOR("Dagobert & Schischu & Konfetti, enhanced by Audioniek");
