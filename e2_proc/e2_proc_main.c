@@ -995,7 +995,11 @@ struct ProcStructure_s e2Proc[] =
  || defined(HS7819) \
  || defined(SPARK) \
  || defined(SPARK7162) \
- || defined(UFS910)
+ || defined(UFS910) \
+ || defined(UFS912) \
+ || defined(UFS913) \
+ || defined(UFS922) \
+ || defined(UFC960)
 	{cProcEntry, "stb/info/OEM",                                                     NULL, NULL, NULL, NULL, ""},
 	{cProcEntry, "stb/info/brand",                                                   NULL, NULL, NULL, NULL, ""},
 	{cProcEntry, "stb/info/model_name",                                              NULL, NULL, NULL, NULL, ""},
@@ -1291,7 +1295,8 @@ struct ProcStructure_s e2Proc[] =
 #endif
 
 // Enigma2 implementation of fan control, doubles the historic various SH4 ones... (TODO: add these)
-#if defined(CUBEREVO) \
+#if defined(ADB_BOX) \
+ || defined(CUBEREVO) \
  || defined(CUBEREVO_9500HD) \
  || defined(IPBOX9900) \
  || defined(IPBOX99) \
@@ -1300,6 +1305,7 @@ struct ProcStructure_s e2Proc[] =
  || defined(SAGEMCOM88) \
  || defined(PACE7241)
 	{cProcEntry, "stb/fp/fan",                                                       NULL, NULL, NULL, NULL, ""},
+	{cProcEntry, "stb/fp/fan_choices",                                               NULL, NULL, NULL, NULL, ""},
 #endif
 #if defined(ADB_BOX) \
  || defined(CUBEREVO) \
