@@ -118,6 +118,7 @@
  *  |           |
  *  |           --------- model_name
  *  |
+ *  |
  *  ---------- fp (this is wrongly used for e2 I think. on dm800 this is frontprocessor and there is another proc entry for frontend)
  *  |           |
  *  |           --------- lnb_sense1
@@ -1011,12 +1012,16 @@ struct ProcStructure_s e2Proc[] =
  || defined(UFS912) \
  || defined(UFS913) \
  || defined(UFS922) \
- || defined(UFC960)
+ || defined(UFC960) \
+ || defined(VIP1_V2) \
+ || defined(VIP2)
 	{cProcEntry, "stb/info/OEM",                                                     NULL, NULL, NULL, NULL, ""},
 	{cProcEntry, "stb/info/brand",                                                   NULL, NULL, NULL, NULL, ""},
 	{cProcEntry, "stb/info/model_name",                                              NULL, NULL, NULL, NULL, ""},
 #if defined(SPARK) \
- || defined(SPARK7162)
+ || defined(SPARK7162) \
+ || defined(VIP1_V2) \
+ || defined(VIP2)
 	{cProcEntry, "stb/info/stb_id",                                                  NULL, NULL, NULL, NULL, ""},
 #endif
 #endif
