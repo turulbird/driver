@@ -51,10 +51,6 @@ ifdef ATEMIO520
 EXTRA_CFLAGS += -DSTx7111
 endif
 
-ifdef ATEMIO530
-EXTRA_CFLAGS += -DSTx7111
-endif
-
 ifdef HS8200
 EXTRA_CFLAGS += -DSTx7105
 endif

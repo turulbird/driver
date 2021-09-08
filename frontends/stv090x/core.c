@@ -35,7 +35,6 @@ static struct stv090x_config tt1600_stv090x_config =
  || defined(HS7119) \
  || defined(HS7819) \
  || defined(ATEMIO520) \
- || defined(ATEMIO530) \
  || defined(SPARK)
 	.device         = STX7111,
 	.demod_mode     = STV090x_DUAL,
@@ -100,7 +99,6 @@ static struct dvb_frontend *frontend_init(struct core_config *cfg, int i)
  || defined(HS7119) \
  || defined(HS7819) \
  || defined(ATEMIO520) \
- || defined(ATEMIO530) \
  || defined(SPARK)
 	frontend = stv090x_attach(&tt1600_stv090x_config, cfg->i2c_adap, STV090x_DEMODULATOR_0, STV090x_TUNER1);
 #else
@@ -224,8 +222,7 @@ static struct dvb_frontend *init_stv090x_device(struct dvb_adapter *adapter, str
  || defined(HS7429) \
  || defined(HS7119) \
  || defined(HS7819) \
- || defined(ATEMIO520) \
- || defined(ATEMIO530)
+ || defined(ATEMIO520)
 		/* give the tuner some time to power up. trial fix for tuner
 		 * not available after boot on some boxes.
 		 *
@@ -273,14 +270,14 @@ struct plat_tuner_config tuner_resources[] =
 		.adapter = 0,
 		.i2c_bus = 0,
 		.i2c_addr = 0x68,
-		.tuner_enable = {2, 2, 1},
+		.tuner_enable = { 2, 2, 1 },
 	},
 	[1] =
 	{
 		.adapter = 0,
 		.i2c_bus = 1,
 		.i2c_addr = 0x68,
-		.tuner_enable = {2, 4, 1},
+		.tuner_enable = { 2, 4, 1 },
 	},
 #elif defined(UFS912)
 	[0] =
@@ -288,7 +285,7 @@ struct plat_tuner_config tuner_resources[] =
 		.adapter = 0,
 		.i2c_bus = 3,
 		.i2c_addr = 0x68,
-		.tuner_enable = {2, 4, 1},
+		.tuner_enable = { 2, 4, 1 },
 	},
 #elif defined(HS7110) \
  || defined(HS7810A) \
@@ -296,14 +293,13 @@ struct plat_tuner_config tuner_resources[] =
  || defined(HS7429) \
  || defined(HS7119) \
  || defined(HS7819) \
- || defined(ATEMIO520) \
- || defined(ATEMIO530)
+ || defined(ATEMIO520)
 	[0] =
 	{
 		.adapter = 0,
 		.i2c_bus = 3,
 		.i2c_addr = 0x68,
-		.tuner_enable = {3, 3, 1},
+		.tuner_enable = { 3, 3, 1 },
 	},
 #elif defined(SPARK)
 	[0] =

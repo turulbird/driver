@@ -113,10 +113,6 @@ ifdef ATEMIO520
 obj-y += cn_micom/
 endif
 
-ifdef ATEMIO530
-obj-y += cn_micom/
-endif
-
 ifdef IPBOX9900
 obj-y += ipbox99xx/
 endif

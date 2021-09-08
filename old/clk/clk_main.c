@@ -44,8 +44,6 @@ extern void hs7429_setup_clks(void);
 extern void hs7819_setup_clks(void);
 #elif defined(ATEMIO520)
 extern void atemio520_setup_clks(void);
-#elif defined(ATEMIO530)
-extern void atemio530_setup_clks(void);
 #endif
 
 int my_init_module(void)
@@ -68,8 +66,6 @@ int my_init_module(void)
    hs7819_setup_clks();
 #elif defined(ATEMIO520)
    atemio520_setup_clks();
-#elif defined(ATEMIO530)
-   atemio530_setup_clks();
 #elif defined(UFS922) || defined(UFC960)
    ufs922_setup_clks();
 #else

@@ -351,8 +351,6 @@ static int info_model_read(char *page, char **start, off_t off, int count, int *
 	int len = sprintf(page, "hs7819\n");
 #elif defined(ATEMIO520)
 	int len = sprintf(page, "atemio520\n");
-#elif defined(ATEMIO530)
-	int len = sprintf(page, "atemio530\n");
 #elif defined(IPBOX9900)
 	int len = sprintf(page, "ipbox9900\n");
 #elif defined(IPBOX99)
@@ -715,7 +713,6 @@ static int info_chipset_read(char *page, char **start, off_t off, int count, int
  || defined(HS7119) \
  || defined(HS7819) \
  || defined(ATEMIO520) \
- || defined(ATEMIO530) \
  || defined(SPARK) \
  || defined(VITAMIN_HD5000)
 	int len = sprintf(page, "STi7111\n");
@@ -1258,7 +1255,6 @@ struct ProcStructure_s e2Proc[] =
  || defined(HS7110) \
  || defined(HS7119) \
  || defined(ATEMIO520) \
- || defined(ATEMIO530) \
  || defined(HS7420) \
  || defined(HS7429) \
  || defined(HS7810A) \

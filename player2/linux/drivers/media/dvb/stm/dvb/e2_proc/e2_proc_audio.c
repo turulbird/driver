@@ -197,7 +197,6 @@ static void WriteRegister(volatile unsigned long *reg, unsigned long val)
  || defined(HS7119) \
  || defined(HS7819) \
  || defined(ATEMIO520) \
- || defined(ATEMIO530) \
  || defined(UFS913) \
  || defined(VITAMIN_HD5000) \
  || defined(SAGEMCOM88)
@@ -230,7 +229,6 @@ void spdif_out_mute(int mute)
  || defined(HS7119) \
  || defined(HS7819) \
  || defined(ATEMIO520) \
- || defined(ATEMIO530) \
  || defined(UFS913) \
  || defined(VITAMIN_HD5000) \
  || defined(SAGEMCOM88)
@@ -251,7 +249,6 @@ void spdif_out_mute(int mute)
  || defined(HS7119) \
  || defined(HS7819) \
  || defined(ATEMIO520) \
- || defined(ATEMIO530) \
  || defined(UFS913) \
  || defined(VITAMIN_HD5000) \
  || defined(SAGEMCOM88)
@@ -275,7 +272,6 @@ void spdif_out_mute(int mute)
  || defined(HS7119) \
  || defined(HS7819) \
  || defined(ATEMIO520) \
- || defined(ATEMIO530) \
  || defined(UFS913) \
  || defined(VITAMIN_HD5000) \
  || defined(SAGEMCOM88)

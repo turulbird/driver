@@ -38,7 +38,6 @@
  || defined(HS7810A) \
  || defined(HS7819) \
  || defined(ATEMIO520) \
- || defined(ATEMIO530) \
  || defined(VITAMIN_HD5000)) \
  && defined(__TDT__)
 #define HAS_DSUB 0
@@ -80,8 +79,7 @@ static struct stmcore_display_pipeline_data platform_data[] = {
  || defined(HS7429) \
  || defined(HS7810A) \
  || defined(HS7819) \
- || defined(ATEMIO520) \
- || defined(ATEMIO530)
+ || defined(ATEMIO520)
 	.hdmi_i2c_adapter_id	  = 2,
 #else
     .hdmi_i2c_adapter_id      = 0,
@@ -98,7 +96,6 @@ static struct stmcore_display_pipeline_data platform_data[] = {
  || defined(HS7429) \
  || defined(HS7819) \
  || defined(ATEMIO520) \
- || defined(ATEMIO530) \
  || defined(VITAMIN_HD5000)) \
  && defined(__TDT__)
     .dvo_output_id            = -1,

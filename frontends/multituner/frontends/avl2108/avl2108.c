@@ -3,10 +3,10 @@
  *
  * @author Pedro Aguilar <pedro@duolabs.com>
  *
- * @brief Availink avl2108 - DVBS/S2 Satellite demod driver with Sharp BS2S7HZ6360 tuner
+ * @brief Availink avl2108 - DVBS/S2 Satellite demod driver
  *
  * Copyright (C) 2009-2010 Duolabs Spa
- * 2011 adapted by konfetti for use with ufs922, hs9510 and hs8200
+ *               2011 adapted by konfetti for use with ufs922, hs9510 and hs8200
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -144,18 +144,18 @@ struct avl2108_pllconf
 const struct avl2108_pllconf pll_conf[] =
 {
 	/* For all parallel modes and all serial modes below 30M (symbol rate) */
-	{ 10, 0, 335, 6, 5, 4000, 11200, 16800, 19200 },  /*< Reference clock 4M;   --> 112, 168, 192 */
-	{ 10, 0, 299, 6, 5, 4500, 11250, 16875, 19286 },  /*< Reference clock 4.5M; --> 112.5, 168.75, 192.86 */
-	{ 10, 1, 269, 6, 5, 10000, 11250, 16875, 19286 }, /*< Reference clock 10M;  --> 112.5, 168.75, 192.86 */
-	{ 10, 0, 83, 6, 5, 16000, 11200, 16800, 19200 },  /*< Reference clock 16M;  --> 112, 168, 192 */
-	{ 10, 0, 49, 6, 5, 27000, 11250, 16875, 19286 },  /*< Reference clock 27M;  --> 112.5, 168.75, 192.86 */
+	{ 10, 0, 335, 6, 5,  4000, 11200, 16800, 19200 },  /*< Reference clock 4M;   --> 112, 168, 192 */
+	{ 10, 0, 299, 6, 5,  4500, 11250, 16875, 19286 },  /*< Reference clock 4.5M; --> 112.5, 168.75, 192.86 */
+	{ 10, 1, 269, 6, 5, 10000, 11250, 16875, 19286 },  /*< Reference clock 10M;  --> 112.5, 168.75, 192.86 */
+	{ 10, 0,  83, 6, 5, 16000, 11200, 16800, 19200 },  /*< Reference clock 16M;  --> 112, 168, 192 */
+	{ 10, 0,  49, 6, 5, 27000, 11250, 16875, 19286 },  /*< Reference clock 27M;  --> 112.5, 168.75, 192.86 */
 
 	/* for all modes */
-	{ 10, 0, 335, 6, 4, 4000, 11200, 16800, 22400 },  /*< Reference clock 4M;   --> 112, 168, 224 */
-	{ 10, 0, 299, 6, 4, 4500, 11250, 16875, 22500 },  /*< Reference clock 4.5M; --> 112.5, 168.75, 225 */
-	{ 10, 1, 269, 6, 4, 10000, 11250, 16875, 22500 }, /*< Reference clock 10M;  --> 112.5, 168.75, 225 */
-	{ 10, 0, 83, 6, 4, 16000, 11200, 16800, 22400 },  /*< Reference clock 16M;  --> 112, 168, 224 */
-	{ 10, 0, 49, 6, 4, 27000, 11250, 16875, 22500 }   /*< Reference clock 27M;  --> 112.5, 168.75, 225 */
+	{ 10, 0, 335, 6, 4,  4000, 11200, 16800, 22400 },  /*< Reference clock 4M;   --> 112, 168, 224 */
+	{ 10, 0, 299, 6, 4,  4500, 11250, 16875, 22500 },  /*< Reference clock 4.5M; --> 112.5, 168.75, 225 */
+	{ 10, 1, 269, 6, 4, 10000, 11250, 16875, 22500 },  /*< Reference clock 10M;  --> 112.5, 168.75, 225 */
+	{ 10, 0,  83, 6, 4, 16000, 11200, 16800, 22400 },  /*< Reference clock 16M;  --> 112, 168, 224 */
+	{ 10, 0,  49, 6, 4, 27000, 11250, 16875, 22500 }   /*< Reference clock 27M;  --> 112.5, 168.75, 225 */
 };
 
 const unsigned short pll_array_size = sizeof(pll_conf) / sizeof(struct avl2108_pllconf);
@@ -174,10 +174,7 @@ static struct socket_s socketList[cMaxSockets];
 static u16 avl2108_i2c_writereg(struct avl2108_state *state, u8 *data, u16 *size)
 {
 	struct i2c_msg msg =
-	{
-		.addr = state->config->demod_address,
-		.flags = 0, .buf = data, .len = *size
-	};
+	{ .addr = state->config->demod_address, .flags = 0, .buf = data, .len = *size };
 	int err;
 
 	{
@@ -189,7 +186,7 @@ static u16 avl2108_i2c_writereg(struct avl2108_state *state, u8 *data, u16 *size
 		{
 			sprintf(dstr, "%s: 0x%02x", dstr, data[i]);
 		}
-		dprintk(200, "%s(): %u b: %s\n", __func__, *size, dstr);
+		dprintk(200, "%s: %u b: %s\n", __func__, *size, dstr);
 	}
 
 	if ((err = i2c_transfer(state->i2c, &msg, 1)) != 1)
@@ -544,7 +541,6 @@ static u16 avl2108_i2c_repeater_recv(void *_state, u8 *buf, u16 size)
 		ret = avl2108_i2c_read(state, REG_I2C_RSP, buf, size);
 	}
 	dprintk(50, "%s: < status = %u\n", __func__, ret);
-// vim:ts=4
 	return ret;
 }
 
@@ -559,7 +555,7 @@ static u16 avl2108_i2c_repeater_init(u16 bus_clk, struct avl2108_state *state)
 	buf[4] = I2C_INIT;
 	ret |= avl2108_i2c_repeater_exec(state, buf, 5);
 
-	dprintk(50, "Leaving %s() with status %u\n", __func__, ret);
+	dprintk(100, "%s < status = %u\n", __func__, ret);
 	return ret;
 }
 
@@ -581,7 +577,7 @@ static u16 avl2108_get_op_status(void *_state)
 			ret = AVL2108_ERROR_PREV;
 		}
 	}
-	dprintk(50, "Leaving %s() with status buf[0]: 0x%02x, buf[1]: 0x%02x\n", __func__, buf[0], buf[1]);
+	dprintk(100, "%s < buf[0]: 0x%02x, buf[1]: 0x%02x\n", __func__, buf[0], buf[1]);
 	return ret;
 }
 
@@ -633,7 +629,7 @@ u16 avl2108_cpu_halt(struct dvb_frontend *fe)
 			}
 		}
 	}
-	dprintk(50, "Leaving %s() with status %u\n", __func__, ret);
+	dprintk(100, "%s < status = %u\n", __func__, ret);
 	return ret;
 }
 
@@ -679,7 +675,7 @@ static int avl2108_load_firmware(struct dvb_frontend *fe)
 	u16 ret;
 	int fw_ret;
 
-	dprintk(5, "%s()\n", __func__);
+	dprintk(100, "%s >\n", __func__);
 	ret = avl2108_i2c_write32(state, REG_CORE_RESET_B, 0);
 	dprintk(10, "%s(): Uploading demod firmware (%s)...\n", __func__, AVL2108_DEMOD_FW);
 	fw_ret = request_firmware(&fw, AVL2108_DEMOD_FW, &state->i2c->dev);
@@ -707,7 +703,7 @@ static int avl2108_load_firmware(struct dvb_frontend *fe)
 #endif
 		i += 4 + buf_size;
 	}
-	printk("out loop\n");
+	dprintk(70, "out loop\n");
 	ret |= avl2108_i2c_write32(state, 0x00000000, 0x00003ffc);
 	ret |= avl2108_i2c_write16(state, REG_CORE_RDY_WORD, 0x0000);
 	ret |= avl2108_i2c_write32(state, REG_ERROR_MSG, 0x00000000);
@@ -716,7 +712,7 @@ static int avl2108_load_firmware(struct dvb_frontend *fe)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,32)
 	kfree(buffer);
 #endif
-	dprintk(10, "Leaving %s() with status %u\n", __func__, ret);
+	dprintk(100, "%s( < status = %u\n", __func__, ret);
 	return ret;
 }
 
@@ -891,7 +887,7 @@ u16 avl2108_save_config(struct dvb_frontend *fe, u32 *buf32, u16 *buf16)
 	ret |= avl2108_i2c_read16(state, 1536, buf16++);
 	ret |= avl2108_i2c_read16(state, REG_MPEG_PERSISTENT_CLK_MODE, buf16++);
 	ret |= avl2108_i2c_read16(state, REG_BLIND_SCAN_CARIER_FREQ_TO_KHZ, buf16);
-	dprintk(10, "Leaving %s() with status %u\n", __func__, ret);
+	dprintk(100, "%s < status = %u\n", __func__, ret);
 	return ret;
 }
 
@@ -975,7 +971,7 @@ u16 avl2108_set_functional_mode(struct dvb_frontend *fe)
 		ret |= avl2108_restore_config(fe, x1, x2);
 		ret |= avl2108_i2c_repeater_init(speed, state);
 	}
-	dprintk(10, "Leaving %s() with status %u\n", __func__, ret);
+	dprintk(100, "%s < status = %u\n", __func__, ret);
 	return ret;
 }
 
@@ -1014,7 +1010,7 @@ u16 avl2108_get_version(struct avl2108_state *state, struct avl2108_ver_info *ve
 		version->patch_build = buf[2];
 		version->patch_build = ((u16)((version->patch_build) << 8)) + buf[3];
 	}
-	dprintk(10, "Leaving %s() with status %u\n", __func__, ret);
+	dprintk(100, "%s < status = %u\n", __func__, ret);
 	return ret;
 }
 
@@ -1023,7 +1019,7 @@ int avl2108_set_voltage(struct dvb_frontend *fe, fe_sec_voltage_t voltage)
 	struct avl2108_state *state = fe->demodulator_priv;
 	int ret = 0;
 
-	dprintk(10, "%s(%p, %d)\n", __FUNCTION__, fe, voltage);
+	dprintk(100, "%s(%p, %d) >\n", __func__, fe, voltage);
 	ret = state->equipment.lnb_set_voltage(state->lnb_priv, fe, voltage);
 	return ret;
 }
@@ -1074,7 +1070,7 @@ static int avl2108_diseqc_init(struct dvb_frontend *fe)
 	{
 		state->diseqc_status = DISEQC_STATUS_INIT;
 	}
-	dprintk(10, "Leaving %s() with status %u\n", __func__, ret);
+	dprintk(100, "%s < status = %u\n", __func__, ret);
 	return 0;
 }
 
@@ -1112,7 +1108,7 @@ u16 avl2108_diseqc_switch_mode(struct dvb_frontend *fe)
 			break;
 		}
 	}
-	dprintk(10, "Leaving %s() with status %u\n", __func__, ret);
+	dprintk(100, "%s < status  = %u\n", __func__, ret);
 	return ret;
 }
 

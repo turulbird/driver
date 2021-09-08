@@ -3,7 +3,7 @@
  *
  * @author Pedro Aguilar <pedro@duolabs.com>
  *
- * @brief Availink avl2108 - DVBS/S2 Satellite demod driver with Sharp BS2S7HZ6360 tuner
+ * @brief Availink avl2108 - DVBS/S2 Satellite demod driver
  *
  * Copyright (C) 2009-2010 Duolabs Spa
  * 2011 adapted by konfetti for use with ufs922, hs9510 and hs8200
@@ -223,7 +223,7 @@ static u16 stv6306_tuner_lock_status_ext(struct dvb_frontend *fe)
 			ret = AVL2108_ERROR_PREV;
 		}
 	}
-	dprintk(50, "%s: lock status: %u, buf: 0x%X\n", __func__, ret, buf);
+	dprintk(50, "%s < lock status: %u, buf: 0x%X\n", __func__, ret, buf);
 	return ret;
 }
 
@@ -273,7 +273,7 @@ static u16 stv6306_load_firmware(struct dvb_frontend *fe)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,32)
 	kfree(buffer);
 #endif
-	dprintk(10, "%s < status = %u\n", __func__, ret);
+	dprintk(100, "%s < status = %u\n", __func__, ret);
 	return ret;
 }
 
@@ -361,7 +361,7 @@ static u16 stv6306_tuner_lock_status_int(struct dvb_frontend *fe)
 		}
 	}
 
-	dprintk(50, "%s < lock status: %u\n", __func__, ret);
+	dprintk(100, "%s < lock status: %u\n", __func__, ret);
 	return ret;
 }
 
@@ -401,10 +401,10 @@ static u16 stv6306_tuner_init(struct dvb_frontend *fe)
 {
 	u16 ret = 0;
 
-	dprintk(50, "%s >\n", __func__);
+	dprintk(100, "%s >\n", __func__);
 	/* nothing to do here ? */
 
-	dprintk(50, "%s < status = %u\n", __func__, ret);
+	dprintk(100, "%s < status = %u\n", __func__, ret);
 	return ret;
 }
 

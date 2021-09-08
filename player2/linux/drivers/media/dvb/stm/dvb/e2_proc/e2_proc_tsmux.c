@@ -18,8 +18,7 @@
 extern struct DeviceContext_s *DeviceContext;
 
 #if defined(HS7110) \
- || defined(ATEMIO520) \
- || defined(ATEMIO530)
+ || defined(ATEMIO520)
 extern int setMuxSource(int source);
 #endif
 int setCiSource(int slot, int source);
@@ -48,8 +47,7 @@ int proc_tsmux_input0_write(struct file *file, const char __user *buf,
 #endif
 		/* ciN for source ciN, e.g. A for TUNER */
 #if defined(HS7110) \
- || defined(ATEMIO520) \
- || defined(ATEMIO530)
+ || defined(ATEMIO520)
 		if (strcmp(page, "A") == 0)
 		{
 			setMuxSource(0);

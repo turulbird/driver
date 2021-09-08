@@ -119,7 +119,6 @@ static int current_input = ENCODER;
  || defined(HS7119) \
  || defined(HS7819) \
  || defined(ATEMIO520) \
- || defined(ATEMIO530) \
  || defined(IPBOX9900) \
  || defined(IPBOX99) \
  || defined(IPBOX55) \
@@ -199,7 +198,6 @@ int proc_avs_0_volume_write(struct file *file, const char __user *buf, unsigned 
  || defined(HS7119) \
  || defined(HS7819) \
  || defined(ATEMIO520) \
- || defined(ATEMIO530) \
  || defined(IPBOX9900) \
  || defined(IPBOX99) \
  || defined(IPBOX55) \

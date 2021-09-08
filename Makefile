@@ -116,9 +116,6 @@ endif
 ifdef ATEMIO520
 CCFLAGSY += -DATEMIO520
 endif
-ifdef ATEMIO530
-CCFLAGSY += -DATEMIO530
-endif
 ifdef ADB_BOX
 CCFLAGSY += -DADB_BOX
 endif
@@ -289,11 +286,6 @@ obj-y += smartcard/
 endif
 
 ifdef ATEMIO520
-obj-y += cec/
-obj-y += smartcard/
-endif
-
-ifdef ATEMIO530
 obj-y += cec/
 obj-y += smartcard/
 endif

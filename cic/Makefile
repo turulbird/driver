@@ -146,11 +146,6 @@ obj-m += cnbox_cic.o
 cnbox_cic-objs:= cnbox_cic/cnbox_cic.o
 endif
 
-ifdef ATEMIO530
-obj-m += cnbox_cic.o
-cnbox_cic-objs:= cnbox_cic/cnbox_cic.o
-endif
-
 ifdef SPARK
 dummy_cic-objs += dummy_cic/dummy_cic.o
 obj-m += dummy_cic.o
