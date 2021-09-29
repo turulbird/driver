@@ -1011,7 +1011,8 @@ struct ProcStructure_s e2Proc[] =
  || defined(UFS922) \
  || defined(UFC960) \
  || defined(VIP1_V2) \
- || defined(VIP2)
+ || defined(VIP2) \
+ || defined(OPT9600)
 	{cProcEntry, "stb/info/OEM",                                                     NULL, NULL, NULL, NULL, ""},
 	{cProcEntry, "stb/info/brand",                                                   NULL, NULL, NULL, NULL, ""},
 	{cProcEntry, "stb/info/model_name",                                              NULL, NULL, NULL, NULL, ""},
