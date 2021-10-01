@@ -125,9 +125,7 @@ static struct stmcore_display_pipeline_data platform_data[] =
 #if defined(UFS922)
 /* Dagobert: for stlinux23 this is mb422 but i2c is on bus 2 instead! */
 		.hdmi_i2c_adapter_id      = 2,
-#elif defined(CONFIG_SH_STB7100_REF) \
- ||   defined(CONFIG_SH_ST_MB442) \
- ||   defined(CONFIG_SH_RELOOK511) \
+#elif defined(ADB_BOX) \
  ||   defined(CUBEREVO) \
  ||   defined(CUBEREVO_MINI) \
  ||   defined(CUBEREVO_MINI2) \
@@ -143,11 +141,11 @@ static struct stmcore_display_pipeline_data platform_data[] =
  ||   defined(HL101) \
  ||   defined(VIP1_V1) \
  ||   defined(VIP1_V2) \
- ||   defined(VIP2) \
- ||   defined(OPT9600)
+ ||   defined(VIP2)
 		.hdmi_i2c_adapter_id      = 1,
 #elif defined(CONFIG_SH_STB7109E_REF) \
- ||   defined(CONFIG_SH_ST_MB448)
+ ||   defined(CONFIG_SH_ST_MB448) \
+ ||   defined(OPT9600)
 		.hdmi_i2c_adapter_id      = 2,
 #elif defined(CONFIG_SH_STB7100_MBOARD) \
  ||   defined(CONFIG_SH_ST_MB411)
@@ -158,7 +156,8 @@ static struct stmcore_display_pipeline_data platform_data[] =
 #endif
 #endif
 #if defined(FS9000) \
- || defined(HS9510)
+ || defined(HS9510) \
+ || defined(OPT9600)
 		.hdmi_i2c_adapter_id      = 2,
 #endif
 		.main_output_id           = 0,
@@ -259,7 +258,7 @@ static const int chromaScale = 112500; // 112.500%, from DENC validation report
  ||   defined(VIP1_V2) \
  ||   defined(VIP2) \
  ||   defined(FS9000) \
- || defined(HS9510)
+ ||   defined(HS9510)
 #define GPIO_PIN_HOTPLUG stm_gpio(4,7)
 #elif defined(OPT9600) 
 #define GPIO_PIN_HOTPLUG stm_gpio(4,4)
