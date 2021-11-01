@@ -1012,7 +1012,8 @@ struct ProcStructure_s e2Proc[] =
  || defined(UFC960) \
  || defined(VIP1_V2) \
  || defined(VIP2) \
- || defined(OPT9600)
+ || defined(OPT9600) \
+ || defined(ATEMIO520)
 	{cProcEntry, "stb/info/OEM",                                                     NULL, NULL, NULL, NULL, ""},
 	{cProcEntry, "stb/info/brand",                                                   NULL, NULL, NULL, NULL, ""},
 	{cProcEntry, "stb/info/model_name",                                              NULL, NULL, NULL, NULL, ""},
@@ -1152,7 +1153,8 @@ struct ProcStructure_s e2Proc[] =
  || defined(HS7420) \
  || defined(HS7429) \
  || defined(HS7810A) \
- || defined(HS7819)
+ || defined(HS7819) \
+ || defined(ATEMIO520)
 	{cProcEntry, "stb/fp/resellerID",                                                NULL, NULL, NULL, NULL, ""},
 #endif
 
