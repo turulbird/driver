@@ -5,15 +5,16 @@
  * Copyright (C) ST Microelectronics
  *
  * Version for:
- * Fortis FS9000/9200 (STV0903) Tuner STV6110X
- * Fortis HS7110      (STX7111) Tuner STV6110X
- * Fortis HS7119      (STX7111) Tuner STV6110X
- * Fortis HS7420      (STX7111) Tuner STV6110X
- * Fortis HS7429      (STX7111) Tuner STV6110X
- * Fortis HS7810A     (STX7111) Tuner STV6110X
- * Fortis HS7819      (STX7111) Tuner STV6110X
- * Atemio 520         (STX7111) Tuner STV6110X?
- * Kathrein UFS912    (STX7111) Tuner STV6110X?
+ * Fortis FS9000/9200    (STV0903) Tuner STV6110X
+ * Fortis HS7110         (STX7111) Tuner STV6110X
+ * Fortis HS7119         (STX7111) Tuner STV6110X
+ * Fortis HS7420         (STX7111) Tuner STV6110X
+ * Fortis HS7429         (STX7111) Tuner STV6110X
+ * Fortis HS7810A        (STX7111) Tuner STV6110X
+ * Fortis HS7819         (STX7111) Tuner STV6110X
+ * Atemio AM 520 HD      (STX7111) Tuner STV6110X
+ * Opticum HD 9600 Mini  (STX7111) Tuner STV6110X
+ * Kathrein UFS912       (STX7111) Tuner STV6110X?
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,6 +38,7 @@
  && !defined(HS7810A) \
  && !defined(HS7819) \
  && !defined(ATEMIO520) \
+ && !defined(OPT9600MINI) \
  && !defined(UFS912)
 #warning: Wrong receiver model!
 #endif
@@ -7878,6 +7880,7 @@ static int stv090x_setup(struct dvb_frontend *fe)
  || defined(HS7810A) \
  || defined(HS7819) \
  || defined(ATEMIO520) \
+ || defined(OPT9600MINI) \
  || defined(SPARK)
 	STV090x_SETFIELD_Px(reg, STOP_ENABLE_FIELD, 1);
 #endif
@@ -7908,6 +7911,7 @@ static int stv090x_setup(struct dvb_frontend *fe)
  || defined(HS7810A) \
  || defined(HS7819) \
  || defined(ATEMIO520) \
+ || defined(OPT9600MINI) \
  || defined(SPARK)
 	if (stv090x_write_reg(state, STV090x_SYNTCTRL, 0x10 | config->clk_mode) < 0) /* enable PLL */
 	{
@@ -8168,6 +8172,7 @@ static int fs9000_set_voltage(struct dvb_frontend *fe, enum fe_sec_voltage volta
  || defined(HS7810A) \
  || defined(HS7819) \
  || defined(ATEMIO520) \
+ || defined(OPT9600MINI) \
  || defined(SPARK)
 
 #define LNB_VOLTAGE_OFF 0x2b0010
@@ -8338,6 +8343,7 @@ static struct dvb_frontend_ops stv090x_ops =
  || defined(HS7810A) \
  || defined(HS7819) \
  || defined(ATEMIO520) \
+ || defined(OPT9600MINI) \
  || defined(SPARK)
 	.set_voltage                 = lnb_set_voltage,
 #elif defined(UFS912)
@@ -8382,6 +8388,7 @@ struct dvb_frontend *stv090x_attach(const struct stv090x_config *config,
  || defined(HS7810A) \
  || defined(HS7819) \
  || defined(ATEMIO520) \
+ || defined(OPT9600MINI) \
  || defined(SPARK)
 	mutex_init(&demod_lock);
 #else

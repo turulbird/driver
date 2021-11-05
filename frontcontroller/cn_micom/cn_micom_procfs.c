@@ -542,7 +542,7 @@ static int brand_name_read(char *page, char **start, off_t off, int count, int *
 static int model_name_read(char *page, char **start, off_t off, int count, int *eof, void *data_unused)
 {
 	int len = 0;
-#if !defined(ATEMIO520)
+#if defined(OPT9600PRIMA)
 	int ts_model = 0;
 
 	// detect DVB-T tuner on TS models
@@ -553,8 +553,10 @@ static int model_name_read(char *page, char **start, off_t off, int count, int *
 	{
 #if defined(ATEMIO520)
 		len = sprintf(page, "%s\n", "AM 520 HD");
+#elif defined(OPT9600MINI)
+		len = sprintf(page, "%s\n", "HD 9600 Mini");
 #else
-		len = sprintf(page, "%s%s%s\n", "HD ", (ts_model == 1 ? "TS " : ""), "9600");
+		len = sprintf(page, "%s%s%s\n", "HD ", (ts_model == 1 ? "TS " : ""), "9600 PRIMA");
 #endif
 	}	
 	dprintk(50, "%s < %d\n", __func__, len);

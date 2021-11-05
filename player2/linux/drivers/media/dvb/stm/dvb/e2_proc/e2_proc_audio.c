@@ -188,7 +188,7 @@ static void WriteRegister(volatile unsigned long *reg, unsigned long val)
 
 #if defined(UFS912) \
  || defined(SPARK) \
- || defined (SPARK7162) \
+ || defined(SPARK7162) \
  || defined(HS8200) \
  || defined(HS7110) \
  || defined(HS7810A) \
@@ -197,6 +197,7 @@ static void WriteRegister(volatile unsigned long *reg, unsigned long val)
  || defined(HS7119) \
  || defined(HS7819) \
  || defined(ATEMIO520) \
+ || defined(OPT9600MINI) \
  || defined(UFS913) \
  || defined(VITAMIN_HD5000) \
  || defined(SAGEMCOM88)
@@ -229,6 +230,7 @@ void spdif_out_mute(int mute)
  || defined(HS7119) \
  || defined(HS7819) \
  || defined(ATEMIO520) \
+ || defined(OPT9600MINI) \
  || defined(UFS913) \
  || defined(VITAMIN_HD5000) \
  || defined(SAGEMCOM88)
@@ -249,6 +251,7 @@ void spdif_out_mute(int mute)
  || defined(HS7119) \
  || defined(HS7819) \
  || defined(ATEMIO520) \
+ || defined(OPT9600MINI) \
  || defined(UFS913) \
  || defined(VITAMIN_HD5000) \
  || defined(SAGEMCOM88)
@@ -272,6 +275,7 @@ void spdif_out_mute(int mute)
  || defined(HS7119) \
  || defined(HS7819) \
  || defined(ATEMIO520) \
+ || defined(OPT9600MINI) \
  || defined(UFS913) \
  || defined(VITAMIN_HD5000) \
  || defined(SAGEMCOM88)

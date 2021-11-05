@@ -1284,6 +1284,7 @@ static int SCI_SetClockSource(SCI_CONTROL_BLOCK *sci)
  || defined(HS7810A) \
  || defined(HS7819) \
  || defined(ATEMIO520) \
+ || defined(OPT9600MINI) \
  || defined(UFS912) \
  || defined(SPARK)
 	reg_address = (U32)checked_ioremap(SYS_CFG_BASE_ADDRESS + SYS_CFG7, 4);
@@ -1314,6 +1315,7 @@ static int SCI_SetClockSource(SCI_CONTROL_BLOCK *sci)
  || defined(HS7810A) \
  || defined(HS7819) \
  || defined(ATEMIO520) \
+ || defined(OPT9600MINI) \
  || defined(VITAMIN_HD5000)
 	reg_address = (U32)checked_ioremap(SYS_CFG_BASE_ADDRESS + SYS_CFG5, 4);
 	if (!reg_address)

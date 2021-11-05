@@ -85,6 +85,7 @@ extern void fe_core_register_frontend(struct dvb_adapter *dvb_adap);
  || defined(HS7119) \
  || defined(HS7819) \
  || defined(ATEMIO520) \
+ || defined(OPT9600MINI) \
  || defined(VITAMIN_HD5000) \
  || defined(SAGEMCOM88) \
  || defined(PACE7241)
@@ -500,6 +501,7 @@ void ptiInit(struct DeviceContext_s *pContext)
  || defined(HS7119) \
  || defined(HS7819) \
  || defined(ATEMIO520) \
+ || defined(OPT9600MINI) \
  || defined(VITAMIN_HD5000)
 	unsigned long start = 0xfe230000;  // STx7105 & STx7111
 #else
@@ -588,6 +590,7 @@ void ptiInit(struct DeviceContext_s *pContext)
  || defined(HS7119) \
  || defined(HS7819) \
  || defined(ATEMIO520) \
+ || defined(OPT9600MINI) \
  || defined(VITAMIN_HD5000) \
  || defined(SAGEMCOM88) \
  || defined(PACE7241)

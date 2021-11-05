@@ -35,6 +35,7 @@
  || defined(HS7810A) \
  || defined(HS7819) \
  || defined(ATEMIO520) \
+ || defined(OPT9600MINI) \
  || defined(VITAMIN_HD5000)
 #include "sci_7111.h"
 #elif defined(CONFIG_CPU_SUBTYPE_STX7105) \

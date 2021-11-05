@@ -166,7 +166,7 @@
  *  |
  *  ---------- misc
  *  |           |
- *  |           --------- 12V_output <- VIP1_V1, HL101, OPT9600, IPBOX9900 only
+ *  |           --------- 12V_output <- VIP1_V1, HL101, OPT9600, OPT9600MINI, IPBOX9900 only
  *  |
  *  ---------- tuner (dagoberts tuner entry ;-) )
  *  |           |
@@ -243,7 +243,8 @@
 #include <linux/module.h>
 #if defined(HL101) \
  || defined(VIP1_V1) \
- || defined(OPT9600)
+ || defined(OPT9600) \
+ || defined(OPT9600MINI)
 #include <linux/version.h>
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,23)
 #  include <linux/stpio.h>
@@ -260,7 +261,8 @@ typedef int (*proc_write_t)(struct file *file, const char __user *buf, unsigned 
 
 // For 12V output
 #if defined(HL101) \
- || defined(VIP1_V1)
+ || defined(VIP1_V1) \
+ || defined(OPT9600MINI)
 struct stpio_pin *_12v_pin;
 #endif
 
@@ -369,6 +371,8 @@ static int info_model_read(char *page, char **start, off_t off, int count, int *
 	int len = sprintf(page, "pace7241\n");
 #elif defined(OPT9600)
 	int len = sprintf(page, "opt9600\n");
+#elif defined(OPT9600MINI)
+	int len = sprintf(page, "opt9600mini\n");
 #else
 	int len = sprintf(page, "unknown\n");
 #endif
@@ -714,7 +718,8 @@ static int info_chipset_read(char *page, char **start, off_t off, int count, int
  || defined(HS7819) \
  || defined(ATEMIO520) \
  || defined(SPARK) \
- || defined(VITAMIN_HD5000)
+ || defined(VITAMIN_HD5000) \
+ || defined(OPT9600MINI)
 	int len = sprintf(page, "STi7111\n");
 #elif defined(SPARK7162)
 	int len = sprintf(page, "STi7162\n");
@@ -866,13 +871,15 @@ out:
 
 #if defined(IPBOX9900) \
  || defined(HL101) \
- || defined(VIP1_V1)
+ || defined(VIP1_V1) \
+ || defined(OPT9600MINI)
 int _12v_isON = 0;
 
 void set_12v(int onoff)
 {
 #if defined(HL101) \
- || defined(VIP1_V1)
+ || defined(VIP1_V1) \
+ || defined(OPT9600MINI)
 	if (onoff)
 	{
 		stpio_set_pin(_12v_pin, 1);
@@ -921,7 +928,8 @@ int proc_misc_12V_output_write(struct file *file, const char __user *buf, unsign
 		ret = count;
 	}
 #if defined(HL101) \
- || defined(VIP1_V1)
+ || defined(VIP1_V1) \
+ || defined(OPT9600MINI)
 //	set_12v(_12v_isON);  // set 12V output
 #endif
 	ret = count;
@@ -1013,6 +1021,7 @@ struct ProcStructure_s e2Proc[] =
  || defined(VIP1_V2) \
  || defined(VIP2) \
  || defined(OPT9600) \
+ || defined(OPT9600MINI) \
  || defined(ATEMIO520)
 	{cProcEntry, "stb/info/OEM",                                                     NULL, NULL, NULL, NULL, ""},
 	{cProcEntry, "stb/info/brand",                                                   NULL, NULL, NULL, NULL, ""},
@@ -1135,7 +1144,10 @@ struct ProcStructure_s e2Proc[] =
 #endif
 	{cProcEntry, "stb/fp/led_pattern_speed",                                         NULL, NULL, default_write_proc, NULL, ""},
 #if !defined(CUBEREVO_250HD) \
- && !defined(CUBEREVO_MINI_FTA)
+ && !defined(CUBEREVO_MINI_FTA) \
+ && !defined(ATEMIO520) \
+ && !defined(OPT9600) \
+ && !defined(OPT9600MINI)
 	{cProcEntry, "stb/fp/oled_brightness",                                           NULL, NULL, NULL, NULL, ""},
 #endif
 	{cProcEntry, "stb/fp/rtc",                                                       NULL, zero_read, default_write_proc, NULL, ""},
@@ -1187,7 +1199,8 @@ struct ProcStructure_s e2Proc[] =
 	{cProcDir, "stb/misc",                                                           NULL, NULL, NULL, NULL, ""},
 #if defined(IPBOX9900) \
  || defined(HL101) \
- || defined(VIP1_V1)
+ || defined(VIP1_V1) \
+ || defined(OPT9600MINI)
 	{cProcEntry, "stb/misc/12V_output",                                              NULL, proc_misc_12V_output_read, proc_misc_12V_output_write, NULL, ""},
 #endif
 

@@ -57,6 +57,7 @@ MODULE_PARM_DESC(camRouting, "Enable camRouting 0=disabled 1=enabled");
  || defined(HS7119) \
  || defined(HS7819) \
  || defined(ATEMIO520) \
+ || defined(OPT9600MINI) \
  || defined(VITAMIN_HD5000) \
  || defined(SAGEMCOM88)
 #define TSMergerBaseAddress 0xFE242000
@@ -140,6 +141,7 @@ MODULE_PARM_DESC(camRouting, "Enable camRouting 0=disabled 1=enabled");
  || defined(HS7119) \
  || defined(HS7819) \
  || defined(ATEMIO520) \
+ || defined(OPT9600MINI) \
  || defined(VITAMIN_HD5000) \
  || defined(SAGEMCOM88)
 #define SysConfigBaseAddress 0xFE001000 // STi7105 STi7111
@@ -605,6 +607,7 @@ void stm_tsm_init(int use_cimax)
  && !defined(HS7119) \
  && !defined(HS7819) \
  && !defined(ATEMIO520) \
+ && !defined(OPT9600MINI) \
  && !defined(CUBEREVO) \
  && !defined(CUBEREVO_MINI2) \
  && !defined(CUBEREVO_MINI) \
@@ -800,6 +803,7 @@ void stm_tsm_init(int use_cimax)
  && !defined(HS7119) \
  && !defined(HS7819) \
  && !defined(ATEMIO520) \
+ && !defined(OPT9600MINI) \
  && !defined(VITAMIN_HD5000)
 		ctrl_outl(0x0, reg_sys_config + SYS_CFG1);
 #endif
@@ -872,6 +876,7 @@ void stm_tsm_init(int use_cimax)
  || defined(HS7119) \
  || defined(HS7819) \
  || defined(ATEMIO520) \
+ || defined(OPT9600MINI) \
  || defined(IPBOX9900) \
  || defined(ARIVALINK200) \
  || defined(VITAMIN_HD5000) \
@@ -923,7 +928,8 @@ void stm_tsm_init(int use_cimax)
 		ctrl_outl(0x0, tsm_io + TSM_STREAM7_CFG2);
 #elif defined(HS7110) \
  ||   defined(HS7119) \
- ||   defined(ATEMIO520)
+ ||   defined(ATEMIO520) \
+ ||   defined(OPT9600MINI)
 		/* RAM partitioning of streams */
 		ctrl_outl(0x0, tsm_io + TSM_STREAM0_CFG); //448kb (8*64)
 		ctrl_outl(0x800, tsm_io + TSM_STREAM1_CFG); //448kb (6*64)
@@ -1109,6 +1115,7 @@ void stm_tsm_init(int use_cimax)
  && !defined(HS7119) \
  && !defined(HS7819) \
  && !defined(ATEMIO520) \
+ && !defined(OPT9600MINI) \
  && !defined(IPBOX9900) \
  && !defined(ARIVALINK200) \
  && !defined(VITAMIN_HD5000) \
@@ -1124,6 +1131,7 @@ void stm_tsm_init(int use_cimax)
  ||   defined(HS7119) \
  ||   defined(HS7819) \
  ||   defined(ATEMIO520) \
+ ||   defined(OPT9600MINI) \
  ||   defined(VITAMIN_HD5000)
 		ctrl_outl(0x8f0000e, tsm_io + SWTS_CFG(0));
 		ctrl_outl(0x8000000, tsm_io + SWTS_CFG(1));
@@ -1166,6 +1174,7 @@ void stm_tsm_init(int use_cimax)
  && !defined(HS7119) \
  && !defined(HS7819) \
  && !defined(ATEMIO520) \
+ && !defined(OPT9600MINI) \
  && !defined(IPBOX9900) \
  && !defined(ARIVALINK200) \
  && !defined(VITAMIN_HD5000) \
@@ -1369,8 +1378,8 @@ void stm_tsm_init(int use_cimax)
 		 ctrl_outl(0x2f, tsm_io + TSM_PTI1_SEL);
 		*/
 #elif defined(IPBOX9900) \
- || defined(ARIVALINK200) \
- || defined(VITAMIN_HD5000)
+ ||   defined(ARIVALINK200) \
+ ||   defined(VITAMIN_HD5000)
 		/* route stream 0/1 to PTI */
 		ret = ctrl_inl(tsm_io + TSM_PTI_SEL);
 		ctrl_outl(ret | 0x2 | 0x1 | 0x4, tsm_io + TSM_PTI_SEL);
@@ -1401,7 +1410,8 @@ void stm_tsm_init(int use_cimax)
 		ctrl_outl(ret | 0x1, tsm_io + TSM_PTI_SEL);
 #elif defined(HS7110) \
  ||   defined(HS7119) \
- ||   defined(ATEMIO520)
+ ||   defined(ATEMIO520) \
+ ||   defined(OPT9600MINI)
 		/* route stream 0 to PTI */
 		ret = ctrl_inl(tsm_io + TSM_PTI_SEL);
 		ctrl_outl(ret | 0x1, tsm_io + TSM_PTI_SEL);
@@ -1420,6 +1430,7 @@ void stm_tsm_init(int use_cimax)
  && !defined(HS7110) \
  && !defined(HS7119) \
  && !defined(ATEMIO520) \
+ && !defined(OPT9600MINI) \
  && !defined(UFS913) /* Dagobert: set-up swts */
 		ctrl_outl(TSM_SWTS_REQ_TRIG(128 / 16) | 0x10, tsm_io + TSM_SWTS_CFG(0));
 		/* SWTS0 to PTI */
@@ -1445,6 +1456,7 @@ void stm_tsm_init(int use_cimax)
  || defined(HS7119) \
  || defined(HS7819) \
  || defined(ATEMIO520) \
+ || defined(OPT9600MINI) \
  || defined(VITAMIN_HD5000)
 		tsm_handle.fdma_reqline = 31;
 #elif defined(UFS910)
@@ -1480,6 +1492,7 @@ void stm_tsm_init(int use_cimax)
  || defined(HS7110) \
  || defined(HS7119) \
  || defined(ATEMIO520) \
+ || defined(OPT9600MINI) \
  || defined(VITAMIN_HD5000) \
  || defined(SAGEMCOM88)
 			tsm_io = ioremap(/* config->tsm_base_address */ TSMergerBaseAddress, 0x1000);
@@ -1580,7 +1593,8 @@ void stm_tsm_init(int use_cimax)
 		ctrl_outl(0x1f00, tsm_io + TSM_STREAM7_CFG);
 #elif defined(HS7110) \
  ||   defined(HS7119) \
- ||   defined(ATEMIO520)
+ ||   defined(ATEMIO520) \
+ ||   defined(OPT9600MINI)
 		/* RAM partitioning of streams */
 		ctrl_outl(0x0, tsm_io + TSM_STREAM0_CFG); //448kb (8*64)
 		ctrl_outl(0x800, tsm_io + TSM_STREAM1_CFG); //448kb (6*64)

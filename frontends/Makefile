@@ -436,3 +436,13 @@ obj-m += opt9600_frontend.o
 opt9600_platform-objs += opt9600/avl2108_platform.o
 obj-m += opt9600_platform.o
 endif
+
+ifdef OPT9600MINI
+stv090x-objs += stv090x/stv090x.o
+stv090x-objs += stv090x/stv6110x.o
+stv090x-objs += stv090x/ix7306.o
+stv090x-objs += stv090x/core.o
+obj-m += stv090x.o
+obj-y += lnb/
+endif
+

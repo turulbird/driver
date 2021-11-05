@@ -119,7 +119,7 @@ extern tFrontPanelOpen FrontPanelOpen[LASTMINOR];
 
 #define cMinimumSize         3  // shortest command/response is this long
 
-// commands sent to FP        ID    resp?
+// commands sent to FP       ID    resp?
 #define FP_CMD_RESPONSE      0xC5  // N  send checksum over previous command (FP_CMD_BOOT only, triggers next response)
 #define FP_CMD_ICON          0xE1  // N  set icon, not used
 #define FP_CMD_STANDBY       0xE5  // Y  switch to standby

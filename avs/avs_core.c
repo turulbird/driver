@@ -128,6 +128,7 @@ static unsigned short normal_i2c[] =
  || defined(HS7810A) \
  || defined(HS7819) \
  || defined(ATEMIO520) \
+ || defined(OPT9600MINI) \
  || defined(ARIVALINK200)
 	/* CUBEREVO_MINI_FTA does not register */
 	/* CUBEREVO_250HD seems to use fake_avs, but does not register */
@@ -291,7 +292,8 @@ static int avs_command_ioctl(struct i2c_client *client, unsigned int cmd, void *
  && !defined(HS7429) \
  && !defined(HS7810A) \
  && !defined(HS7819) \
- && !defined(ATEMIO520)  // these boxes have an avs that does not use I2C
+ && !defined(ATEMIO520) \
+ && !defined(OPT9600MINI)  // these boxes have an avs that does not use I2C
 	if (!client)
 	{
 		return -1;
@@ -375,7 +377,8 @@ int avs_command_kernel(unsigned int cmd, void *arg)
  && !defined(HS7429) \
  && !defined(HS7810A) \
  && !defined(HS7819) \
- && !defined(ATEMIO520)  // i2c avs
+ && !defined(ATEMIO520)  \
+ && !defined(OPT9600MINI) // i2c avs
 	struct i2c_client *client = avs_client;
 	if (!client)
 	{
@@ -396,7 +399,8 @@ int avs_command_kernel(unsigned int cmd, void *arg)
  || defined(HS7429) \
  || defined(HS7810A) \
  || defined(HS7819) \
- || defined(ATEMIO520)  // non-i2c avs
+ || defined(ATEMIO520) \
+ || defined(OPT9600MINI)  // non-i2c avs
 		case AVS_PIO:
 		{
 			err = avs_pio_command_kernel(cmd, arg);
