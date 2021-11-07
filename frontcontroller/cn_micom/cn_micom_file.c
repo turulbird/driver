@@ -42,6 +42,7 @@
  * 20211031 Audioniek       Add mechanism for determining start because of
  *                          timer to provide a sensible wake up reason.
  * 20211101 Audioniek       Fix crash in UTF8 conversion.
+ * 20211107 Audioniek       Fix errors in wakeup time calculation.
  *
  ****************************************************************************/
 
@@ -1801,11 +1802,12 @@ MCOM_RETRY:
 	mcom_wakeup_time[0] = wakeupMJD >> 8;
 	mcom_wakeup_time[1] = wakeupMJD & 0xff;
 	mcom_wakeup_time[2] = mcom_time[3] + wakeupHours;  // wake up hour
-	while (mcom_wakeup_time[3] > 23)
+	while (mcom_wakeup_time[2] > 23)
 	{
 		for (i = 0; i < wakeupDays; i++)
 		{
-			mcom_wakeup_time[3] -= 24;
+			mcom_wakeup_time[2] -= 24;
+			wakeupMJD++;
 		}
 	}
 	mcom_wakeup_time[3] = mcom_time[4] + wakeupMins;  // wake up minute
