@@ -42,7 +42,7 @@
 #define MAX_DVB_ADAPTERS 4
 #define MAX_TUNERS_PER_ADAPTER 4
 
-/* The Demod/Tuner can't easily provide these, we cache them */
+/* The Demod/Tuner cannot easily provide these, we cache them */
 struct cx24116_tuning
 {
 	u32                     frequency;
@@ -66,7 +66,7 @@ struct cx24116_tuning
 
 	/* Demod values */
 	u8                      fec_val;
-	u8 	                    fec_mask;
+	u8                      fec_mask;
 	u8                      inversion_val;
 	u8                      fec_numb;
 	u8                      U1[6];

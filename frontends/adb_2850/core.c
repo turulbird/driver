@@ -219,33 +219,33 @@ static struct dibx000_bandwidth_config dib7070_bw_config_12_mhz =
 
 static struct dibx000_bandwidth_config dib7070_bw_config_12_mhz_ =
 {
-	60000, 15000, // internal, sampling
-	1, 20, 3, 1, 0, // pll_cfg: prediv, ratio, range, reset, bypass
-	0, 0, 1, 1, 2, // misc: refdiv, bypclk_div, IO_CLK_en_core, ADClkSrc, modulo
-	(3 << 14) | (1 << 12) | (524 << 0), // sad_cfg: refsel, sel, freq_15k
-	(0 << 25) | 0, // ifreq = 0.000000 MHz
-	20452225, // timf
-	12000000, // xtal_hz
+	60000, 15000,  // internal, sampling
+	1, 20, 3, 1, 0,  // pll_cfg: prediv, ratio, range, reset, bypass
+	0, 0, 1, 1, 2,  // misc: refdiv, bypclk_div, IO_CLK_en_core, ADClkSrc, modulo
+	(3 << 14) | (1 << 12) | (524 << 0),  // sad_cfg: refsel, sel, freq_15k
+	(0 << 25) | 0,  // ifreq = 0.000000 MHz
+	20452225,  // timf
+	12000000,  // xtal_hz
 };
 
 static struct dib7000p_config cxusb_dualdig4_rev2_config =
 {
-	.output_mode = OUTMODE_MPEG2_SERIAL, // OUTMODE_MPEG2_PAR_GATED_CLK,
+	.output_mode               = OUTMODE_MPEG2_SERIAL, // OUTMODE_MPEG2_PAR_GATED_CLK,
 	.output_mpeg2_in_188_bytes = 1,
 
-	.agc_config_count = 1,
-	.agc = &dib7070_agc_config_,
-	.bw  = &dib7070_bw_config_12_mhz_,
-	.tuner_is_baseband = 1,
-	.spur_protect = 1,
+	.agc_config_count          = 1,
+	.agc                       = &dib7070_agc_config_,
+	.bw                        = &dib7070_bw_config_12_mhz_,
+	.tuner_is_baseband         = 1,
+	.spur_protect              = 1,
 
-	.gpio_dir = 0xfcef,
-	.gpio_val = 0x0110,
-//	.gpio_dir = DIB7000P_GPIO_DEFAULT_DIRECTIONS,
-//	.gpio_val = DIB7000P_GPIO_DEFAULT_VALUES,
-	.gpio_pwm_pos = DIB7000P_GPIO_DEFAULT_PWM_POS,
+	.gpio_dir                  = 0xfcef,
+	.gpio_val                  = 0x0110,
+//	.gpio_dir                  = DIB7000P_GPIO_DEFAULT_DIRECTIONS,
+//	.gpio_val                  = DIB7000P_GPIO_DEFAULT_VALUES,
+	.gpio_pwm_pos              = DIB7000P_GPIO_DEFAULT_PWM_POS,
 
-	.hostbus_diversity = 1,
+	.hostbus_diversity         = 1,
 };
 
 static int dib7070_tuner_reset(struct dvb_frontend *fe, int onoff)
