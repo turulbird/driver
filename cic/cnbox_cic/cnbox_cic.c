@@ -448,6 +448,7 @@ int cic_init_hw(void)
 {
 	struct cnbox_cic_state *state = &ci_state;
 	int i;
+	u32 reg;
 
 	state->ci_enable     = stpio_request_pin (1, 3, "CI_ENABLE", STPIO_OUT);
 	state->slot_reset[0] = stpio_request_pin (3, 6, "SLOT_RESET", STPIO_OUT);
@@ -475,7 +476,6 @@ int cic_init_hw(void)
 	cnbox_write_register_u32(EMIConfigBaseAddress + EMIBank2 + EMI_CFG_DATA3, 0xa);
 	cnbox_write_register_u32(EMIConfigBaseAddress + EMI_GEN_CFG, 0x08);
 
-	u32 reg;
 	reg = cnbox_read_register_u32(0xfe001100);
 	reg |= (1 << 0);
 	cnbox_write_register_u32(0xfe001100, reg);

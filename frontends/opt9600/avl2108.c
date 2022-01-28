@@ -2068,7 +2068,8 @@ static struct dvb_frontend_ops avl2108_ops =
 	.read_ucblocks           = avl2108_read_ucblocks,
 	.set_tone                = avl2108_set_tone,
 	.set_voltage             = avl2108_set_voltage,
-#if defined(OPT9600)
+#if defined(OPT9600) \
+ || defined(OPT9600PRIMA)
 	.enable_high_lnb_voltage = avl2108_set_high_lnb_voltage,
 #endif
 	.diseqc_send_master_cmd  = avl2108_send_diseqc_msg,

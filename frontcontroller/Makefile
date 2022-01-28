@@ -152,7 +152,7 @@ obj-y += front_vfd/
 endif
 
 ifdef ARIVALINK200
-ifneq (,$(wildcard $(DRIVER_TOPDIR)/frontcontroller/front_ArivaLink200 ))
+ifneq (,$(wildcard $(DRIVER_TOPDIR)/frontcontroller/front_ArivaLink200))
 obj-y += front_ArivaLink200/
 endif
 endif
@@ -166,6 +166,10 @@ obj-y += opt9600_fp/
 endif
 
 ifdef OPT9600MINI
+obj-y += cn_micom/
+endif
+
+ifdef OPT9600PRIMA
 obj-y += cn_micom/
 endif
 

@@ -19,6 +19,7 @@
  * CubeRevo 250HD (StarCI2Win)
  * Topfield TF77X0 HDPVR (StarCI2Win)
  * Opticum HD (TS) 9600 (StarCI)
+ * Opticum HD (TS) 9600 Prima (StarCI)
  *
  * It should be noted that this driver is used for both the StarCI2Win
  * and the StarCI/CIcore10, although these devices are not entirely
@@ -95,7 +96,8 @@ static int extmoduldetect = 0;
  || defined(HS7429) \
  || defined(HS7810A) \
  || defined(HS7819) \
- || defined(OPT9600)
+ || defined(OPT9600) \
+ || defined(OPT9600PRIMA)
 struct stpio_pin *cic_enable_pin = NULL;
 struct stpio_pin *module_A_pin = NULL;
 struct stpio_pin *module_B_pin = NULL;
@@ -159,6 +161,17 @@ struct stpio_pin *module_B_pin = NULL;
 #define STARCI_CTRL_REG       0x1f
 
 #if defined(OPT9600)
+#define STARCI_INT_PORT      2
+#define STARCI_INT_PIN       4
+#define STARCI_RESET_PORT    5
+#define STARCI_RESET_PIN     5
+#define STARCI_MODA_PORT     4
+#define STARCI_MODA_PIN      7
+#define STARCI_MODB_PORT     5
+#define STARCI_MODB_PIN      4  /* hardware specific register values */
+#endif
+
+#if defined(OPT9600PRIMA)  // TODO: get values
 #define STARCI_INT_PORT      2
 #define STARCI_INT_PIN       4
 #define STARCI_RESET_PORT    5
@@ -258,6 +271,43 @@ unsigned char default_values[33] =
 	0x03,  // register 0x1e (UP_INTERFACE_WAITACK_REG)
 	0x01   // register 0x1f (STARCI_CTRL_REG)
 };
+#elif defined(OPT9600PRIMA)
+unsigned char default_values[33] =
+{
+	0x00,  // start register number
+	0x00,  // register 0x00 (MODA_CTRL_REG)
+	0x00,  // register 0x01 (MODA_MASK_HIGH_REG)
+	0x02,  // register 0x02 (MODA_MASK_LOW_REG)
+	0x00,  // register 0x03 (MODA_PATTERN_HIGH_REG)
+	0x00,  // register 0x04 (MODA_PATTERN_LOW_REG)
+	0x44,  // register 0x05 (MODA_TIMING_REG)
+	0x00,  // register 0x06 (MODA_INVERT_INPUT_MASK_REG), reserved on StarCI2Win
+	0x00,  // register 0x07 (reserved)
+	0x00,  // register 0x08 (reserved)
+	0x00,  // register 0x09 (MODB_CTRL_REG)
+	0x00,  // register 0x0a (MODB_MASK_HIGH_REG)
+	0x02,  // register 0x0b (MODB_MASK_LOW_REG)
+	0x00,  // register 0x0c (MODB_PATTERN_HIGH_REG)
+	0x02,  // register 0x0d (MODB_PATTERN_LOW_REG)
+	0x44,  // register 0x0e (MODB_TIMING_REG)
+	0x00,  // register 0x0f (MODB_INVERT_INPUT_MASK_REG), reserved on StarCI2Win
+	0x00,  // register 0x10 (SINGLE_MODE_CTRL_REG), reserved on StarCI & CIcore1.0
+	0x80,  // register 0x11 (TWIN_MODE_CTRL_REG), reserved on StarCI & CIcore1.0
+	0x00,  // register 0x12 (EXT_ACCESS_MASK_HIGH_REG)
+	0x00,  // register 0x13 (EXT_ACCESS_MASK_LOW_REG)
+	0x00,  // register 0x14 (EXT_ACCESS_PATTERN_HIGH_REG)
+	0x00,  // register 0x15 (EXT_ACCESS_PATTERN_LOW_REG)
+	0x00,  // register 0x16 (reserved)
+	0x01,  // register 0x17 (DEST_SEL_REG)
+	0x00,  // register 0x18 (POWER_CTRL_REG)
+	0x00,  // register 0x19 (reserved)
+	0x00,  // register 0x1a (INT_STATUS_REG)
+	0x03,  // register 0x1b (INT_MASK_REG)
+	0x06,  // register 0x1c (INT_CONFIG_REG)
+	0x00,  // register 0x1d (UP_INTERFACE_CONFIG_REG)
+	0x03,  // register 0x1e (UP_INTERFACE_WAITACK_REG)
+	0x01   // register 0x1f (STARCI_CTRL_REG)
+};
 #endif
 
 /* EMI configuration */
@@ -278,7 +328,8 @@ unsigned long reg_sysconfig = 0;
  || defined(HS7429) \
  || defined(HS7810A) \
  || defined(HS7819) \
- || defined(OPT9600)
+ || defined(OPT9600) \
+ || defined(OPT9600PRIMA)
 static unsigned char *slot_membase[2];
 #else
 /* for whatever reason the access has to be done though a short pointer */
@@ -613,7 +664,8 @@ int setCiSource(int slot, int source)
 #if defined(TF7700) \
  || defined(HS8200) \
  || defined(FS9000) \
- || defined(OPT9600)
+ || defined(OPT9600) \
+ || defined(OPT9600PRIMA)
 		val |= 0x20;
 #else
 		val &= ~0x20;
@@ -626,7 +678,8 @@ int setCiSource(int slot, int source)
 #if defined(TF7700) \
  || defined(HS8200) \
  || defined(FS9000) \
- || defined(OPT9600)
+ || defined(OPT9600) \
+ || defined(OPT9600PRIMA)
 		val &= ~0x20;
 #else
 		val |= 0x20;
@@ -713,7 +766,8 @@ static int starci_poll_slot_status(struct dvb_ca_en50221 *ca, int slot, int open
 		{
 #if defined(HS8200) \
  || defined(FS9000) \
- || defined(OPT9600)
+ || defined(OPT9600) \
+ || defined(OPT9600PRIMA)
 			dprintk(50, "%s: SLOTSTATUS_NONE -> set PIO pin to 1\n", __func__);
 			if (slot == 0)
 			{
@@ -735,7 +789,8 @@ static int starci_poll_slot_status(struct dvb_ca_en50221 *ca, int slot, int open
 		  {
 #if defined(HS8200) \
  || defined(FS9000) \
- || defined(OPT9600)
+ || defined(OPT9600) \
+ || defined(OPT9600PRIMA)
 			if (slot == 0)
 			{
 				stpio_set_pin(module_A_pin, 0);
@@ -807,7 +862,8 @@ static int starci_slot_reset(struct dvb_ca_en50221 *ca, int slot)
  || defined(HS7429) \
  || defined(HS7810A) \
  || defined(HS7819) \
- || defined(OPT9600)
+ || defined(OPT9600) \
+ || defined(OPT9600PRIMA)
 		msleep(200);
 #else
 		msleep(60);
@@ -997,7 +1053,8 @@ static int starci_slot_ts_enable(struct dvb_ca_en50221 *ca, int slot)
  && !defined(HS7810A) \
  && !defined(HS7819) \
  && !defined(CUBEBOX) \
- && !defined(OPT9600)
+ && !defined(OPT9600) \
+ || defined(OPT9600PRIMA)
 	starci_writereg(state, reg[slot], 0x23);  // write CTRL register: MPEG stream enabled, module inserted, auto mode
 #else
 	starci_writereg(state, reg[slot], 0x21);  // write CTRL register: MPEG stream enabled, module inserted, no auto mode
@@ -1135,7 +1192,8 @@ int init_ci_controller(struct dvb_adapter* dvb_adap)
 	msleep(250);
 	stpio_set_pin (cic_enable_pin, 0);
 	msleep(250);
-#elif defined(OPT9600)
+#elif defined(OPT9600) \
+ ||   defined(OPT9600PRIMA)
 	cic_enable_pin = stpio_request_pin (STARCI_RESET_PORT, STARCI_RESET_PIN, "StarCI_RST", STPIO_OUT);
 	if (cic_enable_pin == NULL)
 	{
@@ -1187,7 +1245,8 @@ int init_ci_controller(struct dvb_adapter* dvb_adap)
  || defined(HS7810A) \
  || defined(HS7819) \
  || defined(CUBEBOX) \
- || defined(OPT9600)
+ || defined(OPT9600) \
+ || defined(OPT9600PRIMA)
 	starci_writereg(state, POWER_CTRL_REG, 0x21);  // ?? data sheet says bit 5 is don't care
 #else
 	starci_writereg(state, POWER_CTRL_REG, 0x01);
@@ -1199,7 +1258,8 @@ int init_ci_controller(struct dvb_adapter* dvb_adap)
  && !defined(HS7429) \
  && !defined(HS7810A) \
  && !defined(HS7819) \
- && !defined(OPT9600)
+ && !defined(OPT9600) \
+ || defined(OPT9600PRIMA)
 	ctrl_outl(0x0, reg_config + EMI_LCK);
 	ctrl_outl(0x0, reg_config + EMI_GEN_CFG);
 #endif
@@ -1266,7 +1326,8 @@ int init_ci_controller(struct dvb_adapter* dvb_adap)
  && !defined(HS7119) \
  && !defined(HS7810A) \
  && !defined(HS7819) \
- && !defined(OPT9600)
+ && !defined(OPT9600) \
+ || defined(OPT9600PRIMA)
 	ctrl_outl(0x1, reg_config + EMI_CLK_EN);
 #endif
 
@@ -1283,7 +1344,8 @@ int init_ci_controller(struct dvb_adapter* dvb_adap)
 #elif defined(CUBEBOX)
 	slot_membase[0] = ioremap(0x3000000, 0x1000);
 	printk("membase-0 0x%08x\n", slot_membase[0]);
-#elif defined(OPT9600)
+#elif defined(OPT9600) \
+ || defined(OPT9600PRIMA)
 //is [0] = top slot?
 	slot_membase[0] = ioremap(0x3000000, 0x1000);
 #else
@@ -1309,7 +1371,8 @@ int init_ci_controller(struct dvb_adapter* dvb_adap)
 #elif defined(CUBEBOX)
 	slot_membase[1] = ioremap( 0x3010000, 0x1000 );
 	printk("membase-1 0x%08x\n", slot_membase[1]);
-#elif defined(OP9600)
+#elif defined(OP9600) \
+ || defined(OPT9600PRIMA)
 //is [1] = bottom slot?
 	slot_membase[1] = ioremap(0x3010000, 0x1000);
 #else
@@ -1328,7 +1391,8 @@ int init_ci_controller(struct dvb_adapter* dvb_adap)
  && !defined(HS7429) \
  && !defined(HS7810A) \
  && !defined(HS7819) \
- && !defined(OPT9600)
+ && !defined(OPT9600) \
+ || defined(OPT9600PRIMA)
 	slot_membase[1] = ioremap(0xa2010000, 0x1000);
 	ctrl_outl(0x1F, reg_config + EMI_LCK);
 #endif
