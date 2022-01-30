@@ -152,7 +152,7 @@ unsigned char default_values[33] =
 	0x00, 0x00, 0x00, 0x03, 0x06, 0x00, 0x03, 0x01
 };
 #elif defined(OPT9600) \
-      defined(OPT9600PRIMA)
+ ||   defined(OPT9600PRIMA)
 unsigned char default_values[33] =
 {
 	0x00,
