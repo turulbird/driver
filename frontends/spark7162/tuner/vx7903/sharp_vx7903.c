@@ -105,8 +105,8 @@ typedef enum _VX7903_LPF_FC
 
 typedef struct _VX7903_CONFIG_STRUCT
 {
-	unsigned int ui_VX7903_RFChannelkHz;  /* direct channel */
-	unsigned int ui_VX7903_XtalFreqkHz;
+	unsigned int  ui_VX7903_RFChannelkHz;  // direct channel
+	unsigned int  ui_VX7903_XtalFreqkHz;
 	BOOL          b_VX7903_fast_search_mode;
 	BOOL          b_VX7903_loop_through;
 	BOOL          b_VX7903_tuner_standby;
@@ -299,7 +299,7 @@ int vx7903_i2c_read(struct i2c_adapter *i2c_adap, u8 I2cAddr, u8 *pData, u8 bLen
 	u8 RegAddr[] = {pData[0]};
 	struct i2c_msg msg[] =
 	{
-		{ .addr = I2cAddr, .flags = I2C_M_RD, .buf = pData, .len = bLen}
+		{ .addr = I2cAddr, .flags = I2C_M_RD, .buf = pData, .len = bLen }
 	};
 //	dprintk(70, "%s: len = %d MemAddr = 0x%x addr = 0x%02x\n", __func__, bLen, pData[0], addr);
 	ret = i2c_transfer(i2c_adap, msg, 1);

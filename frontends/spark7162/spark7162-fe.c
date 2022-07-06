@@ -17,7 +17,7 @@
  * Detection of which front end(s) are present is automatic and is
  * performed when the driver is initialized. Frontends not detected
  * are replaced by a dummy front end; thus the driver always provides
- * three frontends. This allter feature is required as there were
+ * three frontends. This latter feature is required as there were
  * spark7162 receivers built with either, one, two or (the most common)
  * three frontends.
  *
@@ -25,7 +25,7 @@
  * Ali M3501 demodulators mounted on main board; not in frontends;
  * STM STV0367 demodulator is part of the STi7162 SoC.
  * These facts lead to only the Sharp VA4M1EE6169 and Eardatek
- * EDU-1165II5VB beining true front ends; the other 'tin cans' are
+ * EDU-1165II5VB being true front ends; the other 'tin cans' are
  * merely tuners.
  *
  * Tuner I2C control:
@@ -68,7 +68,7 @@
  *
  * The current version of this driver has two issues to be fixed:
  * 1. The +5V active antenna power output of the DVB-T/C tuner cannot
- *    be controlled currently. Some code is present to facilitiatie this,
+ *    be controlled currently. Some code is present to facilitate this,
  *    but the mechanism that actually controls this setting has not been
  *    found out yet.
  *    The current situation is that the +5V active antenna power output
@@ -242,8 +242,8 @@ static const struct MxL301_config mxl603_config =
 
 static struct sharp_vx7903_i2c_config vx7903_i2cConfig =
 {
-	.addr = 0x60,
-	.DemodI2cAddr = 0x33,
+	.addr         = 0x60,
+	.DemodI2cAddr = 0x33,  // Ali M3501
 };
 
 // I2C data for frontends

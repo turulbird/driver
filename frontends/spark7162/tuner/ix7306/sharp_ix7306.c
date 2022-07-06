@@ -161,7 +161,7 @@ static int calculate_local_frequency_band(long freq)
 {
 	int band;
 
-//	if(950000<=freq && freq<986000)
+//	if(950000 <= freq && freq < 986000)
 	if (freq < 986000)
 	{
 		band = 1;
@@ -208,7 +208,7 @@ static void calculate_band_to_byte(int band, int *byte_)
 	int DIV, BA210;
 
 	if ((band == 1)
-	|| (band == 2))
+	||  (band == 2))
 	{
 		PSC = 1;
 	}
@@ -536,7 +536,7 @@ static void pll_setdata(struct dvb_frontend *fe, int *byte_)
 	u8 ucOperData[5];
 	u8 byte1, /* byte2, */byte3, byte4;
 
-	// in this function, we operate on  ucOperData instead of byte_
+	// in this function, we operate on ucOperData instead of byte_
 	memset(ucOperData, 0, sizeof(ucOperData));
 	ucOperData[0] = *(byte_ + 1);
 	ucOperData[1] = *(byte_ + 2);
@@ -675,7 +675,7 @@ static int ix7306_get_state(struct dvb_frontend *fe, enum tuner_param param, str
 		}
 		case DVBFE_TUNER_BANDWIDTH:
 		{
-			tstate->bandwidth = state->bandwidth; /* FIXME! need to calculate Bandwidth */
+			tstate->bandwidth = state->bandwidth;  // FIXME! need to calculate Bandwidth
 			break;
 		}
 		default:

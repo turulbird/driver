@@ -169,7 +169,7 @@ exit:
  *  4) byte1 -> byte4 -> byte5
  *  5) byte1 -> byte6
  *
- * Note that driver uses the sequence  byte1 -> byte2 -> byte3 -> byte4 -> byte5 to
+ * Note that the driver uses the sequence  byte1 -> byte2 -> byte3 -> byte4 -> byte5 to
  * set up the tuner. This sequence is not specified as valid.
  *
  */

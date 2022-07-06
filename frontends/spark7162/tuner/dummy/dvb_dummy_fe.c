@@ -85,7 +85,9 @@ static int dvb_dummy_fe_set_frontend(struct dvb_frontend *fe, struct dvb_fronten
 	{
 		fe->ops.tuner_ops.set_params(fe, p);
 		if (fe->ops.i2c_gate_ctrl)
+		{
 			fe->ops.i2c_gate_ctrl(fe, 0);
+		}
 	}
 	return 0;
 }
@@ -117,8 +119,7 @@ static void dvb_dummy_fe_release(struct dvb_frontend *fe)
 }
 
 #if (DVB_API_VERSION < 5)
-static int dvb_dummy_fe_ofdm_get_info(struct dvb_frontend *fe,
-									  struct dvbfe_info *fe_info)
+static int dvb_dummy_fe_ofdm_get_info(struct dvb_frontend *fe, struct dvbfe_info *fe_info)
 {
 	if (fe_info->delivery == DVBFE_DELSYS_DVBT)
 	{

@@ -234,10 +234,10 @@ static void sn761640_calculate_mop_divider(u32 freq, int *byte)
 	long data;
 	u64  i64Freq;
 
-	i64Freq = (u64)freq * 100000;
+	i64Freq  = (u64)freq * 100000;
 //	i64Freq += (u64)3612500000;
 	i64Freq += 3612500000LL;
-	i64Freq = __udivdi3(i64Freq, sn761640_calculate_mop_step(byte));
+	i64Freq  = __udivdi3(i64Freq, sn761640_calculate_mop_step(byte));
 	i64Freq += 5;
 	i64Freq /= 10;
 	data = (long)i64Freq;
