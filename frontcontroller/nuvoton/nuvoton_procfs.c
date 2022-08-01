@@ -43,6 +43,8 @@
  * 20191202 Audioniek       /proc/stb/lcd/symbol_timeshift support added.
  * 20210425 Audioniek       Fixed buildproblem with /proc/power/vfd.
  * 20210601 Audioniek       Add /proc/stb/info/OEM, brand and model_name.
+ * 20220620 Audioniek       Add Atemio AM520/530 HD support for
+ *                          /proc/stb/info/OEM, brand and model_name.
  * 
  ****************************************************************************/
 
@@ -873,10 +875,20 @@ static int oled_brightness_write(struct file *file, const char __user *buf, unsi
 static int oem_name_read(char *page, char **start, off_t off, int count, int *eof, void *data_unused)
 {
 	int len = 0;
+	unsigned int data[2];
+
+	len = nuvotonGetVersion(data);
 
 	if (NULL != page)
 	{
-		len = sprintf(page, "Fortis\n");
+		if (data[1] & 0xff == 0xa5 || data[1] & 0xff == 0xaa)  // Atemio AM 520/530 HD
+		{
+			len = sprintf(page, "CreNova\n");
+		}
+		else
+		{
+			len = sprintf(page, "Fortis\n");
+		}
 	}
 	return len;
 }
@@ -948,7 +960,7 @@ static int brand_name_read(char *page, char **start, off_t off, int count, int *
 				table = HS7420_brand_table;
 				break;
 			}
-			case 0x2502:  // HS7110
+			case 0x2502:  // HS7110 or Atemio AM 5X0 HD
 			{
 				table = HS7110_brand_table;
 				break;
@@ -992,7 +1004,15 @@ static int brand_name_read(char *page, char **start, off_t off, int count, int *
 	}
 	if (NULL != page)
 	{
-		len = sprintf(page, "%s\n", table[reseller2]);
+		if (data[1] == 0x252902a5
+		||  data[1] == 0x252902aa)  // Atemio AM 5X0 HD
+		{
+			len = sprintf(page, "%s\n", "Atemio");
+		}
+		else
+		{
+			len = sprintf(page, "%s\n", table[reseller2]);
+		}
 	}
 	return len;
 }
@@ -1065,7 +1085,7 @@ static int model_name_read(char *page, char **start, off_t off, int count, int *
 				table = HS7420_name_table;
 				break;
 			}
-			case 0x2502:  // HS7110
+			case 0x2502:  // HS7110 or Atemio AM 5X0 HD
 			{
 				table = HS7110_name_table;
 				break;
@@ -1110,7 +1130,24 @@ static int model_name_read(char *page, char **start, off_t off, int count, int *
 	}
 	if (NULL != page)
 	{
-		len = sprintf(page, "%s\n", table[reseller2]);
+		switch (reseller4)
+		{
+			case 0xa5:
+			{
+				len = sprintf(page, "%s\n", "AM 520 HD");			
+				break;
+			}
+			case 0xaa:
+			{
+				len = sprintf(page, "%s\n", "AM 530 HD");			
+				break;
+			}
+			default:
+			{
+				len = sprintf(page, "%s\n", table[reseller2]);
+				break;
+			}
+		}
 	}
 	dprintk(50, "%s < %d\n", __func__, len);
 	return len;
