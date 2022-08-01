@@ -81,7 +81,7 @@ unsigned char VFD_OLD_UTF_C2[64] =
 
 unsigned char VFD_OLD_UTF_C3[64] =
 {
-	// table: 0xc3 0xXX -> non accented ASCII (LED segment pattern)
+	// table: 0xc3 0xXX -> non accented ASCII
 	0x41,	//0x80, capital A with accent grave
 	0x41,	//0x81, capital A with accent acute
 	0x41,	//0x82, capital A with accent circonflexe
@@ -179,8 +179,8 @@ unsigned char VFD_OLD_UTF_C4[64] =
 	0x45,	//0x95, small e with accent breve
 	0x45,	//0x96, capital E with dot above
 	0x45,	//0x97, small e with dot above
-	0x45,	//0x98, capital E with accent ogonek (polish
-	0x45,	//0x99, small e with accent ogonek (polish ac
+	0x45,	//0x98, capital E with accent ogonek (polish accented E)
+	0x45,	//0x99, small e with accent ogonek (polish accented e)
 	0x45,	//0x9a, capital E with accent caron
 	0x45,	//0x9b, small e with accent caron
 	0x47,	//0x9c, capital G with accent circonflexe
