@@ -160,8 +160,8 @@ unsigned char PT6302_UTF_C4[64] =
 	0x61,	// 0x83, small a with accent breve
 	0x41,	// 0x84, capital A with accent ogonek (polish accented A)
 	0x61,	// 0x85, small a with accent ogonek (polish accented a)
-	0x43,	// 0x86, capital C with accent acute (polish accented A)
-	0x63,	// 0x87, small c with accent acute (polish accented a)
+	0x43,	// 0x86, capital C with accent acute (polish accented C)
+	0x63,	// 0x87, small c with accent acute (polish accented c)
 	0x43,	// 0x88, capital C with accent circonflexe
 	0x63,	// 0x89, small c with accent circonflexe
 	0x43,	// 0x8a, capital C with dot above
