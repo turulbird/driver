@@ -2,11 +2,11 @@
 #define _asc_123
 
 /* ************************************************** */
-/* Access ASC3; from u-boot; copied from TF7700 ;-)   */
+/* Access ASC1; from u-boot; copied from TF7700 ;-)   */
 /* ************************************************** */
 
 #define ASC0BaseAddress  0xfd030000
-#define ASC1BaseAddress  0xfd031000
+#define ASC1BaseAddress  0xfd031000  // FP UART on Atemio 520HD
 #define ASC2BaseAddress  0xfd032000
 #define ASC3BaseAddress  0xfd034000
 
@@ -38,6 +38,7 @@
 
 
 //-------------------------------------
+#if 0
 #define PIO5BaseAddress  0xb8025000
 
 #define PIO_CLR_PnC0     0x28
@@ -59,6 +60,7 @@
 #define PIO_SET_PnCOMP   0x54
 #define PIO_SET_PnMASK   0x64
 #define PIO_SET_PnOUT    0x04
+#endif
 
 int serial_putc(char Data);
 void serial_init(void);

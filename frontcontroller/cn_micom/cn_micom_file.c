@@ -251,156 +251,6 @@ static char *mcom_ascii_char_7seg[] =
 	_7SEG_ASC7F   // 0x7f, <DEL>
 };
 
-#if 0
-/**************************************************
- *
- * Character table for early VFD models
- *
- * Order is ASCII.
- *
- * NOTE: lower case letters are translated
- * to uppercase
- */
-static unsigned char mcom_ascii_char_14seg_old[] =
-{
-	0x00,  // 0x00, unprintable control character
-	0x00,  // 0x01, unprintable control character
-	0x00,  // 0x02, unprintable control character
-	0x00,  // 0x03, unprintable control character
-	0x00,  // 0x04, unprintable control character
-	0x00,  // 0x05, unprintable control character
-	0x00,  // 0x06, unprintable control character
-	0x00,  // 0x07, unprintable control character
-	0x00,  // 0x08, unprintable control character
-	0x00,  // 0x09, unprintable control character
-	0x00,  // 0x0a, unprintable control character
-	0x00,  // 0x0b, unprintable control character
-	0x00,  // 0x0c, unprintable control character
-	0x00,  // 0x0d, unprintable control character
-	0x00,  // 0x0e, unprintable control character
-	0x00,  // 0x0f, unprintable control character
-
-	0x00,  // 0x10, unprintable control character
-	0x00,  // 0x11, unprintable control character
-	0x00,  // 0x12, unprintable control character
-	0x00,  // 0x13, unprintable control character
-	0x00,  // 0x14, unprintable control character
-	0x00,  // 0x15, unprintable control character
-	0x00,  // 0x16, unprintable control character
-	0x00,  // 0x17, unprintable control character
-	0x00,  // 0x18, unprintable control character
-	0x00,  // 0x19, unprintable control character
-	0x00,  // 0x1a, unprintable control character
-	0x00,  // 0x1b, unprintable control character
-	0x00,  // 0x1c, unprintable control character
-	0x00,  // 0x1d, unprintable control character
-	0x00,  // 0x1e, unprintable control character
-	0x00,  // 0x1f, unprintable control character
-
-	0x00,  // 0x20, <space>
-	0x00,  // 0x21, !
-	0x00,  // 0x22, "
-	0x00,  // 0x23, #
-	0x00,  // 0x24, $
-	0x00,  // 0x25, %
-	0x00,  // 0x26, &
-	0x00,  // 0x27, '
-	0x00,  // 0x28, (
-	0x00,  // 0x29, )
-	0x00,  // 0x2a, *
-	0x00,  // 0x2b, +
-	0x00,  // 0x2c, ,
-	0x00,  // 0x2d, -
-	0x00,  // 0x2e, .
-	0x00,  // 0x2f, /
-
-	0x02,  // 0x30, 0
-	0x03,  // 0x31, 1
-	0x04,  // 0x32, 2
-	0x05,  // 0x33, 3
-	0x06,  // 0x34, 4
-	0x07,  // 0x35, 5
-	0x08,  // 0x36, 6
-	0x09,  // 0x37, 7
-	0x0a,  // 0x38, 8
-	0x0b,  // 0x39, 9
-	0x00,  // 0x3a, :
-	0x00,  // 0x3b, ;
-	0x00,  // 0x3c, <
-	0x00,  // 0x3d, =
-	0x00,  // 0x3e, >
-	0x00,  // 0x3f, ?
-
-	0x00,  // 0x40, @
-	0x0c,  // 0x41, A
-	0x0d,  // 0x42, B
-	0x0e,  // 0x43, C
-	0x0f,  // 0x44, D
-	0x10,  // 0x45, E
-	0x11,  // 0x46, F
-	0x12,  // 0x47, G
-	0x13,  // 0x48, H
-	0x14,  // 0x49, I
-	0x15,  // 0x4a, J
-	0x16,  // 0x4b, K
-	0x17,  // 0x4c, L
-	0x18,  // 0x4d, M
-	0x19,  // 0x4e, N
-	0x1a,  // 0x4f, O
-
-	0x1b,  // 0x50, P
-	0x1c,  // 0x51, Q
-	0x1d,  // 0x52, R
-	0x1e,  // 0x53, S
-	0x1f,  // 0x54, T
-	0x20,  // 0x55, U
-	0x21,  // 0x56, V
-	0x22,  // 0x57, W
-	0x23,  // 0x58, X
-	0x24,  // 0x59, Y
-	0x25,  // 0x5a, Z
-	0x00,  // 0x5b  [
-	0x00,  // 0x5c, |
-	0x00,  // 0x5d, ]
-	0x00,  // 0x5e, ^
-	0x00,  // 0x5f, _
-
-	0x00,  // 0x60, `
-	0x0c,  // 0x61, a
-	0x0d,  // 0x62, b
-	0x0e,  // 0x63, c
-	0x0f,  // 0x64, d
-	0x10,  // 0x65, e
-	0x11,  // 0x66, f
-	0x12,  // 0x67, g
-	0x13,  // 0x68, h
-	0x14,  // 0x69, i
-	0x15,  // 0x6a, j
-	0x16,  // 0x6b, k
-	0x17,  // 0x6c, l
-	0x18,  // 0x6d, m
-	0x19,  // 0x6e, n
-	0x1a,  // 0x6f, o
-               
-	0x1b,  // 0x70, p
-	0x1c,  // 0x71, q
-	0x1d,  // 0x72, r
-	0x1e,  // 0x73, s
-	0x1f,  // 0x74, t
-	0x20,  // 0x75, u
-	0x21,  // 0x76, v
-	0x22,  // 0x77, w
-	0x23,  // 0x78, x
-	0x24,  // 0x79, y
-	0x25,  // 0x7a, z
-	0x00,  // 0x7b, {
-	0x00,  // 0x7c, backslash
-	0x00,  // 0x7d, }
-	0x00,  // 0x7e, ~
-	0x00,  // 0x7f, <DEL>
-};
-#endif
-
 /**************************************************
  *
  * Character table for late VFD models
@@ -703,11 +553,7 @@ static DISPLAYTYPE mcom_GetDisplayType(void)
 	{
 		return _7SEG;
 	}
-	if (mcom_version[0] == 5)
-	{
-		return _VFD;
-	}
-	return _VFD_OLD;
+	return _VFD;
 }
 
 /*******************************************************
@@ -1354,7 +1200,7 @@ int mcom_utf8conv(unsigned char *text, unsigned char len, int displaytype)
 							case _7SEG:
 							default:
 							{
-								UTF_Char_Table = VFD_OLD_UTF_C2;  // LED_UTF_C2;
+								UTF_Char_Table = LED_UTF_C2;
 								break;
 							}
 							case _VFD:
@@ -1362,13 +1208,6 @@ int mcom_utf8conv(unsigned char *text, unsigned char len, int displaytype)
 								UTF_Char_Table = VFD_UTF_C2;
 								break;
 							}
-#if 0
-							case _VFD_OLD:
-							{
-								UTF_Char_Table = VFD_OLD_UTF_C2;
-								break;
-							}
-#endif
 						}
 					}
 					break;
@@ -1380,7 +1219,7 @@ int mcom_utf8conv(unsigned char *text, unsigned char len, int displaytype)
 						case _7SEG:
 						default:
 						{
-							UTF_Char_Table = VFD_OLD_UTF_C3;  // LED_UTF_C3;
+							UTF_Char_Table = LED_UTF_C3;
 							break;
 						}
 						case _VFD:
@@ -1388,13 +1227,6 @@ int mcom_utf8conv(unsigned char *text, unsigned char len, int displaytype)
 							UTF_Char_Table = VFD_UTF_C3;
 							break;
 						}
-#if 0
-						case _VFD_OLD:
-						{
-							UTF_Char_Table = VFD_OLD_UTF_C3;
-							break;
-						}
-#endif
 					}
 					break;
 				}
@@ -1405,7 +1237,7 @@ int mcom_utf8conv(unsigned char *text, unsigned char len, int displaytype)
 						case _7SEG:
 						default:
 						{
-							UTF_Char_Table = VFD_OLD_UTF_C4;  // LED_UTF_C4;
+							UTF_Char_Table = LED_UTF_C4;
 							break;
 						}
 						case _VFD:
@@ -1413,13 +1245,6 @@ int mcom_utf8conv(unsigned char *text, unsigned char len, int displaytype)
 							UTF_Char_Table = VFD_UTF_C4;
 							break;
 						}
-#if 0
-						case _VFD_OLD:
-						{
-							UTF_Char_Table = VFD_OLD_UTF_C4;
-							break;
-						}
-#endif
 					}
 					break;
 				}
@@ -1430,7 +1255,7 @@ int mcom_utf8conv(unsigned char *text, unsigned char len, int displaytype)
 						case _7SEG:
 						default:
 						{
-							UTF_Char_Table = VFD_OLD_UTF_C5;  // LED_UTF_C5;
+							UTF_Char_Table = LED_UTF_C5;
 							break;
 						}
 						case _VFD:
@@ -1438,13 +1263,6 @@ int mcom_utf8conv(unsigned char *text, unsigned char len, int displaytype)
 							UTF_Char_Table = VFD_UTF_C5;
 							break;
 						}
-#if 0
-						case _VFD_OLD:
-						{
-							UTF_Char_Table = VFD_OLD_UTF_C5;
-							break;
-						}
-#endif
 					}
 					break;
 				}
@@ -1456,7 +1274,7 @@ int mcom_utf8conv(unsigned char *text, unsigned char len, int displaytype)
 						case _7SEG:
 						default:
 						{
-							UTF_Char_Table = VFD_OLD_UTF_D0;  // LED_UTF_D0;
+							UTF_Char_Table = LED_UTF_D0;
 							break;
 						}
 						case _VFD:
@@ -1464,13 +1282,6 @@ int mcom_utf8conv(unsigned char *text, unsigned char len, int displaytype)
 							UTF_Char_Table = VFD_UTF_D0;
 							break;
 						}
-#if 0
-						case _VFD_OLD:
-						{
-							UTF_Char_Table = VFD_OLD_UTF_D0;
-							break;
-						}
-#endif
 					}
 					break;
 				}
@@ -1481,7 +1292,7 @@ int mcom_utf8conv(unsigned char *text, unsigned char len, int displaytype)
 						case _7SEG:
 						default:
 						{
-							UTF_Char_Table = VFD_OLD_UTF_D1;  // LED_UTF_D1;
+							UTF_Char_Table = LED_UTF_D1;
 							break;
 						}
 						case _VFD:
@@ -1489,13 +1300,6 @@ int mcom_utf8conv(unsigned char *text, unsigned char len, int displaytype)
 							UTF_Char_Table = VFD_UTF_D1;
 							break;
 						}
-#if 0
-						case _VFD_OLD:
-						{
-							UTF_Char_Table = VFD_OLD_UTF_D1;
-							break;
-						}
-#endif
 					}
 					break;
 				}
@@ -1603,14 +1407,6 @@ int mcom_WriteString(unsigned char *aBuf, int len)
 				payload_len++;
 				break;
 			}
-#if 0
-			case _VFD_OLD:  // (HD 9600 models)
-			{
-				cmdBuf[i + _VAL] = mcom_ascii_char_14seg_old[bBuf[i]];
-				payload_len++;
-				break
-			}
-#endif
 		}
 	}
 	/* complete command write */
