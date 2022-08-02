@@ -59,7 +59,8 @@ MODULE_PARM_DESC(camRouting, "Enable camRouting 0=disabled 1=enabled");
  || defined(ATEMIO520) \
  || defined(OPT9600MINI) \
  || defined(VITAMIN_HD5000) \
- || defined(SAGEMCOM88)
+ || defined(SAGEMCOM88) \
+ || defined(OPT9600PRIMA)
 #define TSMergerBaseAddress 0xFE242000
 #define SWTS_BASE_ADDRESS 0xFE900000 // STi7105 STi7111
 #else
@@ -143,7 +144,8 @@ MODULE_PARM_DESC(camRouting, "Enable camRouting 0=disabled 1=enabled");
  || defined(ATEMIO520) \
  || defined(OPT9600MINI) \
  || defined(VITAMIN_HD5000) \
- || defined(SAGEMCOM88)
+ || defined(SAGEMCOM88) \
+ || defined(OPT9600PRIMA)
 #define SysConfigBaseAddress 0xFE001000 // STi7105 STi7111
 #else
 #define SysConfigBaseAddress 0x19001000 // STi7100 STi7109
@@ -826,7 +828,8 @@ void stm_tsm_init(int use_cimax)
  && !defined(HS7819) \
  && !defined(ATEMIO520) \
  && !defined(OPT9600MINI) \
- && !defined(VITAMIN_HD5000)
+ && !defined(VITAMIN_HD5000) \
+ && !defined(OPT9600PRIMA)
 		ctrl_outl(0x0, reg_sys_config + SYS_CFG1);
 #endif
 		if (reinit)
@@ -1574,7 +1577,7 @@ void stm_tsm_init(int use_cimax)
  || defined(IPBOX55) \
  || defined(HL101) \
  || defined(VIP1_V1)
-		printk(">>Init DVBT-USB\n");
+		printk(">>Init USB-DVBT\n");
 		tsm_handle.tsm_io = ioremap(TSMergerBaseAddress, 0x0900);
 		tsm_handle.swts_channel = 3;
 		tsm_handle.tsm_swts = (unsigned long)ioremap(0x1A300000, 0x1000);
@@ -1595,7 +1598,7 @@ void stm_tsm_init(int use_cimax)
 		}
 		*/
 #endif
-		/* <<< DVBT-USB */
+		/* <<< USB DVB-T */
 #ifdef LOAD_TSM_DATA
 		TSM_NUM_PTI_ALT_OUT = 1/* config->tsm_num_pti_alt_out*/;
 		TSM_NUM_1394_ALT_OUT = 1/*config->tsm_num_1394_alt_out */;

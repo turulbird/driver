@@ -27,7 +27,7 @@
  * This version only supports a Sharp IX2470VA DVBS(2) tuner. The DVB-T tuner
  * present in TS models is not supported due to:
  * 1. Its driver code is closed source;
- * 2. At the time writing DVB-T is (being) phased out in many areas in favour
+ * 2. At the time of writing DVB-T is (being) phased out in many areas in favour
  *    of DVB-T2.
  */
 
