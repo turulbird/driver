@@ -1054,7 +1054,8 @@ void stm_tsm_init(int use_cimax)
 		/* add tag bytes to stream + stream priority */
 #if defined(FS9000) \
  || defined(HS9510) \
- || defined(HS8200)
+ || defined(HS8200) \
+ || defined(OPT9600PRIMA)
 		ret = ctrl_inl(tsm_io + TSM_STREAM1_CFG);
 		ctrl_outl(ret | (0x40020), tsm_io + TSM_STREAM1_CFG);
 #elif !defined(UFS913)
@@ -1066,7 +1067,8 @@ void stm_tsm_init(int use_cimax)
 		/* add tag bytes to stream + stream priority */
 #if defined(FS9000) \
  || defined(HS9510) \
- || defined(HS8200)
+ || defined(HS8200) \
+ || defined(OPT9600PRIMA)
 		ret = ctrl_inl(tsm_io + TSM_STREAM2_CFG);
 		ctrl_outl(ret | (0x40020), tsm_io + TSM_STREAM2_CFG);
 #elif defined(UFS912) \
@@ -1096,7 +1098,8 @@ void stm_tsm_init(int use_cimax)
  ||   defined(HS7429) \
  ||   defined(HS7810A) \
  ||   defined(HS7819) \
- ||   defined(VITAMIN_HD5000)
+ ||   defined(VITAMIN_HD5000) \
+ ||   defined(OPT9600PRIMA)
 		ret = ctrl_inl(tsm_io + TSM_STREAM3_CFG);
 		ctrl_outl(ret | (0x20020), tsm_io + TSM_STREAM3_CFG);
 		ret = ctrl_inl(tsm_io + TSM_STREAM4_CFG);
@@ -1160,7 +1163,8 @@ void stm_tsm_init(int use_cimax)
  ||   defined(HS7819) \
  ||   defined(ATEMIO520) \
  ||   defined(OPT9600MINI) \
- ||   defined(VITAMIN_HD5000)
+ ||   defined(VITAMIN_HD5000) \
+ ||   defined(OPT9600PRIMA)
 		ctrl_outl(0x8f0000e, tsm_io + SWTS_CFG(0));
 		ctrl_outl(0x8000000, tsm_io + SWTS_CFG(1));
 		ctrl_outl(0x8000000, tsm_io + SWTS_CFG(2));
@@ -1312,13 +1316,13 @@ void stm_tsm_init(int use_cimax)
 		ret = ctrl_inl(tsm_io + TSM_1394_DEST);
 		ctrl_outl(ret | 0x38, tsm_io + TSM_1394_DEST);
 #elif defined(CUBEREVO) \
- || defined(CUBEREVO_MINI2) \
- || defined(CUBEREVO_MINI) \
- || defined(CUBEREVO_250HD) \
- || defined(CUBEREVO_2000HD) \
- || defined(CUBEREVO_9500HD) \
- || defined(CUBEREVO_MINI_FTA) \
- || defined(CUBEREVO_3000HD)
+ ||   defined(CUBEREVO_MINI2) \
+ ||   defined(CUBEREVO_MINI) \
+ ||   defined(CUBEREVO_250HD) \
+ ||   defined(CUBEREVO_2000HD) \
+ ||   defined(CUBEREVO_9500HD) \
+ ||   defined(CUBEREVO_MINI_FTA) \
+ ||   defined(CUBEREVO_3000HD)
 		/* route stream 1 to PTI */
 		ret = ctrl_inl(tsm_io + TSM_PTI_SEL);
 		ctrl_outl(ret | 0x2, tsm_io + TSM_PTI_SEL);
@@ -1493,7 +1497,8 @@ void stm_tsm_init(int use_cimax)
  || defined(HS7819) \
  || defined(ATEMIO520) \
  || defined(OPT9600MINI) \
- || defined(VITAMIN_HD5000)
+ || defined(VITAMIN_HD5000) \
+ || defined(OPT9600PRIMA)
 		tsm_handle.fdma_reqline = 31;
 #elif defined(UFS910)
 		//ufs910 use dma request id 30 for swts, do'nt know what other boxes use
