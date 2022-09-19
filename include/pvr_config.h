@@ -19,7 +19,28 @@ struct plat_tuner_config
 	   [2] value for LNB power 18V (horizontal)
 	   [3] value for LNB power off
 	 */
+#if defined(UFS922)
+	/* the following array defines
+	   [0] i2c address of LNB power controller
+	   [1] value for LNB power 13V (vertical)
+	   [2] value for LNB power 18V (horizontal)
+	   [3] value for LNB power off
+	 */
 	int lnb_vsel[4];
+#else
+	/* the following arrays define
+	   [0] PIO port number
+	   [1] PIO pin number
+	   [2] active state of the pin for 13V
+	 */
+	int lnb_vsel[3];
+#endif
+	/* the following arrays define
+	   [0] PIO port number
+	   [1] PIO pin number
+	   [2] active state of the pin for +1V
+	 */
+	int lnb_1vsel[3];
 };
 
 struct plat_tuner_data

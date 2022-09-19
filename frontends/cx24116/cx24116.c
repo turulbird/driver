@@ -3282,7 +3282,7 @@ struct plat_tuner_config tuner_resources[] =
 		.i2c_addr = 0x05,
 		.tuner_enable = { 2, 4, 1 },
 		.lnb_enable = { -1, -1, -1 },
-		.lnb_vsel = { 0x0a, 0xc4, 0xcc, 0xc0 },
+		.lnb_vsel = { 0x0a, 0xc4, 0xcc, 0xc0 },  // !!! i2c, NOT PIO values!
 	},
 	[1] =  // marked LNB2 on rear panel
 	{
@@ -3291,7 +3291,7 @@ struct plat_tuner_config tuner_resources[] =
 		.i2c_addr = 0x05,
 		.tuner_enable = { 2, 5, 1 },
 		.lnb_enable = { -1, -1, -1 },
-		.lnb_vsel = { 0x0a, 0xc4, 0xcc, 0xc0 },
+		.lnb_vsel = { 0x0a, 0xc4, 0xcc, 0xc0 },  // !!! i2c, NOT PIO values!
 	},
 };
 
