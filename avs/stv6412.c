@@ -51,100 +51,102 @@ static int debug = AVS_DEBUG;
  */
 #if 1 
 //defined(__LITTLE_ENDIAN__)
-typedef struct s_stv6412_data {
- /* Data 0 */
- unsigned char svm			: 1;
- unsigned char t_vol_c			: 5;
- unsigned char t_vol_x			: 1;
- unsigned char t_stereo			: 1;
- /* Data 1 */
- unsigned char tc_asc			: 3;
- unsigned char c_ag			: 1;
- unsigned char v_asc			: 2;
- unsigned char res1			: 1;
- unsigned char v_stereo			: 1;
- /* Data 2 */
- unsigned char t_vsc			: 3;
- unsigned char t_cm			: 1;
- unsigned char v_vsc			: 3;
- unsigned char v_cm			: 1;
- /* Data 3 */
- unsigned char fblk			: 2;
- unsigned char rgb_vsc			: 2;
- unsigned char rgb_gain			: 3;
- unsigned char rgb_tri			: 1;
- /* Data 4 */
- unsigned char t_rcos			: 1;
- unsigned char r_ac			: 1;
- unsigned char r_tfc			: 1;
- unsigned char v_cgc			: 1;
- unsigned char v_coc			: 1;
- unsigned char res2			: 1;
- unsigned char slb			: 1;
- unsigned char it_enable		: 1;
- /* Data 5 */
- unsigned char e_rcsc			: 1;
- unsigned char v_rcsc			: 1;
- unsigned char e_aig			: 2;
- unsigned char t_sb			: 2;
- unsigned char v_sb			: 2;
- /* Data 6 */
- unsigned char e_in			: 1;
- unsigned char v_in			: 1;
- unsigned char t_in			: 1;
- unsigned char a_in			: 1;
- unsigned char v_out			: 1;
- unsigned char c_out			: 1;
- unsigned char t_out			: 1;
- unsigned char r_out			: 1;
+typedef struct s_stv6412_data
+{
+	/* Data 0 */
+	unsigned char svm       : 1;
+	unsigned char t_vol_c   : 5;
+	unsigned char t_vol_x   : 1;
+	unsigned char t_stereo  : 1;
+	/* Data 1 */
+	unsigned char tc_asc    : 3;  // TV SCART & CINC audio source selection
+	unsigned char c_ag      : 1;  // cinch audio gain
+	unsigned char v_asc     : 2;  // VCR SCART audio selection
+	unsigned char res1      : 1;
+	unsigned char v_stereo  : 1;  // VCR audio mode
+	/* Data 2 */
+	unsigned char t_vsc     : 3;  // TV SCART video source
+	unsigned char t_cm      : 1;  // TV SCART chroma mute
+	unsigned char v_vsc     : 3;  // VCR SCART video source
+	unsigned char v_cm      : 1;  // VCR SCART chroma mute
+	/* Data 3 */
+	unsigned char fblk      : 2;  // TV SCART fast blanking value
+	unsigned char rgb_vsc   : 2;  // TV SCART RGB video source
+	unsigned char rgb_gain  : 3;  // TV SCART RGB gain
+	unsigned char rgb_tri   : 1;  // TV SCART FB and RGB tri-state control
+	/* Data 4 */
+	unsigned char t_rcos    : 1;  // selects Red of Chroma on R output
+	unsigned char r_ac      : 1;  // Addr control bit 0, selects CVBS or Y/C to RF output
+	unsigned char r_tfc     : 1;  // Addr control bit 1, selects chroma filter on/off
+	unsigned char v_cgc     : 1;  // Cgate output control
+	unsigned char v_coc     : 1;  // C VCR control
+	unsigned char res2      : 1;  // bit is don't care
+	unsigned char slb       : 1;  // slow blanking source: normal or VCR
+	unsigned char it_enable : 1;
+	/* Data 5 */
+	unsigned char e_rcsc    : 1;  // Clamping of SoC video
+	unsigned char v_rcsc    : 1;  // Clamping of VCR video
+	unsigned char e_aig     : 2;  // SoC audio input level
+	unsigned char t_sb      : 2;  // TV SCART status
+	unsigned char v_sb      : 2;  // VCR SCART status
+	/* Data 6 */
+	unsigned char e_in      : 1;
+	unsigned char v_in      : 1;
+	unsigned char t_in      : 1;
+	unsigned char a_in      : 1;
+	unsigned char v_out     : 1;
+	unsigned char c_out     : 1;
+	unsigned char t_out     : 1;
+	unsigned char r_out     : 1;
 } s_stv6412_data;
 #else
-typedef struct s_stv6412_data {
+typedef struct s_stv6412_data
+{
  /* Data 0 */
- unsigned char t_stereo			: 1;
- unsigned char t_vol_x			: 1;
- unsigned char t_vol_c			: 5;
- unsigned char svm			: 1;
+	unsigned char t_stereo  : 1;
+	unsigned char t_vol_x   : 1;
+	unsigned char t_vol_c   : 5;
+	unsigned char svm       : 1;
  /* Data 1 */
- unsigned char v_stereo			: 1;
- unsigned char res1			: 1;
- unsigned char v_asc			: 2;
- unsigned char c_ag			: 1;
- unsigned char tc_asc			: 3;
+	unsigned char v_stereo  : 1;
+	unsigned char res1      : 1;
+	unsigned char v_asc     : 2;
+	unsigned char c_ag      : 1;
+	unsigned char tc_asc    : 3;
  /* Data 2 */
- unsigned char v_cm			: 1;
- unsigned char v_vsc			: 3;
- unsigned char t_cm			: 1;
- unsigned char t_vsc			: 3;
+	unsigned char v_cm      : 1;
+	unsigned char v_vsc     : 3;
+	unsigned char t_cm      : 1;
+	unsigned char t_vsc     : 3;
  /* Data 3 */
- unsigned char rgb_tri			: 1;
- unsigned char rgb_gain			: 3;
- unsigned char rgb_vsc			: 2;
- unsigned char fblk			: 2;
+	unsigned char rgb_tri   : 1;
+	unsigned char rgb_gain  : 3;
+	unsigned char rgb_vsc   : 2;
+	unsigned char fblk      : 2;
  /* Data 4 */
- unsigned char it_enable		: 1;
- unsigned char slb			: 1;
- unsigned char res2			: 1;
- unsigned char v_coc			: 1;
- unsigned char v_cgc			: 1;
- unsigned char r_tfc			: 1;
- unsigned char r_ac			: 1;
- unsigned char t_rcos			: 1;
+	unsigned char it_enable : 1;
+	unsigned char slb       : 1;
+	unsigned char res2      : 1;
+	unsigned char v_coc     : 1;
+	unsigned char v_cgc     : 1;
+	unsigned char r_tfc     : 1;
+	unsigned char r_ac      : 1;
+	unsigned char t_rcos    : 1;
  /* Data 5 */
- unsigned char v_sb			: 2;
- unsigned char t_sb			: 2;
- unsigned char e_aig			: 2;
- unsigned char v_rcsc			: 1;
- unsigned char e_rcsc			: 1;
+	unsigned char v_sb      : 2;
+	unsigned char t_sb      : 2;
+	unsigned char e_aig     : 2;
+	unsigned char v_rcsc    : 1;
+	unsigned char e_rcsc    : 1;
  /* Data 6 */
- unsigned char r_out			: 1;
- unsigned char t_out			: 1;
- unsigned char c_out			: 1;
- unsigned char v_out			: 1;
- unsigned char a_in			: 1;
- unsigned char t_in			: 1;
- unsigned char v_in			: 1;
- unsigned char e_in			: 1;
+	unsigned char r_out     : 1;
+	unsigned char t_out     : 1;
+	unsigned char c_out     : 1;
+	unsigned char v_out     : 1;
+	unsigned char a_in      : 1;
+	unsigned char t_in      : 1;
+	unsigned char v_in      : 1;
+	unsigned char e_in      : 1;
 } s_stv6412_data;
 #endif
 
@@ -156,7 +158,7 @@ unsigned char tc_asc;
 unsigned char v_asc;
 
 /* hold old values for standby */
-unsigned char t_stnby=0;
+unsigned char t_stnby = 0;
 
 /* ---------------------------------------------------------------------- */
 
@@ -164,25 +166,32 @@ static struct s_stv6412_data stv6412_data;
 static struct s_stv6412_data tmpstv6412_data;
 static int stv6412_s_old_src;
 
-/* ---------------------------------------------------------------------- */
-#if defined(FS9000) || defined(HL101) || defined(VIP1_V1)  || defined(IPBOX9900)
+/***************************************************
+ *
+ * Send all current register values to the STV6412.
+ *
+/***************************************************/
+#if defined(FS9000) \
+ || defined(HL101) \
+ || defined(VIP1_V1) \
+ || defined(IPBOX9900)
 //Trick: hack ;)
 int stv6412_set(struct i2c_client *client)
 {
 	char buffer[11];
 
-	printk("[AVS] [STV6418] set!\n");
+	printk("[AVS] [STV6412] set!\n");
 
-	buffer[0] = 0x00;
-	buffer[1] = 0x40;
-	buffer[2] = 0x09;
-	buffer[3] = 0x11;
-	buffer[4] = 0x84;
-	buffer[5] = 0x84;
-	buffer[6] = 0x25;
-	buffer[7] = 0x08;
-	buffer[8] = 0x21;
-	buffer[9] = 0xc0;
+	buffer[0]  = 0x00;
+	buffer[1]  = 0x40;
+	buffer[2]  = 0x09;
+	buffer[3]  = 0x11;
+	buffer[4]  = 0x84;
+	buffer[5]  = 0x84;
+	buffer[6]  = 0x25;
+	buffer[7]  = 0x08;
+	buffer[8]  = 0x21;
+	buffer[9]  = 0xc0;
 	buffer[10] = 0x00;
 	i2c_master_send(client, buffer, 10); //not 11?
 	return 0;
@@ -190,33 +199,31 @@ int stv6412_set(struct i2c_client *client)
 #else
 int stv6412_set(struct i2c_client *client)
 {
-	char buffer[STV6412_DATA_SIZE+1];
+	char buffer[STV6412_DATA_SIZE + 1];
 
 	buffer[0] = 0;
 
-	memcpy( buffer+1, &stv6412_data, STV6412_DATA_SIZE );
+	memcpy(buffer + 1, &stv6412_data, STV6412_DATA_SIZE);
 
-	if ( (STV6412_DATA_SIZE+1) != i2c_master_send(client, buffer, STV6412_DATA_SIZE+1))
+	if ((STV6412_DATA_SIZE + 1) != i2c_master_send(client, buffer, STV6412_DATA_SIZE + 1))
 	{
 		return -EFAULT;
 	}
 	return 0;
 }
 #endif
-/* ---------------------------------------------------------------------- */
 
-int stv6412_set_volume( struct i2c_client *client, int vol )
+/***************************************************
+ *
+ * Set volume.
+ *
+ ***************************************************/
+int stv6412_set_volume(struct i2c_client *client, int vol)
 {
-	int c=0;
+	int c = 0;
 
 	c = vol;
 
-// not needed
-//	// not smart ;-)
-//	if ( c == 63 )
-//	{
-//		c--;
-//	}
 #if !defined(ADB_BOX)
 	if (c == 63)
 	{
@@ -236,16 +243,26 @@ int stv6412_set_volume( struct i2c_client *client, int vol )
 	return stv6412_set(client);
 }
 
-/* ---------------------------------------------------------------------- */
-
-inline int stv6412_set_mute( struct i2c_client *client, int type )
+/***************************************************
+ *
+ * Set mute state.
+ *
+ * sw = output
+ *      0 = VCR SCART
+ *      1 = TV SCART RGB
+ *      2 = TV SCART CVBS or Y/C
+ *
+ * type: 0 = off, 1 on
+ *
+/***************************************************/
+inline int stv6412_set_mute(struct i2c_client *client, int type)
 {
-	if ((type<0) || (type>1))
+	if ((type < AVS_UNMUTE) || (type > AVS_MUTE))
 	{
 		return -EINVAL;
 	}
 
-	if (type==AVS_MUTE) 
+	if (type == AVS_MUTE) 
 	{
 		if (tc_asc == 0xff)
 		{
@@ -254,8 +271,8 @@ inline int stv6412_set_mute( struct i2c_client *client, int type )
 			v_asc  = stv6412_data.v_asc;
 
 			/* set mute */
-			stv6412_data.tc_asc = 0;	// tv & cinch mute
-			stv6412_data.v_asc  = 0;	// vcr mute
+			stv6412_data.tc_asc = 0;  // tv & cinch mute
+			stv6412_data.v_asc  = 0;  // vcr mute
 		}
 	}
 	else /* unmute with old values */
@@ -272,37 +289,50 @@ inline int stv6412_set_mute( struct i2c_client *client, int type )
 	return stv6412_set(client);
 }
 
-/* ---------------------------------------------------------------------- */
-
-inline int stv6412_set_vsw( struct i2c_client *client, int sw, int type )
+/***************************************************
+ *
+ * Set video output format.
+ *
+ * sw = output
+ *      0 = VCR SCART
+ *      1 = TV SCART RGB
+ *      2 = TV SCART CVBS or Y/C
+ *
+ * type = video format
+ *        0 = muted (no output)
+ *        1 = SoC CVBS
+ *        2 = SoC Y/C
+ *        3 = CVBS (of opposite SCART)
+ *
+/***************************************************/
+inline int stv6412_set_vsw( struct i2c_client *client, int sw, int type)
 {
-	printk("SET VSW: %d %d\n",sw,type);
+	printk("[STV6412] Set VSW: %d %d\n", sw, type);
 
-	if (type<0 || type>4)
+	if (type < 0 || type > 4)
 	{
 		return -EINVAL;
 	}
 
-	switch(sw)
+	switch (sw)  // get output to set: VCR CVBS, TV RGB, TV CVBS
 	{
-		case 0:	// vcr
+		case 0:	 // vcr
 		{
-			stv6412_data.v_vsc = type;
+			stv6412_data.v_vsc = type;  // 
 			break;
 		}
-		case 1:	// rgb
+		case 1:	 // rgb
 		{
-			if (type<0 || type>2)
+			if (type < 0 || type > 2)
 			{
 				return -EINVAL;
 			}
-
-			stv6412_data.rgb_vsc = type;
+			stv6412_data.rgb_vsc = type;  // 0 = TV RGB, 1 VCR RGB
 			break;
 		}
-		case 2: // tv
+		case 2:  // tv
 		{
-			stv6412_data.t_vsc = type;
+			stv6412_data.t_vsc = type;  // 0 = no output, 1 = SoC CVBS, 2 = SoC Y/C, 3 = VCR Y/CVBS & VCR C
 			break;
 		}
 		default:
@@ -313,15 +343,30 @@ inline int stv6412_set_vsw( struct i2c_client *client, int sw, int type )
 	return stv6412_set(client);
 }
 
-/* ---------------------------------------------------------------------- */
-
+/***************************************************
+ *
+ * Set audio output source.
+ *
+ * sw = output
+ *      0 = VCR SCART
+ *      1 = TV SCART RGB
+ *      2 = TV SCART CVBS or Y/C
+ *
+ * type = audio format
+ *        0 = muted (no output)
+ *        1 = SoC audio
+ *        2 = audio of opposite SCART
+ *        3 = AUX
+ *        4 = TV ?
+ *
+/***************************************************/
 inline int stv6412_set_asw( struct i2c_client *client, int sw, int type )
 {
 	switch(sw)
 	{
-		case 0:
+		case 0:  // VCR SCART
 		{
-			if (type<=0 || type>3)
+			if (type <= 0 || type > 3)
 			{
 				return -EINVAL;
 			}
@@ -329,18 +374,18 @@ inline int stv6412_set_asw( struct i2c_client *client, int sw, int type )
 			/* if muted ? yes: save in temp */
 			if ( v_asc == 0xff )
 			{
-				stv6412_data.v_asc = type;
+				stv6412_data.v_asc = type;  
 			}
 			else
 			{
-				v_asc = type;
+				v_asc = type;  // keep for unmute
 			}
 			break;
 		}
-		case 1:
-		case 2:
+		case 1:  // TV SCART RGB
+		case 2:  // TV SCART CVBS
 		{
-			if (type<=0 || type>4)
+			if (type <= 0 || type > 4)
 			{
 				return -EINVAL;
 			}
@@ -364,11 +409,20 @@ inline int stv6412_set_asw( struct i2c_client *client, int sw, int type )
 	return stv6412_set(client);
 }
 
-/* ---------------------------------------------------------------------- */
-
-inline int stv6412_set_t_sb( struct i2c_client *client, int type )
+/***************************************************
+ *
+ * Set TV SCART status pin 8.
+ *
+ * type = status
+ *        0 = pin floats (TV does not select SCART input)
+ *        1 = pin < 2V (TV does not select SCART input)
+ *        2 = Select SCART input, 16:9 mode
+ *        3 = Select SCART input, 4:3 mode
+ *
+/***************************************************/
+inline int stv6412_set_t_sb(struct i2c_client *client, int type)
 {
-	if (type<0 || type>3)
+	if (type < 0 || type > 3)
 	{
 		return -EINVAL;
 	}
@@ -376,9 +430,20 @@ inline int stv6412_set_t_sb( struct i2c_client *client, int type )
 	return stv6412_set(client);
 }
 
-/* ---------------------------------------------------------------------- */
-
-inline int stv6412_set_wss( struct i2c_client *client, int vol )
+/***************************************************
+ *
+ * Set WSS on TV SCART.
+ *
+ * type = aspect ratio
+ *        0 = 4:3
+ *        1 = 16:9
+ *        2 = off
+ *
+ * Note: does not actually set WSS but sets status
+ *       pin of TV SCART to matching aspect ratio.
+ *
+/***************************************************/
+inline int stv6412_set_wss(struct i2c_client *client, int vol)
 {
 	if (vol == SAA_WSS_43F)
 	{
@@ -399,75 +464,114 @@ inline int stv6412_set_wss( struct i2c_client *client, int vol )
 	return stv6412_set(client);
 }
 
-/* ---------------------------------------------------------------------- */
-
-inline int stv6412_set_fblk( struct i2c_client *client, int type )
+/***************************************************
+ *
+ * Set TV SCART fast blanking pin 16.
+ *
+ * type = status
+ *        0 = low level
+ *        1 = high level (RGB mode)
+ *        2 = from SoC
+ *        3 = from VCR SCART fast blanking pin
+ *
+ * Note: does not actually set WSS but sets status
+ *       pin of TV SCART to matching aspect ratio.
+ *
+/***************************************************/
+inline int stv6412_set_fblk(struct i2c_client *client, int type)
 {
-	if (type<0 || type>3)
+	if (type < 0 || type > 3)
 	{
 		return -EINVAL;
 	}
 	stv6412_data.fblk = type;
-
 	return stv6412_set(client);
 }
 
-/* ---------------------------------------------------------------------- */
-
+/***************************************************
+ *
+ * Get AVS status.
+ *
+ * Merely reads the status byte and returns it
+ * without further processing.
+ *
+/***************************************************/
 int stv6412_get_status(struct i2c_client *client)
 {
 	unsigned char byte;
 
 	byte = 0;
 
-	if (1 != i2c_master_recv(client,&byte,1))
+	if (1 != i2c_master_recv(client, &byte, 1))
 	{
 		return -1;
 	}
 	return byte;
 }
 
-/* ---------------------------------------------------------------------- */
-
+/***************************************************
+ *
+ * Get volume.
+ *
+ *
+/***************************************************/
 int stv6412_get_volume(void)
 {
 	int c;
 
-	c = stv6412_data.t_vol_c;
+	c = stv6412_data.t_vol_c;  // get current volume value
 
 	if (c)
 	{
-		c *= 2;
+		c *= 2; // times 2
 	}
 	return c;
 }
 
-/* ---------------------------------------------------------------------- */
-
+/***************************************************
+ *
+ * Get mute status. Returns zero if both TV SCART
+ * and VCR SCART are not muted.
+ *
+/***************************************************/
 inline int stv6412_get_mute(void)
 {
 	return !((tc_asc == 0xff) && (v_asc == 0xff));
 }
 
-/* ---------------------------------------------------------------------- */
-
+/***************************************************
+ *
+ * Get fast blanking status.
+ *
+/***************************************************/
 inline int stv6412_get_fblk(void)
 {
 	return stv6412_data.fblk;
 }
 
-/* ---------------------------------------------------------------------- */
-
+/***************************************************
+ *
+ * Get TV SCART status.
+ *
+/***************************************************/
 inline int stv6412_get_t_sb(void)
 {
 	return stv6412_data.t_sb;
 }
 
-/* ---------------------------------------------------------------------- */
-
-inline int stv6412_get_vsw( int sw )
+/***************************************************
+ *
+ * Get video source.
+ *
+ * sw = output
+ *      0 = VCR SCART CVBS
+ *      1 = TV SCART RGB
+ *      2 = TV SCART CVBS
+ *
+/***************************************************/
+inline int stv6412_get_vsw(int sw)
 {
-	switch(sw)
+	switch (sw)
 	{
 		case 0:
 		{
@@ -492,16 +596,24 @@ inline int stv6412_get_vsw( int sw )
 	return -EINVAL;
 }
 
-/* ---------------------------------------------------------------------- */
-
+/***************************************************
+ *
+ * Get audio source.
+ *
+ * sw = output
+ *      0 = VCR SCART CVBS
+ *      1 = TV SCART RGB
+ *      2 = TV SCART CVBS
+ *
+/***************************************************/
 inline int stv6412_get_asw( int sw )
 {
-	switch(sw)
+	switch (sw)
 	{
-		case 0:
+		case 0:  // VCR
 		{
 			// muted ? yes: return tmp values
-			if ( v_asc == 0xff )
+			if (v_asc == 0xff)
 			{
 				return stv6412_data.v_asc;
 			}
@@ -510,8 +622,8 @@ inline int stv6412_get_asw( int sw )
 				return v_asc;
 			}
 		}
-		case 1:
-		case 2:
+		case 1:  // TV RGB
+		case 2:  // TV CVBS
 		{
 			if (tc_asc == 0xff)
 			{
@@ -531,53 +643,68 @@ inline int stv6412_get_asw( int sw )
 	return -EINVAL;
 }
 
-/* ---------------------------------------------------------------------- */
+/***************************************************
+ *
+ * Set encoder mode.
+ *
+ * NOT IMPLEMENTED
+ *
+/***************************************************/
 //NOT IMPLEMENTED
-int stv6412_set_encoder( struct i2c_client *client, int vol )
+int stv6412_set_encoder(struct i2c_client *client, int vol)
 {
 	return 0;
 }
 
-/* ---------------------------------------------------------------------- */
- 
-int stv6412_set_mode( struct i2c_client *client, int vol )
+/***************************************************
+ *
+ * Set TV SCART output video format.
+ *
+ * vol = format
+ *       0 (SAA_MODE_RGB) = RGB mode
+ *       1 (SAA_MODE_FBAS) = CVBS mode
+ *       2 (SAA_MODE_SVIDEO) = Y/C
+ *       3 (SAA_MODE_COMPONENT) = component
+ *
+/***************************************************/
+int stv6412_set_mode(struct i2c_client *client, int vol)
 {
-	dprintk("[AVS]: SAAIOSMODE command : %d\n", vol);
+	dprintk("[STV6412] SAAIOSMODE command : %d\n", vol);
 	if (vol == SAA_MODE_RGB)
 	{
-		if (stv6412_data.t_vsc == 4) // scart selected
+		if (stv6412_data.t_vsc == 4)  // if in AUX mode
 		{
-			stv6412_s_old_src = 1;
+			stv6412_s_old_src = 1;  // save value for SoC video
 		}
 		else
 		{
-			stv6412_data.t_vsc = 1;
+			stv6412_data.t_vsc = 1;  // else set SoC CVBS video as source for TV SCART CVBS
 		}
-		stv6412_data.fblk = 1;
+		stv6412_data.fblk = 1;  // set fast blanking to high (RGB mode)
 	}
 	else if (vol == SAA_MODE_FBAS)
 	{
-		if (stv6412_data.t_vsc == 4) // scart selected
+		if (stv6412_data.t_vsc == 4)  // if in AUX mode
 		{
-			stv6412_s_old_src = 1;
+			stv6412_s_old_src = 1;  // save value for SoC video
 		}
 		else
 		{
-			stv6412_data.t_vsc = 1;
+			stv6412_data.t_vsc = 1;  // else set SoC CVBS video as source for TV SCART CVBS
 		}
-		stv6412_data.fblk = 0;
+		stv6412_data.fblk = 0;  // set fast blanking to low (RGB mode off)
 	}
 	else if (vol == SAA_MODE_SVIDEO)
 	{
 		if (stv6412_data.t_vsc == 4) // scart selected
 		{
-			stv6412_s_old_src = 2;
+			stv6412_s_old_src = 2;  // save value for SoC video
 		}
 		else
 		{
-			stv6412_data.t_vsc = 2;
+			stv6412_data.t_vsc = 2;  // else set SoC Y/C video as source for TV SCART CVBS
 		}
-		stv6412_data.fblk = 0;
+		stv6412_data.fblk = 0;  // set fast blanking to low (RGB mode off)
 	}
 	else
 	{
@@ -586,25 +713,32 @@ int stv6412_set_mode( struct i2c_client *client, int vol )
 	return stv6412_set(client);
 }
 
-/* ---------------------------------------------------------------------- */
- 
-int stv6412_src_sel( struct i2c_client *client, int src )
+/***************************************************
+ *
+ * Set TV SCART sources.
+ *
+ * src = format
+ *       0 both video and audio come from SoC
+ *       1 both video and audio come from VCR SCART
+ *
+/***************************************************/
+int stv6412_src_sel(struct i2c_client *client, int src)
 {
 	if (src == SAA_SRC_ENC)
 	{
 		stv6412_data.t_vsc = stv6412_s_old_src;
 		stv6412_data.v_vsc = stv6412_s_old_src;
-		stv6412_data.tc_asc = 1;
-		stv6412_data.v_asc = 1;
+		stv6412_data.tc_asc = 1;  // TV SCART audio source is SoC audio
+		stv6412_data.v_asc = 1;  // VCR SCART audio source is SoC audio
 	}
 	else if (src == SAA_SRC_SCART)
 	{
 		stv6412_s_old_src = stv6412_data.t_vsc;
 #if !defined(ADB_BOX)
-		stv6412_data.t_vsc = 4;
-		stv6412_data.v_vsc = 0;
-		stv6412_data.tc_asc = 2;
-		stv6412_data.v_asc = 0;
+		stv6412_data.t_vsc = 4;  // set TV SCART AUX mode
+		stv6412_data.v_vsc = 0;  // mute VCR video CVBS output
+		stv6412_data.tc_asc = 2;  // TV SCART audio source is VCR SCART audio
+		stv6412_data.v_asc = 0;  // VCR SCART audio source is muted
 #endif
   	}
   	else
@@ -614,32 +748,37 @@ int stv6412_src_sel( struct i2c_client *client, int src )
 	return stv6412_set(client);
 }
 
-/* ---------------------------------------------------------------------- */
-
-inline int stv6412_standby( struct i2c_client *client, int type )
+/***************************************************
+ *
+ * Set standby mode.
+ *
+ * type: 1 = standby, 0 = active
+ *
+/***************************************************/
+inline int stv6412_standby(struct i2c_client *client, int type)
 {
  
-	if ((type<0) || (type>1))
+	if ((type < 0) || (type > 1))
 	{
 		return -EINVAL;
 	}
  
-	if (type==1) 
+	if (type == 1) 
 	{
 		if (t_stnby == 0)
 		{
-			tmpstv6412_data = stv6412_data;
+			tmpstv6412_data = stv6412_data;  // save current AVS data
 			// Full Stop mode
 			/* Data 6 */
-			stv6412_data.e_in = 1;
-			stv6412_data.v_in = 1;
-			stv6412_data.t_in = 1;
-			stv6412_data.a_in = 1;
-			stv6412_data.v_out = 1;
-			stv6412_data.c_out = 1;
-			stv6412_data.t_out = 1;
-			stv6412_data.r_out = 1;
-			t_stnby = 1;
+			stv6412_data.e_in = 1;  // SoC inputs off
+			stv6412_data.v_in = 1;  // VCR inputs off
+			stv6412_data.t_in = 1;  // TV inputs off
+			stv6412_data.a_in = 1;  // AUX inputs off
+			stv6412_data.v_out = 1;  // TV SCART outputs off
+			stv6412_data.c_out = 1;  // CINCH outputs off
+			stv6412_data.t_out = 1;  // TV SCART inputs off
+			stv6412_data.r_out = 1;  // RF modulator outputs off
+			t_stnby = 1;  // flag standby mode set
 		}
 		else
 		{
@@ -648,10 +787,10 @@ inline int stv6412_standby( struct i2c_client *client, int type )
 	}
 	else
 	{
-		if (t_stnby == 1)
+		if (t_stnby == 1)  // if in standby mode
 		{
-			stv6412_data = tmpstv6412_data;
-			t_stnby = 0;
+			stv6412_data = tmpstv6412_data;  // get old data
+			t_stnby = 0;  // flag standby off
 		}
 		else
 		{
@@ -661,20 +800,23 @@ inline int stv6412_standby( struct i2c_client *client, int type )
 	return stv6412_set(client);
 }
 
-/* ---------------------------------------------------------------------- */
-
-int stv6412_command(struct i2c_client *client, unsigned int cmd, void *arg )
+/***************************************************
+ *
+ * Execute command.
+ *
+/***************************************************/
+int stv6412_command(struct i2c_client *client, unsigned int cmd, void *arg)
 {
 	int val=0;
 
 	unsigned char scartPin8Table[3] = { 0, 2, 3 };
 	unsigned char scartPin8Table_reverse[4] = { 0, 0, 1, 2 };
 
-	printk("[AVS]: command\n");
+	printk("[STV6412]: command\n");
 	
 	if (cmd & AVSIOSET)
 	{
-		if ( copy_from_user(&val,arg,sizeof(val)) )
+		if (copy_from_user(&val, arg, sizeof(val)))
 		{
 			return -EFAULT;
 		}
@@ -684,63 +826,67 @@ int stv6412_command(struct i2c_client *client, unsigned int cmd, void *arg )
 			/* set video */
 			case AVSIOSVSW1:
 			{
-				return stv6412_set_vsw(client,0,val);
+				return stv6412_set_vsw(client, 0, val);
 			}
 			case AVSIOSVSW2:
 			{
-				return stv6412_set_vsw(client,1,val);
+				return stv6412_set_vsw(client, 1, val);
 			}
 			case AVSIOSVSW3:
 			{
-				return stv6412_set_vsw(client,2,val);
+				return stv6412_set_vsw(client, 2, val);
 			}
 			/* set audio */
 			case AVSIOSASW1:
 			{
-				return stv6412_set_asw(client,0,val);
+				return stv6412_set_asw(client, 0, val);
 			}
 			case AVSIOSASW2:
 			{
-				return stv6412_set_asw(client,1,val);
+				return stv6412_set_asw(client, 1, val);
 			}
 			case AVSIOSASW3:
 			{
-				return stv6412_set_asw(client,2,val);
+				return stv6412_set_asw(client, 2, val);
 			}
 			/* set vol & mute */
 			case AVSIOSVOL:
 			{
-				return stv6412_set_volume(client,val);
+				return stv6412_set_volume(client, val);
 			}
 			case AVSIOSMUTE:
 			{
-				return stv6412_set_mute(client,val);
+				return stv6412_set_mute(client, val);
 			}
 			/* set video fast blanking */
 			case AVSIOSFBLK:
 			{
-#if defined(FS9000) || defined(HL101) || defined(VIP1_V1) || defined(IPBOX9900) || defined(IPBOX99)
-				printk("[AVS STV6418] does not support AVSIOSFBLK yet!\n");
+#if defined(FS9000) \
+ || defined(HL101) \
+ || defined(VIP1_V1) \
+ || defined(IPBOX9900) \
+ || defined(IPBOX99)
+				printk("[STV6412] does not support AVSIOSFBLK yet!\n");
 				return -1;
 #else
 				return stv6412_set_fblk(client,val);
 #endif
 			}
 #if 1
-/* no direct manipulation allowed, use set_wss instead */
 			/* set slow blanking (tv) */
+			/* no direct manipulation allowed, use set_wss instead */
 			case AVSIOSSCARTPIN8:
 			{
-				return stv6412_set_t_sb(client,scartPin8Table[val]);
+				return stv6412_set_t_sb(client, scartPin8Table[val]);
 			}
 			case AVSIOSFNC:
 			{
-				return stv6412_set_t_sb(client,val);
+				return stv6412_set_t_sb(client, val);
 			}
 #endif
 			case AVSIOSTANDBY:
 			{
-				return stv6412_standby(client,val);
+				return stv6412_standby(client, val);
 			}
 			default:
 			{
@@ -798,8 +944,12 @@ int stv6412_command(struct i2c_client *client, unsigned int cmd, void *arg )
 			/* get video fast blanking */
 			case AVSIOGFBLK:
 			{
-#if defined(FS9000) || defined(HL101) || defined(VIP1_V1) || defined(IPBOX9900) || defined(IPBOX99)
-				printk("[AVS STV6418] does not support AVSIOSFBLK yet!\n");
+#if defined(FS9000) \
+ || defined(HL101) \
+ || defined(VIP1_V1) \
+ || defined(IPBOX9900) \
+ || defined(IPBOX99)
+				printk("[STV6412] does not support AVSIOSFBLK yet!\n");
 				break;
 #else
 				val = stv6412_get_fblk();
@@ -829,39 +979,39 @@ int stv6412_command(struct i2c_client *client, unsigned int cmd, void *arg )
 				return -EINVAL;
 			}
 		}
-		return put_user(val,(int*)arg);
+		return put_user(val, (int*)arg);
 	}
 	else
 	{
-		printk("[AVS]: SAA command\n");
+		printk("[STV6412]: SAA command\n");
 
 		/* an SAA command */
-		if ( copy_from_user(&val,arg,sizeof(val)) )
+		if (copy_from_user(&val, arg, sizeof(val)))
 		{
 			return -EFAULT;
 		}
 
-		switch(cmd)
+		switch (cmd)
 		{
 			case SAAIOSMODE:
 			{
-		   		 return stv6412_set_mode(client,val);
+		   		 return stv6412_set_mode(client, val);
 			}
 	 	        case SAAIOSENC:
 			{
-				 return stv6412_set_encoder(client,val);
+				 return stv6412_set_encoder(client, val);
 			}
 			case SAAIOSWSS:
 			{
-				return stv6412_set_wss(client,val);
+				return stv6412_set_wss(client, val);
 			}
 			case SAAIOSSRCSEL:
 			{
-				return stv6412_src_sel(client,val);
+				return stv6412_src_sel(client, val);
 			}
 			default:
 			{
-				dprintk("[AVS]: SAA command not supported\n");
+				dprintk("[STV6412]: SAA command %d not supported\n", cmd);
 				return -EINVAL;
 			}
 		}
@@ -869,80 +1019,83 @@ int stv6412_command(struct i2c_client *client, unsigned int cmd, void *arg )
 	return 0;
 }
 
-/* ---------------------------------------------------------------------- */
- 
+/***************************************************
+ *
+ * Execute command.
+ *
+/***************************************************/
 int stv6412_command_kernel(struct i2c_client *client, unsigned int cmd, void *arg)
 {
-   int val=0;
+   int val = 0;
 
 	unsigned char scartPin8Table[3] = { 0, 2, 3 };
 	unsigned char scartPin8Table_reverse[4] = { 0, 0, 1, 2 };
 
-	dprintk("[AVS]: command_kernel(%u)\n", cmd);
+	dprintk("[STV6412]: command_kernel(%u)\n", cmd);
 	
 	if (cmd & AVSIOSET)
 	{
 		val = (int) arg;
 
-      		dprintk("[AVS]: AVSIOSET command\n");
+      		dprintk("[STV6412]: AVSIOSET command\n");
 
 		switch (cmd)
 		{
 			/* set video */
 			case AVSIOSVSW1:
 			{
-				return stv6412_set_vsw(client,0,val);
+				return stv6412_set_vsw(client, 0, val);
 			}
 			case AVSIOSVSW2:
 			{
-				return stv6412_set_vsw(client,1,val);
+				return stv6412_set_vsw(client, 1, val);
 			}
 			case AVSIOSVSW3:
 			{
-				return stv6412_set_vsw(client,2,val);
+				return stv6412_set_vsw(client, 2, val);
 			}
 			/* set audio */
 			case AVSIOSASW1:
 			{
-				return stv6412_set_asw(client,0,val);
+				return stv6412_set_asw(client, 0, val);
 			}
 			case AVSIOSASW2:
 			{
-				return stv6412_set_asw(client,1,val);
+				return stv6412_set_asw(client, 1, val);
 			}
 			case AVSIOSASW3:
 			{
-				return stv6412_set_asw(client,2,val);
+				return stv6412_set_asw(client, 2, val);
 			}
 			/* set vol & mute */
 			case AVSIOSVOL:
 			{
-				return stv6412_set_volume(client,val);
+				return stv6412_set_volume(client, val);
 			}
 			case AVSIOSMUTE:
 			{
-				return stv6412_set_mute(client,val);
+				return stv6412_set_mute(client, val);
 			}
 			/* set video fast blanking */
 			case AVSIOSFBLK:
 			{
-				return stv6412_set_fblk(client,val);
+				return stv6412_set_fblk(client, val);
 			}
 #if 1
-/* no direct manipulation allowed, use set_wss instead */
 			/* set slow blanking (tv) */
+			/* no direct manipulation allowed, use set_wss instead */
 			case AVSIOSSCARTPIN8:
 			{
-				return stv6412_set_t_sb(client,scartPin8Table[val]);
+				return stv6412_set_t_sb(client, scartPin8Table[val]);
 			}
 			case AVSIOSFNC:
 			{
-				return stv6412_set_t_sb(client,val);
+				return stv6412_set_t_sb(client, val);
 			}
 #endif
 			case AVSIOSTANDBY:
 			{
-				return stv6412_standby(client,val);
+				return stv6412_standby(client, val);
 			}
 			default:
 			{
@@ -952,7 +1105,7 @@ int stv6412_command_kernel(struct i2c_client *client, unsigned int cmd, void *ar
 	}
 	else if (cmd & AVSIOGET)
 	{
-		dprintk("[AVS]: AVSIOGET command\n");
+		dprintk("[STV6412]: AVSIOGET command\n");
 
 		switch (cmd)
 		{
@@ -1028,35 +1181,35 @@ int stv6412_command_kernel(struct i2c_client *client, unsigned int cmd, void *ar
 				return -EINVAL;
 			}
 		}
-		*((int*) arg) = (int) val;
+		*((int*)arg) = (int)val;
 		return 0;
 	}
 	else
 	{
-		printk("[AVS]: SAA command\n");
+		printk("[STV6412]: SAA command\n");
 		val = (int) arg;
 
-		switch(cmd)
+		switch (cmd)
 		{
 			case SAAIOSMODE:
 			{
-		   		 return stv6412_set_mode(client,val);
+		   		 return stv6412_set_mode(client, val);
 			}
 	 	        case SAAIOSENC:
 			{
-				 return stv6412_set_encoder(client,val);
+				 return stv6412_set_encoder(client, val);
 			}
 			case SAAIOSWSS:
 			{
-				return stv6412_set_wss(client,val);
+				return stv6412_set_wss(client, val);
 			}
 			case SAAIOSSRCSEL:
 			{
-				return stv6412_src_sel(client,val);
+				return stv6412_src_sel(client, val);
 			}
 			default:
 			{
-				dprintk("[AVS]: SAA command not supported\n");
+				dprintk("[STV6412]: SAA command %d not supported\n", cmd);
 				return -EINVAL;
 			}
 		}
@@ -1064,8 +1217,11 @@ int stv6412_command_kernel(struct i2c_client *client, unsigned int cmd, void *ar
 	return 0;
 }
 
-/* ---------------------------------------------------------------------- */
-
+/***************************************************
+ *
+ * Initialize the STV6412.
+ *
+/***************************************************/
 int stv6412_init(struct i2c_client *client)
 {
 	memset((void*)&stv6412_data,0,STV6412_DATA_SIZE);
@@ -1100,25 +1256,25 @@ int stv6412_init(struct i2c_client *client)
 	stv6412_data.v_sb = 0;
 #else
 	/* Data 0 */
-	stv6412_data.t_vol_c = 0;
+	stv6412_data.t_vol_c = 0;  // TV volume: 0 dB
 	 /* Data 1 */
-	stv6412_data.v_asc  = 1;
-	stv6412_data.tc_asc = 1;
+	stv6412_data.v_asc   = 1;  // VCR audio: Encoder L/R
+	stv6412_data.tc_asc  = 1;  // TV / Cinch audio: Encoder L/R
 	/* Data 2 */
-	stv6412_data.v_vsc  = 1;
-	stv6412_data.t_vsc  = 1;
+	stv6412_data.v_vsc   = 1;  // VCR CVBS: Encoder CVBS
+	stv6412_data.t_vsc   = 1;  // TV CVBS: Encoder CVBS
 	/* Data 3 */
-	stv6412_data.rgb_tri  = 1;
-	stv6412_data.rgb_vsc  = 1;
-	stv6412_data.fblk     = 2;
+	stv6412_data.rgb_tri = 1; // TV SCART: RGB and FB outputs on
+	stv6412_data.rgb_vsc = 1; // TV SCART: RGB output from Encoder
+	stv6412_data.fblk    = 2; // Fast blanking from SoC
 	/* Data 4 */
-	stv6412_data.t_rcos  = 1;
-	stv6412_data.res2  = 1;
+	stv6412_data.t_rcos  = 1;  // Chroma on TV R (wrong!, should be 0 for RGB output)
+	stv6412_data.res2    = 1;  // ?? bit is don't care
 	/* Data 5 */
-	stv6412_data.t_sb  = 3;
-	stv6412_data.v_sb  = 0;
+	stv6412_data.t_sb    = 3;  // TV slow blanking is 4:3 (why not 16:9?) 
+	stv6412_data.v_sb    = 0;  // VCR slow blanking is input
 	/* Data 6 */
-	stv6412_data.a_in  = 0;
+	stv6412_data.a_in    = 0; // AUX inputs active
 #endif
 	stv6412_s_old_src = 1;
 
@@ -1127,6 +1283,4 @@ int stv6412_init(struct i2c_client *client)
 	v_asc  = 0xff;
 	return stv6412_set(client);
 }
-
-/* ---------------------------------------------------------------------- */
 // vim:ts=4
