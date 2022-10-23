@@ -7,8 +7,8 @@
  * Copyright (C) 2007-2008 Darron Broad
  * Copyright (C) 2008 Igor Liplianin
  *
- * Version for Topfield TF77X0HDPVR, Kathrein UFS910 and
- *             Ferguson ArivaLink 200
+ * Version for Topfield TF77X0HDPVR, Kathrein UFS910,
+ *             Ferguson ArivaLink 200 and Homecast HS8100 series
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -81,7 +81,7 @@ static short paramDebug = 0;
 #define dprintk(level, x...) \
 do \
 { \
-	if ((paramDebug > level) || level == 0) \
+	if ((paramDebug >= level) || level == 0) \
 	{ \
 		printk(TAGDEBUG x); \
 	} \
@@ -234,9 +234,15 @@ struct cx24116_state
 	struct stpio_pin *tuner_enable_pin;
 	struct stpio_pin *lnb_enable_pin;
 	struct stpio_pin *lnb_vsel_pin;
+#if defined(HS8100)
+	struct stpio_pin *lnb_1vsel_pin;
+#endif
 	u8               tuner_enable_act; // active state of the pin
 	u8               lnb_enable_act;   // active state of the pin
 	u8               lnb_vsel_act;     // active state of the pin
+#if defined(HS8100)
+	u8               lnb_1vsel_act;    // active state of the pin
+#endif
 };
 
 struct dvb_adapter	*adapter;
@@ -265,11 +271,12 @@ static int cx24116_writeregN(struct cx24116_state *state, int reg, const u8 *dat
 	int ret = -EREMOTEIO;
 	struct i2c_msg msg;
 	u8 *buf;
-
 #ifndef CONFIG_I2C_STM
 	struct i2c_algo_bit_data *algo_data = state->i2c->algo_data;
 	int udelay = algo_data->udelay;
 #endif
+
+	dprintk(100, "%s: 1st reg 0x%02x, count 0x%02x\n", __func__, reg, (int)len);
 
 	buf = kmalloc(len + 1, GFP_KERNEL);
 	if (buf == NULL)
@@ -294,11 +301,10 @@ static int cx24116_writeregN(struct cx24116_state *state, int reg, const u8 *dat
 	// increase the transfer timeout
 	state->i2c->timeout = 20;
 #endif
-	dprintk(100, "%s < reg 0x%02x, len = %d\n", __func__, reg, len);
 	ret = i2c_transfer(state->i2c, &msg, 1);
 
 #ifndef CONFIG_I2C_STM
-	// restore restore the bus speed
+	// restore the bus speed
 	algo_data->udelay = udelay;
 #else
 	// restore transfer timeout
@@ -333,7 +339,7 @@ static int cx24116_readreg(struct cx24116_state *state, u8 reg)
 		dprintk(1, "%s: reg=0x%x (error=%d)\n", __func__, reg, ret);
 		return ret;
 	}
-	dprintk(50, "%s < reg 0x%02x, value 0x%02x\n", __func__, reg, b1[0]);
+	dprintk(100, "%s < reg 0x%02x, value 0x%02x\n", __func__, reg, b1[0]);
 	return b1[0];
 }
 
@@ -640,6 +646,12 @@ static int cx24116_reset(struct cx24116_state *state)
 	{
 		stpio_set_pin(state->lnb_vsel_pin, state->lnb_vsel_act);
 	}
+#if defined(HS8100)
+	if (state->lnb_1vsel_pin != NULL)
+	{
+		stpio_set_pin(state->lnb_1vsel_pin, state->lnb_1vsel_act);
+	}
+#endif
 	return 0;
 }
 
@@ -956,26 +968,33 @@ static int cx24116_wait_for_lnb(struct dvb_frontend *fe)
 static int cx24116_set_voltage(struct dvb_frontend *fe, fe_sec_voltage_t voltage)
 {
 	struct cx24116_state *state = fe->demodulator_priv;
+
 	switch (voltage)
 	{
 		case SEC_VOLTAGE_OFF:
 		{
-			dprintk(20, "SEC_VOLTAGE_OFF\n");
+			dprintk(20, "LNB VOLTAGE OFF\n");
 			stpio_set_pin(state->lnb_enable_pin, !state->lnb_enable_act);
 			break;
 		}
 		case SEC_VOLTAGE_13:
 		{
-			dprintk(20, "SEC_VOLTAGE_13\n");
+			dprintk(20, "LNB VOLTAGE VERTICAL (13V)\n");
 			stpio_set_pin(state->lnb_enable_pin, state->lnb_enable_act);
 			stpio_set_pin(state->lnb_vsel_pin, !state->lnb_vsel_act);
+#if defined(HS8100)
+			stpio_set_pin(state->lnb_1vsel_pin, !state->lnb_1vsel_act);
+#endif
 			break;
 		}
 		case SEC_VOLTAGE_18:
 		{
-			dprintk(20, "SEC_VOLTAGE_18\n");
+			dprintk(20, "LNB VOLTAGE HORIZONTAL (18V)\n");
 			stpio_set_pin(state->lnb_enable_pin, state->lnb_enable_act);
 			stpio_set_pin(state->lnb_vsel_pin, state->lnb_vsel_act);
+#if defined(HS8100)
+			stpio_set_pin(state->lnb_1vsel_pin, !state->lnb_1vsel_act);
+#endif
 			break;
 		}
 		default:
@@ -1254,6 +1273,12 @@ static void cx24116_release(struct dvb_frontend *fe)
 	{
 		stpio_free_pin(state->lnb_vsel_pin);
 	}
+#if defined(HS8100)
+	if (state->lnb_1vsel_pin != NULL)
+	{
+		stpio_free_pin(state->lnb_1vsel_pin);
+	}
+#endif
 	kfree(state);
 }
 
@@ -1286,11 +1311,49 @@ struct plat_tuner_config tuner_resources[] =
 		.i2c_bus      = 1,
 		.i2c_addr     = 0x55,
 		.tuner_enable = { -1, -1, -1 },  // not used
-		.lnb_enable   = { 0, 6, 0 },  // TR21 1-disabled,, 0-enabled
-		.lnb_vsel     = { 0, 2, 0 }   // R22 1-H(18V), 0-V(13V)
+		.lnb_enable   = { 0, 6, 0 },  // TR21 1-disabled, 0-enabled
+		.lnb_vsel     = { 0, 2, 0 }   // TR22 1-H(18V), 0-V(13V)
+	}
+#elif defined(HS8100)
+	/* Homecast HS8100 tuner resources
+	 *
+	 * The LNB interface is PIO driven and uses three
+	 * PIOs for each front end, allocated as follows:
+	 *
+	 * FE  LNB on/off  LNB 13/18V  LNB 1V lift
+	 * ----------------------------------------
+	 * 0       5.2         5.0         5.1
+	 * 1       4.7?        4.4         4.5
+     *         off         13V         off     <- state is high
+	 *
+	 * The driver initializes the 1V drop state as off
+	 * as the 13V output of the interface is rather low at a
+	 * theoretical 12.3V, with the 1V drop off it is 14.1V.
+	 */
+	[0] =
+	{
+		.adapter      = 0,
+		.i2c_bus      = 0,
+		.i2c_addr     = 0x55,
+		.tuner_enable = { -1, -1, -1 },  // not used
+//		.tuner_enable = { 2, 5, 1 },  // TODO: find values
+		.lnb_enable   = { 5, 2, 0 },
+		.lnb_vsel     = { 5, 0, 0 },
+		.lnb_1vsel    = { 5, 1, 0 }
+	},
+	[1] =
+	{
+		.adapter      = 0,
+		.i2c_bus      = 0,
+		.i2c_addr     = 0x05,
+		.tuner_enable = { -1, -1, -1 },  // not used
+//		.tuner_enable = { 2, 6, 1 },  // TODO: find values
+		.lnb_enable   = { 4, 7, 0 },  // TODO: find values
+		.lnb_vsel     = { 4, 4, 0 },
+		.lnb_1vsel    = { 4, 5, 0 }
 	}
 #else
-	/* UFS910 tuner resources */
+	/* Kathrein UFS910 tuner resources */
 	[0] =
 	{
 		.adapter      = 0,
@@ -1332,24 +1395,53 @@ static int cx24116_probe(struct platform_device *pdev)
 		}
 		state->demod_address = tuner_cfg->i2c_addr;
 		state->i2c = i2c_get_adapter(tuner_cfg->i2c_bus);
-
-		state->tuner_enable_pin = stpio_request_pin(tuner_cfg->tuner_enable[0],
-							    tuner_cfg->tuner_enable[1],
-							    "tuner enabl", STPIO_OUT);
-
+		if (state->i2c == NULL)
+		{
+			dprintk(1, "%s Error: Failed to allocate I2C bus %d for frontend %d\n", __func__, tuner_cfg->i2c_bus, tuner);
+		}
+		if (tuner_cfg->tuner_enable[0] != -1)
+		{
+			state->tuner_enable_pin = stpio_request_pin(tuner_cfg->tuner_enable[0],
+								    tuner_cfg->tuner_enable[1],
+								    "tuner enabl", STPIO_OUT);
+			if (state->tuner_enable_pin == NULL)
+			{
+				dprintk(1, "%s Error: Failed to allocate PIO %d,%d for %s\n", __func__, tuner_cfg->tuner_enable[0], tuner_cfg->tuner_enable[1], "tuner_enabl");
+			}
+		}
 		state->lnb_enable_pin = stpio_request_pin(tuner_cfg->lnb_enable[0],
 							  tuner_cfg->lnb_enable[1],
 							  "LNB enable", STPIO_OUT);
-
+		if (state->lnb_enable_pin == NULL)
+		{
+			dprintk(1, "%s Error: Failed to allocate PIO %d,%d for %s\n", __func__, tuner_cfg->lnb_enable[0], tuner_cfg->lnb_enable[1], "LNB_enable");
+		}
 		state->lnb_vsel_pin = stpio_request_pin(tuner_cfg->lnb_vsel[0],
 							tuner_cfg->lnb_vsel[1],
 							"LNB vsel", STPIO_OUT);
+		if (state->lnb_vsel_pin == NULL)
+		{
+			dprintk(1, "%s Error: Failed to allocate PIO %d,%d for %s\n", __func__, tuner_cfg->lnb_vsel[0], tuner_cfg->lnb_vsel[1], "LNB_vsel");
+		}
+#if defined(HS8100)
+		state->lnb_1vsel_pin = stpio_request_pin(tuner_cfg->lnb_1vsel[0],
+							tuner_cfg->lnb_1vsel[1],
+							"LNB 1vsel", STPIO_OUT);
+		if (state->lnb_1vsel_pin == NULL)
+		{
+			dprintk(1, "%s Error: Failed to allocate PIO %d,%d for %s\n", __func__, tuner_cfg->lnb_1vsel[0], tuner_cfg->lnb_1vsel[1], "LNB_1vsel");
+		}
+#endif
 
 		if ((state->i2c == NULL)
-#if !defined(ARIVALINK200)
-		|| (state->tuner_enable_pin == NULL)
-#endif
+//#if !defined(ARIVALINK200) 
+// && !defined(HS8100)
+		|| (tuner_cfg->tuner_enable[0] != -1 && state->tuner_enable_pin == NULL)
+//#endif
 		|| (state->lnb_enable_pin == NULL)
+#if defined(HS8100)
+		|| (state->lnb_1vsel_pin == NULL)
+#endif
 		|| (state->lnb_vsel_pin == NULL))
 		{
 			printk("cx24116: failed to allocate resources\n");
@@ -1358,6 +1450,9 @@ static int cx24116_probe(struct platform_device *pdev)
 		state->tuner_enable_act = tuner_cfg->tuner_enable[2];
 		state->lnb_enable_act = tuner_cfg->lnb_enable[2];
 		state->lnb_vsel_act = tuner_cfg->lnb_vsel[2];
+#if defined(HS8100)
+		state->lnb_1vsel_act = tuner_cfg->lnb_1vsel[2];
+#endif
 
 		// enable the pins
 		cx24116_reset(state);
@@ -1390,25 +1485,44 @@ error2:
 	{
 		stpio_free_pin(state->lnb_vsel_pin);
 	}
+#if defined(HS8100)
+	if (state->lnb_1vsel_pin != NULL)
+	{
+		stpio_free_pin(state->lnb_1vsel_pin);
+	}
+#endif
 	kfree(state);
 
 error1:
 	return 0;
 }
 
-static int cx24116_remove(struct device *dev)
+static int cx24116_remove(struct platform_device *pdev)
 {
 	return 0; // TODO
 }
 
+#if 0
+static struct platform_driver avl2108_driver =
+{
+	.probe  = avl2108_probe,
+	.remove = avl2108_remove,
+	.driver	=
+	{
+		.name  = "avl2108",
+		.owner = THIS_MODULE,
+	},
+};
+#endif
 static struct platform_driver cx24116_driver =
 {
+	.probe  = cx24116_probe,
+	.remove = cx24116_remove,
 	.driver	=
 	{
 		.name = "cx24116",
-	},
-	.probe  = cx24116_probe,
-	.remove = cx24116_remove
+		.owner = THIS_MODULE,
+	}
 };
 
 static struct platform_device tuner_device =
@@ -1536,7 +1650,7 @@ static int cx24116_set_frontend(struct dvb_frontend *fe, struct dvb_frontend_par
 			/* Only QPSK is supported for DVB-S */
 			if (c->modulation != QPSK)
 			{
-				dprintk(1, "%s: unsupported modulation selected (%d)\n", __func__, c->modulation);
+				dprintk(1, "%s: Unsupported modulation selected (%d)\n", __func__, c->modulation);
 				return -EOPNOTSUPP;
 			}
 			/* Pilot doesn't exist in DVB-S, turn bit off */
@@ -1545,7 +1659,7 @@ static int cx24116_set_frontend(struct dvb_frontend *fe, struct dvb_frontend_par
 			/* DVB-S only supports 0.35 */
 			if (c->rolloff != ROLLOFF_35)
 			{
-				dprintk(1, "%s: unsupported rolloff selected (%d)\n", __func__, c->rolloff);
+				dprintk(1, "%s: Unsupported rolloff selected (%d)\n", __func__, c->rolloff);
 				return -EOPNOTSUPP;
 			}
 			state->dnxt.rolloff_val = CX24116_ROLLOFF_035;
@@ -1921,7 +2035,7 @@ MODULE_PARM_DESC(fastZap, "Activates faster zapping (default: 0)");
 
 #if defined(ARIVALINK200)
 module_param(DVBS2mode, short, 0644);
-MODULE_PARM_DESC(DVBS2mode, "Activates alternative DVB-S2 tunnig routines (default: 2)");
+MODULE_PARM_DESC(DVBS2mode, "Activates alternative DVB-S2 tuning routines (default: 2)");
 #endif
 
 MODULE_DESCRIPTION("DVB Frontend module for Conexant cx24116/cx24118 hardware");
