@@ -32,28 +32,28 @@ unsigned char t_vol;
 unsigned char ft_stnby=0;
 
 #if !defined(ADB_BOX)
-struct stpio_pin*	wss_pin;
-struct stpio_pin*	vid_pin;
+struct stpio_pin *wss_pin;
+struct stpio_pin *vid_pin;
 #endif
 /* ---------------------------------------------------------------------- */
  
-int fake_avs_src_sel( struct i2c_client *client, int src )
+int fake_avs_src_sel(struct i2c_client *client, int src)
 { 
-	// fake avs do not need it
+	// fake avs does not need it
 	return 0;
 }
 
 /* ---------------------------------------------------------------------- */
 
-inline int fake_avs_standby( struct i2c_client *client, int type )
+inline int fake_avs_standby(struct i2c_client *client, int type)
 {
 
-	if ((type<0) || (type>1))
+	if ((type < 0) || (type > 1))
 	{
 		return -EINVAL;
 	}
  
-	if (type==1) 
+	if (type == 1) 
 	{
 		if (ft_stnby == 0)
 		{
@@ -63,7 +63,9 @@ inline int fake_avs_standby( struct i2c_client *client, int type )
 			ft_stnby = 1;
 		}
 		else
+		{
 			return -EINVAL;		
+		}
 	}
 	else
 	{
@@ -75,43 +77,43 @@ inline int fake_avs_standby( struct i2c_client *client, int type )
 			ft_stnby = 0;
 		}
 		else
+		{
 			return -EINVAL;
+		}
 	}
-
 	return 0;
 }
  
 /* ---------------------------------------------------------------------- */
  
-int fake_avs_set_volume( struct i2c_client *client, int vol )
+int fake_avs_set_volume(struct i2c_client *client, int vol)
 {
-	int c=0;
+	int c = 0;
  
 	c = vol;
  
 	if (c > 63 || c < 0)
+	{
 		return -EINVAL;
- 
+	} 
 	c = 63 - c;
  
-	c=c/2;
+	c /= 2;
  
 	t_vol = c;
- 
 	return 0;
 }
  
 /* ---------------------------------------------------------------------- */
  
-inline int fake_avs_set_mute( struct i2c_client *client, int type )
+inline int fake_avs_set_mute(struct i2c_client *client, int type)
 {
-
-	if ((type<0) || (type>1))
+	if ((type < 0) || (type > 1))
 	{
 		return -EINVAL;
 	}
  
-	if (type==AVS_MUTE) 
+	if (type == AVS_MUTE) 
 	{
 		t_mute = 1;
 	}
@@ -119,7 +121,6 @@ inline int fake_avs_set_mute( struct i2c_client *client, int type )
 	{
 		t_mute = 0;
 	}
- 
 	return 0;
 }
  
@@ -130,7 +131,6 @@ int fake_avs_get_volume(void)
 	int c;
  
 	c = t_vol;
- 
 	return c;
 }
  
@@ -143,63 +143,61 @@ inline int fake_avs_get_mute(void)
  
 /* ---------------------------------------------------------------------- */
  
-int fake_avs_set_mode( struct i2c_client *client, int vol )
+int fake_avs_set_mode(struct i2c_client *client, int val)
 {
-	dprintk("[AVS]: SAAIOSMODE command : %d\n", vol);
+	dprintk(20, "[fake]: SAAIOSMODE command : %d\n", val);
 	
-	// fake avs do not need it
- 
-	return 0;
+	// fake avs does not need it
+ 	return 0;
 }
  
 /* ---------------------------------------------------------------------- */
 //NOT IMPLEMENTED
-int fake_avs_set_encoder( struct i2c_client *client, int vol )
+int fake_avs_set_encoder(struct i2c_client *client, int val)
 {
 	return 0;
 }
  
 /* ---------------------------------------------------------------------- */
  
-int fake_avs_set_wss( struct i2c_client *client, int vol )
+int fake_avs_set_wss(struct i2c_client *client, int val)
 {
-	if (vol == SAA_WSS_43F)
+	if (val == SAA_WSS_43F)
 	{
 #if !defined(ADB_BOX)
-		stpio_set_pin (wss_pin, 0);
+		stpio_set_pin(wss_pin, 0);
 #endif
 	}
-	else if (vol == SAA_WSS_169F)
+	else if (val == SAA_WSS_169F)
 	{
 #if !defined(ADB_BOX)
-		stpio_set_pin (wss_pin, 0);
+		stpio_set_pin(wss_pin, 0);
 #endif
 	}
-	else if (vol == SAA_WSS_OFF)
+	else if (val == SAA_WSS_OFF)
 	{
 #if !defined(ADB_BOX)
-		stpio_set_pin (wss_pin, 1);
+		stpio_set_pin(wss_pin, 1);
 #endif
 	}
 	else
 	{
-		return  -EINVAL;
+		return -EINVAL;
 	}
- 
 	return 0;
 }
 
 /* ---------------------------------------------------------------------- */
 
-int fake_avs_command(struct i2c_client *client, unsigned int cmd, void *arg )
+int fake_avs_command(struct i2c_client *client, unsigned int cmd, void *arg)
 {
-	int val=0;
+	int val = 0;
 
-	printk("[AVS]: command\n");
+	dprintk(50, "[fake] %s: >\n", __func__);
 	
 	if (cmd & AVSIOSET)
 	{
-		if ( copy_from_user(&val,arg,sizeof(val)) )
+		if (copy_from_user(&val,arg,sizeof(val)))
 		{
 			return -EFAULT;
 		}
@@ -207,56 +205,79 @@ int fake_avs_command(struct i2c_client *client, unsigned int cmd, void *arg )
 		switch (cmd)
 		{
 			case AVSIOSVOL:
+			{
 				return fake_avs_set_volume(client,val);
+			}
 			case AVSIOSMUTE:
+			{
 				return fake_avs_set_mute(client,val);
+			}
 			case AVSIOSTANDBY:
+			{
 				return fake_avs_standby(client,val);
+			}
 			default:
+			{
 				return -EINVAL;
+			}
 		}
-	} else if (cmd & AVSIOGET)
+	}
+	else if (cmd & AVSIOGET)
 	{
 		switch (cmd)
 		{
 			case AVSIOGVOL:
+			{
 				val = fake_avs_get_volume();
 				break;
+			}
 			case AVSIOGMUTE:
+			{
 				val = fake_avs_get_mute();
 				break;
+			}
 			default:
+			{
 				return -EINVAL;
+			}
 		}
-
-		return put_user(val,(int*)arg);
+		return put_user(val, (int*)arg);
 	}
 	else
 	{
-		printk("[AVS]: SAA command\n");
+		dprintk(20, "[fake] %s: SAA command\n", __func__);
 
 		/* an SAA command */
-		if ( copy_from_user(&val,arg,sizeof(val)) )
+		if (copy_from_user(&val,arg,sizeof(val)))
 		{
 			return -EFAULT;
 		}
 
 		switch(cmd)
 		{
-		case SAAIOSMODE:
-           		 return fake_avs_set_mode(client,val);
- 	        case SAAIOSENC:
-        		 return fake_avs_set_encoder(client,val);
-		case SAAIOSWSS:
-			return fake_avs_set_wss(client,val);
-		case SAAIOSSRCSEL:
-        		return fake_avs_src_sel(client,val);
-		default:
-			dprintk("[AVS]: SAA command not supported\n");
-			return -EINVAL;
+			case SAAIOSMODE:
+			{
+				return fake_avs_set_mode(client, val);
+			}
+			case SAAIOSENC:
+			{
+				return fake_avs_set_encoder(client, val);
+			}
+			case SAAIOSWSS:
+			{
+				return fake_avs_set_wss(client, val);
+			}
+			case SAAIOSSRCSEL:
+			{
+				return fake_avs_src_sel(client, val);
+			}
+			default:
+			{
+				dprintk(1, "[fake] %s: SAA command 0x%04x not supported\n", __func__, cmd);
+				return -EINVAL;
+			}
 		}
 	}
-
 	return 0;
 }
 
@@ -264,68 +285,91 @@ int fake_avs_command(struct i2c_client *client, unsigned int cmd, void *arg )
  
 int fake_avs_command_kernel(struct i2c_client *client, unsigned int cmd, void *arg)
 {
-   int val=0;
+   int val = 0;
 
-	dprintk("[AVS]: command_kernel(%u)\n", cmd);
+	dprintk(20, "[fake] %s: cmd = %u\n", __func__, cmd);
 	
 	if (cmd & AVSIOSET)
 	{
 		val = (int) arg;
 
-      		dprintk("[AVS]: AVSIOSET command\n");
+		dprintk(20, "[fake]: AVSIOSET command\n");
 
 		switch (cmd)
 		{
 			case AVSIOSVOL:
-		            return fake_avs_set_volume(client,val);
-		        case AVSIOSMUTE:
-		            return fake_avs_set_mute(client,val);
-		        case AVSIOSTANDBY:
-		            return fake_avs_standby(client,val);
+			{
+				return fake_avs_set_volume(client, val);
+			}
+			case AVSIOSMUTE:
+			{
+				return fake_avs_set_mute(client, val);
+			}
+			case AVSIOSTANDBY:
+			{
+	            return fake_avs_standby(client,val);
+			}
 			default:
+			{
 				return -EINVAL;
+			}
 		}
-	} else if (cmd & AVSIOGET)
+	}
+	else if (cmd & AVSIOGET)
 	{
-		dprintk("[AVS]: AVSIOGET command\n");
+		dprintk(20, "[fake] %s: AVSIOGET command\n", __func__);
 
 		switch (cmd)
 		{
 			case AVSIOGVOL:
+			{
 			    val = fake_avs_get_volume();
 			    break;
+			}
 			case AVSIOGMUTE:
+			{
 			    val = fake_avs_get_mute();
 			    break;
+			}
 			default:
+			{
 				return -EINVAL;
+			}
 		}
-
-		*((int*) arg) = (int) val;
-	        return 0;
+		*((int*)arg) = (int)val;
+        return 0;
 	}
 	else
 	{
-		printk("[AVS]: SAA command\n");
+		dprintk(20, "[fake] %s: SAA command\n", __func__);
 
-		val = (int) arg;
+		val = (int)arg;
 
-		switch(cmd)
+		switch (cmd)
 		{
-		case SAAIOSMODE:
-           		 return fake_avs_set_mode(client,val);
+			case SAAIOSMODE:
+			{
+				return fake_avs_set_mode(client, val);
+			}
  	        case SAAIOSENC:
-        		 return fake_avs_set_encoder(client,val);
-		case SAAIOSWSS:
-			return fake_avs_set_wss(client,val);
-		case SAAIOSSRCSEL:
-        		return fake_avs_src_sel(client,val);
-		default:
-			dprintk("[AVS]: SAA command not supported\n");
-			return -EINVAL;
+			{
+        		 return fake_avs_set_encoder(client, val);
+			}
+			case SAAIOSWSS:
+			{
+				return fake_avs_set_wss(client, val);
+			}
+			case SAAIOSSRCSEL:
+			{
+				return fake_avs_src_sel(client, val);
+			}
+			default:
+			{
+				dprintk(1, "[fake] %s: SAA command 0x%04x not supported\n", __func__, cmd);
+				return -EINVAL;
+			}
 		}
 	}
-
 	return 0;
 }
 
@@ -334,23 +378,26 @@ int fake_avs_command_kernel(struct i2c_client *client, unsigned int cmd, void *a
 int fake_avs_init(struct i2c_client *client)
 {
 #if !defined(ADB_BOX)
-  wss_pin = stpio_request_pin (3, 4, "WSS enable", STPIO_OUT);
-  vid_pin = stpio_request_pin (3, 3, "Video enab", STPIO_OUT);
+  wss_pin = stpio_request_pin(3, 4, "WSS enable", STPIO_OUT);
+  vid_pin = stpio_request_pin(3, 3, "Video enab", STPIO_OUT);
 
   if ((wss_pin == NULL) || (vid_pin == NULL))
   {
-	if(wss_pin != NULL)
-      		stpio_free_pin (wss_pin);
-    	if(vid_pin != NULL)
-      		stpio_free_pin (vid_pin);
+	if (wss_pin != NULL)
+	{
+		stpio_free_pin(wss_pin);
+	}
+	if (vid_pin != NULL)
+	{
+		stpio_free_pin(vid_pin);
+	}
 	return 1;
   }
-
-  stpio_set_pin (wss_pin, 1);
-  stpio_set_pin (vid_pin, 1);
+  stpio_set_pin(wss_pin, 1);
+  stpio_set_pin(vid_pin, 1);
 #endif
-
   return 0;
 }
 
 /* ---------------------------------------------------------------------- */
+// vim:ts=4

@@ -45,12 +45,14 @@
 #include "stv6417.h"
 #include "stv6418.h"
 #include "stv6419.h"
+#include "cxa2161r.h"
 #include "vip2_avs.h"
 #include "vip1_avs.h"
 #include "fake_avs.h"
 #include "avs_pio.h"
 #include "avs_none.h"
 
+short paramDebug = 10;
 static int debug = AVS_DEBUG;
 
 enum
@@ -61,12 +63,13 @@ enum
 	STV6417,
 	STV6418,
 	STV6419,
+	CXA2161R,
 	VIP2_AVS,
 	VIP1_AVS,
 	FAKE_AVS,
+	AVS_PIO,
 	SPARK_AVS,
 	SPARK7162_AVS,
-	AVS_PIO,
 	AVS_NONE,
 };
 
@@ -79,6 +82,7 @@ static const struct i2c_device_id avs_id[] =
 	{ "stv6417", STV6417 },
 	{ "stv6418", STV6418 },
 	{ "stv6419", STV6419 },
+	{ "cxa2161r", CXA2161R },
 	{ "vip2_avs", VIP2_AVS },
 	{ "vip1_avs", VIP1_AVS },
 	{ "fake_avs", FAKE_AVS },
@@ -104,7 +108,7 @@ static unsigned short normal_i2c[] =
  || defined(CUBEREVO_MINI2) \
  || defined(CUBEREVO_9500HD) \
  || defined(CUBEREVO_2000HD)
-	0x4a, /* stv6412" */
+	0x4a, /* stv6412 */
 #elif defined(UFC960) \
  || defined(FS9000) \
  || defined(TF7700) \
@@ -133,6 +137,8 @@ static unsigned short normal_i2c[] =
 	/* CUBEREVO_MINI_FTA does not register */
 	/* CUBEREVO_250HD seems to use fake_avs, but does not register */
 	0,
+#elif defined(HS8100)
+	0x48, /* cxa2161r */
 #else /* default */
 	0x11, /* ak4705 */
 #endif
@@ -151,13 +157,13 @@ static int avs_newprobe(struct i2c_client *client, const struct i2c_device_id *i
 {
 	if (avs_client)
 	{
-		dprintk("failure, client already registered\n");
+		dprintk(1, "%s Failure; I2Cclient already registered.\n", __func__);
 		return -ENODEV;
 	}
 
-	dprintk("I2C chip found @ address 0x%x\n", client->addr);
+	dprintk(20, "I2C chip found @ address 0x%x\n", client->addr);
 
-	switch(devType)
+	switch (devType)
 	{
 		case AK4705:
 		{
@@ -189,6 +195,11 @@ static int avs_newprobe(struct i2c_client *client, const struct i2c_device_id *i
 			stv6419_init(client);
 			break;
 		}
+		case CXA2161R:
+		{
+			cxa2161r_init(client);
+			break;
+		}
 		case FAKE_AVS:
 		{
 			fake_avs_init(client);
@@ -211,7 +222,7 @@ static int avs_newprobe(struct i2c_client *client, const struct i2c_device_id *i
 static int avs_remove(struct i2c_client *client)
 {
 	avs_client = NULL;
-	dprintk("remove driver\n");
+	dprintk(20, "remove driver\n");
 	return 0;
 }
 
@@ -221,11 +232,11 @@ static int avs_attach(struct i2c_adapter *adap, int addr, int kind)
 	struct i2c_client *client;
 	int err;
 
-	dprintk("attach driver\n");
+	dprintk(20, "attach driver\n");
 
 	if (!(client = kzalloc(sizeof(struct i2c_client), GFP_KERNEL)))
 	{
-		dprintk("[AVS]: attach nomem 1\n");
+		dprintk(1, "[core] %s: attach nomem 1\n", __func__);
 		return -ENOMEM;
 	}
 	/*
@@ -241,9 +252,9 @@ static int avs_attach(struct i2c_adapter *adap, int addr, int kind)
 		kfree(client);
 		return err;
 	}
-	dprintk("Attach final\n");
+	dprintk(20, "Attach final\n");
 	i2c_attach_client(client);
-	dprintk("Attach final OK\n");
+	dprintk(20, "Attach final OK\n");
 
 	return 0;
 }
@@ -255,9 +266,9 @@ static int avs_probe(struct i2c_adapter *adap)
 #if !defined(CUBEREVO_MINI_FTA) \
  && !defined(CUBEREVO_250HD) \
  && !defined(IPBOX55)
-	dprintk("%s > probe\n", __func__);
+	dprintk(50, "%s > probe\n", __func__);
 	ret = i2c_probe(adap, &addr_data, avs_attach);
-	dprintk("%s < probe end %d\n", __func__, ret);
+	dprintk(50, "%s < probe end %d\n", __func__, ret);
 #endif
 	return ret;
 }
@@ -265,6 +276,7 @@ static int avs_probe(struct i2c_adapter *adap)
 static int avs_detach(struct i2c_client *client)
 {
 	int err = avs_remove(client);
+
 	i2c_detach_client(client);
 	if (client)
 	{
@@ -293,13 +305,13 @@ static int avs_command_ioctl(struct i2c_client *client, unsigned int cmd, void *
  && !defined(HS7810A) \
  && !defined(HS7819) \
  && !defined(ATEMIO520) \
- && !defined(OPT9600MINI)  // these boxes have an avs that does not use I2C
+ && !defined(OPT9600MINI)  // these boxes have an AVS that does not use I2C
 	if (!client)
 	{
 		return -1;
 	}
 #endif
-	dprintk("%s (IOCTL = 0x%02x)\n", __func__, cmd);
+	dprintk(20, "%s (IOCTL = 0x%02x)\n", __func__, cmd);
 
 	switch(devType)
 	{
@@ -331,6 +343,11 @@ static int avs_command_ioctl(struct i2c_client *client, unsigned int cmd, void *
 		case STV6419:
 		{
 			err = stv6419_command(client, cmd, arg);
+			break;
+		}
+		case CXA2161R:
+		{
+			err = cxa2161r_command(client, cmd, arg);
 			break;
 		}
 		case FAKE_AVS:
@@ -380,14 +397,15 @@ int avs_command_kernel(unsigned int cmd, void *arg)
  && !defined(ATEMIO520)  \
  && !defined(OPT9600MINI) // i2c avs
 	struct i2c_client *client = avs_client;
+
 	if (!client)
 	{
 		return -1;
 	}
 #endif
-	dprintk("%s > cmd = (0x%02x)\n", __func__, cmd);
+	dprintk(50, "%s > cmd = 0x%04x\n", __func__, cmd);
 
-	switch(devType)
+	switch (devType)
 	{
 #if defined(VIP1_V2) \
  || defined(VIP2) \
@@ -400,7 +418,7 @@ int avs_command_kernel(unsigned int cmd, void *arg)
  || defined(HS7810A) \
  || defined(HS7819) \
  || defined(ATEMIO520) \
- || defined(OPT9600MINI)  // non-i2c avs
+ || defined(OPT9600MINI)  // non-i2c AVS
 		case AVS_PIO:
 		{
 			err = avs_pio_command_kernel(cmd, arg);
@@ -447,6 +465,11 @@ int avs_command_kernel(unsigned int cmd, void *arg)
 			err = stv6419_command_kernel(client, cmd, arg);
 			break;
 		}
+		case CXA2161R:
+		{
+			err = cxa2161r_command_kernel(client, cmd, arg);
+			break;
+		}
 		case FAKE_AVS:
 		{
 			err = fake_avs_command_kernel(client, cmd, arg);
@@ -465,7 +488,7 @@ EXPORT_SYMBOL(avs_command_kernel);
 
 static int avs_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsigned long arg)
 {
-	dprintk("IOCTL 0x%x (arg=%d)\n", cmd, (int)arg);
+	dprintk(20, "IOCTL 0x%x (arg=%d)\n", cmd, (int)arg);
 	return avs_command_ioctl(avs_client, cmd, (void *)arg);
 }
 
@@ -533,6 +556,10 @@ static int avs_detect(struct i2c_client *client, int kind, struct i2c_board_info
 		{
 			kind = STV6419;
 		}
+		else if(!strcmp("cxa2161r", type))
+		{
+			kind = CXA2161R;
+		}
 		else if(!strcmp("vip2_avs", type))
 		{
 			kind = VIP2_AVS;
@@ -588,6 +615,11 @@ static int avs_detect(struct i2c_client *client, int kind, struct i2c_board_info
 		case STV6419:
 		{
 			name = "stv6419";
+			break;
+		}
+		case CXA2161R:
+		{
+			name = "cxa2161r";
 			break;
 		}
 		case VIP2_AVS:
@@ -679,10 +711,10 @@ int __init avs_init(void)
 
 	if (err)
 	{
-		printk("Unknown AVS driver type\n");
+		dprintk(1, "Unknown AVS driver type\n");
 		return err;
 	}
-	dprintk("A/V switch handling for %s\n", name);
+	dprintk(20, "A/V switch handling for %s\n", name);
 
 #if !defined(CUBEREVO_MINI_FTA) && !defined(CUBEREVO_250HD)
 	if ((devType != FAKE_AVS)  //  These are not I2C driven
@@ -693,12 +725,12 @@ int __init avs_init(void)
 	{
 		if ((res = i2c_add_driver(&avs_i2c_driver)))
 		{
-			dprintk("Adding I2C driver failed\n");
+			dprintk(1, "Adding I2C driver failed\n");
 			return res;
 		}
 		if (!avs_client)
 		{
-			printk("No I2C client found\n");
+			dprintk(1, "No I2C client found\n");
 			i2c_del_driver(&avs_i2c_driver);
 			return -EIO;
 		}
@@ -707,7 +739,7 @@ int __init avs_init(void)
 	{
 		if (avs_pio_init() != 0)
 		{
-			printk("Initializing pio avs failed!\n");
+			dprintk(1, "Initializing pio avs failed!\n");
 			return -EIO;
 		}
 	}
@@ -715,7 +747,7 @@ int __init avs_init(void)
 	{
 		if (vip2_avs_init() != 0)
 		{
-			printk("Initializing vip2 avs failed!\n");
+			dprintk(1, "Initializing vip2 avs failed!\n");
 			return -EIO;
 		}
 	}
@@ -723,14 +755,14 @@ int __init avs_init(void)
 	{
 		if (vip1_avs_init() != 0)
 		{
-			printk("init vip1_avs failed!\n");
+			dprintk(1, "Initializing vip1_avs failed!\n");
 			return -EIO;
 		}
 	}
 #endif
 	if (misc_register(&avs_dev) < 0)
 	{
-		printk("Unable to register device\n");
+		dprintk(1, "Unable to register device\n");
 		return -EIO;
 	}
 	return 0;
@@ -753,6 +785,9 @@ MODULE_AUTHOR("Team Ducktales");
 MODULE_DESCRIPTION("Multiplatform A/V SCART switch driver");
 MODULE_LICENSE("GPL");
 
+module_param(paramDebug, short, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
+MODULE_PARM_DESC(paramDebug, "Debug Output 0=disabled >0=enabled(debuglevel)");
+
 module_param(type,charp,0);
-MODULE_PARM_DESC(type, "device type (ak4705, ak4708, stv6412, stv6417, stv6418, stv6419, vip2_avs, vip1_avs, fake_avs, avs_pio, avs_none)");
+MODULE_PARM_DESC(type, "device type (ak4705, ak4708, stv6412, stv6417, stv6418, stv6419, vip2_avs, vip1_avs, fake_avs, avs_pio, cxa2161r, avs_none)");
 // vim:ts=4

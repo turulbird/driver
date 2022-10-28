@@ -18,7 +18,8 @@ avs-objs += \
 	avs_pio.o \
 	vip2_avs.o \
 	vip1_avs.o \
-	stv6419.o
+	stv6419.o \
+	cxa2161r.o
 
 ifneq (,$(findstring 2.6.3,$(KERNELVERSION)))
 ccflags-y += $(CCFLAGSY)

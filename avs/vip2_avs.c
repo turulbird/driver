@@ -171,7 +171,7 @@ int vip2_avs_set_volume(int vol)
 {
 	int c = 0;
  
-	dprintk("[AVS] %s: vol = %d\n", __func__, vol);
+	dprintk(20, "[vip2_avs] %s: vol = %d\n", __func__, vol);
 	c = vol;
  
 	if (c > 63 || c < 0)
@@ -244,7 +244,7 @@ int vip2_avs_set_encoder(int vol)
  
 int vip2_avs_set_wss(int wss)
 {
-	dprintk("[AVS] %s >\n", __func__);
+	dprintk(50, "[vip2_avs] %s >\n", __func__);
 
 	if (wss == SAA_WSS_43F)
 	{
@@ -269,7 +269,7 @@ int vip2_avs_command(unsigned int cmd, void *arg )
 {
 	int val = 0;
 
-	dprintk("[AVS] %s > cmd = %d\n", __func__, cmd);
+	dprintk(50, "[vip2_avs] %s > cmd = %d\n", __func__, cmd);
 
 	if (cmd & AVSIOSET)
 	{
@@ -320,7 +320,7 @@ int vip2_avs_command(unsigned int cmd, void *arg )
 	}
 	else
 	{
-		dprintk("[AVS] %s SAA command\n", __func__);
+		dprintk(20, "[vip2_avs] %s SAA command\n", __func__);
 
 		/* an SAA command */
 		if (copy_from_user(&val,arg,sizeof(val)))
@@ -347,7 +347,7 @@ int vip2_avs_command(unsigned int cmd, void *arg )
 			}
 			default:
 			{
-				dprintk("[AVS] %s: Unsupported SAA command\n", __func__);
+				dprintk(1, "[vip2_avs] %s: Unsupported SAA command 0x%04x\n", __func__, cmd);
 				return -EINVAL;
 			}
 		}
@@ -362,7 +362,7 @@ int vip2_avs_command_kernel(unsigned int cmd, void *arg)
 	if (cmd & AVSIOSET)
 	{
 		val = (int)arg;
-		dprintk("[AVS] %s: AVSIOSET command\n", __func__);
+		dprintk(20, "[vip2_avs] %s: AVSIOSET command\n", __func__);
 		switch (cmd)
 		{
 			case AVSIOSVOL:
@@ -385,7 +385,7 @@ int vip2_avs_command_kernel(unsigned int cmd, void *arg)
 	}
 	else if (cmd & AVSIOGET)
 	{
-		dprintk("[AVS] %s: AVSIOGET command\n", __func__);
+		dprintk(20, "[vip2_avs] %s: AVSIOGET command\n", __func__);
 		switch (cmd)
 		{
 			case AVSIOGVOL:
@@ -408,7 +408,7 @@ int vip2_avs_command_kernel(unsigned int cmd, void *arg)
 	}
 	else
 	{
-		dprintk("[AVS] %s: SAA command (%d)\n", __func__, cmd);
+		dprintk(20, "[vip2_avs] %s: SAA command (%d)\n", __func__, cmd);
 		val = (int)arg;
 		switch (cmd)
 		{
@@ -430,7 +430,7 @@ int vip2_avs_command_kernel(unsigned int cmd, void *arg)
 			}
 			default:
 			{
-				dprintk("[AVS] %s: Unsupported SAA command\n", __func__);
+				dprintk(1, "[vip2_avs] %s: Unsupported SAA command 0x%04x\n", __func__, cmd);
 				return -EINVAL;
 			}
 		}
@@ -440,7 +440,7 @@ int vip2_avs_command_kernel(unsigned int cmd, void *arg)
 
 int vip2_avs_init(void)
 {
-	dprintk("[AVS] %s: > Assigning AVS PIOs\n", __func__);
+	dprintk(20, "[vip2_avs] %s: > Assigning AVS PIOs\n", __func__);
 	srclk = stpio_request_pin(2, 5, "AVS_HC595_SRCLK", STPIO_OUT);
 	lclk  = stpio_request_pin(2, 6, "AVS_HC595_LCLK", STPIO_OUT);
 	sda   = stpio_request_pin(2, 7, "AVS_HC595_SDA", STPIO_OUT);
@@ -449,35 +449,35 @@ int vip2_avs_init(void)
 	{
 		if (srclk != NULL)
 		{
-			dprintk("[AVS] %s: Assigning srclk PIO failed\n", __func__);
+			dprintk(1, "[vip2_avs] %s: Assigning srclk PIO failed\n", __func__);
 			stpio_free_pin(srclk);
 		}
 		else
 		{
-			dprintk("[AVS] srclk error\n");
+			dprintk(1, "[vip2_avs] srclk error\n");
 		}
 		if (lclk != NULL)
 		{
-			dprintk("[AVS] %s: Assigning lclk PIO failed\n", __func__);
+			dprintk(1, "[vip2_avs] %s: Assigning lclk PIO failed\n", __func__);
 			stpio_free_pin(lclk);
 		}
 		else
 		{
-			dprintk("[AVS] lclk error\n");
+			dprintk(1, "[vip2_avs] lclk error\n");
 		}
 		if (sda != NULL)
 		{
-			dprintk("[AVS] %s: Assigning sda PIO failed\n", __func__);
+			dprintk(1, "[vip2_avs] %s: Assigning sda PIO failed\n", __func__);
 			stpio_free_pin(sda);
 		}
 		else
 		{
-			dprintk("[AVS] sda error\n");
+			dprintk(1, "[vip2_avs] sda error\n");
 		}
 		return -1;
 	}
 	vip2_avs_hc595_out(SCART_TV_SAT, 1);  // set encoder
-	dprintk("[AVS] init success\n");
+	dprintk(50, "[vip2_avs] init successful\n");
 	return 0;
 }
 // vim:ts=4

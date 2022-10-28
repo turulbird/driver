@@ -180,7 +180,7 @@ int stv6412_set(struct i2c_client *client)
 {
 	char buffer[11];
 
-	printk("[AVS] [STV6412] set!\n");
+	dprintk(50, "[STV6412] %s >\n", __func__);
 
 	buffer[0]  = 0x00;
 	buffer[1]  = 0x40;
@@ -291,7 +291,7 @@ inline int stv6412_set_mute(struct i2c_client *client, int type)
 
 /***************************************************
  *
- * Set video output format.
+ * Set video signal type format.
  *
  * sw = output
  *      0 = VCR SCART
@@ -305,9 +305,9 @@ inline int stv6412_set_mute(struct i2c_client *client, int type)
  *        3 = CVBS (of opposite SCART)
  *
 /***************************************************/
-inline int stv6412_set_vsw( struct i2c_client *client, int sw, int type)
+inline int stv6412_set_vsw(struct i2c_client *client, int sw, int type)
 {
-	printk("[STV6412] Set VSW: %d %d\n", sw, type);
+	dprintk(20, "[STV6412] Set VSW: %d %d\n", sw, type);
 
 	if (type < 0 || type > 4)
 	{
@@ -316,12 +316,12 @@ inline int stv6412_set_vsw( struct i2c_client *client, int sw, int type)
 
 	switch (sw)  // get output to set: VCR CVBS, TV RGB, TV CVBS
 	{
-		case 0:	 // vcr
+		case 0:	 // VCR video output selection
 		{
 			stv6412_data.v_vsc = type;  // 
 			break;
 		}
-		case 1:	 // rgb
+		case 1:	 // RGB selection
 		{
 			if (type < 0 || type > 2)
 			{
@@ -330,7 +330,7 @@ inline int stv6412_set_vsw( struct i2c_client *client, int sw, int type)
 			stv6412_data.rgb_vsc = type;  // 0 = TV RGB, 1 VCR RGB
 			break;
 		}
-		case 2:  // tv
+		case 2: // TV video output selection
 		{
 			stv6412_data.t_vsc = type;  // 0 = no output, 1 = SoC CVBS, 2 = SoC Y/C, 3 = VCR Y/CVBS & VCR C
 			break;
@@ -360,7 +360,7 @@ inline int stv6412_set_vsw( struct i2c_client *client, int sw, int type)
  *        4 = TV ?
  *
 /***************************************************/
-inline int stv6412_set_asw( struct i2c_client *client, int sw, int type )
+inline int stv6412_set_asw(struct i2c_client *client, int sw, int type)
 {
 	switch(sw)
 	{
@@ -370,11 +370,10 @@ inline int stv6412_set_asw( struct i2c_client *client, int sw, int type )
 			{
 				return -EINVAL;
 			}
-
 			/* if muted ? yes: save in temp */
-			if ( v_asc == 0xff )
+			if (v_asc == 0xff)
 			{
-				stv6412_data.v_asc = type;  
+				stv6412_data.v_asc = type;
 			}
 			else
 			{
@@ -523,7 +522,7 @@ int stv6412_get_volume(void)
 
 	if (c)
 	{
-		c *= 2; // times 2
+		c *= 2;  // times 2
 	}
 	return c;
 }
@@ -606,7 +605,7 @@ inline int stv6412_get_vsw(int sw)
  *      2 = TV SCART CVBS
  *
 /***************************************************/
-inline int stv6412_get_asw( int sw )
+inline int stv6412_get_asw(int sw)
 {
 	switch (sw)
 	{
@@ -650,7 +649,6 @@ inline int stv6412_get_asw( int sw )
  * NOT IMPLEMENTED
  *
 /***************************************************/
-//NOT IMPLEMENTED
 int stv6412_set_encoder(struct i2c_client *client, int vol)
 {
 	return 0;
@@ -667,10 +665,10 @@ int stv6412_set_encoder(struct i2c_client *client, int vol)
  *       3 (SAA_MODE_COMPONENT) = component
  *
 /***************************************************/
-int stv6412_set_mode(struct i2c_client *client, int vol)
+int stv6412_set_mode(struct i2c_client *client, int val)
 {
-	dprintk("[STV6412] SAAIOSMODE command : %d\n", vol);
-	if (vol == SAA_MODE_RGB)
+	dprintk(20, "[STV6412] SAAIOSMODE command : %d\n", val);
+	if (val == SAA_MODE_RGB)
 	{
 		if (stv6412_data.t_vsc == 4)  // if in AUX mode
 		{
@@ -682,7 +680,7 @@ int stv6412_set_mode(struct i2c_client *client, int vol)
 		}
 		stv6412_data.fblk = 1;  // set fast blanking to high (RGB mode)
 	}
-	else if (vol == SAA_MODE_FBAS)
+	else if (val == SAA_MODE_FBAS)
 	{
 		if (stv6412_data.t_vsc == 4)  // if in AUX mode
 		{
@@ -694,7 +692,7 @@ int stv6412_set_mode(struct i2c_client *client, int vol)
 		}
 		stv6412_data.fblk = 0;  // set fast blanking to low (RGB mode off)
 	}
-	else if (vol == SAA_MODE_SVIDEO)
+	else if (val == SAA_MODE_SVIDEO)
 	{
 		if (stv6412_data.t_vsc == 4) // scart selected
 		{
@@ -717,7 +715,7 @@ int stv6412_set_mode(struct i2c_client *client, int vol)
  *
  * Set TV SCART sources.
  *
- * src = format
+ * src = source
  *       0 both video and audio come from SoC
  *       1 both video and audio come from VCR SCART
  *
@@ -757,13 +755,11 @@ int stv6412_src_sel(struct i2c_client *client, int src)
 /***************************************************/
 inline int stv6412_standby(struct i2c_client *client, int type)
 {
- 
 	if ((type < 0) || (type > 1))
 	{
 		return -EINVAL;
 	}
- 
-	if (type == 1) 
+	if (type == 1)
 	{
 		if (t_stnby == 0)
 		{
@@ -807,12 +803,12 @@ inline int stv6412_standby(struct i2c_client *client, int type)
 /***************************************************/
 int stv6412_command(struct i2c_client *client, unsigned int cmd, void *arg)
 {
-	int val=0;
+	int val = 0;
 
 	unsigned char scartPin8Table[3] = { 0, 2, 3 };
 	unsigned char scartPin8Table_reverse[4] = { 0, 0, 1, 2 };
 
-	printk("[STV6412]: command\n");
+	dprintk(20, "[STV6412]: command\n");
 	
 	if (cmd & AVSIOSET)
 	{
@@ -866,10 +862,10 @@ int stv6412_command(struct i2c_client *client, unsigned int cmd, void *arg)
  || defined(VIP1_V1) \
  || defined(IPBOX9900) \
  || defined(IPBOX99)
-				printk("[STV6412] does not support AVSIOSFBLK yet!\n");
+				dprintk(1, "[STV6412] does not support AVSIOSFBLK yet!\n");
 				return -1;
 #else
-				return stv6412_set_fblk(client,val);
+				return stv6412_set_fblk(client, val);
 #endif
 			}
 #if 1
@@ -949,7 +945,7 @@ int stv6412_command(struct i2c_client *client, unsigned int cmd, void *arg)
  || defined(VIP1_V1) \
  || defined(IPBOX9900) \
  || defined(IPBOX99)
-				printk("[STV6412] does not support AVSIOSFBLK yet!\n");
+				dprintk(1, "[STV6412] does not support AVSIOSFBLK yet!\n");
 				break;
 #else
 				val = stv6412_get_fblk();
@@ -983,7 +979,7 @@ int stv6412_command(struct i2c_client *client, unsigned int cmd, void *arg)
 	}
 	else
 	{
-		printk("[STV6412]: SAA command\n");
+		dprintk(20, "[STV6412]: SAA command\n");
 
 		/* an SAA command */
 		if (copy_from_user(&val, arg, sizeof(val)))
@@ -995,11 +991,11 @@ int stv6412_command(struct i2c_client *client, unsigned int cmd, void *arg)
 		{
 			case SAAIOSMODE:
 			{
-		   		 return stv6412_set_mode(client, val);
+				return stv6412_set_mode(client, val);
 			}
-	 	        case SAAIOSENC:
+			case SAAIOSENC:
 			{
-				 return stv6412_set_encoder(client, val);
+				return stv6412_set_encoder(client, val);
 			}
 			case SAAIOSWSS:
 			{
@@ -1011,7 +1007,7 @@ int stv6412_command(struct i2c_client *client, unsigned int cmd, void *arg)
 			}
 			default:
 			{
-				dprintk("[STV6412]: SAA command %d not supported\n", cmd);
+				dprintk(1, "%s: SAA command %d not supported\n", __func__, cmd);
 				return -EINVAL;
 			}
 		}
@@ -1031,13 +1027,13 @@ int stv6412_command_kernel(struct i2c_client *client, unsigned int cmd, void *ar
 	unsigned char scartPin8Table[3] = { 0, 2, 3 };
 	unsigned char scartPin8Table_reverse[4] = { 0, 0, 1, 2 };
 
-	dprintk("[STV6412]: command_kernel(%u)\n", cmd);
+	dprintk(20, "[STV6412]: command_kernel(%u)\n", cmd);
 	
 	if (cmd & AVSIOSET)
 	{
 		val = (int) arg;
 
-      		dprintk("[STV6412]: AVSIOSET command\n");
+      	dprintk(20, "[STV6412]: AVSIOSET command\n");
 
 		switch (cmd)
 		{
@@ -1105,7 +1101,7 @@ int stv6412_command_kernel(struct i2c_client *client, unsigned int cmd, void *ar
 	}
 	else if (cmd & AVSIOGET)
 	{
-		dprintk("[STV6412]: AVSIOGET command\n");
+		dprintk(20, "[STV6412]: AVSIOGET command\n");
 
 		switch (cmd)
 		{
@@ -1186,16 +1182,16 @@ int stv6412_command_kernel(struct i2c_client *client, unsigned int cmd, void *ar
 	}
 	else
 	{
-		printk("[STV6412]: SAA command\n");
+		dprintk(20, "[STV6412]: SAA command\n");
 		val = (int) arg;
 
 		switch (cmd)
 		{
 			case SAAIOSMODE:
 			{
-		   		 return stv6412_set_mode(client, val);
+				return stv6412_set_mode(client, val);
 			}
-	 	        case SAAIOSENC:
+			case SAAIOSENC:
 			{
 				 return stv6412_set_encoder(client, val);
 			}
@@ -1209,7 +1205,7 @@ int stv6412_command_kernel(struct i2c_client *client, unsigned int cmd, void *ar
 			}
 			default:
 			{
-				dprintk("[STV6412]: SAA command %d not supported\n", cmd);
+				dprintk(1, "[STV6412] %s: SAA command %d not supported\n", __func__, cmd);
 				return -EINVAL;
 			}
 		}
@@ -1224,7 +1220,7 @@ int stv6412_command_kernel(struct i2c_client *client, unsigned int cmd, void *ar
 /***************************************************/
 int stv6412_init(struct i2c_client *client)
 {
-	memset((void*)&stv6412_data,0,STV6412_DATA_SIZE);
+	memset((void*)&stv6412_data, 0, STV6412_DATA_SIZE);
 
 #if 0
 	stv6412_data.svm = 0;

@@ -21,9 +21,9 @@
  */
 
 int stv6418_init(struct i2c_client *client);
-int stv6418_command(struct i2c_client *client, unsigned int cmd, void *arg );
+int stv6418_command(struct i2c_client *client, unsigned int cmd, void *arg);
 int stv6418_command_kernel(struct i2c_client *client, unsigned int cmd, void *arg);
-int stv6418_set_volume( struct i2c_client *client, int vol );
+int stv6418_set_volume(struct i2c_client *client, int vol);
 int stv6418_get_volume(void);
 int stv6418_get_status(struct i2c_client *client);
 

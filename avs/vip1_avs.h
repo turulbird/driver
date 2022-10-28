@@ -21,7 +21,7 @@
  */
 
 int vip1_avs_init(void);
-int vip1_avs_command(unsigned int cmd, void *arg );
+int vip1_avs_command(unsigned int cmd, void *arg);
 int vip1_avs_command_kernel(unsigned int cmd, void *arg);
 #endif
 // vim:ts=4

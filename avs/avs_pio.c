@@ -50,13 +50,13 @@ static unsigned char t_mute;
 static unsigned char t_vol;
 
 /* hold old values for standby */
-static unsigned char ft_stnby=0;
+static unsigned char ft_stnby = 0;
 
-static struct stpio_pin*	avs_mode;
-static struct stpio_pin*	avs_format;
-static struct stpio_pin*	avs_standby;
-static struct stpio_pin*	avs_mute;
-//static struct stpio_pin*	avs_src;
+static struct stpio_pin *avs_mode;
+static struct stpio_pin *avs_format;
+static struct stpio_pin *avs_standby;
+static struct stpio_pin *avs_mute;
+//static struct stpio_pin *avs_src;
 
 int avs_pio_src_sel(int src)
 {
@@ -119,7 +119,7 @@ int avs_pio_set_volume(int vol)
 {
 	int c = 0;
 
-	dprintk("[AVS]: %s (%d)\n", __func__, vol);
+	dprintk(20, "[pio] %s: (%d)\n", __func__, vol);
 	c = vol;
 
 	if (c > 63 || c < 0)
@@ -178,7 +178,7 @@ inline int avs_pio_get_mute(void)
 
 int avs_pio_set_mode(int val)
 {
-	switch(val)
+	switch (val)
 	{
 		case SAA_MODE_RGB:
 		{
@@ -201,7 +201,7 @@ int avs_pio_set_encoder(int vol)
 
 int avs_pio_set_wss(int val)
 {
-	dprintk("[AVS]: %s\n", __func__);
+	dprintk(50, "[none]: %s >\n", __func__);
 
 	if (val == SAA_WSS_43F)
 	{
@@ -243,7 +243,7 @@ int avs_pio_command(unsigned int cmd, void *arg)
 {
 	int val = 0;
 
-	dprintk("[AVS]: %s (cmd=0x%04x)\n", __func__, cmd);
+	dprintk(20, "[pio] %s: cmd=0x%04x\n", __func__, cmd);
 
 	if (cmd & AVSIOSET)
 	{
@@ -295,7 +295,7 @@ int avs_pio_command(unsigned int cmd, void *arg)
 	}
 	else
 	{
-		dprintk("[AVS]: %s: SAA command\n", __func__);
+		dprintk(20, "[pio] %s: SAA command\n", __func__);
 
 		/* an SAA command */
 		if ( copy_from_user(&val,arg,sizeof(val)) )
@@ -323,7 +323,7 @@ int avs_pio_command(unsigned int cmd, void *arg)
 			}
 			default:
 			{
-				dprintk("[AVS]: %s: SAA command 0x%04x not supported\n", __func__, cmd);
+				dprintk(1, "[pio]: %s: SAA command 0x%04x not supported\n", __func__, cmd);
 				return -EINVAL;
 			}
 		}
@@ -339,7 +339,7 @@ int avs_pio_command_kernel(unsigned int cmd, void *arg)
 	{
 		val = (int)arg;
 
-		dprintk("[AVS]: %s: AVSIOSET command (0x%04x)\n", __func__, cmd);
+		dprintk(20, "[pio] %s: AVSIOSET command (0x%04x)\n", __func__, cmd);
 
 		switch (cmd)
 		{
@@ -357,14 +357,14 @@ int avs_pio_command_kernel(unsigned int cmd, void *arg)
 			}
 			default:
 			{
-				dprintk("[AVS]: %s: AVSIOSET command 0x%04x not supported\n", __func__, cmd);
+				dprintk(1, "[pio] %s: AVSIOSET command 0x%04x not supported\n", __func__, cmd);
 				return -EINVAL;
 			}
 		}
 	}
 	else if (cmd & AVSIOGET)
 	{
-		dprintk("[AVS]: %s: AVSIOGET command (0x%04x)\n", __func__, cmd);
+		dprintk(20, "[pio] %s: AVSIOGET command (0x%04x)\n", __func__, cmd);
 
 		switch (cmd)
 		{
@@ -380,7 +380,7 @@ int avs_pio_command_kernel(unsigned int cmd, void *arg)
 			}
 			default:
 			{
-				dprintk("[AVS]: %s: AVSIOGET command 0x%04x not supported\n", __func__, cmd);
+				dprintk(1, "[pio] %s: AVSIOGET command 0x%04x not supported\n", __func__, cmd);
 				return -EINVAL;
 			}
 		}
@@ -389,7 +389,7 @@ int avs_pio_command_kernel(unsigned int cmd, void *arg)
 	}
 	else
 	{
-		dprintk("[AVS]: %s: SAA command (0x%04x)\n", __func__, cmd);
+		dprintk(20, "[pio] %s: SAA command (0x%04x)\n", __func__, cmd);
 
 		val = (int)arg;
 
@@ -413,7 +413,7 @@ int avs_pio_command_kernel(unsigned int cmd, void *arg)
 			}
 			default:
 			{
-				dprintk("[AVS]: %s: SAA command 0x%04x not supported\n", __func__, cmd);
+				dprintk(1, "[pio] %s: SAA command 0x%04x not supported\n", __func__, cmd);
 				return -EINVAL;
 			}
 		}
@@ -458,7 +458,7 @@ int avs_pio_init(void)
 		}
 		else
 		{
-			dprintk("[AVS]: avs_mode error\n");
+			dprintk(1, "[pio] %s: avs_mode error\n", __func__);
 		}
 		if (avs_format != NULL)
 		{
@@ -466,7 +466,7 @@ int avs_pio_init(void)
 		}
 		else
 		{
-			dprintk("[AVS]: avs_format error\n");
+			dprintk(1, "[pio] %s: avs_format error\n", __func__);
 		}
 		if (avs_standby != NULL)
 		{
@@ -474,7 +474,7 @@ int avs_pio_init(void)
 		}
 		else
 		{
-			dprintk("[AVS]: avs_standby error\n");
+			dprintk(1, "[pio] %s: avs_standby error\n", __func__);
 		}
 		return -1;
 	}
@@ -483,11 +483,11 @@ int avs_pio_init(void)
  || defined(SPARK7162)
 	if (avs_mute == NULL)
 	{
-		dprintk("[AVS]: avs_mute error\n");
+		dprintk(1, "[pio] %s: avs_mute error\n", __func__);
 		return -1;
 	}
 #endif
-	dprintk("[AVS-PIO]: init success\n");
+	dprintk(20, "[PIO] %s: init success\n", __func__);
 	return 0;
 }
 

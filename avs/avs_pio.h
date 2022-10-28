@@ -24,6 +24,5 @@ int avs_pio_init(void);
 int avs_pio_exit(void);
 int avs_pio_command(unsigned int cmd, void *arg );
 int avs_pio_command_kernel(unsigned int cmd, void *arg);
-
 #endif
 
