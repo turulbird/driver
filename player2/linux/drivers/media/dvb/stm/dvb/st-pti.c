@@ -172,7 +172,7 @@ int stpti_start_feed(struct dvb_demux_feed *dvbdmxfeed, struct DeviceContext_s *
 			break;
 		case DMX_TYPE_PES:
 		default:
-			printk("%s: feed type = %d (not supported) <\n", __FUNCTION__,
+			printk("%s: feed type = %d (not supported) <\n", __func__,
 			       dvbdmxfeed->type);
 			return -EINVAL;
 	}
@@ -193,7 +193,7 @@ int stpti_start_feed(struct dvb_demux_feed *dvbdmxfeed, struct DeviceContext_s *
 			case DMX_TS_PES_OTHER:
 				break;
 			default:
-				printk("%s: pes type = %d (not supported) <\n", __FUNCTION__, dvbdmxfeed->pes_type);
+				printk("%s: pes type = %d (not supported) <\n", __func__, dvbdmxfeed->pes_type);
 				return -EINVAL;
 		}
 	}
@@ -286,7 +286,7 @@ int stpti_start_feed(struct dvb_demux_feed *dvbdmxfeed, struct DeviceContext_s *
 	//pti_hal_buffer_enable ( pSession->session, pSession->buffers[0] );
 	//pti_hal_buffer_enable ( pSession->session, pSession->buffers[1] );
 	pSession->num_pids++;
-	dprintk("%s: pid = %d, num_pids = %d \n", __FUNCTION__, dvbdmxfeed->pid, pSession->num_pids);
+	dprintk("%s: pid = %d, num_pids = %d \n", __func__, dvbdmxfeed->pid, pSession->num_pids);
 #ifdef VERY_VERBOSE
 	printk("# pid t pt ref\n");
 	for (vLoop = 0; vLoop < (pSession->num_pids); vLoop++)
@@ -295,7 +295,7 @@ int stpti_start_feed(struct dvb_demux_feed *dvbdmxfeed, struct DeviceContext_s *
 		       pSession->references[vLoop]);
 	}
 #endif
-//	dprintk("%s: <\n", __FUNCTION__);
+//	dprintk("%s: <\n", __func__);
 	return 0;
 }
 
@@ -329,7 +329,7 @@ int stpti_stop_feed(struct dvb_demux_feed *dvbdmxfeed, struct DeviceContext_s *p
 #ifdef VERY_VERBOSE
 	printk("stop sh %d, pid %d, pt %d\n", pSession->session, dvbdmxfeed->pid, dvbdmxfeed->pes_type);
 #endif
-	//printk ( "%s(): demux = %p, context = %p, sesison = %p, pid = %d, type = %d, pes_type = %d>", __FUNCTION__, dvbdmxfeed->demux, pContext, pSession, dvbdmxfeed->pid, dvbdmxfeed->type, dvbdmxfeed->pes_type );
+	//printk ( "%s(): demux = %p, context = %p, sesison = %p, pid = %d, type = %d, pes_type = %d>", __func__, dvbdmxfeed->demux, pContext, pSession, dvbdmxfeed->pid, dvbdmxfeed->type, dvbdmxfeed->pes_type );
 	if (dvbdmxfeed->type == DMX_TYPE_SEC)
 		my_pes_type = 99;
 	else
@@ -534,7 +534,7 @@ void ptiInit(struct DeviceContext_s *pContext)
 		tuner = TWIN;
 	}
 #endif
-	printk("%s context = %p, demux = %p\n", __FUNCTION__,
+	printk("%s context = %p, demux = %p\n", __func__,
 	       pContext, &pContext->DvbDemux);
 	if (pContext->pPtiSession != NULL)
 	{
@@ -575,7 +575,8 @@ void ptiInit(struct DeviceContext_s *pContext)
  || defined(UFS913) \
  || defined(SAGEMCOM88) \
  || defined(OPT9600) \
- || defined(OPT9600PRIMA)
+ || defined(OPT9600PRIMA) \
+ || defined(HCHS8100)
 		pti_hal_init(&pti, &pContext->DvbDemux, demultiplexDvbPackets, 2);
 #elif defined(SPARK7162) \
  ||   defined(PACE7241)

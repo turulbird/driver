@@ -377,6 +377,8 @@ static int info_model_read(char *page, char **start, off_t off, int count, int *
 	int len = sprintf(page, "opt9600mini\n");
 #elif defined(OPT9600PRIMA)
 	int len = sprintf(page, "opt9600prima\n");
+#elif defined(HCHS8100)
+	int len = sprintf(page, "hchs8100\n");
 #else
 	int len = sprintf(page, "unknown\n");
 #endif
@@ -712,7 +714,8 @@ static int info_chipset_read(char *page, char **start, off_t off, int count, int
  || defined(IPBOX99) \
  || defined(IPBOX55) \
  || defined(ARIVALINK200) \
- || defined(OPT9600)
+ || defined(OPT9600) \
+ || defined(HCHS8100)
 	int len = sprintf(page, "STi7109\n");
 #elif defined(UFS912) \
  || defined(HS7110) \
@@ -1028,7 +1031,8 @@ struct ProcStructure_s e2Proc[] =
  || defined(OPT9600) \
  || defined(OPT9600MINI) \
  || defined(OPT9600PRIMA) \
- || defined(ATEMIO520)
+ || defined(ATEMIO520) \
+ || defined(HCHS8100)
 	{cProcEntry, "stb/info/OEM",                                                     NULL, NULL, NULL, NULL, ""},
 	{cProcEntry, "stb/info/brand",                                                   NULL, NULL, NULL, NULL, ""},
 	{cProcEntry, "stb/info/model_name",                                              NULL, NULL, NULL, NULL, ""},
@@ -1061,7 +1065,8 @@ struct ProcStructure_s e2Proc[] =
  || defined(HL101) \
  || defined(VIP1_V1) \
  || defined(VIP1_V2) \
- || defined(VIP2)
+ || defined(VIP2) \
+ || defined(HCHS8100)
 	{cProcEntry, "stb/lcd/symbol_circle",                                            NULL, NULL, NULL, NULL, ""},
 #endif
 #if defined(SPARK7162) \
@@ -1139,16 +1144,21 @@ struct ProcStructure_s e2Proc[] =
 	{cProcDir,   "stb/fp",                                                           NULL, NULL, NULL, NULL, ""},
 //	{cProcEntry, "stb/fp/lnb_sense1",                                                NULL, NULL, NULL, NULL, ""},
 //	{cProcEntry, "stb/fp/lnb_sense2",                                                NULL, NULL, NULL, NULL, ""},
+#if !defined(HCHS8100)
 	{cProcEntry, "stb/fp/led0_pattern",                                              NULL, NULL, default_write_proc, NULL, ""},
+#endif
 #if !defined(VIP1_V2) \
- && !defined(VIP2)
+ && !defined(VIP2) \
+ && !defined(HCHS8100)
 	{cProcEntry, "stb/fp/led1_pattern",                                              NULL, NULL, default_write_proc, NULL, ""},
 #endif
 #if defined(ADB_BOX)
 	{cProcEntry, "stb/fp/led2_pattern",                                              NULL, NULL, default_write_proc, NULL, ""},
 	{cProcEntry, "stb/fp/led3_pattern",                                              NULL, NULL, default_write_proc, NULL, ""},
 #endif
+#if !defined(HS8100)
 	{cProcEntry, "stb/fp/led_pattern_speed",                                         NULL, NULL, default_write_proc, NULL, ""},
+#endif
 #if !defined(CUBEREVO_250HD) \
  && !defined(CUBEREVO_MINI_FTA) \
  && !defined(ATEMIO520) \
@@ -1320,7 +1330,8 @@ struct ProcStructure_s e2Proc[] =
  || defined(IPBOX99) \
  || defined(IPBOX55) \
  || defined(ARIVALINK200) \
- || defined(OPT9600)
+ || defined(OPT9600) \
+ || defined(HCHS8100)
 	/* dagobert: the dei settings can be used for all 7109 architectures to affect the de-interlacer */
 	{cProcEntry, "stb/video/plane/dei_fmd",                                          NULL, NULL, NULL, NULL, "dei_fmd"},
 	{cProcEntry, "stb/video/plane/dei_mode",                                         NULL, NULL, NULL, NULL, "dei_mode"},
@@ -1341,7 +1352,9 @@ struct ProcStructure_s e2Proc[] =
  || defined(ADB_BOX) \
  || defined(UFS922) \
  || defined(SAGEMCOM88) \
- || defined(PACE7241)
+ || defined(PACE7241) \
+ || defined(HCHS8100) \
+ || defined(HCHS9100)
 	{cProcEntry, "stb/fp/fan",                                                       NULL, NULL, NULL, NULL, ""},
 	{cProcEntry, "stb/fp/fan_choices",                                               NULL, NULL, NULL, NULL, ""},
 #endif
@@ -1350,12 +1363,14 @@ struct ProcStructure_s e2Proc[] =
  || defined(CUBEREVO_9500HD) \
  || defined(IPBOX9900) \
  || defined(IPBOX99) \
- || defined(UFS922)
+ || defined(UFS922) \
+ || defined(HCHS8100)
 	{cProcEntry, "stb/fp/fan_pwm",                                                   NULL, NULL, NULL, NULL, ""},
 #endif
 
 #if defined(ADB_BOX) \
- || defined(SAGEMCOM88)
+ || defined(SAGEMCOM88) \
+ || defined(HCHS8100)
 	{cProcDir,   "stb/fan",                                                          NULL, NULL, NULL, NULL, ""},
 	{cProcEntry, "stb/fan/fan_ctrl",                                                 NULL, NULL, NULL, NULL, ""},
 	{cProcEntry, "stb/hdmi/cec",                                                     NULL, NULL, NULL, NULL, ""},

@@ -42,36 +42,36 @@ int button_dev_init(void)
 	int error;
 	int vLoop = 0;
 
-	dprintk("allocating and registering button device\n");
+	dprintk("Allocating and registering remote control button device\n");
 
 	button_dev = input_allocate_device();
 	if (!button_dev)
+	{
 		return -ENOMEM;
-
+	}
 	button_dev->name = button_driver_name;
 	button_dev->open = NULL;
 	button_dev->close = NULL;
 
-
 	set_bit(EV_KEY, button_dev->evbit);
-  set_bit(EV_REP, button_dev->evbit);
+	set_bit(EV_REP, button_dev->evbit);
 	
-	for(vLoop = 0; vLoop < KEY_MAX; vLoop++)
+	for (vLoop = 0; vLoop < KEY_MAX; vLoop++)
+	{
 		set_bit(vLoop, button_dev->keybit); 
-
-
+	}
 	error = input_register_device(button_dev);
-	if (error) {
+	if (error)
+	{
 		input_free_device(button_dev);
 		return error;
 	}
-
 	return 0;
 }
 
 void button_dev_exit(void)
 {
-	dprintk("unregistering button device\n");
+	dprintk("Unregistering remote control button device\n");
 	input_unregister_device(button_dev);
 }
 
@@ -79,15 +79,16 @@ int __init button_init(void)
 {
 	dprintk("initializing ...\n");
 
-	if(button_dev_init() != 0)
+	if (button_dev_init() != 0)
+	{
 		return 1;
-
+	}
 	return 0;
 }
 
 void __exit button_exit(void)
 {
-	dprintk("unloading ...\n");
+	dprintk("Unloading...\n");
 
 	button_dev_exit();
 }
@@ -101,3 +102,4 @@ MODULE_PARM_DESC(paramDebug, "Debug Output 0=disabled 1=enabled(default)");
 MODULE_DESCRIPTION("TDT RC event driver");
 MODULE_AUTHOR("Team Ducktales");
 MODULE_LICENSE("GPL");
+// vim:ts=4

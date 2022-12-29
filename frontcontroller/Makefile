@@ -173,3 +173,7 @@ ifdef OPT9600PRIMA
 obj-y += cn_micom/
 endif
 
+ifdef HCHS8100
+obj-y += hchs8100_fp/
+endif
+

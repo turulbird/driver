@@ -456,3 +456,8 @@ opt9600_platform-objs += opt9600/avl2108_platform.o
 obj-m += opt9600_platform.o
 endif
 
+ifdef HCHS8100
+cx24116-objs += cx24116_dvbapi5/cx24116.o
+obj-m += cx24116.o
+endif
+

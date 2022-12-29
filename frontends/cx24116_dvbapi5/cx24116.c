@@ -8,7 +8,7 @@
  * Copyright (C) 2008 Igor Liplianin
  *
  * Version for Topfield TF77X0HDPVR, Kathrein UFS910,
- *             Ferguson ArivaLink 200 and Homecast HS8100 series
+ *             Ferguson ArivaLink 200 and Homecast HS8100/9000 series
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -234,18 +234,20 @@ struct cx24116_state
 	struct stpio_pin *tuner_enable_pin;
 	struct stpio_pin *lnb_enable_pin;
 	struct stpio_pin *lnb_vsel_pin;
-#if defined(HS8100)
+#if defined(HCHS8100) \
+ || defined(HCHS9000)
 	struct stpio_pin *lnb_1vsel_pin;
 #endif
 	u8               tuner_enable_act; // active state of the pin
 	u8               lnb_enable_act;   // active state of the pin
 	u8               lnb_vsel_act;     // active state of the pin
-#if defined(HS8100)
+#if defined(HCHS8100) \
+ || defined(HCHS9000)
 	u8               lnb_1vsel_act;    // active state of the pin
 #endif
 };
 
-struct dvb_adapter	*adapter;
+struct dvb_adapter *adapter;
 
 static int cx24116_writereg(struct cx24116_state *state, int reg, int data)
 {
@@ -646,7 +648,8 @@ static int cx24116_reset(struct cx24116_state *state)
 	{
 		stpio_set_pin(state->lnb_vsel_pin, state->lnb_vsel_act);
 	}
-#if defined(HS8100)
+#if defined(HCHS8100) \
+ || defined(HCHS9000)
 	if (state->lnb_1vsel_pin != NULL)
 	{
 		stpio_set_pin(state->lnb_1vsel_pin, state->lnb_1vsel_act);
@@ -982,7 +985,9 @@ static int cx24116_set_voltage(struct dvb_frontend *fe, fe_sec_voltage_t voltage
 			dprintk(20, "LNB VOLTAGE VERTICAL (13V)\n");
 			stpio_set_pin(state->lnb_enable_pin, state->lnb_enable_act);
 			stpio_set_pin(state->lnb_vsel_pin, !state->lnb_vsel_act);
-#if defined(HS8100)
+#if defined(HCHS8100) \
+ || defined(HCHS9000)
+
 			stpio_set_pin(state->lnb_1vsel_pin, !state->lnb_1vsel_act);
 #endif
 			break;
@@ -992,7 +997,8 @@ static int cx24116_set_voltage(struct dvb_frontend *fe, fe_sec_voltage_t voltage
 			dprintk(20, "LNB VOLTAGE HORIZONTAL (18V)\n");
 			stpio_set_pin(state->lnb_enable_pin, state->lnb_enable_act);
 			stpio_set_pin(state->lnb_vsel_pin, state->lnb_vsel_act);
-#if defined(HS8100)
+#if defined(HCHS8100) \
+ || defined(HCHS9000)
 			stpio_set_pin(state->lnb_1vsel_pin, !state->lnb_1vsel_act);
 #endif
 			break;
@@ -1273,7 +1279,9 @@ static void cx24116_release(struct dvb_frontend *fe)
 	{
 		stpio_free_pin(state->lnb_vsel_pin);
 	}
-#if defined(HS8100)
+#if defined(HCHS8100) \
+ || defined(HCHS9000)
+
 	if (state->lnb_1vsel_pin != NULL)
 	{
 		stpio_free_pin(state->lnb_1vsel_pin);
@@ -1314,7 +1322,8 @@ struct plat_tuner_config tuner_resources[] =
 		.lnb_enable   = { 0, 6, 0 },  // TR21 1-disabled, 0-enabled
 		.lnb_vsel     = { 0, 2, 0 }   // TR22 1-H(18V), 0-V(13V)
 	}
-#elif defined(HS8100)
+#elif defined(HCHS8100)
+
 	/* Homecast HS8100 tuner resources
 	 *
 	 * The LNB interface is PIO driven and uses three
@@ -1323,8 +1332,8 @@ struct plat_tuner_config tuner_resources[] =
 	 * FE  LNB on/off  LNB 13/18V  LNB 1V lift
 	 * ----------------------------------------
 	 * 0       5.2         5.0         5.1
-	 * 1       4.7?        4.4         4.5
-     *         off         13V         off     <- state is high
+	 * 1       ?.?         4.4         4.5
+     *         off         13V         off     <- if PIO pin is high
 	 *
 	 * The driver initializes the 1V drop state as off
 	 * as the 13V output of the interface is rather low at a
@@ -1336,7 +1345,6 @@ struct plat_tuner_config tuner_resources[] =
 		.i2c_bus      = 0,
 		.i2c_addr     = 0x55,
 		.tuner_enable = { -1, -1, -1 },  // not used
-//		.tuner_enable = { 2, 5, 1 },  // TODO: find values
 		.lnb_enable   = { 5, 2, 0 },
 		.lnb_vsel     = { 5, 0, 0 },
 		.lnb_1vsel    = { 5, 1, 0 }
@@ -1347,8 +1355,44 @@ struct plat_tuner_config tuner_resources[] =
 		.i2c_bus      = 0,
 		.i2c_addr     = 0x05,
 		.tuner_enable = { -1, -1, -1 },  // not used
-//		.tuner_enable = { 2, 6, 1 },  // TODO: find values
-		.lnb_enable   = { 4, 7, 0 },  // TODO: find values
+		.lnb_enable   = { 4, 7, 0 },  // TODO: find PIO number or drive method
+		.lnb_vsel     = { 4, 4, 0 },
+		.lnb_1vsel    = { 4, 5, 0 }
+	}
+#elif defined(HCHS9000)
+
+	/* Homecast HS9000/9100 tuner resources
+	 *
+	 * The LNB interface is PIO driven and uses three
+	 * PIOs for each front end, allocated as follows:
+	 *
+	 * FE  LNB on/off  LNB 13/18V  LNB 1V lift
+	 * ----------------------------------------
+	 * 0       5.2         5.0         5.1
+	 * 1       3.6         4.4         4.5
+     *         off         13V         off     <- if PIO pin is high
+	 *
+	 * The driver initializes the 1V drop state as off
+	 * as the 13V output of the interface is rather low at a
+	 * theoretical 12.3V, with the 1V drop off it is 14.1V.
+	 */
+	[0] =
+	{
+		.adapter      = 0,
+		.i2c_bus      = 0,
+		.i2c_addr     = 0x55,
+		.tuner_enable = { -1, -1, -1 },  // not used
+		.lnb_enable   = { 5, 2, 0 },
+		.lnb_vsel     = { 5, 0, 0 },
+		.lnb_1vsel    = { 5, 1, 0 }
+	},
+	[1] =
+	{
+		.adapter      = 0,
+		.i2c_bus      = 0,
+		.i2c_addr     = 0x05,
+		.tuner_enable = { -1, -1, -1 },  // not used
+		.lnb_enable   = { 3, 6, 0 },
 		.lnb_vsel     = { 4, 4, 0 },
 		.lnb_1vsel    = { 4, 5, 0 }
 	}
@@ -1423,7 +1467,9 @@ static int cx24116_probe(struct platform_device *pdev)
 		{
 			dprintk(1, "%s Error: Failed to allocate PIO %d,%d for %s\n", __func__, tuner_cfg->lnb_vsel[0], tuner_cfg->lnb_vsel[1], "LNB_vsel");
 		}
-#if defined(HS8100)
+#if defined(HCHS8100) \
+ || defined(HCHS9000)
+
 		state->lnb_1vsel_pin = stpio_request_pin(tuner_cfg->lnb_1vsel[0],
 							tuner_cfg->lnb_1vsel[1],
 							"LNB 1vsel", STPIO_OUT);
@@ -1435,11 +1481,13 @@ static int cx24116_probe(struct platform_device *pdev)
 
 		if ((state->i2c == NULL)
 //#if !defined(ARIVALINK200) 
-// && !defined(HS8100)
+// && !defined(HCHS8100)
+// && !defined(HCHS9000)
 		|| (tuner_cfg->tuner_enable[0] != -1 && state->tuner_enable_pin == NULL)
 //#endif
 		|| (state->lnb_enable_pin == NULL)
-#if defined(HS8100)
+#if defined(HCHS8100) \
+ || defined(HCHS9000)
 		|| (state->lnb_1vsel_pin == NULL)
 #endif
 		|| (state->lnb_vsel_pin == NULL))
@@ -1450,7 +1498,8 @@ static int cx24116_probe(struct platform_device *pdev)
 		state->tuner_enable_act = tuner_cfg->tuner_enable[2];
 		state->lnb_enable_act = tuner_cfg->lnb_enable[2];
 		state->lnb_vsel_act = tuner_cfg->lnb_vsel[2];
-#if defined(HS8100)
+#if defined(HCHS8100) \
+ || defined(HCHS9000)
 		state->lnb_1vsel_act = tuner_cfg->lnb_1vsel[2];
 #endif
 
@@ -1485,7 +1534,8 @@ error2:
 	{
 		stpio_free_pin(state->lnb_vsel_pin);
 	}
-#if defined(HS8100)
+#if defined(HCHS8100) \
+ || defined(HCHS9000)
 	if (state->lnb_1vsel_pin != NULL)
 	{
 		stpio_free_pin(state->lnb_1vsel_pin);

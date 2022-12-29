@@ -141,7 +141,8 @@ static struct stmcore_display_pipeline_data platform_data[] =
  ||   defined(HL101) \
  ||   defined(VIP1_V1) \
  ||   defined(VIP1_V2) \
- ||   defined(VIP2)
+ ||   defined(VIP2) \
+ ||   defined(HCHS8100)
 		.hdmi_i2c_adapter_id      = 1,
 #elif defined(CONFIG_SH_STB7109E_REF) \
  ||   defined(CONFIG_SH_ST_MB448) \
@@ -304,7 +305,8 @@ static bool claimed_gpio_hotplug;
  || defined(VIP1_V1) \
  || defined(VIP1_V2) \
  || defined(VIP2) \
- || defined(OPT9600)
+ || defined(OPT9600) \
+ || defined(HCHS8100)
 #define SYSCONF_DEVICEID 0x19001000
 #else
 #define SYSCONF_DEVICEID 0
@@ -357,7 +359,8 @@ int __init stmcore_probe_device(struct stmcore_display_pipeline_data **pd,
  || defined(VIP2) \
  || defined(FS9000) \
  || defined(HS9510) \
- || defined(OPT9600)
+ || defined(OPT9600) \
+ || defined(HCHS8100)
 			gpio_direction_input(GPIO_PIN_HOTPLUG);
 #endif
 #endif

@@ -137,7 +137,8 @@ static unsigned short normal_i2c[] =
 	/* CUBEREVO_MINI_FTA does not register */
 	/* CUBEREVO_250HD seems to use fake_avs, but does not register */
 	0,
-#elif defined(HS8100)
+#elif defined(HCHS8100) \
+ ||   defined(HCHS9000)
 	0x48, /* cxa2161r */
 #else /* default */
 	0x11, /* ak4705 */

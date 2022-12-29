@@ -488,7 +488,7 @@ void calcSetMicomTime(time_t theTime, char *destString)
 		calc_tm.tm_mon++;
 	}
 	calc_tm.tm_mon++;
-	calc_tm.tm_mday++;
+	calc_tm.tm_mday = dayno + 1;
 	destString[0] = (calc_tm.tm_year >> 4) + '0';   // tens
 	destString[1] = (calc_tm.tm_year & 0x0f) + '0'; // units
 	destString[2] = (calc_tm.tm_mon >> 4) + '0';

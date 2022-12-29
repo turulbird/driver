@@ -710,7 +710,7 @@ static int AOTOMdev_ioctl(struct inode *Inode, struct file *File, unsigned int c
 		case VFDSETBLUEKEY:
 		case VFDSETDISPLAYTIME:
 		{
-			if (copy_from_user(&aotom_data, (void *) arg, sizeof(aotom_data)))
+			if (copy_from_user(&aotom_data, (void *)arg, sizeof(aotom_data)))
 			{
 				return -EFAULT;
 			}

@@ -191,4 +191,8 @@ obj-m += starci.o
 starci-objs:= opt9600/starci2win.o
 endif
 
+ifdef HCHS8100
+obj-m += starci.o
+starci-objs:= starci2win/starci2win.o
+endif
 

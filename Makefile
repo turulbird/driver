@@ -154,6 +154,9 @@ endif
 ifdef OPT9600PRIMA
 CCFLAGSY += -DOPT9600PRIMA
 endif
+ifdef HCHS8100
+CCFLAGSY += -DHCHS8100
+endif
 
 ifneq (,$(findstring 2.6.3,$(KERNELVERSION)))
 ccflags-y += $(CCFLAGSY)
@@ -399,6 +402,10 @@ endif
 ifdef OPT9600PRIMA
 obj-y += cec/
 obj-y += smartcard/
+endif
+
+ifdef HCHS8100
+#obj-y += cec/
 endif
 
 endif

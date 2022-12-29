@@ -1,5 +1,5 @@
 /*
-	StarCI2Win driver for TF7700, Fortis, Opticum
+	StarCI2Win driver for TF7700, Fortis, Opticum, Homecast
 
 	Copyright (C) 2007 konfetti <konfetti@ufs910.de>
 	many thanx to jolt for good support
@@ -44,10 +44,15 @@
 
 static int debug;
 static int extmoduldetect = 0;
-#define dprintk(args...) \
-	do { \
-		if (debug) printk (args); \
-	} while (0)
+short paramDebug = 0;
+#define TAGDEBUG "[starci2win] "
+
+#ifndef dprintk
+#define dprintk(level, x...) do \
+{ \
+	if ((paramDebug) && (paramDebug >= level)) printk(TAGDEBUG x); \
+} while (0)
+#endif
 
 #if defined(FS9000) \
  || defined(HS8200) \
@@ -138,11 +143,11 @@ unsigned char default_values[33] =
 	0x00, 0x00, 0x00, 0x03, 0x06, 0x00, 0x03, 0x01
 };
 #elif defined(HS7110) \
- || defined(HS7119) \
- || defined(HS7420) \
- || defined(HS7429) \
- || defined(HS7810A) \
- || defined(HS7819)
+ ||   defined(HS7119) \
+ ||   defined(HS7420) \
+ ||   defined(HS7429) \
+ ||   defined(HS7810A) \
+ ||   defined(HS7819)
 unsigned char default_values[33] =
 {
 	0x00,
@@ -161,6 +166,25 @@ unsigned char default_values[33] =
 	0x00, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
 	0x00, 0x00, 0x00, 0x03, 0x06, 0x00, 0x03, 0x01
 };
+#elif defined(HCHS8100)
+unsigned char default_values[33] =
+#if 0
+{
+	0x00, /* register address for block transfer */
+	0x02, 0x00, 0x01, 0x00, 0x00, 0x33, 0x00, 0x00,
+	0x00, 0x02, 0x00, 0x01, 0x00, 0x00, 0x33, 0x00,
+	0x00, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
+	0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x00
+};
+#else
+{
+	0x00,
+	0x00, 0x00, 0x02, 0x00, 0x00, 0x44, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x02, 0x00, 0x02, 0x44, 0x00,
+	0x00, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
+	0x00, 0x00, 0x00, 0x03, 0x06, 0x00, 0x03, 0x01
+};
+#endif
 #endif
 
 /* EMI configuration */
@@ -322,7 +346,7 @@ static int starci_writeregN(struct dvb_ca_state *state, u8 * data, u16 len)
 	msg.buf   = data;
 	msg.len   = len;
 
-	if ((ret = i2c_transfer (state->i2c, &msg, 1)) != 1)
+	if ((ret = i2c_transfer(state->i2c, &msg, 1)) != 1)
 	{
 		printk("%s: writereg error(err == %i, reg == 0x%02x\n", __func__, ret, data[0]);
 		ret = -EREMOTEIO;
@@ -336,11 +360,11 @@ static int starci_writereg(struct dvb_ca_state* state, int reg, int data)
 	struct i2c_msg msg = { .addr = state->i2c_addr, .flags = 0, .buf = buf, .len = 2 };
 	int err;
 
-	dprintk("cimax: %s:  write reg 0x%02x, value 0x%02x\n", __func__, reg, data);
+	dprintk(20, "cimax: %s:  write reg 0x%02x, value 0x%02x\n", __func__, reg, data);
 
 	if ((err = i2c_transfer(state->i2c, &msg, 1)) != 1)
 	{
-		dprintk("%s: writereg error(err = %i, reg = 0x%02x, data = 0x%02x)\n", __func__, err, reg, data);
+		dprintk(20, "%s: writereg error(err = %i, reg = 0x%02x, data = 0x%02x)\n", __func__, err, reg, data);
 		return -EREMOTEIO;
 	}
 	return 0;
@@ -360,10 +384,10 @@ static int starci_readreg(struct dvb_ca_state* state, u8 reg)
 
 	if (ret != 2)
 	{
-		dprintk("%s: reg=0x%x (error=%d)\n", __func__, reg, ret);
+		dprintk(1, "%s: reg=0x%x (error=%d)\n", __func__, reg, ret);
 		return ret;
 	}
-	dprintk("%s read reg 0x%02x, value 0x%02x\n",__func__, reg, b1[0]);
+	dprintk(20, "%s read reg 0x%02x, value 0x%02x\n",__func__, reg, b1[0]);
 	return b1[0];
 }
 
@@ -497,7 +521,7 @@ void setDestination(struct dvb_ca_state *state, int slot)
 	int activationMask[2] = {0x02, 0x04};
 	int deactivationMask[2] = {0x04, 0x02};
 
-	dprintk("%s (slot = %d)>\n", __func__, slot);
+	dprintk(20, "%s (slot = %d)>\n", __func__, slot);
 
 	if ((slot < 0)
 	||  (slot > 1))
@@ -521,16 +545,16 @@ void setDestination(struct dvb_ca_state *state, int slot)
 		/* re-read the destination register */
 		result = starci_readreg(state, DEST_SEL_REG);
 
-		dprintk("%s (slot = %d, loop = %d): result = 0x%x\n", __func__, slot,loop, result);
+		dprintk(20, "%s (slot = %d, loop = %d): result = 0x%x\n", __func__, slot,loop, result);
 
 		loop++;
 		if (loop >= 10)
 		{
-			dprintk("->abort setting slot destination\n");
+			dprintk(1, "->abort setting slot destination\n");
 			break;
 		}
 	}
-	dprintk("%s (slot = %d)<\n", __func__, slot);
+	dprintk(20, "%s (slot = %d)<\n", __func__, slot);
 }
 
 static int starci_poll_slot_status(struct dvb_ca_en50221 *ca, int slot, int open)
@@ -539,7 +563,7 @@ static int starci_poll_slot_status(struct dvb_ca_en50221 *ca, int slot, int open
 	int    slot_status = 0;
 	int    ctrlReg[2] = {MODA_CTRL_REG, MODB_CTRL_REG};
 
-	dprintk("%s (%d; open = %d) >\n", __func__, slot, open);
+	dprintk(20, "%s (%d; open = %d) >\n", __func__, slot, open);
 
 	if ((slot < 0)
 	|| (slot > 1))
@@ -554,7 +578,7 @@ static int starci_poll_slot_status(struct dvb_ca_en50221 *ca, int slot, int open
 		{
 			unsigned int result = starci_read_attribute_mem(ca, slot, 0); 
 
-			dprintk("result = 0x%02x\n", result);
+			dprintk(20, "result = 0x%02x\n", result);
 
 			if (result == 0x1d)
 			{
@@ -574,7 +598,7 @@ static int starci_poll_slot_status(struct dvb_ca_en50221 *ca, int slot, int open
 				stpio_set_pin(module_B_pin, 1);
 			}
 #endif
-			dprintk("Modul now present\n");
+			dprintk(20, "Module present now\n");
 			state->module_status[slot] = SLOTSTATUS_PRESENT;
 		}
 	}
@@ -593,7 +617,7 @@ static int starci_poll_slot_status(struct dvb_ca_en50221 *ca, int slot, int open
 				stpio_set_pin(module_B_pin, 0);
 			}
 #endif
-			dprintk("Modul now not present\n");
+			dprintk(20, "Module not present now\n");
 			state->module_status[slot] = SLOTSTATUS_NONE;
 		}
 	}
@@ -609,8 +633,8 @@ static int starci_poll_slot_status(struct dvb_ca_en50221 *ca, int slot, int open
 	{
 		slot_status |= DVB_CA_EN50221_POLL_CAM_READY;
 	}
-	dprintk("Module %c (%d): result = %d, status = %d\n", slot ? 'B' : 'A', slot, slot_status, state->module_status[slot]);
-	dprintk("%s 2<\n", __func__);
+	dprintk(20, "Module %c (%d): result = %d, status = %d\n", slot ? 'B' : 'A', slot, slot_status, state->module_status[slot]);
+	dprintk(100, "%s 2<\n", __func__);
 	return slot_status;
 }
 
@@ -620,7 +644,7 @@ static int starci_slot_reset(struct dvb_ca_en50221 *ca, int slot)
 	int reg[2] = {MODA_CTRL_REG, MODB_CTRL_REG};
 	int result;
 
-	dprintk("%s >\n", __func__);
+	dprintk(100, "%s >\n", __func__);
 
 	if((slot < 0) || (slot > 1))
 	{
@@ -642,7 +666,7 @@ static int starci_slot_reset(struct dvb_ca_en50221 *ca, int slot)
 		result = starci_readreg(state, reg[slot]);
 		starci_writereg(state, reg[slot], 0x00);
 
-		dprintk(KERN_ERR "Reset Module %c\n", (slot == 0) ? 'A' : 'B');
+		dprintk(20, "Reset Module %c\n", (slot == 0) ? 'A' : 'B');
 #else
 		result = starci_readreg(state, reg[slot]);
 		printk("%s: result = 0x%x\n", __func__, result);
@@ -664,10 +688,10 @@ static int starci_slot_reset(struct dvb_ca_en50221 *ca, int slot)
 		/* reset "rst" bit */
 		result = starci_readreg(state, reg[slot]);
 		starci_writereg(state, reg[slot], result & ~0x80);
-		dprintk(KERN_ERR "Reset Module %c\n", (slot == 0) ? 'A' : 'B');
+		dprintk(20, "Reset Module %c\n", (slot == 0) ? 'A' : 'B');
 #endif
 	}
-	dprintk("%s <\n", __func__);
+	dprintk(100, "%s <\n", __func__);
 	return 0;
 }
 
@@ -678,7 +702,7 @@ static int starci_read_attribute_mem(struct dvb_ca_en50221 *ca, int slot, int ad
 	int result;
 	int reg[2] = {MODA_CTRL_REG, MODB_CTRL_REG};
 
-	dprintk("%s > slot = %d, address = %d\n", __func__, slot, address);
+	dprintk(100, "%s > slot = %d, address = %d\n", __func__, slot, address);
 
 	if ((slot < 0)
 	|| (slot > 1))
@@ -697,17 +721,17 @@ static int starci_read_attribute_mem(struct dvb_ca_en50221 *ca, int slot, int ad
 
 	if (address <= 2)
 	{
-		dprintk ("address = %d: res = 0x%.x\n", address, res);
+		dprintk(20, "address = %d: res = 0x%.x\n", address, res);
 	}
 	else
 	{
 		if ((res > 31) && (res < 127))
 		{
-			dprintk("%c\n", res);
+			dprintk(20, "%c\n", res);
 		}
 		else
 		{
-			dprintk(".\n");
+			dprintk(20, ".\n");
 		}
 	}
 	return res;
@@ -719,7 +743,7 @@ static int starci_write_attribute_mem(struct dvb_ca_en50221 *ca, int slot, int a
 	int result;
 	int reg[2] = {MODA_CTRL_REG, MODB_CTRL_REG};
 
-	dprintk("%s > slot = %d, address = %d, value = %d\n", __func__, slot, address, value);
+	dprintk(100, "%s > slot = %d, address = %d, value = %d\n", __func__, slot, address, value);
 
 	if ((slot < 0)
 	||  (slot > 1))
@@ -745,7 +769,7 @@ static int starci_read_cam_control(struct dvb_ca_en50221 *ca, int slot, u8 addre
 	int result;
 	int reg[2] = {MODA_CTRL_REG, MODB_CTRL_REG};
 
-	dprintk("%s > slot = %d, address = %d\n", __func__, slot, address);
+	dprintk(100, "%s > slot = %d, address = %d\n", __func__, slot, address);
 
 	if ((slot < 0)
 	||  (slot > 1))
@@ -766,13 +790,13 @@ static int starci_read_cam_control(struct dvb_ca_en50221 *ca, int slot, u8 addre
 
 	if (address > 2)
 	{
-		if ((res > 31) && (res < 127))
+		if ((res > 31) && (res < 127) && (paramDebug > 19))
 		{
-			dprintk("%c", res);
+			printk("%c", res);
 		}
 		else
 		{
-			dprintk(".");
+			printk(".");
 		}
 	}
 	return res;
@@ -784,7 +808,7 @@ static int starci_write_cam_control(struct dvb_ca_en50221 *ca, int slot, u8 addr
 	int result;
 	int reg[2] = {MODA_CTRL_REG, MODB_CTRL_REG};
 
-	dprintk("%s > slot = %d, address = %d, value = %d\n", __func__, slot, address, value);
+	dprintk(100, "%s > slot = %d, address = %d, value = %d\n", __func__, slot, address, value);
 
 	if((slot < 0) || (slot > 1))
 		return -1;
@@ -795,8 +819,9 @@ static int starci_write_cam_control(struct dvb_ca_en50221 *ca, int slot, u8 addr
 
 	/* access to i/o mem */
 	if (!(result & 0x4))
-		  starci_writereg(state, reg[slot], (result & ~0xC) | 0x4);
-
+	{
+	  starci_writereg(state, reg[slot], (result & ~0xC) | 0x4);
+	}
 	setDestination(state, slot);
 
 	slot_membase[slot][address] = value;
@@ -804,17 +829,17 @@ static int starci_write_cam_control(struct dvb_ca_en50221 *ca, int slot, u8 addr
 	//without this some modules not working (unicam evo, unicam twin, zetaCam)
 	//i have tested with 9 modules an all working with this code
 	if(extmoduldetect == 1 && value == 8 && address == 1)
+	{
 		slot_membase[slot][address] = 0;
-
+	}
 	return 0;
 }
 
 static int starci_slot_shutdown(struct dvb_ca_en50221 *ca, int slot)
 {
-	dprintk("%s > slot = %d\n", __func__, slot);
+	dprintk(100, "%s > slot = %d\n", __func__, slot);
 
 	/*Power control : (@18h); quatsch slot shutdown ->0x17*/
-
 	return 0;
 }
 
@@ -824,11 +849,12 @@ static int starci_slot_ts_enable(struct dvb_ca_en50221 *ca, int slot)
 	int reg[2] = {MODA_CTRL_REG, MODB_CTRL_REG};
 	int result;
 
-	dprintk("%s > slot = %d\n", __func__, slot);
+	dprintk(100, "%s > slot = %d\n", __func__, slot);
 
 	if((slot < 0) || (slot > 1))
+	{
 		return -1;
-
+	}
 	result = starci_readreg(state, reg[slot]);
 
 #if !defined(HS8200) \
@@ -848,15 +874,16 @@ static int starci_slot_ts_enable(struct dvb_ca_en50221 *ca, int slot)
 	/* reading back from the register implements the delay */
 	result = starci_readreg(state, reg[slot]);
 
-	dprintk("%s: writing 0x%x\n", __func__, result | 0x40);
+	dprintk(50, "%s: writing 0x%x\n", __func__, result | 0x40);
 	starci_writereg(state, reg[slot], result | 0x40);
 	result = starci_readreg(state, reg[slot]);
 
-	dprintk("%s: result 0x%x (%d)\n", __func__, result, slot);
+	dprintk(50, "%s: result 0x%x (%d)\n", __func__, result, slot);
 
 	if (!(result & 0x40))
-		  printk("Error setting ts enable on slot 0\n");
-
+	{
+		dprintk(1, "Error setting ts enable on slot 0\n");
+	}
 	return 0;
 }
 
@@ -865,19 +892,21 @@ int init_ci_controller(struct dvb_adapter* dvb_adap)
 	struct dvb_ca_state *state = &ca_state;
 	int result = 0;
 
-	dprintk("%s >\n", __func__);
+	dprintk(100, "%s >\n", __func__);
 
 	state->dvb_adap = dvb_adap;
 	state->i2c_addr = 0x40;
 
-#if defined(FS9000) || defined(HS8200)
+#if defined(FS9000) \
+ || defined(HS8200) \
+ || defined(HCHS8100)
 	state->i2c = i2c_get_adapter(2);
 #elif defined(HS7110) \
- || defined(HS7119) \
- || defined(HS7420) \
- || defined(HS7429) \
- || defined(HS7810A) \
- || defined(HS7819)
+ ||   defined(HS7119) \
+ ||   defined(HS7420) \
+ ||   defined(HS7429) \
+ ||   defined(HS7810A) \
+ ||   defined(HS7819)
 	state->i2c = i2c_get_adapter(1);
 	state->i2c_addr = 0x43;
 #else
@@ -889,17 +918,17 @@ int init_ci_controller(struct dvb_adapter* dvb_adap)
 	/* register CI interface */
 	state->ca.owner = THIS_MODULE;
 
-	state->ca.read_attribute_mem 	= starci_read_attribute_mem;
+	state->ca.read_attribute_mem  = starci_read_attribute_mem;
 	state->ca.write_attribute_mem = starci_write_attribute_mem;
-	state->ca.read_cam_control 	= starci_read_cam_control;
-	state->ca.write_cam_control 	= starci_write_cam_control;
-	state->ca.slot_shutdown 	    = starci_slot_shutdown;
-	state->ca.slot_ts_enable 	    = starci_slot_ts_enable;
+	state->ca.read_cam_control    = starci_read_cam_control;
+	state->ca.write_cam_control   = starci_write_cam_control;
+	state->ca.slot_shutdown       = starci_slot_shutdown;
+	state->ca.slot_ts_enable      = starci_slot_ts_enable;
 
-	state->ca.slot_reset 		    = starci_slot_reset;
-	state->ca.poll_slot_status 	= starci_poll_slot_status;
+	state->ca.slot_reset          = starci_slot_reset;
+	state->ca.poll_slot_status    = starci_poll_slot_status;
 
-	state->ca.data 		        = state;
+	state->ca.data                = state;
 
 	state->module_status[0] = SLOTSTATUS_NONE;
 	state->module_status[1] = SLOTSTATUS_NONE;
@@ -926,7 +955,7 @@ int init_ci_controller(struct dvb_adapter* dvb_adap)
 	reg_sysconfig = (unsigned long)ioremap(SysConfigBaseAddress, 0x200);
 #endif
 
-	dprintk (KERN_ERR "ioremap 0x%.8x -> 0x%.8lx\n", EMIConfigBaseAddress, reg_config);
+	dprintk(50, "ioremap 0x%.8x -> 0x%.8lx\n", EMIConfigBaseAddress, reg_config);
 
 #if !defined(HS8200) \
  && !defined(HS7110) \
@@ -935,7 +964,7 @@ int init_ci_controller(struct dvb_adapter* dvb_adap)
  && !defined(HS7429) \
  && !defined(HS7810A) \
  && !defined(HS7819)
-	dprintk (KERN_ERR "ioremap 0x%.8x -> 0x%.8lx\n", EMIBufferBaseAddress, reg_buffer);
+	dprintk(50, "ioremap 0x%.8x -> 0x%.8lx\n", EMIBufferBaseAddress, reg_buffer);
 #endif
 
 #if defined(FS9000)
@@ -1046,33 +1075,33 @@ int init_ci_controller(struct dvb_adapter* dvb_adap)
 	ctrl_outl(0x9d220000,reg_config + EMIBank3 + EMI_CFG_DATA2);
 	ctrl_outl(0x8,reg_config + EMIBank3 + EMI_CFG_DATA3);
 	ctrl_outl(0x0, reg_config + EMI_GEN_CFG);
-#else /* Cuberevo & TF7700  */
-	ctrl_outl(	EMI_DATA0_WE_USE_OE(0x0) 	|
-		  EMI_DATA0_WAIT_POL(0x0)	|
-		  EMI_DATA0_LATCH_POINT(30)	|
-		  EMI_DATA0_DATA_DRIVE(12)	|
-		  EMI_DATA0_BUS_RELEASE(50)	|
-		  EMI_DATA0_CS_ACTIVE(0x3)	|
-		  EMI_DATA0_OE_ACTIVE(0x1)	|
-		  EMI_DATA0_BE_ACTIVE(0x2)	|
-		  EMI_DATA0_PORT_SIZE(0x2)	|
-		  EMI_DATA0_DEVICE_TYPE(0x1),reg_config + EMIBank2 + EMI_CFG_DATA0);
-	ctrl_outl(	EMI_DATA1_CYCLE(0x1)		|
-		  EMI_DATA1_ACCESS_READ(100)	|
-		  EMI_DATA1_CSE1_READ(0)	|
-		  EMI_DATA1_CSE2_READ(0)	|
-		  EMI_DATA1_OEE1_READ(10)	|
-		  EMI_DATA1_OEE2_READ(10)	|
-		  EMI_DATA1_BEE1_READ(10)	|
-		  EMI_DATA1_BEE2_READ(10),reg_config + EMIBank2 + EMI_CFG_DATA1);
-	ctrl_outl(	EMI_DATA2_CYCLE(1)		|
-		  EMI_DATA2_ACCESS_WRITE(100)	|
-		  EMI_DATA2_CSE1_WRITE(0)	|
-		  EMI_DATA2_CSE2_WRITE(0)	|
-		  EMI_DATA2_OEE1_WRITE(10)	|
-		  EMI_DATA2_OEE2_WRITE(10)	|
-		  EMI_DATA2_BEE1_WRITE(10)	|
-		  EMI_DATA2_BEE2_WRITE(10),reg_config + EMIBank2 + EMI_CFG_DATA2);
+#else /* Cuberevo, TF7700, HCHS8100 */
+	ctrl_outl(EMI_DATA0_WE_USE_OE(0x0)  |
+	          EMI_DATA0_WAIT_POL(0x0)   |
+	          EMI_DATA0_LATCH_POINT(30) |
+	          EMI_DATA0_DATA_DRIVE(12)  |
+	          EMI_DATA0_BUS_RELEASE(50) |
+	          EMI_DATA0_CS_ACTIVE(0x3)  |
+	          EMI_DATA0_OE_ACTIVE(0x1)  |
+	          EMI_DATA0_BE_ACTIVE(0x2)  |
+	          EMI_DATA0_PORT_SIZE(0x2)  |
+	          EMI_DATA0_DEVICE_TYPE(0x1), reg_config + EMIBank2 + EMI_CFG_DATA0);
+	ctrl_outl(EMI_DATA1_CYCLE(0x1)       |
+	          EMI_DATA1_ACCESS_READ(100) |
+	          EMI_DATA1_CSE1_READ(0)     |
+	          EMI_DATA1_CSE2_READ(0)     |
+	          EMI_DATA1_OEE1_READ(10)    |
+	          EMI_DATA1_OEE2_READ(10)    |
+	          EMI_DATA1_BEE1_READ(10)    |
+	          EMI_DATA1_BEE2_READ(10), reg_config + EMIBank2 + EMI_CFG_DATA1);
+	ctrl_outl(EMI_DATA2_CYCLE(1)          |
+	          EMI_DATA2_ACCESS_WRITE(100) |
+	          EMI_DATA2_CSE1_WRITE(0)     |
+	          EMI_DATA2_CSE2_WRITE(0)     |
+	          EMI_DATA2_OEE1_WRITE(10)    |
+	          EMI_DATA2_OEE2_WRITE(10)    |
+	          EMI_DATA2_BEE1_WRITE(10)    |
+	          EMI_DATA2_BEE2_WRITE(10), reg_config + EMIBank2 + EMI_CFG_DATA2);
 
 	ctrl_outl(0x0, reg_config + EMIBank2 + EMI_CFG_DATA3);
 
@@ -1084,7 +1113,12 @@ int init_ci_controller(struct dvb_adapter* dvb_adap)
 
 #endif
 
-#if !defined(HS8200) && !defined(FS9000) && !defined(HS7110) && !defined(HS7119) && !defined(HS7810A) && !defined(HS7819)
+#if !defined(HS8200) \
+ && !defined(FS9000) \
+ && !defined(HS7110) \
+ && !defined(HS7119) \
+ && !defined(HS7810A) \
+ && !defined(HS7819)
 	ctrl_outl(0x1, reg_config + EMI_CLK_EN);
 #endif
 
@@ -1094,14 +1128,17 @@ int init_ci_controller(struct dvb_adapter* dvb_adap)
 #elif defined(HS8200)
 	slot_membase[0] = ioremap( 0x06800000, 0x1000 );
 #elif defined(HS7110) \
- || defined(HS7119) \
- || defined(HS7420) \
- || defined(HS7429) \
- || defined(HS7810A) \
- || defined(HS7819)
+ ||   defined(HS7119) \
+ ||   defined(HS7420) \
+ ||   defined(HS7429) \
+ ||   defined(HS7810A) \
+ ||   defined(HS7819)
 	slot_membase[0] = ioremap( 0x06000000, 0x1000 );
 #elif defined(CUBEBOX)
 	slot_membase[0] = ioremap( 0x3000000, 0x1000 );
+	printk("membase-0 0x%08x\n", slot_membase[0]);
+#elif defined(HCHS8100)
+	slot_membase[0] = ioremap( 0xa2000000, 0x1000 );
 	printk("membase-0 0x%08x\n", slot_membase[0]);
 #else
 	slot_membase[0] = ioremap( 0xa3000000, 0x1000 );
@@ -1128,6 +1165,9 @@ int init_ci_controller(struct dvb_adapter* dvb_adap)
 #elif defined(CUBEBOX)
 	slot_membase[1] = ioremap( 0x3010000, 0x1000 );
 	printk("membase-1 0x%08x\n", slot_membase[1]);
+#elif defined(HCHS8100)
+	slot_membase[1] = ioremap( 0xa2010000, 0x1000 );
+	printk("membase-1 0x%08x\n", slot_membase[0]);
 #else
 	slot_membase[1] = ioremap( 0xa3010000, 0x1000 );
 #endif
@@ -1149,7 +1189,7 @@ int init_ci_controller(struct dvb_adapter* dvb_adap)
 	ctrl_outl(0x1F,reg_config + EMI_LCK);
 #endif
 
-	dprintk("init_startci: call dvb_ca_en50221_init\n");
+	dprintk(20, "init_startci: call dvb_ca_en50221_init\n");
 
 #if defined(CUBEREVO_250HD) || defined(CUBEREVO_2000HD) || defined(CUBEREVO_MINI_FTA)
 	if ((result = dvb_ca_en50221_init(state->dvb_adap, &state->ca, 0, 1)) != 0)
@@ -1158,14 +1198,14 @@ int init_ci_controller(struct dvb_adapter* dvb_adap)
 	if ((result = dvb_ca_en50221_init(state->dvb_adap, &state->ca, 0, 2)) != 0)
 	{
 #endif
-		printk(KERN_ERR "ca0 initialisation failed.\n");
+		dprintk(1, "ca0 initialisation failed.\n");
 		goto error;
 	}
 
-	dprintk(KERN_INFO "cimax: ca0 interface initialised.\n");
+	dprintk(20, "cimax: ca0 interface initialised.\n");
 
 error:
-	dprintk("init_starci <\n");
+	dprintk(100, "%s <\n", __func__);
 
 	return result;
 }
@@ -1191,6 +1231,9 @@ module_exit             (starci2win_exit);
 MODULE_DESCRIPTION      ("CI Controller");
 MODULE_AUTHOR           ("");
 MODULE_LICENSE          ("GPL");
+
+module_param(paramDebug, short, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
+MODULE_PARM_DESC(paramDebug, "Debug Output 0=disabled (default), >1=enabled (level_");
 
 module_param(extmoduldetect, int, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
 MODULE_PARM_DESC(extmoduldetect, "Ext. Modul detect 0=disabled 1=enabled");

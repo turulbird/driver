@@ -68,22 +68,22 @@ MODULE_PARM_DESC(camRouting, "Enable camRouting 0=disabled 1=enabled");
 #define SWTS_BASE_ADDRESS 0x1A300000
 #endif
 
-#define TSM_STREAM0_CFG 0x0000
-#define TSM_STREAM1_CFG 0x0020
-#define TSM_STREAM2_CFG 0x0040
-#define TSM_STREAM3_CFG 0x0060
-#define TSM_STREAM4_CFG 0x0080
+#define TSM_STREAM0_CFG  0x0000
+#define TSM_STREAM1_CFG  0x0020
+#define TSM_STREAM2_CFG  0x0040
+#define TSM_STREAM3_CFG  0x0060
+#define TSM_STREAM4_CFG  0x0080
 
-/* for all 7109er */
-#define TSM_STREAM5_CFG 0x00a0
-#define TSM_STREAM6_CFG 0x00c0
+/* for all 7109's */
+#define TSM_STREAM5_CFG  0x00a0
+#define TSM_STREAM6_CFG  0x00c0
 
 /* see proc entry from ufs912 */
-#define TSM_STREAM7_CFG 0x00e0
+#define TSM_STREAM7_CFG  0x00e0
 #define TSM_STREAM7_SYNC 0x00e8
 #define TSM_STREAM7_STAT 0x00f0
 
-/* 7111er */
+/* for all 7111's */
 #define TSM_STREAM0_CFG2 0x0018
 #define TSM_STREAM1_CFG2 0x0038
 #define TSM_STREAM2_CFG2 0x0058
@@ -99,36 +99,36 @@ MODULE_PARM_DESC(camRouting, "Enable camRouting 0=disabled 1=enabled");
 #define TSM_STREAM3_SYNC 0x0068
 #define TSM_STREAM4_SYNC 0x0088
 
-/* for all 7109er */
+/* for all 7109's */
 #define TSM_STREAM5_SYNC 0x00a8
 #define TSM_STREAM6_SYNC 0x00c8
 
-#define TSM_STREAM0_STA 0x0010
-#define TSM_STREAM1_STA 0x0030
-#define TSM_STREAM2_STA 0x0050
-#define TSM_STREAM3_STA 0x0070
-#define TSM_STREAM4_STA 0x0090
+#define TSM_STREAM0_STA  0x0010
+#define TSM_STREAM1_STA  0x0030
+#define TSM_STREAM2_STA  0x0050
+#define TSM_STREAM3_STA  0x0070
+#define TSM_STREAM4_STA  0x0090
 
-#define TSM_PTI_DEST 0x0200
-#define TSM_PTI_SEL TSM_PTI_DEST
+#define TSM_PTI_DEST     0x0200
+#define TSM_PTI_SEL      TSM_PTI_DEST
 
-#define TSM_PTI1_DEST 0x0210
-#define TSM_PTI1_SEL TSM_PTI1_DEST
+#define TSM_PTI1_DEST    0x0210
+#define TSM_PTI1_SEL     TSM_PTI1_DEST
 
-#define TSM_1394_DEST 0x0210
-#define TSM_1394_SEL TSM_1394_DEST
+#define TSM_1394_DEST    0x0210
+#define TSM_1394_SEL     TSM_1394_DEST
 
-#define TSM_PROG_CNT0 0x0400
-#define TSM_PROG_CNT1 0x0410
+#define TSM_PROG_CNT0    0x0400
+#define TSM_PROG_CNT1    0x0410
 
-#define SWTS_CFG(x) (0x0600 + (x*0x10))
+#define SWTS_CFG(x)      (0x0600 + (x*0x10))
 
-#define PTI_ALT_OUT_CFG 0x0800
-#define TS_1394_CFG 0x0810
-#define TSM_SYS_CFG 0x0820
-#define TSM_SW_RST 0x0830
+#define PTI_ALT_OUT_CFG  0x0800
+#define TS_1394_CFG      0x0810
+#define TSM_SYS_CFG      0x0820
+#define TSM_SW_RST       0x0830
 
-#define TSM_SWTS 0x010BE000
+#define TSM_SWTS         0x010BE000
 
 #if defined(UFS912) \
  || defined(UFS913) \
@@ -445,11 +445,12 @@ void spark_stm_tsm_init(void)
 	unsigned int ret;
 	unsigned int stream_sync = 0xbc4722;
 	int n;
+	int reinit = 0;
+
 	/* ugly hack: the TSM sometimes seems to stop working, a
 	* reset of the config registers fixes it
 	* but the DMA stuff must not be touched or everything
 	* blows up badly */
-	int reinit = 0;
 	if (tsm_io)
 	{
 		reinit = 1;
@@ -628,7 +629,6 @@ void stm_tsm_init(int use_cimax)
  && !defined(HS7119) \
  && !defined(HS7819) \
  && !defined(ATEMIO520) \
- && !defined(OPT9600MINI) \
  && !defined(CUBEREVO) \
  && !defined(CUBEREVO_MINI2) \
  && !defined(CUBEREVO_MINI) \
@@ -639,11 +639,14 @@ void stm_tsm_init(int use_cimax)
  && !defined(CUBEREVO_3000HD) \
  && !defined(VITAMIN_HD5000) \
  && !defined(OPT9600) \
- && !defined(OPT9600PRIMA)
+ && !defined(OPT9600MINI) \
+ && !defined(OPT9600PRIMA) \
+ && !defined(HCHS8100)
 	unsigned int stream_sync = 0xbc4733;
 #else
 	unsigned int stream_sync = 0xbc4722;
 #endif
+
 #if defined(SPARK)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,30)
 	spark_stm_tsm_init();
@@ -751,12 +754,12 @@ void stm_tsm_init(int use_cimax)
 		 * 0x20020 =
 		 * add_tag_bytes = 1
 		 * ram = 0
-		 * pri = 2 (binaer 10)
+		 * pri = 2 (binary 10)
 
 		 * 0x30020 =
 		 * add_tag_bytes = 1
 		 * ram = 0
-		 * pri = 3 (binaer 11)
+		 * pri = 3 (binary 11)
 		 */
 		printk("Routing streams through cimax\n");
 #if defined(HS9510)
@@ -1145,15 +1148,15 @@ void stm_tsm_init(int use_cimax)
  && !defined(HS7119) \
  && !defined(HS7819) \
  && !defined(ATEMIO520) \
- && !defined(OPT9600MINI) \
  && !defined(IPBOX9900) \
  && !defined(ARIVALINK200) \
  && !defined(VITAMIN_HD5000) \
  && !defined(OPT9600) \
- && !defined(OPT9600PRIMA)
-		/* swts_req_trigger + pace cycles (1101) */
+ && !defined(OPT9600PRIMA) \
+ && !defined(OPT9600MINI)
+ 		/* swts_req_trigger + pace cycles (1101) */
 		ctrl_outl(0x800000d, tsm_io + SWTS_CFG(0));
-#elif defined (UFS912) \
+#elif defined(UFS912) \
  ||   defined(HS8200) \
  ||   defined(HS7110) \
  ||   defined(HS7810A) \
@@ -1206,12 +1209,13 @@ void stm_tsm_init(int use_cimax)
  && !defined(HS7119) \
  && !defined(HS7819) \
  && !defined(ATEMIO520) \
- && !defined(OPT9600MINI) \
  && !defined(IPBOX9900) \
  && !defined(ARIVALINK200) \
  && !defined(VITAMIN_HD5000) \
  && !defined(OPT9600) \
- && !defined(OPT9600PRIMA)
+ && !defined(OPT9600MINI) \
+ && !defined(OPT9600PRIMA) \
+ && !defined(HCHS8100)
 		/* UFS910 stream configuration */
 		/* route stream 2 to PTI */
 		ret = ctrl_inl(tsm_io + TSM_PTI_SEL);
@@ -1341,6 +1345,11 @@ void stm_tsm_init(int use_cimax)
 		ctrl_outl(0x0001804c ,tsm_io + TS_1394_CFG);
 		ret = ctrl_inl(tsm_io + TSM_1394_DEST);
 		ctrl_outl(ret | 0x1 , tsm_io + TSM_1394_DEST);*/
+#elif defined(HCHS8100)
+		ret = ctrl_inl(tsm_io + TSM_PTI_SEL);
+		ctrl_outl(ret | 0x1,tsm_io + TSM_PTI_SEL);
+		ret = ctrl_inl(tsm_io + TSM_STREAM0_CFG);
+		ctrl_outl(ret | 0x0,tsm_io + TSM_STREAM0_CFG);
 #elif defined(HS9510) \
  ||   defined(OPT9600)
 		/* route stream 1 to PTI */

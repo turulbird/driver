@@ -15,9 +15,9 @@
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- *   Implementation for Homecast HS8100/9000/9100 series
+ *   Implementation for Homecast HS8100/9000 series
  *
- *   HS8100/9000/9100 connections to the CXA2161R are as follows:
+ *   HS8100/9000 connections to the CXA2161R are as follows:
  *
  *   TV SCART CVBS in     (20) : NC
  *   TV SCART CVBS out    (19) : VOUT4    CXA2161R pin 43
@@ -113,7 +113,6 @@
  *      
  */
 
-//#include <linux/version.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/sched.h>
@@ -129,20 +128,12 @@
 
 #include "avs_core.h"
 #include "cxa2161r.h"
-#include "tools.h"
 
-#define CXA2161R_MAX_REGS 7
 
 static int debug = AVS_DEBUG;
 
-static unsigned char regs[CXA2161R_MAX_REGS + 1]; /* range 0x01 to 0x07 */
-
-static unsigned char backup_regs[CXA2161R_MAX_REGS + 1];
 /* hold old values for standby */
-static unsigned char t_stnby=0;
-
-
-#define CXA2161R_DATA_SIZE sizeof(regs)
+static unsigned char t_stnby = 0;
 
 /* CXA2161R I2C data structure (write)
 
@@ -277,68 +268,24 @@ typedef struct s_cxa2161r_data
 	unsigned not_used3             : 1;
 } s_cxa2161r_data;
  
-#define CXA2161R_DATA_SIZE1 sizeof(s_cxa2161r_data)
+#define CXA2161R_DATA_SIZE sizeof(s_cxa2161r_data)
 static struct s_cxa2161r_data cxa2161r_data;
 static struct s_cxa2161r_data tmpcxa2161r_data;
 static int cxa2161r_s_old_src;
 
-#define cReg0  0x01
-#define cReg1  0x02
-#define cReg2  0x03
-#define cReg3  0x04
-#define cReg4  0x05
-#define cReg5  0x06
-#define cReg6  0x06
 
 /* hold old values for mute / unmute */
 static unsigned char audio_value; /* audio switch control */
 
-#if 0
-int cxa2161r_set2(struct i2c_client *client)
-{
-	int i;
-	
-	regs[0] = 0x00; //bit staly START
-	regs[1] = 0x1E; //0x00h > 0x06 
-	regs[2] = 0x00; //0x01h > 0x02 
-	regs[3] = 0x51; //0x02h > 0x52
-	regs[4] = 0x55; //0x03h > 0x03 04
-	regs[5] = 0x00; //0x04h > 0x04
-	regs[6] = 0x00; //bit staly END
-
-	dprintk(50, "[CXA2161R] %s > data size is %d\n", __func__, CXA2161R_DATA_SIZE);
-
-	dprintk(20, "[CXA2161R] init regs = { ");
-	for (i = 0; i <= CXA2161R_MAX_REGS; i++)
-	{
-		if (paramDebug > 19)
-		{
-			printk("0x%02x ", regs[i]);
-		}
-	}
-	if (paramDebug > 19)
-	{
-		printk(" }\n");
-	}
-	if (CXA2161R_DATA_SIZE != i2c_master_send(client, regs, CXA2161R_DATA_SIZE))
-	{
-		dprintk(1, "[CXA2161R] %s: error sending data\n", __func__);
-		return -EFAULT;
-	}
-	dprintk(50, "[CXA2161R] %s <\n", __func__);
-	return 0;
-}
-#endif
-
 int cxa2161r_set(struct i2c_client *client)
 {
-	char buffer[CXA2161R_DATA_SIZE1 + 1];
+	char buffer[CXA2161R_DATA_SIZE + 1];
 
 	buffer[0] = 0;
 
-	memcpy(buffer + 1, &cxa2161r_data, CXA2161R_DATA_SIZE1);
+	memcpy(buffer + 1, &cxa2161r_data, CXA2161R_DATA_SIZE);
 
-	if ((CXA2161R_DATA_SIZE1 + 1) != i2c_master_send(client, buffer, CXA2161R_DATA_SIZE1 + 1))
+	if ((CXA2161R_DATA_SIZE + 1) != i2c_master_send(client, buffer, CXA2161R_DATA_SIZE + 1))
 	{
 		return -EFAULT;
 	}
@@ -897,9 +844,8 @@ inline int cxa2161r_get_fblk(void)
 /***************************************************/
 inline int cxa2161r_get_t_sb(void)
 {
-	int c;
-
 	dprintk(50, "[CXA2161R] %s <>\n", __func__);
+
 	switch (cxa2161r_data.fnc_level)
 	{
 		case 0:
@@ -1191,7 +1137,7 @@ int cxa2161r_set_mode(struct i2c_client *client, int val)
  *
 /***************************************************/
 int cxa2161r_src_sel(struct i2c_client *client, int src)
-{  // TODO
+{
 	dprintk(50, "[CXA2161R] %s >\n", __func__);
 
 	if (src == SAA_SRC_ENC)
@@ -1664,7 +1610,7 @@ int cxa2161r_command_kernel(struct i2c_client *client, unsigned int cmd, void *a
 
 int cxa2161r_init(struct i2c_client *client)
 {
-	memset((void*)&cxa2161r_data, 0, CXA2161R_DATA_SIZE1);
+	memset((void*)&cxa2161r_data, 0, CXA2161R_DATA_SIZE);
 
 	dprintk(50, "[CXA2161R] %s >\n", __func__);
 
