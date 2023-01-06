@@ -2,7 +2,11 @@
  *
  * hchs8100_fp.h
  *
- * (c) 2019-2022 Audioniek
+ * (c) 2019-2023 Audioniek
+ *
+ * Some ground work has been done by corev in the past in the form of
+ * a VFD driver for the HS5101 models which share the same front panel
+ * board.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -192,8 +196,8 @@ struct fp_driver
  *
  */ 
 #define RTC_I2CBUS                 2
-// Register definitions
 #define RTC_I2CADDR                0x68
+// Register definitions
 #define DS1307_REG_SECS            0x00  // 00-59
 #define DS1307_BIT_CH              0x80  // in REG_SECS, write as 0 to start oscillator
 #define DS1307_REG_MINS            0x01  // 00-59
@@ -224,7 +228,7 @@ struct fp_driver
 #define WAKEUP_DEEPSTDBY           0xaa55
 #define WAKEUP_INVALID             0x5a5a
 
-#define WAKEUP_TIME                120  // seconds
+#define WAKEUP_TIME                120  // seconds, receiver will wake up this period before the actual wake up time
 
 // wake up mode
 enum  // define wake up mode numbers
@@ -383,6 +387,7 @@ struct saved_data_s
 	unsigned char saved_icon_data[ICON_WIDTH * 5];  // holds the CGRAM bit patterns for icon display during standby
 };
 
+// structs for the threads
 typedef struct
 {
 	int state;
@@ -419,6 +424,7 @@ typedef struct
 	struct semaphore sem;
 } tSpinnerState;
 
+// structure of icon data table
 struct iconToInternal
 {
 	char *name;

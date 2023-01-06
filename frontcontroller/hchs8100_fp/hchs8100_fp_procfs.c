@@ -2,7 +2,11 @@
  * hchs8100_fp_procfs.c
  *
  * (c) 20?? Gustav Gans
- * (c) 2019 Audioniek
+ * (c) 2019-2023 Audioniek
+ *
+ * Some ground work has been done by corev in the past in the form of
+ * a VFD driver for the HS5101 models which share the same front panel
+ * board.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -61,7 +65,7 @@
  *             +--- fan (rw)                Control of fan (on/off)
  *             +--- fan_pwm (rw)            Control of fan speed
  *             +--- oled_brightness (w)     Direct control of display brightness
- *             +--- rtc (rw)                RTC time (UTC, seconds since Unix epoch)) (not yet implemented)
+ *             +--- rtc (rw)                RTC time (UTC, seconds since Unix epoch)
  *             +--- rtc_offset (rw)         RTC offset in seconds from UTC
  *             +--- wakeup_time (rw)        Next wakeup time (absolute, UTC, seconds since Unix epoch)
  *             +--- was_timer_wakeup (r)    Reports timer wakup or not

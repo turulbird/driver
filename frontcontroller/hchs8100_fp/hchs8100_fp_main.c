@@ -2,7 +2,11 @@
  *
  * hchs8100_fp_main.c
  *
- * (c) 2019-2022 Audioniek
+ * (c) 2019-2023 Audioniek
+ *
+ * Some ground work has been done by corev in the past in the form of
+ * a VFD driver for the HS5101 models which share the same front panel
+ * board.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

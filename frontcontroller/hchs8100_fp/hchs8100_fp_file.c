@@ -2,7 +2,11 @@
  *
  * hchs8100_fp_file.c
  *
- * (c) 2019-2022 Audioniek
+ * (c) 2019-2023 Audioniek
+ *
+ * Some ground work has been done by corev in the past in the form of
+ * a VFD driver for the HS5101 models which share the same front panel
+ * board.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,7 +24,7 @@
  *
  *
  * Front panel driver for Homecast HS8100 series;
- * Button, fan, RTC and VFD driver, file part
+ * Button, fan, RTC and VFD driver, file part.
  *
  * The front panel has a 12 character dot matrix VFD with 34 icons
  * driven by a PIO controlled PT6302-007.
@@ -1296,8 +1300,8 @@ int hchs8100_GetWakeUpMode(int *wakeup_reason)
 /******************************************************
  *
  * hchs8100_SetStandby: sets wake up time and then 
- *                    switches receiver to simulated
- *                    standby.
+ *                      switches receiver to simulated
+ *                      standby.
  *
  * Description of simulated standby:
  *
@@ -1312,14 +1316,14 @@ int hchs8100_GetWakeUpMode(int *wakeup_reason)
  *
  * Upon entering this routine the following is done:
  * - The current system time is stored in the DS1307
- *   RTC.
- * - If a power up time at least 5 minutes in the
+ *   RTC, synchronizing it.
+ * - If a power up time at least five minutes in the
  *   future is specified, it is stored as such in the
  *   DS1307 RTC.
  * - A wait loop is started that shows the time and
  *   date without seconds and year on the front panel
  *   about twice each second (in order to show a
- *   blinking icon).
+ *   blinking colon).
  * - The standby icon is switched on.
  * - If a valid wake up time at least five minutes in
  *   the future is stored in the RTC, the timer icon
@@ -1339,23 +1343,23 @@ int hchs8100_GetWakeUpMode(int *wakeup_reason)
  *   the future is stored in the RTC, a second thread
  *   is started running every 29.5 seconds. This thread
  *   will evaluate if the current RTC time has reached
- *   the point in time five minutes before the stored
- *   wakeup time. When this happens, the 100 ms key
- *   scan thread will be stopped and the receiver will
- *   reboot.
+ *   the point in time WAKEUP_TIME seconds before the
+ *   stored wakeup time. When this happens, the 100 ms
+ *   key scan thread will be stopped and the receiver
+ *   will reboot.
  *   This thread will run until the wake up time minus
- *   five minutes is reached or when a power key is
- *   pressed.
+ *   WAKEUP_TIME seconds is reached or when a power key
+ *   is pressed.
  *
  * Note: if the intention is to merely start simulated
  *       deep standby, specify a wake up time in the
  *       far future or in the past. fp_control uses
  *       the first possiblility.
  *
- * TODO: Fix a mysterious bug as this code shows a date
+ * TODO: Fix a mysterious bug as this code shows the date
  *       of yesterday on the front panel display before
  *       noon during simulated deep standby. It cannot be
- *       the RTC, linux or mjd epochs, as these all start
+ *       the RTC, linux or MJD epochs, as these all start
  *       at midnight, only JD has an epoch starting at
  *       noon.
  *
@@ -1412,7 +1416,7 @@ int hchs8100_SetStandby(char *wtime)
 		ret |= ds1307_setalarm(22, 1, 1, 0, 0, 0);  // midnight on 01-01-2022
 		goto standby;
 	}
-	// test if wake up time is at least WAKEUP_TIME seconds
+	// test if wake up time is at least WAKEUP_TIME seconds in the future
 	wakeup_int = calcSetRTCTime(wtime);  // get wake up time as time_t
 #if 0
 	calcGetRTCTime(wakeup_int - WAKEUP_TIME, temp_string);
