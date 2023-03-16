@@ -27,8 +27,8 @@
  * This version only supports a Sharp IX2470VA DVBS(2) tuner. The DVB-T tuner
  * present in TS models is not supported due to:
  * 1. Its driver code is closed source;
- * 2. At the time of writing DVB-T is (being) phased out in many areas in favour
- *    of DVB-T2.
+ * 2. At the time of writing DVB-T is (being) phased out in many areas in
+ *    favour of DVB-T2.
  */
 
 #include <linux/platform_device.h>
@@ -44,19 +44,23 @@ short paramDebug = 0;
 #define TAGDEBUG "[avl2108_platform] "
 
 /*
- * DVB-S(2) Frontend is a Sharp BS2F7VZ7700 (AVL2108 demodulator + IX2470VA tuner),
- * connected as follows:
- * DVBTPWREN#  : PIO2.5 (power enable for DVB-T, active low)
- * DVBS2OE#    : PIO3.3 (?, active low)
- * DVBS2PWREN# : PIO4.6 (power enable for DVB-S(2), active low)
- * Tuner RESET : PIO5.3 (active low)
+ * DVB-S(2) Frontend is a Sharp BS2F7VZ7700 (AVL2108 demodulator +
+ * IX2470VA tuner), with optional LG TDFP-G16?? (Mediatek MT5133AN
+ * DVB-T tuner/demodulator) connected as follows:
+ *
+ *               non-   PRIMA 
+ * DVBTPWREN#  : PIO2.5 PIO10.0 pin 22 of frontend socket (power enable for DVB-T, active low)
+ * DVBS2OE#    : PIO3.3 PIO15.3 (data output enable for DVB-S(2) active low, high is DVB-T enabled)
+ * DVBS2PWREN# : PIO4.6 PIO10.1 pin 21 of frontend socket (power enable for DVB-S(2), active low)
+ * Tuner RESET : PIO5.3 PIO3.2 pin 14 of frontend socket (active low)
  *  
  * LNB power driver is an STM LNBP12, connected as follows:
  *
- * Voltage select (pin 4, 13V = low)           : PIO2.2
- * Enable/power off (pin 5, Enable = high)     : PIO5.2
- * Tone enable (pin 7, high = tone on)         : PIO2.3 (currently not used by driver, initialized to 0)
- * 1V Vout lift (pin 9, LLC input, high = +1V) : PIO2.6
+ *                                               non-   PRIMA
+ * Voltage select (pin 4, 13V = low)           : PIO2.2 PIO10.4 pin 19 of frontend socket
+ * Enable/power off (pin 5, Enable = high)     : PIO5.2 PIO10.2 pin 17 of frontend socket
+ * Tone enable (pin 7, high = tone on)         : PIO2.3 PIO10.5 pin 18 of frontend socket (currently not used by driver, initialized to 0)
+ * 1V Vout lift (pin 9, LLC input, high = +1V) : PIO2.6 PIO10.3 pin 20 of frontend socket
  *
  * Driver currently does not support the DVB-T frontend of TS models
  * and disables it in the driver initialization by powering it off.
@@ -98,9 +102,9 @@ static struct platform_frontend_s avl2108_config =
 			.lnb          = { 5, 2, 1, 2, 2, 0 },  // enable (group, bit, state for on), voltage select (group, bit, state for 13V)
 			.i2c_bus      = 1,
 #elif defined(OPT9600PRIMA)  // TODO: find PIO pins and I2C bus number
-			.tuner_enable = { 5, 3, 1 },  // group, bit, state for active
-			.lnb          = { 5, 2, 1, 2, 2, 0 },  // enable (group, bit, state for on), voltage select (group, bit, state for 13V)
-			.i2c_bus      = 1,
+			.tuner_enable = { 3, 2, 1 },  // group, bit, state for active
+			.lnb          = { 10, 2, 1, 10, 4, 0 },  // enable (group, bit, state for on), voltage select (group, bit, state for 13V)
+			.i2c_bus      = 2,
 #endif
 			.demod_i2c    = 0x0C, // 0x18 >> 1
 //			NOTE: I2C address used for the IX2470VA tuner determines the value of its ADR input

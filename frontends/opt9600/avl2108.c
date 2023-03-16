@@ -5,10 +5,10 @@
  * @author Pedro Aguilar <pedro@duolabs.com>
  *
  * @brief Availink AVL2108 - DVBS/S2 Satellite demod driver with
- *        Sharp IX2470VA tuner connected to I2C repeater as present
- *        in Sharp BS2F7VZ7700 frontend
+ *        Sharp IX2470VA tuner connected to the I2C repeater as present
+ *        in Sharp BS2F7VZ7700 frontend.
  *
- *        Version for Opticum HD (TS) 9600 and HD (TS) 9600 PRIMA series.
+ *        Version for Opticum HD (TS) 9600 and HD (TS) 9600 PRIMA.
  *
  * 	Copyright (C) 2009-2010 Duolabs Spa
  *                2020-2021 adapted by Audioniek for use with Opticum
@@ -32,7 +32,7 @@
  *
  * This version only supports a Sharp IX2470VA DVBS(2) tuner. The DVB-T tuner
  * present in TS models is not supported due to:
- * 1. Its driver code is closed source;
+ * 1. Its driver code for the Mediatek MT5133 is closed source;
  * 2. At the time writing DVB-T is (being) phased out in many areas in favour
  *    of DVB-T2.
  */
@@ -2121,25 +2121,25 @@ void avl2108_register_frontend(struct dvb_adapter *dvb_adap)
 	stpio_set_pin(pin, 0);  // switch DVB-S(2) power on
 //	dprintk(70, "Initialize PIO 3.3 (DVB-S OE#) to 0 (enabled)\n");
 	pin = stpio_request_pin(3, 3, "DVBS2OE#", STPIO_OUT);
-	stpio_set_pin(pin, 0);  // ?
+	stpio_set_pin(pin, 0);  // data output from DVB-S(s) frontend
 #elif defined(OPT9600PRIMA)  // TODO: find PIO pins
 	/* Opticum HD 9600 PRIMA uses three PIO pins to further control the front end:
 	 *
-	 * DVBTPWREN#  : PIO 2.5 (power enable for DVB-T part, active low) -> driver initializes this to high, does not bother any further
-	 * DVBS2OE#    : PIO 3.3 (output enable for parallel stream out) -> driver initializes this to low, does not bother any further
-	 * DVBS2PWREN# : PIO 4.6 (power enable for DVB-S(2) part, active low) -> driver initializes this to low, does not bother any further
+	 * DVBTPWREN#  : PIO 10.0 (power enable for DVB-T part, active low) -> driver initializes this to high, does not bother any further
+	 * DVBS2OE#    : PIO 15.3 (output enable for parallel stream out) -> driver initializes this to low, does not bother any further
+	 * DVBS2PWREN# : PIO 10.1 (power enable for DVB-S(2) part, active low) -> driver initializes this to low, does not bother any further
 	 *
 	 * Net result is that the tuner is always set to DVB-S(2), even on TS models
 	 */
-//	dprintk(70, "Initialize PIO 2.5 (DVB-T power) to 1 (off)\n");
-	pin = stpio_request_pin(2, 5, "DVBT_PWR", STPIO_OUT);
+//	dprintk(70, "Initialize PIO ?.? (DVB-T power) to 1 (off)\n");
+	pin = stpio_request_pin(10, 0, "DVBT_PWR", STPIO_OUT);
 	stpio_set_pin(pin, 1);  // switch DVB-T power off
-//	dprintk(70, "Initialize PIO 4.6 (DVB-S(2) power) to 0 (on)\n");
-	pin = stpio_request_pin(4, 6, "DVBS_PWR", STPIO_OUT);
+//	dprintk(70, "Initialize PIO ?.? (DVB-S(2) power) to 0 (on)\n");
+	pin = stpio_request_pin(10, 1, "DVBS_PWR", STPIO_OUT);
 	stpio_set_pin(pin, 0);  // switch DVB-S(2) power on
-//	dprintk(70, "Initialize PIO 3.3 (DVB-S OE#) to 0 (enabled)\n");
-	pin = stpio_request_pin(3, 3, "DVBS2OE#", STPIO_OUT);
-	stpio_set_pin(pin, 0);  // ?
+//	dprintk(70, "Initialize PIO ?.? (DVB-S OE#) to 0 (enabled)\n");
+	pin = stpio_request_pin(15, 3, "DVBS2OE#", STPIO_OUT);
+	stpio_set_pin(pin, 0);  // data output from DVB-S(s) frontend
 #endif
 	for (i = 0; i < numFrontends; i++)
 	{
