@@ -51,6 +51,8 @@ static struct stmcore_display_pipeline_data platform_data[] = {
 #if defined(CONFIG_SH_ST_MB680)
 #if defined(SAGEMCOM88)
     .hdmi_i2c_adapter_id      = 1,
+#elif defined(OPT9600PRIMA)
+    .hdmi_i2c_adapter_id      = 0,
 #else
     .hdmi_i2c_adapter_id      = 2,
 #endif    
