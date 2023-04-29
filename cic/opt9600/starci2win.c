@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * StarCI2Win driver for TF7700, Fortis, Opticum HD (TS) 9600
+ * StarCI2Win driver for TF7700, Fortis, Opticum HD (TS) 9600 (PRIMA)
  *
  * CI slot driver for the following receivers:
  * Fortis FS9000 (StarCI2Win)
@@ -19,7 +19,7 @@
  * CubeRevo 250HD (StarCI2Win)
  * Topfield TF77X0 HDPVR (StarCI2Win)
  * Opticum HD (TS) 9600 (StarCI)
- * Opticum HD (TS) 9600 Prima (StarCI)
+ * Opticum HD (TS) 9600 Prima (StarCI / Coreriver CIcore10)
  *
  * It should be noted that this driver is used for both the StarCI2Win
  * and the StarCI/CIcore10, although these devices are not entirely
@@ -50,7 +50,8 @@
  * Date     By              Description
  * --------------------------------------------------------------------------
  * 20211008 Audioniek       Removed Fortis HS7110/7119.
- * */
+ *
+ */
 
 #include <linux/version.h>
 #include <linux/module.h>
@@ -118,7 +119,8 @@ struct stpio_pin *module_B_pin = NULL;
 
 /* I2C addressing */
 #if defined(FS9000) \
- || defined(HS8200)
+ || defined(HS8200) \
+ || defined(OPT9600PRIMA)
 #define STARCI2_I2C_BUS 2
 #elif defined(HS7420) \
  ||   defined(HS7429) \
@@ -160,6 +162,7 @@ struct stpio_pin *module_B_pin = NULL;
 #define INT_CONFIG_REG        0x1c
 #define STARCI_CTRL_REG       0x1f
 
+// PIO definitions
 #if defined(OPT9600)
 #define STARCI_INT_PORT      2
 #define STARCI_INT_PIN       4
@@ -168,18 +171,18 @@ struct stpio_pin *module_B_pin = NULL;
 #define STARCI_MODA_PORT     4
 #define STARCI_MODA_PIN      7
 #define STARCI_MODB_PORT     5
-#define STARCI_MODB_PIN      4  /* hardware specific register values */
+#define STARCI_MODB_PIN      4
 #endif
 
-#if defined(OPT9600PRIMA)  // TODO: get values
-#define STARCI_INT_PORT      2
-#define STARCI_INT_PIN       4
-#define STARCI_RESET_PORT    5
-#define STARCI_RESET_PIN     5
-#define STARCI_MODA_PORT     4
-#define STARCI_MODA_PIN      7
-#define STARCI_MODB_PORT     5
-#define STARCI_MODB_PIN      4  /* hardware specific register values */
+#if defined(OPT9600PRIMA)  // TODO: check values
+#define STARCI_INT_PORT      15  // connected to pin 14
+#define STARCI_INT_PIN       4  // OK
+#define STARCI_RESET_PORT    5  // connected to pin 34 (RESET)
+#define STARCI_RESET_PIN     7  // OK
+#define STARCI_MODA_PORT     7  // top slot  // connected to pin 7? (CD2A)
+#define STARCI_MODA_PIN      1
+#define STARCI_MODB_PORT     7  // bottom slot  // connected to pin 6? (CD2B)
+#define STARCI_MODB_PIN      0
 #endif
 
 #if defined(TF7700)
@@ -318,7 +321,8 @@ unsigned long reg_buffer = 0;
  || defined(HS7420) \
  || defined(HS7429) \
  || defined(HS7810A) \
- || defined(HS7819)
+ || defined(HS7819) \
+ || defined(OPT9600PRIMA)
 unsigned long reg_sysconfig = 0;
 #endif
 
@@ -369,21 +373,22 @@ static unsigned short *slot_membase[2];
  || defined(HS7420) \
  || defined(HS7429) \
  || defined(HS7810A) \
- || defined(HS7819)
+ || defined(HS7819) \
+ || defined(OPT9600PRIMA)
 #define EMIConfigBaseAddress 0xfe700000
-#define SysConfigBaseAddress 0xFE001000
+#define SysConfigBaseAddress 0xfe001000
 #else
-#define EMIConfigBaseAddress 0x1A100000
+#define EMIConfigBaseAddress 0x1a100000
 #endif
 
-#define EMIBufferBaseAddress 0x1A100800
+#define EMIBufferBaseAddress 0x1a100800
 
 #define EMIBank0 0x100
 #define EMIBank1 0x140
 #define EMIBank2 0x180
 #define EMIBank3 0x1C0
 #define EMIBank4 0x200
-#define EMIBank5 0x240  /* virtual */
+#define EMIBank5 0x240  // virtual
 
 #define EMIBank0BaseAddress EMIConfigBaseAddress + EMIBank0
 #define EMIBank1BaseAddress EMIConfigBaseAddress + EMIBank1
@@ -400,9 +405,9 @@ static unsigned short *slot_membase[2];
 #define EMI_BANK0_BASE_ADDRESS  0x40000000
 
 /* ConfigBase */
-#define EMI_STA_CFG 0x0010
-#define EMI_STA_LCK 0x0018
-#define EMI_LCK     0x0020
+#define EMI_STA_CFG       0x0010
+#define EMI_STA_LCK       0x0018
+#define EMI_LCK           0x0020
 /* general purpose config register
  * 32Bit, R/W, reset=0x00
  * Bit 31-5 reserved
@@ -411,16 +416,16 @@ static unsigned short *slot_membase[2];
  * Bit 2 = EWAIT_RETIME
  * Bit 1/0 reserved
  */
-#define EMI_GEN_CFG 0x0028
+#define EMI_GEN_CFG       0x0028
 
-#define EMI_FLASH_CLK_SEL 0x0050  /* WO: 00, 10, 01 */
-#define EMI_CLK_EN        0x0068  /* WO: must only be set once !!*/
+#define EMI_FLASH_CLK_SEL 0x0050  // WO: 00, 10, 01
+#define EMI_CLK_EN        0x0068  // WO: must only be set once
 
 /* BankBase */
-#define EMI_CFG_DATA0 0x0000
-#define EMI_CFG_DATA1 0x0008
-#define EMI_CFG_DATA2 0x0010
-#define EMI_CFG_DATA3 0x0018
+#define EMI_CFG_DATA0     0x0000
+#define EMI_CFG_DATA1     0x0008
+#define EMI_CFG_DATA2     0x0010
+#define EMI_CFG_DATA3     0x0018
 
 /* ***************************** */
 /* EMIBufferBaseAddress + Offset */
@@ -572,7 +577,9 @@ void getCiSource(int slot, int* source)
  && !defined(HS7429) \
  && !defined(HS7810A) \
  && !defined(HS7119) \
- && !defined(HS7819)  // These receivers use single mode?
+ && !defined(HS7819) \
+ && !defined(OPT9600) \
+ && !defined(OPT9600PRIMA)  // These receivers use single mode?
 	int val;
 
 	dprintk(150, "%s >\n", __func__);
@@ -693,8 +700,8 @@ void setDestination(struct dvb_ca_state *state, int slot)
 {
 	int result = 0;
 	int loop = 0;
-	int activationMask[2] = {0x02, 0x04};
-	int deactivationMask[2] = {0x04, 0x02};
+	int activationMask[2] = { 0x02, 0x04 };
+	int deactivationMask[2] = { 0x04, 0x02 };
 
 	dprintk(150, "%s > slot = %d\n", __func__, slot);
 
@@ -736,13 +743,13 @@ static int starci_poll_slot_status(struct dvb_ca_en50221 *ca, int slot, int open
 {
 	struct dvb_ca_state *state = ca->data;
 	int    slot_status = 0;
-	int    ctrlReg[2] = {MODA_CTRL_REG, MODB_CTRL_REG};
+	int    ctrlReg[2] = { MODA_CTRL_REG, MODB_CTRL_REG };
 
 	dprintk(150, "%s <\n", __func__);
 	dprintk(20, "%s (slot %d; open = %d) >\n", __func__, slot, open);
 
 	if ((slot < 0)
-	|| (slot > 1))
+	||  (slot > 1))
 	{
 		return 0;
 	}
@@ -849,7 +856,7 @@ static int starci_slot_reset(struct dvb_ca_en50221 *ca, int slot)
 		result = starci_readreg(state, reg[slot]);
 		starci_writereg(state, reg[slot], 0x00);
 
-		dprintk(KERN_ERR "Reset Module %c\n", slot ? 'B' : 'A');
+		dprintk(20, "Reset Module %c\n", slot ? 'B' : 'A');
 #else
 		result = starci_readreg(state, reg[slot]);
 		dprintk(20, "%s: result = 0x%02x\n", __func__, result);
@@ -1054,7 +1061,7 @@ static int starci_slot_ts_enable(struct dvb_ca_en50221 *ca, int slot)
  && !defined(HS7819) \
  && !defined(CUBEBOX) \
  && !defined(OPT9600) \
- || defined(OPT9600PRIMA)
+ && !defined(OPT9600PRIMA)
 	starci_writereg(state, reg[slot], 0x23);  // write CTRL register: MPEG stream enabled, module inserted, auto mode
 #else
 	starci_writereg(state, reg[slot], 0x21);  // write CTRL register: MPEG stream enabled, module inserted, no auto mode
@@ -1097,6 +1104,7 @@ int init_ci_controller(struct dvb_adapter* dvb_adap)
 	if (starci_detect(&ca_state))
 	{
 		dprintk(1, "%s Error: StarCI2Win chip not detected.\n",__func__);
+		return -ENODEV;
 	}
 	memset(&state->ca, 0, sizeof(struct dvb_ca_en50221));
 
@@ -1124,7 +1132,8 @@ int init_ci_controller(struct dvb_adapter* dvb_adap)
  && !defined(HS7420) \
  && !defined(HS7429) \
  && !defined(HS7810A) \
- && !defined(HS7819)
+ && !defined(HS7819) \
+ && !defined(OPT9600PRIMA)
 	reg_buffer = (unsigned long)ioremap(EMIBufferBaseAddress, 0x40);
 #endif
 
@@ -1132,7 +1141,8 @@ int init_ci_controller(struct dvb_adapter* dvb_adap)
  || defined(HS7420) \
  || defined(HS7429) \
  || defined(HS7810A) \
- || defined(HS7819)
+ || defined(HS7819) \
+ || defined(OPT9600PRIMA)
 	reg_sysconfig = (unsigned long)ioremap(SysConfigBaseAddress, 0x200);
 #endif
 
@@ -1142,22 +1152,23 @@ int init_ci_controller(struct dvb_adapter* dvb_adap)
  && !defined(HS7420) \
  && !defined(HS7429) \
  && !defined(HS7810A) \
- && !defined(HS7819)
-	dprintk(20, "ioremap 0x%.8x -> 0x%.8lx\n", EMIBufferBaseAddress, reg_buffer);
+ && !defined(HS7819) \
+ && !defined(OPT9600PRIMA)
+	dprintk(50, "ioremap 0x%.8x -> 0x%.8lx\n", EMIBufferBaseAddress, reg_buffer);
 #endif
 
 #if defined(FS9000)
-	cic_enable_pin = stpio_request_pin (3, 6, "StarCI", STPIO_OUT);
-	stpio_set_pin (cic_enable_pin, 1);
+	cic_enable_pin = stpio_request_pin(3, 6, "StarCI", STPIO_OUT);
+	stpio_set_pin(cic_enable_pin, 1);
 	msleep(250);
-	stpio_set_pin (cic_enable_pin, 0);
+	stpio_set_pin(cic_enable_pin, 0);
 	msleep(250);
 
-	module_A_pin = stpio_request_pin (1, 2, "StarCI_ModA", STPIO_OUT);
-	module_B_pin = stpio_request_pin (2, 7, "StarCI_ModB", STPIO_OUT);
+	module_A_pin = stpio_request_pin(1, 2, "StarCI_ModA", STPIO_OUT);
+	module_B_pin = stpio_request_pin(2, 7, "StarCI_ModB", STPIO_OUT);
 
-	stpio_set_pin (module_A_pin, 0);
-	stpio_set_pin (module_B_pin, 0);
+	stpio_set_pin(module_A_pin, 0);
+	stpio_set_pin(module_B_pin, 0);
 #elif defined(HS8200)
 	/* the magic potion - some clkb settings */
 	ctrl_outl(0x0000c0de, 0xfe000010);
@@ -1167,17 +1178,17 @@ int init_ci_controller(struct dvb_adapter* dvb_adap)
 	/* necessary to access i2c register */
 	ctrl_outl(0x1c, reg_sysconfig + 0x160);
 
-	module_A_pin = stpio_request_pin (11, 0, "StarCI_ModA", STPIO_OUT);
-	module_B_pin = stpio_request_pin (11, 1, "StarCI_ModB", STPIO_OUT);
+	module_A_pin = stpio_request_pin(11, 0, "StarCI_ModA", STPIO_OUT);
+	module_B_pin = stpio_request_pin(11, 1, "StarCI_ModB", STPIO_OUT);
 
-	cic_enable_pin = stpio_request_pin (15, 1, "StarCI", STPIO_OUT);
-	stpio_set_pin (cic_enable_pin, 1);
+	cic_enable_pin = stpio_request_pin(15, 1, "StarCI", STPIO_OUT);
+	stpio_set_pin(cic_enable_pin, 1);
 	msleep(250);
-	stpio_set_pin (cic_enable_pin, 0);
+	stpio_set_pin(cic_enable_pin, 0);
 	msleep(250);
 
-	stpio_set_pin (module_A_pin, 0);
-	stpio_set_pin (module_B_pin, 0);
+	stpio_set_pin(module_A_pin, 0);
+	stpio_set_pin(module_B_pin, 0);
 #elif defined(HS7420) \
  ||   defined(HS7429) \
  ||   defined(HS7810A) \
@@ -1187,33 +1198,33 @@ int init_ci_controller(struct dvb_adapter* dvb_adap)
 	ctrl_outl(0x00000008, 0xfe0000b4);
 	ctrl_outl(0x0000c1a0, 0xfe000010);
 
-	cic_enable_pin = stpio_request_pin (6, 2, "StarCI_RST", STPIO_OUT);
-	stpio_set_pin (cic_enable_pin, 1);
+	cic_enable_pin = stpio_request_pin(6, 2, "StarCI_RST", STPIO_OUT);
+	stpio_set_pin(cic_enable_pin, 1);
 	msleep(250);
-	stpio_set_pin (cic_enable_pin, 0);
+	stpio_set_pin(cic_enable_pin, 0);
 	msleep(250);
-#elif defined(OPT9600) \
- ||   defined(OPT9600PRIMA)
-	cic_enable_pin = stpio_request_pin (STARCI_RESET_PORT, STARCI_RESET_PIN, "StarCI_RST", STPIO_OUT);
+#elif defined(OPT9600)
+	// claim reset pin
+	cic_enable_pin = stpio_request_pin(STARCI_RESET_PORT, STARCI_RESET_PIN, "StarCI_RST", STPIO_OUT);
 	if (cic_enable_pin == NULL)
 	{
 		dprintk(1, "%s: Request for STPIO pin %d.%1d (STARCI_RESET) failed; abort\n", __func__, STARCI_RESET_PORT, STARCI_RESET_PIN);
 		result = 1;
-		goto pio_init_fail3;
+		goto pio_init_fail1;
 	}
-	stpio_set_pin (cic_enable_pin, 1);
+	stpio_set_pin(cic_enable_pin, 1);
 	msleep(250);
-	stpio_set_pin (cic_enable_pin, 0);
+	stpio_set_pin(cic_enable_pin, 0);
 	msleep(250);
 
-	module_A_pin = stpio_request_pin (STARCI_MODA_PORT, STARCI_MODA_PIN, "StarCI_ModA", STPIO_OUT);  // power enable for upper slot
+	module_A_pin = stpio_request_pin(STARCI_MODA_PORT, STARCI_MODA_PIN, "StarCI_ModA", STPIO_OUT);  // power enable for upper slot
 	if (module_A_pin == NULL)
 	{
 		dprintk(1, "%s: Request for STPIO pin %d.%1d (STARCI_MODA) failed; abort\n", __func__, STARCI_MODA_PORT, STARCI_MODA_PIN);
 		result = 1;
 		goto pio_init_fail2;
 	}
-	module_B_pin = stpio_request_pin (STARCI_MODB_PORT, STARCI_MODB_PIN, "StarCI_ModB", STPIO_OUT);  // power enable for lower slot
+	module_B_pin = stpio_request_pin(STARCI_MODB_PORT, STARCI_MODB_PIN, "StarCI_ModB", STPIO_OUT);  // power enable for lower slot
 	if (module_B_pin == NULL)
 	{
 		dprintk(1, "%s: Request for STPIO pin %d.%1d (STARCI_MODB) failed; abort\n", __func__, STARCI_MODB_PORT, STARCI_MODB_PIN);
@@ -1221,11 +1232,52 @@ int init_ci_controller(struct dvb_adapter* dvb_adap)
 		goto pio_init_fail3;
 	}
 	dprintk(20, "%s: Allocating PIO pins successful\n", __func__);
-	stpio_set_pin (module_A_pin, 0);
-	stpio_set_pin (module_B_pin, 0);
+	stpio_set_pin(module_A_pin, 0);
+	stpio_set_pin(module_B_pin, 0);
+#elif defined(OPT9600PRIMA)
+	/* the magic potion - some clkb settings */
+	ctrl_outl(0x0000c0de, 0xfe000010);
+	ctrl_outl(0x00000008, 0xfe0000b4);
+	ctrl_outl(0x0000c1a0, 0xfe000010);
+
+	/* necessary to access i2c register */
+	ctrl_outl(0x1c, reg_sysconfig + 0x160);
+
+	// claim reset pin
+	cic_enable_pin = stpio_request_pin(STARCI_RESET_PORT, STARCI_RESET_PIN, "StarCI_RST", STPIO_OUT);
+	if (cic_enable_pin == NULL)
+	{
+		dprintk(1, "%s: Request for STPIO pin %d.%1d (STARCI_RESET) failed; abort\n", __func__, STARCI_RESET_PORT, STARCI_RESET_PIN);
+		result = 1;
+		goto pio_init_fail1;
+	}
+	// reset the CiMAX
+	stpio_set_pin(cic_enable_pin, 1);
+	msleep(250);
+	stpio_set_pin(cic_enable_pin, 0);
+	msleep(250);
+
+	// TODO: find PIOs
+	module_A_pin = stpio_request_pin(STARCI_MODA_PORT, STARCI_MODA_PIN, "StarCI_ModA", STPIO_OUT);  // power enable for upper slot
+	if (module_A_pin == NULL)
+	{
+		dprintk(1, "%s: Request for STPIO pin %d.%1d (STARCI_MODA) failed; abort\n", __func__, STARCI_MODA_PORT, STARCI_MODA_PIN);
+		result = 1;
+		goto pio_init_fail2;
+	}
+	module_B_pin = stpio_request_pin(STARCI_MODB_PORT, STARCI_MODB_PIN, "StarCI_ModB", STPIO_OUT);  // power enable for lower slot
+	if (module_B_pin == NULL)
+	{
+		dprintk(1, "%s: Request for STPIO pin %d.%1d (STARCI_MODB) failed; abort\n", __func__, STARCI_MODB_PORT, STARCI_MODB_PIN);
+		result = 1;
+		goto pio_init_fail3;
+	}
+	dprintk(20, "%s: Allocating PIO pins successful\n", __func__);
+	stpio_set_pin(module_A_pin, 0);
+	stpio_set_pin(module_B_pin, 0);
 #endif
 
-	/* reset the chip */
+	// SW reset the chip */
 	dprintk(20, "%s: Initializing StarCI2Win\n", __func__);
 	starci_writereg(state, STARCI_CTRL_REG, 0x80);  // set RESET bit
 
@@ -1277,7 +1329,8 @@ int init_ci_controller(struct dvb_adapter* dvb_adap)
  ||   defined(HS7420) \
  ||   defined(HS7429) \
  ||   defined(HS7810A) \
- ||   defined(HS7819)
+ ||   defined(HS7819) \
+ ||   defined(OPT9600PRIMA)
 	ctrl_outl(0x008486d9, reg_config + EMIBank3 + EMI_CFG_DATA0);
 	ctrl_outl(0x9d220000, reg_config + EMIBank3 + EMI_CFG_DATA2);
 	ctrl_outl(0x00000008, reg_config + EMIBank3 + EMI_CFG_DATA3);
@@ -1327,7 +1380,7 @@ int init_ci_controller(struct dvb_adapter* dvb_adap)
  && !defined(HS7810A) \
  && !defined(HS7819) \
  && !defined(OPT9600) \
- || defined(OPT9600PRIMA)
+ && !defined(OPT9600PRIMA)
 	ctrl_outl(0x1, reg_config + EMI_CLK_EN);
 #endif
 
@@ -1344,10 +1397,11 @@ int init_ci_controller(struct dvb_adapter* dvb_adap)
 #elif defined(CUBEBOX)
 	slot_membase[0] = ioremap(0x3000000, 0x1000);
 	printk("membase-0 0x%08x\n", slot_membase[0]);
-#elif defined(OPT9600) \
- || defined(OPT9600PRIMA)
+#elif defined(OPT9600)
 //is [0] = top slot?
 	slot_membase[0] = ioremap(0x3000000, 0x1000);
+#elif defined(OPT9600PRIMA)
+	slot_membase[0] = ioremap(0x06800000, 0x1000);  // TODO: find correct value
 #else
 	slot_membase[0] = ioremap(0xa3000000, 0x1000);
 #endif
@@ -1371,10 +1425,11 @@ int init_ci_controller(struct dvb_adapter* dvb_adap)
 #elif defined(CUBEBOX)
 	slot_membase[1] = ioremap( 0x3010000, 0x1000 );
 	printk("membase-1 0x%08x\n", slot_membase[1]);
-#elif defined(OP9600) \
- || defined(OPT9600PRIMA)
+#elif defined(OP9600)
 //is [1] = bottom slot?
 	slot_membase[1] = ioremap(0x3010000, 0x1000);
+#elif defined(OPT9600PRIMA)
+	slot_membase[1] = ioremap(0x06810000, 0x1000);  // TODO: find correct value
 #else
 	slot_membase[1] = ioremap(0xa3010000, 0x1000);
 #endif
@@ -1392,7 +1447,7 @@ int init_ci_controller(struct dvb_adapter* dvb_adap)
  && !defined(HS7810A) \
  && !defined(HS7819) \
  && !defined(OPT9600) \
- || defined(OPT9600PRIMA)
+ && !defined(OPT9600PRIMA)
 	slot_membase[1] = ioremap(0xa2010000, 0x1000);
 	ctrl_outl(0x1F, reg_config + EMI_LCK);
 #endif
@@ -1433,8 +1488,8 @@ EXPORT_SYMBOL(getCiSource);
 
 int starci2win_init(void)
 {
-		printk("Module starci2win loaded\n");
-		return 0;
+	printk("Module starci2win loaded\n");
+	return 0;
 }
 
 void starci2win_exit(void)
@@ -1453,5 +1508,5 @@ module_param(paramDebug, short, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
 MODULE_PARM_DESC(paramDebug, "Debug Output 0=disabled >0=enabled(debuglevel)");
 
 module_param(extmoduldetect, int, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
-MODULE_PARM_DESC(extmoduldetect, "Ext. Modul detect 0=disabled 1=enabled");
+MODULE_PARM_DESC(extmoduldetect, "Ext. Module detect 0=disabled 1=enabled");
 // vim:ts=4
