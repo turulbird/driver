@@ -80,4 +80,4 @@ extern int socket_register_frontend(struct frontend_s *frontend);
 extern int socket_register_adapter(struct dvb_adapter *_adapter);
 
 #endif
-// vim:ts-4
+// vim:ts=4
