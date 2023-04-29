@@ -57,10 +57,10 @@ MODULE_PARM_DESC(camRouting, "Enable camRouting 0=disabled 1=enabled");
  || defined(HS7119) \
  || defined(HS7819) \
  || defined(ATEMIO520) \
- || defined(OPT9600MINI) \
  || defined(VITAMIN_HD5000) \
  || defined(SAGEMCOM88) \
- || defined(OPT9600PRIMA)
+ || defined(OPT9600PRIMA) \
+ || defined(OPT9600MINI)
 #define TSMergerBaseAddress 0xFE242000
 #define SWTS_BASE_ADDRESS 0xFE900000 // STi7105 STi7111
 #else
@@ -142,10 +142,10 @@ MODULE_PARM_DESC(camRouting, "Enable camRouting 0=disabled 1=enabled");
  || defined(HS7119) \
  || defined(HS7819) \
  || defined(ATEMIO520) \
- || defined(OPT9600MINI) \
  || defined(VITAMIN_HD5000) \
  || defined(SAGEMCOM88) \
- || defined(OPT9600PRIMA)
+ || defined(OPT9600PRIMA) \
+ || defined(OPT9600MINI)
 #define SysConfigBaseAddress 0xFE001000 // STi7105 STi7111
 #else
 #define SysConfigBaseAddress 0x19001000 // STi7100 STi7109
@@ -237,7 +237,7 @@ static const char *fdma_cap_hb[] = { STM_DMA_CAP_HIGH_BW, NULL };
  || defined(IPBOX55) \
  || defined(HL101) \
  || defined(VIP1_V1)
-//injecting stream from DVB-T USB driver to SWTS
+// injecting stream from DVB-T USB driver to SWTS
 void extern_inject_data(u32 *data, off_t size)
 {
 	int blocks = (size + 127) / 128;
@@ -247,8 +247,8 @@ void extern_inject_data(u32 *data, off_t size)
 	int n;
 	int m;
 	u32 *addr = (u32 *)tsm_handle.tsm_swts;
-	//paceSwtsByPti();
-	//dprintk("%s > size = %d, block %d\n", __FUNCTION__, (int) size, blocks);
+	// paceSwtsByPti();
+	// dprintk("%s > size = %d, block %d\n", __FUNCTION__, (int) size, blocks);
 	for (n = 0; n < blocks; n++)
 	{
 		while (!(readl(tsm_handle.tsm_io + SWTS_CFG(0)) & TSM_SWTS_REQ))
@@ -696,7 +696,9 @@ void stm_tsm_init(int use_cimax)
 			struct stpio *stream2_pin = stpio_request_pin(5, 3, "TSinterface2", STPIO_IN);
 		}
 		else
+		{
 			printk("[TSM] skip stpio stuff in reinit\n");
+		}
 #elif defined(HS8200)
 		if (!reinit)
 		{
@@ -904,12 +906,12 @@ void stm_tsm_init(int use_cimax)
  || defined(HS7119) \
  || defined(HS7819) \
  || defined(ATEMIO520) \
- || defined(OPT9600MINI) \
  || defined(IPBOX9900) \
  || defined(ARIVALINK200) \
  || defined(VITAMIN_HD5000) \
  || defined(OPT9600) \
- || defined(OPT9600PRIMA)
+ || defined(OPT9600PRIMA) \
+ || defined(OPT9600MINI)
 		ctrl_outl(0x0, tsm_io + SWTS_CFG(1));
 		ctrl_outl(0x0, tsm_io + SWTS_CFG(2));
 #endif
@@ -930,7 +932,7 @@ void stm_tsm_init(int use_cimax)
 		ctrl_outl(0x1300, tsm_io + TSM_STREAM4_CFG); //256kb (4*64)
 		ctrl_outl(0x1700, tsm_io + TSM_STREAM5_CFG); //192kb (3*64)
 		ctrl_outl(0x1a00, tsm_io + TSM_STREAM6_CFG); //384kb (5*64)
-#elif defined (UFS912) \
+#elif defined(UFS912) \
  ||   defined(HS7420) \
  ||   defined(HS7429) \
  ||   defined(HS7810A) \
@@ -1165,9 +1167,9 @@ void stm_tsm_init(int use_cimax)
  ||   defined(HS7119) \
  ||   defined(HS7819) \
  ||   defined(ATEMIO520) \
- ||   defined(OPT9600MINI) \
  ||   defined(VITAMIN_HD5000) \
- ||   defined(OPT9600PRIMA)
+ ||   defined(OPT9600PRIMA) \
+ ||   defined(OPT9600MINI)
 		ctrl_outl(0x8f0000e, tsm_io + SWTS_CFG(0));
 		ctrl_outl(0x8000000, tsm_io + SWTS_CFG(1));
 		ctrl_outl(0x8000000, tsm_io + SWTS_CFG(2));
@@ -1213,8 +1215,8 @@ void stm_tsm_init(int use_cimax)
  && !defined(ARIVALINK200) \
  && !defined(VITAMIN_HD5000) \
  && !defined(OPT9600) \
- && !defined(OPT9600MINI) \
  && !defined(OPT9600PRIMA) \
+ && !defined(OPT9600MINI) \
  && !defined(HCHS8100)
 		/* UFS910 stream configuration */
 		/* route stream 2 to PTI */
@@ -1505,9 +1507,9 @@ void stm_tsm_init(int use_cimax)
  || defined(HS7119) \
  || defined(HS7819) \
  || defined(ATEMIO520) \
- || defined(OPT9600MINI) \
  || defined(VITAMIN_HD5000) \
- || defined(OPT9600PRIMA)
+ || defined(OPT9600PRIMA) \
+ || defined(OPT9600MINI)
 		tsm_handle.fdma_reqline = 31;
 #elif defined(UFS910)
 		//ufs910 use dma request id 30 for swts, do'nt know what other boxes use

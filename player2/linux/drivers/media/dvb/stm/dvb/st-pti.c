@@ -534,11 +534,10 @@ void ptiInit(struct DeviceContext_s *pContext)
 		tuner = TWIN;
 	}
 #endif
-	printk("%s context = %p, demux = %p\n", __func__,
-	       pContext, &pContext->DvbDemux);
+	printk("%s [st-pti] context = %p, demux = %p\n", __func__, pContext, &pContext->DvbDemux);
 	if (pContext->pPtiSession != NULL)
 	{
-		printk("PTI ERROR: attempted to initialize a device context with an existing session\n");
+		printk("[st-pti] PTI ERROR: attempted to initialize a device context with an existing session\n");
 		return;
 	}
 	if (!ptiInitialized)
@@ -552,7 +551,10 @@ void ptiInit(struct DeviceContext_s *pContext)
 		/*
 		 * Setup the transport stream merger based on the configuration
 		 */
+		printk("%s: [st-pti] stm_tsm_init\n", __func__);
 		stm_tsm_init(/*config */ 1);
+		printk("%s: [st-pti] pti_hal_init\n", __func__);
+// Twin tuner models
 #if defined(ARIVALINK200) \
  || defined(TF7700) \
  || defined(UFS922) \
@@ -578,12 +580,15 @@ void ptiInit(struct DeviceContext_s *pContext)
  || defined(OPT9600PRIMA) \
  || defined(HCHS8100)
 		pti_hal_init(&pti, &pContext->DvbDemux, demultiplexDvbPackets, 2);
+// Triple tuner models
 #elif defined(SPARK7162) \
  ||   defined(PACE7241)
 		pti_hal_init(&pti, &pContext->DvbDemux, demultiplexDvbPackets, 3);
+// All others: single tuner models
 #else
 		pti_hal_init(&pti, &pContext->DvbDemux, demultiplexDvbPackets, 1);
 #endif
+		printk("%s: [st-pti] register frontend\n", __func__);
 #if defined(FS9000) \
  || defined(UFS912) \
  || defined(SPARK) \
@@ -652,15 +657,18 @@ void ptiInit(struct DeviceContext_s *pContext)
 	pSession->descrambler = pti_hal_get_new_descrambler(pSession->session);
 	pSession->descramblers[0] = pSession->descrambler;
 	for (i = 1; i < NUMBER_OF_DESCRAMBLERS - 1; i++)
+	{
 		pSession->descramblers[i] = pti_hal_get_new_descrambler(pSession->session);
+	}
 	printk("Descrambler Handler = %d\n", pSession->descrambler);
 	for (i = 0; i < 8192; i++)
+	{
 		pSession->descramblerForPid[i] = 0;
+	}
 	pContext->pPtiSession = pSession;
 	sessionCounter++;
 	return;
 }
-
 EXPORT_SYMBOL(ptiInit);
 
 int SetSource(struct dmx_demux *demux, const dmx_source_t *src)
