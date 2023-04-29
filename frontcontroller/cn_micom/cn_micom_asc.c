@@ -43,8 +43,20 @@
 
 //-------------------------------------
 
+#if defined(ATEMIO520) \
+ || defined(SOGNO800)
 unsigned int InterruptLine = 122;
-unsigned int ASCXBaseAddress = ASC1BaseAddress;  // ASC1 is FP UART  // TODO: check Prima models
+unsigned int ASCXBaseAddress = ASC1BaseAddress;  // ASC1 is FP UART
+#elif defined(OPT9600PRIMA)
+unsigned int InterruptLine = 120;
+unsigned int ASCXBaseAddress = ASC3BaseAddress;  // ASC3 is FP UART
+#elif defined(OPT9600MINI)
+unsigned int InterruptLine = 122;
+unsigned int ASCXBaseAddress = ASC1BaseAddress;  // ASC1 is FP UART  // TODO: CHECK
+#else
+unsigned int InterruptLine = 122;
+unsigned int ASCXBaseAddress = ASC1BaseAddress;  // default: ASC1 is FP UART
+#endif
 
 //-------------------------------------
 

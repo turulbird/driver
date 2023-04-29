@@ -2,13 +2,19 @@
 #define _asc_123
 
 /* ************************************************** */
-/* Access ASC1; from u-boot; copied from TF7700 ;-)   */
+/* Access ASC; from u-boot; copied from TF7700 ;-)    */
 /* ************************************************** */
 
 #define ASC0BaseAddress  0xfd030000
-#define ASC1BaseAddress  0xfd031000  // FP UART on Atemio 520HD
+#define ASC1BaseAddress  0xfd031000  // FP UART on Atemio 520HD / Sogno HD 800 V3 / Opticum HD 9600 MINI?
 #define ASC2BaseAddress  0xfd032000
+#if defined(ATEMIO520) \
+ || defined(SOGNO800) \
+ || defined(OPT9600MINI)
 #define ASC3BaseAddress  0xfd034000
+#elif defined(OPT9600PRIMA)
+#define ASC3BaseAddress  0xfd033000  // FP UART on Opticum HD 9600 PRIMA
+#endif
 
 #define ASC_BAUDRATE     0x000
 #define ASC_TX_BUFF      0x004

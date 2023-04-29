@@ -10,8 +10,8 @@
  * Atemio AM 520 HD (Miniline B)
  * Sogno HD 800-V3 (Miniline B)
  * Opticum HD 9600 Mini (Miniline A, not tested)
- * Opticum HD 9600 PRIMA (?, not tested)
- * Opticum HD TS 9600 PRIMA (?, not tested)
+ * Opticum HD 9600 PRIMA (Flexline, not tested)
+ * Opticum HD TS 9600 PRIMA (Flexline, not tested)
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -42,6 +42,12 @@
  *                          cn_micom_file.c.
  * 20211031 Audioniek       Add processing of FP_RSP_PRIVATE preamble.
  * 20211031 Audioniek       Fix bug in processing of FP_RSP_PRIVATE.
+ * 20230306 Audioniek       Instead of processing "preambles" just give the
+ *                          front processor time to send the complete repsonse
+ *                          by waiting a bit -> the "preambles" no longer
+ *                          appear.
+ * 20230419 Audioniek       FP_RSP_PRIVATE must be acknowledged with
+ *                          FP_RSP_RESPONSE.
  *
  ****************************************************************************/
 
@@ -68,12 +74,14 @@
 
 //----------------------------------------------
 
+// module parameter defaults
 short paramDebug = 0;
-int dataflag = 0;
 int waitTime = 1000;
+char *gmt_offset = "3600";  // GMT offset is plus one hour (CET) as default
+
+int dataflag = 0;
 static unsigned char expectEventData = 0;
 static unsigned char expectEventId   = 1;
-char *gmt_offset = "3600";  // GMT offset is plus one hour as default
 int rtc_offset;
 
 #define ACK_WAIT_TIME msecs_to_jiffies(1000)
@@ -92,7 +100,6 @@ static wait_queue_head_t wq;
 static wait_queue_head_t rx_wq;
 static wait_queue_head_t ack_wq;
 static int dataReady = 0;
-static int preambleID;
 
 //----------------------------------------------
 
@@ -328,6 +335,7 @@ void dumpData(void)
 
 	if (len == 0)
 	{
+		dprintk(0, "Nothing received\n");
 		return;
 	}
 	dprintk(0, "Dumping %d received bytes:\n", len);
@@ -375,36 +383,33 @@ void dumpValues(void)
  * occur each time the front processor sends data.
  *
  * In the CreNova implemention the front processor is
- * initialised by sending it a boot command (eb 01 01).
- * The front processor will respond by sending up to six
+ * initialized by sending it a boot command (eb 01 01).
+ * The front processor will respond by sending up to three
  * responses:
- * 1. FP_RSP_VERSION with a length of 2. This signals the
- *    next response will be FP_RSP_VERSION as well, but
- *    that response will have version data and is to be
- *    processed by this routine.
- * 2. FP_RSP_VERSION with a length of 6. The response
+ * 1. FP_RSP_VERSION with a length of 6. The response
  *    has the version data and must be acknowledged with
  *    a FP_CMD_RESPONSE command. This action will trigger:
- * 3. FP_RSP_TIME with a length of 2. This signals the
- *    next response will be FP_RSP_TIME as well, but
- *    that response will have time data and is to be
- *    processed by this routine.
- * 4. FP_RSP_TIME with a length of 11. The response has
+ * 2. FP_RSP_TIME with a length of 11. The response has
  *    the time/date data and must be acknowledged with
  *    a FP_CMD_RESPONSE command. This action will trigger:
- * 5. FP_RSP_PRIVATE with a length of 2. This signals the
- *    next response will be FP_RSP_PRIVATE as well, but
- *    that response will have private data and is to be
- *    processed by this routine.
- * 6. FP_RSP_PRIVATE with a length of 10. The response has
+ * 3. FP_RSP_PRIVATE with a length of 10. The response has
  *    the private data and must not be acknowledged with
  *    FP_CMD_RESPONSE command. Processing this response
  *    finishes processing the boot command.
- * The initial responses with a length of 2 are called
- * preambles in the code below. They are counted and
- * their correct identity is checked for upon reception
- * of the next response in the bootsequence.
  *
+ * The front processor may send two other responses:
+ * 4. FP_RSP_RESPONSE is sent after completion of the
+ *    following commands:
+ *    - FP_CMD_KEYCODE;
+ *    - FP_CMD_DISPLAY;
+ *    - FP_CMD_STANDBY;
+ *    - FP_CMD_SETTIME
+ *    and signals the command sent completed
+ *    successfully.
+ * 5. The last response (FP_RSP_KEYIN) is not triggered
+ *    by the invocation of a command but is sent on
+ *    pressing a front panel key or the resption of a
+ *    remote control key code.
  */
 static void processResponse(void)
 {
@@ -414,41 +419,20 @@ static void processResponse(void)
 	struct tm *sTime;
 
 	dprintk(150, "%s >\n", __func__);
-//	dumpData();
-//	if (preamblecount == 0)
-//	{
-		len = getLen(-1);
-//	}
-//	else
-//	{
-//		len = getLen(preambleLength + 2);
-//	}
+#if 0
+	dumpData();  // this process consumes enough time to make the delay below superfluous
+#else
+	/* Probably the interrupt causing this routine to be called is generated
+	 * on the arrival if the 1st response byte, but at that point in time
+	 * usually only two bytes have been completely received, but the complete
+	 * reponse can be up to 11 bytes long. So try and delay a bit. */
+	udelay(4000);
+#endif
+	len = getLen(-1);
 
-	if (len == 2 && preamblecount)  // if preamble
-	{
-		preamblecount++;  // count preambles
-		preambleID = RCVBuffer[RCVBufferEnd];
-		if (preamblecount > 4)  // if already 3 preambles processed
-		{
-			dprintk(1, "%s Error: too many preambles received (ID = 0x%02x)\n", __func__, preambleID);
-			preamblecount = 0;
-			return;
-		}
-
-		if (RCVBufferEnd != BUFFERSIZE)
-		{
-			preambleLength = RCVBuffer[RCVBufferEnd + 1];
-		}
-		else
-		{
-			RCVBuffer[0];
-		}
-		dprintk(70, "Preamble (0x%02x) received, count = %d\n", preambleID, preamblecount - 1);
-		return;
-	}
 	if ((len < cMinimumSize) && RCVBuffer[RCVBufferEnd] != FP_RSP_RESPONSE)
 	{
-		dprintk(1, "%s: Error: packet too small (rcvLen = %d (< %d))\n", __func__, len, cMinimumSize);
+		dprintk(1, "%s: ERROR: Packet too small (rcvLen = %d (< %d))\n", __func__, len, cMinimumSize);
 		return;
 	}
 //	dumpData();
@@ -459,13 +443,13 @@ static void processResponse(void)
 		expectEventId = 0;
 	}
 
-	dprintk(100, "event 0x%02x %d %d\n", expectEventData, RCVBufferStart, RCVBufferEnd);
+	dprintk(100, "Event 0x%02x start: %d end: %d\n", expectEventData, RCVBufferStart, RCVBufferEnd);
 
 	if (expectEventData)
 	{
 		switch (expectEventData)
 		{
-			case FP_RSP_KEYIN:  // handles both front panel keys as well as remote control
+			case FP_RSP_KEYIN:  // 0xF1, handles both front panel keys as well as remote control
 			{
 				len = getLen(cPackageSizeKeyIn);
 
@@ -478,7 +462,7 @@ static void processResponse(void)
 				{
 					goto out_switch;
 				}
-				dprintk(50, "FP_RSP_KEYIN processed\n");
+//				dprintk(50, "FP_RSP_KEYIN processed\n");
 
 				if (paramDebug >= 150)
 				{
@@ -496,14 +480,14 @@ static void processResponse(void)
 
 					KeyBufferStart = (KeyBufferStart + 1) % BUFFERSIZE;
 				}
-				//printk("FP_RSP_KEYIN complete - %02x\n", RCVBuffer[(RCVBufferEnd + 2) % BUFFERSIZE]);
+				dprintk(100, "FP_RSP_KEYIN complete - %02x\n", RCVBuffer[(RCVBufferEnd + 2) % BUFFERSIZE]);
 
 				wake_up_interruptible(&wq);
 
 				RCVBufferEnd = (RCVBufferEnd + cPackageSizeKeyIn) % BUFFERSIZE;
 				break;
 			}
-			case FP_RSP_RESPONSE:
+			case FP_RSP_RESPONSE:  // 0xC5
 			{
 				dprintk(70, "FP_RSP_RESPONSE (0x%02x) received\n", FP_RSP_RESPONSE);
 				len = getLen(cGetResponseSize);
@@ -521,7 +505,7 @@ static void processResponse(void)
 				if (rsp_cksum != ioctl_data[_VAL])
 				{
 					dprintk(1, "%s: Checksum error in FP_RSP_RESPONSE: 0x%02x (should be 0x%02x)\n", __func__, ioctl_data[_VAL], rsp_cksum);
-//					goto out_switch;
+					goto out_switch;
 				}
 				dprintk(100, "RESPONSE: ack received\n");
 				errorOccured = 0;
@@ -529,15 +513,9 @@ static void processResponse(void)
 				RCVBufferEnd = (RCVBufferEnd + cGetResponseSize) % BUFFERSIZE;
 				break;
 			}
-			case FP_RSP_VERSION:
+			case FP_RSP_VERSION:  // 0xDB
 			{
 				len = getLen(cGetVersionSize);
-				if (preamblecount && (preambleID != FP_RSP_VERSION))
-				{
-					dprintk(1, "%s Error: wrong Boot response 0x%02x received\n", __func__, preambleID);
-					break;
-				}
-
 				if (len == 0)
 				{
 					goto out_switch;
@@ -547,7 +525,7 @@ static void processResponse(void)
 				{
 					goto out_switch;
 				}
-				dprintk(70, "FP_RSP_VERSION (0x%02x) received\n", FP_RSP_VERSION);
+				dprintk(100, "FP_RSP_VERSION (0x%02x) received\n", FP_RSP_VERSION);
 				if (eb_flag == 0)  // if version answer on boot
 				{
 					handleCopyData(len, 1);  // send ACK
@@ -557,7 +535,7 @@ static void processResponse(void)
 				else
 				{
 					handleCopyData(len, 0);
-					dprintk(100, "FP_RSP_VERSION (0x%02x) processed\n", FP_RSP_VERSION);
+//					dprintk(100, "FP_RSP_VERSION (0x%02x) processed\n", FP_RSP_VERSION);
 				}
 				errorOccured = 0;
 				ack_sem_up();
@@ -566,12 +544,6 @@ static void processResponse(void)
 			}
 			case FP_RSP_TIME:
 			{
-				if (preamblecount
-				&&  preambleID != FP_RSP_TIME)
-				{
-					dprintk(1, "%s Error: wrong Boot response 0x%02x received\n", __func__, preambleID);
-					break;
-				}
 				len = getLen(cGetTimeSize);
 
 				if (len == 0)
@@ -582,8 +554,8 @@ static void processResponse(void)
 				{
 					goto out_switch;
 				}
-				dprintk(70, "FP_RSP_TIME (0x%02x) received\n", FP_RSP_TIME);
-				if (eb_flag == 1)
+				dprintk(50, "FP_RSP_TIME (0x%02x) received\n", FP_RSP_TIME);
+				if (eb_flag == 1)  // FP_RSP_VERSION must have been processed
 				{
 					handleCopyData(len, 1);  // get data and send ACK
 					memcpy(mcom_time, ioctl_data + _VAL, ioctl_data[_LEN]);
@@ -591,9 +563,11 @@ static void processResponse(void)
 					// TODO: this will fail when system time is changed!
 					tp = current_kernel_time();
 					mcom_time_set_time = tp.tv_sec;
+#if 0
 					sTime = gmtime(mcom_time_set_time);
-					dprintk(70, "mcom_time_set_time = %02d:%02d:%02d %02d-%02d-%04d\n", sTime->tm_hour, sTime->tm_min, sTime->tm_sec,
+					dprintk(20, "System time is %02d:%02d:%02d %02d-%02d-%04d\n", sTime->tm_hour, sTime->tm_min, sTime->tm_sec,
 						sTime->tm_mday, sTime->tm_mon + 1, sTime->tm_year + 1900);
+#endif
 					eb_flag++;  // flag 2nd response received
 				}
 				else
@@ -610,13 +584,6 @@ static void processResponse(void)
 			case FP_RSP_PRIVATE:
 			{
 				len = getLen(cGetPrivateSize);
-				if (preamblecount == 3
-				&&  preambleID != FP_RSP_PRIVATE
-				&&  eb_flag == 2)
-				{
-					dprintk(1, "%s Error: wrong Boot response 0x%02x received\n", __func__, preambleID);
-					break;
-				}
 				if (len == 0)
 				{
 					goto out_switch;
@@ -625,11 +592,10 @@ static void processResponse(void)
 				{
 					goto out_switch;
 				}
-				dprintk(70, "FP_RSP_PRIVATE (0x%02x) received\n", FP_RSP_PRIVATE);
-				if (preamblecount)
+				dprintk(20, "FP_RSP_PRIVATE (0x%02x) received\n", FP_RSP_PRIVATE);
+				if (eb_flag == 2)  // FP_RSP_TIME must have been processed
 				{
-					handleCopyData(len, 0);
-					preamblecount = 0;
+					handleCopyData(len, 1);
 					memcpy(mcom_private, ioctl_data + _VAL, ioctl_data[_LEN]);
 					eb_flag++;  // flag 3rd response received
 				}
@@ -640,12 +606,11 @@ static void processResponse(void)
 				errorOccured = 0;
 				ack_sem_up();
 				RCVBufferEnd = (RCVBufferEnd + cGetPrivateSize) % BUFFERSIZE;
-				preamblecount = 0;  // flag BOOT command responses finished
 				break;
 			}
 			default:  // Ignore unknown response
 			{
-				dprintk(1, "Unknown FP response %02x received, discarding\n", expectEventData);
+				dprintk(1, "Unknown FP response %02x received, discarding it.\n", expectEventData);
 				dprintk(1, "start %d end %d\n",  RCVBufferStart,  RCVBufferEnd);
 				dumpData();
 
@@ -681,7 +646,7 @@ static irqreturn_t FP_interrupt(int irq, void *dev_id)
 //        printk("%02x ", RCVBuffer [RCVBufferStart]);
 		RCVBufferStart = (RCVBufferStart + 1) % BUFFERSIZE;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,32)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 32)
 		// We are too fast, let us make a break
 		udelay(1);
 #endif
@@ -705,7 +670,7 @@ static irqreturn_t FP_interrupt(int irq, void *dev_id)
 		*ASC_X_TX_BUFF = OutBuffer[OutBufferEnd];
 		OutBufferEnd = (OutBufferEnd + 1) % BUFFERSIZE;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,32)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 32)
 		// We are too fast, let us make a break
 		udelay(1);
 #endif

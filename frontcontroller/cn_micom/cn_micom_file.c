@@ -10,8 +10,9 @@
  * Atemio AM 520 HD (Miniline B)
  * Sogno HD 800-V3 (Miniline B)
  * Opticum HD 9600 Mini (Miniline A)
- * Opticum HD 9600 PRIMA (?)
- * Opticum HD TS 9600 PRIMA (?)
+ * Opticum HD 9600 PRIMA (Flexline)
+ * Opticum HD TS 9600 PRIMA (Flexline)
+ * Xsarius Combo HD (Ecoline)
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -43,6 +44,11 @@
  *                          timer to provide a sensible wake up reason.
  * 20211101 Audioniek       Fix crash in UTF8 conversion.
  * 20211107 Audioniek       Fix errors in wakeup time calculation.
+ * 20230309 Audioniek       VFD characterset now full ASCII with option to
+ *                          replace lower case letters with upper case due to
+ *                          the fact that the centre vertical segment can only
+ *                          be controlled as a pair.
+ * 20230419 Audioniek       Set remote control code in starup sequence.
  *
  ****************************************************************************/
 
@@ -80,7 +86,7 @@ int              errorOccured = 0;
 extern int       dataflag;
 unsigned char    ioctl_data[12];
 int              eb_flag = 0;  // response counter for boot command
-int              preamblecount;  // preamble counter for boot command
+//int              preamblecount;  // preamble counter for boot command
 unsigned char    rsp_cksum;  // checksum over last command sent
 
 tFrontPanelOpen  FrontPanelOpen [LASTMINOR];
@@ -100,7 +106,11 @@ unsigned char    mcom_version[4];  // FP software version
 unsigned char    mcom_private[8];
 unsigned char    *wakeupName[3] = { "power on", "from deep standby", "timer" };
 int              wakeupreason = 0;  // default to power on
+#if defined(OPT9600PRIMA)
+int              displayType = _VFD;  // default to VFD display
+#else
 int              displayType = _7SEG;  // default to LED display
+#endif
 
 struct saved_data_s lastdata;
 
@@ -148,7 +158,7 @@ static char *mcom_ascii_char_7seg[] =
 	_7SEG_NULL,   // 0x1e, unprintable control character
 	_7SEG_NULL,   // 0x1f, unprintable control character
 
-	_7SEG_NULL,   // 0x20, <space>
+	_7SEG_ASC20,  // 0x20, <space>
 	_7SEG_ASC21,  // 0x21, !
 	_7SEG_ASC22,  // 0x22, "
 	_7SEG_ASC23,  // 0x23, #
@@ -293,107 +303,107 @@ static char *mcom_ascii_char_14seg[] =
 	_14SEG_NULL,  // 0x1e, unprintable control character
 	_14SEG_NULL,  // 0x1f, unprintable control character
 
-	_14SEG_NULL,  // 0x20, <space>
-	_14SEG_NULL,  // 0x21, !
-	_14SEG_NULL,  // 0x22, "
-	_14SEG_NULL,  // 0x23, #
-	_14SEG_NULL,  // 0x24, $
-	_14SEG_NULL,  // 0x25, %
-	_14SEG_NULL,  // 0x26, &
-	_14SEG_NULL,  // 0x27, '
-	_14SEG_NULL,  // 0x28, (
-	_14SEG_NULL,  // 0x29, )
-	_14SEG_NULL,  // 0x2a, *
-	_14SEG_NULL,  // 0x2b, +
-	_14SEG_NULL,  // 0x2c, ,
-	_14SEG_NULL,  // 0x2d, -
-	_14SEG_NULL,  // 0x2e, .
-	_14SEG_NULL,  // 0x2f, /
+	_14SEG_ASC20,  // 0x20, <space>
+	_14SEG_ASC21,  // 0x21, !
+	_14SEG_ASC22,  // 0x22, "
+	_14SEG_ASC23,  // 0x23, #
+	_14SEG_ASC24,  // 0x24, $
+	_14SEG_ASC25,  // 0x25, %
+	_14SEG_ASC26,  // 0x26, &
+	_14SEG_ASC27,  // 0x27, '
+	_14SEG_ASC28,  // 0x28, (
+	_14SEG_ASC29,  // 0x29, )
+	_14SEG_ASC2A,  // 0x2a, *
+	_14SEG_ASC2B,  // 0x2b, +
+	_14SEG_ASC2C,  // 0x2c, ,
+	_14SEG_ASC2D,  // 0x2d, -
+	_14SEG_ASC2E,  // 0x2e, .
+	_14SEG_ASC2F,  // 0x2f, /
 
-	_14SEG_NUM_0, // 0x30, 0
-	_14SEG_NUM_1, // 0x31, 1
-	_14SEG_NUM_2, // 0x32, 2
-	_14SEG_NUM_3, // 0x33, 3
-	_14SEG_NUM_4, // 0x34, 4
-	_14SEG_NUM_5, // 0x35, 5
-	_14SEG_NUM_6, // 0x36, 6
-	_14SEG_NUM_7, // 0x37, 7
-	_14SEG_NUM_8, // 0x38, 8
-	_14SEG_NUM_9, // 0x39, 9
-	_14SEG_NULL,  // 0x3a, :
-	_14SEG_NULL,  // 0x3b, ;
-	_14SEG_NULL,  // 0x3c, <
-	_14SEG_NULL,  // 0x3d, =
-	_14SEG_NULL,  // 0x3e, >
-	_14SEG_NULL,  // 0x3f, ?
+	_14SEG_NUM_0,  // 0x30, 0
+	_14SEG_NUM_1,  // 0x31, 1
+	_14SEG_NUM_2,  // 0x32, 2
+	_14SEG_NUM_3,  // 0x33, 3
+	_14SEG_NUM_4,  // 0x34, 4
+	_14SEG_NUM_5,  // 0x35, 5
+	_14SEG_NUM_6,  // 0x36, 6
+	_14SEG_NUM_7,  // 0x37, 7
+	_14SEG_NUM_8,  // 0x38, 8
+	_14SEG_NUM_9,  // 0x39, 9
+	_14SEG_ASC3A,  // 0x3a, :
+	_14SEG_ASC3B,  // 0x3b, ;
+	_14SEG_ASC3C,  // 0x3c, <
+	_14SEG_ASC3D,  // 0x3d, =
+	_14SEG_ASC3E,  // 0x3e, >
+	_14SEG_ASC3F,  // 0x3f, ?
 
-	_14SEG_NULL,  // 0x40, @
-	_14SEG_CH_A,  // 0x41, A
-	_14SEG_CH_B,  // 0x42, B
-	_14SEG_CH_C,  // 0x43, C
-	_14SEG_CH_D,  // 0x44, D
-	_14SEG_CH_E,  // 0x45, E
-	_14SEG_CH_F,  // 0x46, F
-	_14SEG_CH_G,  // 0x47, G
-	_14SEG_CH_H,  // 0x48, H
-	_14SEG_CH_I,  // 0x49, I
-	_14SEG_CH_J,  // 0x4a, J
-	_14SEG_CH_K,  // 0x4b, K
-	_14SEG_CH_L,  // 0x4c, L
-	_14SEG_CH_M,  // 0x4d, M
-	_14SEG_CH_N,  // 0x4e, N
-	_14SEG_CH_O,  // 0x4f, O
+	_14SEG_ASC40,  // 0x40, @
+	_14SEG_CH_A,   // 0x41, A
+	_14SEG_CH_B,   // 0x42, B
+	_14SEG_CH_C,   // 0x43, C
+	_14SEG_CH_D,   // 0x44, D
+	_14SEG_CH_E,   // 0x45, E
+	_14SEG_CH_F,   // 0x46, F
+	_14SEG_CH_G,   // 0x47, G
+	_14SEG_CH_H,   // 0x48, H
+	_14SEG_CH_I,   // 0x49, I
+	_14SEG_CH_J,   // 0x4a, J
+	_14SEG_CH_K,   // 0x4b, K
+	_14SEG_CH_L,   // 0x4c, L
+	_14SEG_CH_M,   // 0x4d, M
+	_14SEG_CH_N,   // 0x4e, N
+	_14SEG_CH_O,   // 0x4f, O
 
-	_14SEG_CH_P,  // 0x50, P
-	_14SEG_CH_Q,  // 0x51, Q
-	_14SEG_CH_R,  // 0x52, R
-	_14SEG_CH_S,  // 0x53, S
-	_14SEG_CH_T,  // 0x54, T
-	_14SEG_CH_U,  // 0x55, U
-	_14SEG_CH_V,  // 0x56, V
-	_14SEG_CH_W,  // 0x57, W
-	_14SEG_CH_X,  // 0x58, X
-	_14SEG_CH_Y,  // 0x59, Y
-	_14SEG_CH_Z,  // 0x5a, Z
-	_14SEG_NULL,  // 0x5b  [
-	_14SEG_NULL,  // 0x5c, |
-	_14SEG_NULL,  // 0x5d, ]
-	_14SEG_NULL,  // 0x5e, ^
-	_14SEG_NULL,  // 0x5f, _
+	_14SEG_CH_P,   // 0x50, P
+	_14SEG_CH_Q,   // 0x51, Q
+	_14SEG_CH_R,   // 0x52, R
+	_14SEG_CH_S,   // 0x53, S
+	_14SEG_CH_T,   // 0x54, T
+	_14SEG_CH_U,   // 0x55, U
+	_14SEG_CH_V,   // 0x56, V
+	_14SEG_CH_W,   // 0x57, W
+	_14SEG_CH_X,   // 0x58, X
+	_14SEG_CH_Y,   // 0x59, Y
+	_14SEG_CH_Z,   // 0x5a, Z
+	_14SEG_ASC5B,  // 0x5b  [
+	_14SEG_ASC5C,  // 0x5c, |
+	_14SEG_ASC5D,  // 0x5d, ]
+	_14SEG_ASC5E,  // 0x5e, ^
+	_14SEG_ASC5F,  // 0x5f, _
 
-	_14SEG_NULL,  // 0x60, `
-	_14SEG_CH_a,  // 0x61, a
-	_14SEG_CH_b,  // 0x62, b
-	_14SEG_CH_c,  // 0x63, c
-	_14SEG_CH_d,  // 0x64, d
-	_14SEG_CH_e,  // 0x65, e
-	_14SEG_CH_f,  // 0x66, f
-	_14SEG_CH_g,  // 0x67, g
-	_14SEG_CH_h,  // 0x68, h
-	_14SEG_CH_i,  // 0x69, i
-	_14SEG_CH_j,  // 0x6a, j
-	_14SEG_CH_k,  // 0x6b, k
-	_14SEG_CH_l,  // 0x6c, l
-	_14SEG_CH_m,  // 0x6d, m
-	_14SEG_CH_n,  // 0x6e, n
-	_14SEG_CH_o,  // 0x6f, o
+	_14SEG_ASC60,  // 0x60, `
+	_14SEG_CH_a,   // 0x61, a
+	_14SEG_CH_b,   // 0x62, b
+	_14SEG_CH_c,   // 0x63, c
+	_14SEG_CH_d,   // 0x64, d
+	_14SEG_CH_e,   // 0x65, e
+	_14SEG_CH_f,   // 0x66, f
+	_14SEG_CH_g,   // 0x67, g
+	_14SEG_CH_h,   // 0x68, h
+	_14SEG_CH_i,   // 0x69, i
+	_14SEG_CH_j,   // 0x6a, j
+	_14SEG_CH_k,   // 0x6b, k
+	_14SEG_CH_l,   // 0x6c, l
+	_14SEG_CH_m,   // 0x6d, m
+	_14SEG_CH_n,   // 0x6e, n
+	_14SEG_CH_o,   // 0x6f, o
 
-	_14SEG_CH_p,  // 0x70, p
-	_14SEG_CH_q,  // 0x71, q
-	_14SEG_CH_r,  // 0x72, r
-	_14SEG_CH_s,  // 0x73, s
-	_14SEG_CH_t,  // 0x74, t
-	_14SEG_CH_u,  // 0x75, u
-	_14SEG_CH_v,  // 0x76, v
-	_14SEG_CH_w,  // 0x77, w
-	_14SEG_CH_x,  // 0x78, x
-	_14SEG_CH_y,  // 0x79, y
-	_14SEG_CH_z,  // 0x7a, z
-	_14SEG_NULL,  // 0x7b, {
-	_14SEG_NULL,  // 0x7c, backslash
-	_14SEG_NULL,  // 0x7d, }
-	_14SEG_NULL,  // 0x7e, ~
-	_14SEG_NULL   // 0x7f, <DEL>--> all segments on
+	_14SEG_CH_p,   // 0x70, p
+	_14SEG_CH_q,   // 0x71, q
+	_14SEG_CH_r,   // 0x72, r
+	_14SEG_CH_s,   // 0x73, s
+	_14SEG_CH_t,   // 0x74, t
+	_14SEG_CH_u,   // 0x75, u
+	_14SEG_CH_v,   // 0x76, v
+	_14SEG_CH_w,   // 0x77, w
+	_14SEG_CH_x,   // 0x78, x
+	_14SEG_CH_y,   // 0x79, y
+	_14SEG_CH_z,   // 0x7a, z
+	_14SEG_ASC7B,  // 0x7b, {
+	_14SEG_ASC7C,  // 0x7c, backslash
+	_14SEG_ASC7D,  // 0x7d, }
+	_14SEG_ASC7E,  // 0x7e, ~
+	_14SEG_ASC7F   // 0x7f, <DEL>--> all segments on
 };
 
 
@@ -549,11 +559,19 @@ int mcom_WriteCommand(char *buffer, int len, int needAck)
  */
 static DISPLAYTYPE mcom_GetDisplayType(void)
 {
+#if defined(OPT9600PRIMA)
+	if (mcom_version[0] != 4)  // if not Miniline
+	{
+		return _VFD;
+	}
+	return _7SEG;
+#else
 	if (mcom_version[0] == 4)  // if Miniline
 	{
 		return _7SEG;
 	}
 	return _VFD;
+#endif
 }
 
 /*******************************************************
@@ -596,18 +614,18 @@ void mcom_MJD2YMD(unsigned short usMJD, unsigned short *year, unsigned char *mon
  * time = wake up time as MJD H M S
  *
  * NOTE: The front processor works with a number of
- *       minutes after shut down to wake up, whereby
- *       the of minutes is limited to 16777215.
+ *       minutes after shut down to facilitate wake up,
+ *       whereby the number of minutes is limited to 16777215.
  *       The latter equals 16777215 / 60 = 279620,25 hours
  *       or 16777215 / 60 / 24 = 11650 days and 20.25 hours
- *       or about 31 years and 335 days and 20.25 hours.
+ *       or about 31 years, 335 days and 20.25 hours.
  *       At the time of writing this is beyond the maximum
- *       Linux time.
+ *       32 bit Linux time.
  *       The only check on the wake up time that is done for
  *       this reason is it being in the past.
  *       A wakeup time of LONG_MAX is regarded as a flag for
- *       no timer set -> remain in standby until woken up by
- *       the user.
+ *       no timer set -> remain in deep standby until woken up
+ *       by the user.
  *
  */
 int mcom_SetStandby(char *time, int showTime, int twentyfour)
@@ -1266,7 +1284,7 @@ int mcom_utf8conv(unsigned char *text, unsigned char len, int displaytype)
 					}
 					break;
 				}
-#if 0  // Cyrillic currently not supported
+#if 0  // Cyrillic currently not supported TODO: add opt9600prima
 				case 0xd0:
 				{
 					switch (displayType)
@@ -1382,43 +1400,42 @@ int mcom_WriteString(unsigned char *aBuf, int len)
 	len = mcom_utf8conv(bBuf, len, displayType);  // process UTF-8
 
 	dlen = (displayType == _7SEG ? 4 : 8);
+	payload_len = (displayType == _7SEG ? 1 : 2);
 	if (len > dlen)
 	{
 		len = dlen;  // do not display more than DISPLAY_WIDTH characters
 	}
 	memset(cmdBuf, 0, sizeof(cmdBuf));  // fill command buffer with 'spaces'
 
-	payload_len = 0;
-	for (i = 0;  i < len; i++)
+
+	for (i = 0; i < len; i++)
 	{
 		// build command argument
 		switch (displayType)
 		{
 			case _VFD:  // VFD display
 			{
-				memcpy(cmdBuf + _VAL + payload_len, mcom_ascii_char_14seg[bBuf[i]], 2);
-				payload_len += 2;
+				memcpy(cmdBuf + _VAL + (i * payload_len), mcom_ascii_char_14seg[bBuf[i]], payload_len);
 				break;
 			}
 			case _7SEG:  // 4 digit 7-Seg display
 			default:
 			{
-				memcpy(cmdBuf + _VAL + payload_len, mcom_ascii_char_7seg[bBuf[i]], 1);
-				payload_len++;
+				memcpy(cmdBuf + _VAL + (i * payload_len), mcom_ascii_char_7seg[bBuf[i]], payload_len);
 				break;
 			}
 		}
 	}
 	/* complete command write */
 	cmdBuf[0] = FP_CMD_DISPLAY;
-	cmdBuf[1] = payload_len;
+	cmdBuf[1] = dlen * 2;
 
 	/* save last string written to FP */
 	memcpy(&lastdata.data, bBuf, len);  // save display text for /dev/vfd read
 	lastdata.length = len;  // save length for /dev/vfd read
 
 //	dprintk(50, "%s: len %d\n", __func__, len);
-	res = mcom_WriteCommand(cmdBuf, (displayType == _VFD ? dlen << 1 : dlen) + _VAL, 1);
+	res = mcom_WriteCommand(cmdBuf, cmdBuf[1] + _VAL, 1);
 //	dprintk(150, "%s <\n", __func__);
 	return res;
 }
@@ -1444,12 +1461,12 @@ int mcom_init_func(void)
 	unsigned char  wakeupMonth;
 	unsigned char  wakeupDay;
 
-//	dprintk(150, "%s >\n", __func__);
+	dprintk(150, "%s >\n", __func__);
 	sema_init(&write_sem, 1);
 
 	bootSendCount = 3;  // allow 3 FP boot attempts
 	eb_flag = 0;  // flag wait for version
-	preamblecount = 1;  // preset preamble counter
+//	preamblecount = 1;  // preset preamble counter
 
 	/*****************************************************************************
 	 *
@@ -1460,7 +1477,7 @@ int mcom_init_func(void)
      *   a. Version followed by FP time (always seen in practice on VFD and LED);
 	 *   b: FP time followed by Version (always seen in practice on VFD_OLD);
 	 *   c: private data (never seen in practice on VFD_OLD).
-	 * Responses a) and b) must be acknowledged with a C5 command.
+	 * Responses a), b) and c) must be acknowledged with a C5 command.
 	 *
 	 * This sequence and accompying checks are performed in the processResponse
 	 * routine in cn_micom_main.c.
@@ -1510,54 +1527,6 @@ MCOM_RETRY:
 		dprintk(1, "%s < Error: Front processor is not responding.\n", __func__);
 		return -1;
 	}
-
-#if 0  // On Atemio TitanNit this is sent
-	if (1)  // (MCOM_GetMcuType() > FP_CMD_TYPE_1)
-	{
-		for (i = 0; i < 3; k++)
-		{
-			// send "KEYCODE (0xE9)"
-			comm_buf[_TAG] = FP_CMD_KEYCODE;
-			comm_buf[_LEN] = 4;
-			comm_buf[_VAL + 0] = 0x04;
-			comm_buf[_VAL + 1] = 0xF3;
-			comm_buf[_VAL + 2] = 0x5F;
-			comm_buf[_VAL + 3] = 0xA0;
-
-			checksum = mcom_Checksum(comm_buf, 6);
-
-			errorOccured = 0;
-//			mcom_Dump("## SEND:KEYCODE ##", comm_buf, 2/*tag+len*/ + n);
-			mcom_Dump("## SEND:KEYCODE ##", comm_buf);
-//			res = mcom_WriteCommand(comm_buf, 6, 1);  // yields timeout on ack
-			res = mcom_WriteCommand(comm_buf, comm_buf[_LEN] + _VAL, 0);
-#if 0
-			if (errorOccured == 1)
-			{
-				/* error */
-				memset(ioctl_data, 0, 8);
-				dprintk(1, "Error sending KEYCODE command\n");
-
-				msleep(100);
-				goto MCOM_RECOVER;
-			}
-			if (res == 0)
-			{
-				if (checksum == ioctl_data[_VAL])
-				{
-					dprintk(1, "KEYCODE response: checksum error\n");
-					break;
-				}
-			}
-#endif
-		}
-		if (i >= 3)
-		{
-			msleep(100);
-			goto MCOM_RECOVER;
-		}
-	}
-#endif
 	// display boot result data
 	dprintk(20, "Front panel version: %X.%02X.%02X\n", mcom_version[0], mcom_version[1], mcom_version[2]);
 	dprintk(20, "Front panel time: %02d:%02d:%02d %02d-%02d-20%02d\n", mcom_time[3], mcom_time[4], mcom_time[5], mcom_time[2], mcom_time[1], mcom_time[0]);
@@ -1573,7 +1542,7 @@ MCOM_RETRY:
 	&&  mcom_time[5] == 0
 	&&  mcom_time[2] == 1
 	&&  mcom_time[1] == 1
-	&&  mcom_time[0] == 0)
+	&&  mcom_time[0] == 0)  // check for 00:00:00 01-01-2000
 	{
 		wakeupreason = PWR_ON;
 	}
@@ -1616,7 +1585,28 @@ MCOM_RETRY:
 	mcom_MJD2YMD(wakeupMJD, &wakeupYear, &wakeupMonth, &wakeupDay);
 	dprintk(20, "Wake up time: %02d:%02d:00 %02d-%02d-%04d\n", mcom_wakeup_time[2], mcom_wakeup_time[3], wakeupDay, wakeupMonth, wakeupYear);
 
+	// set remote control code
+	// send "KEYCODE (0xE9)"
+	comm_buf[_TAG] = FP_CMD_KEYCODE;
+	comm_buf[_LEN] = 4;
+	comm_buf[_VAL + 0] = 0x04;  // TODO: check if Orton and Globo models use the same code (Atemio and Sogno do)
+	comm_buf[_VAL + 1] = 0xF3;
+	comm_buf[_VAL + 2] = 0x5F;
+	comm_buf[_VAL + 3] = 0xA0;
+
+	errorOccured = 0;
+	res = mcom_WriteCommand(comm_buf, comm_buf[_LEN] + _VAL, 1);
+
+	if (errorOccured == 1)
+	{
+		dprintk(1, "Error sending KEYCODE command\n");
+	}
+	else
+	{
+		dprintk(20, "Remote control code set.\n");
+	}
 	displayType = mcom_GetDisplayType();  // determine display type
+	dprintk(20, "Displaytype: %s\n", (displayType == _VFD ? "VFD" : "LED"));
 
 	// Handle initial GMT offset (may be changed by writing to /proc/stb/fp/rtc_offset)
 	res = strict_strtol(gmt_offset, 10, (long *)&rtc_offset);

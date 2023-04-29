@@ -497,6 +497,30 @@ static int fp_reseller_read(char *page, char **start, off_t off, int count, int 
 	}
 	return len;
 }
+
+#elif defined(OPT9600PRIMA)
+static int fp_reseller_read(char *page, char **start, off_t off, int count, int *eof, void *data_unused)
+{
+	int len = 0;
+
+	if (NULL != page)
+	{
+		len = sprintf(page, "%s\n", "07730603");
+	}
+	return len;
+}
+
+#elif defined(OPT9600MINI)
+static int fp_reseller_read(char *page, char **start, off_t off, int count, int *eof, void *data_unused)
+{
+	int len = 0;
+
+	if (NULL != page)
+	{
+		len = sprintf(page, "%s\n", "05140607");
+	}
+	return len;
+}
 #endif
 
 static int oem_name_read(char *page, char **start, off_t off, int count, int *eof, void *data_unused)
@@ -510,18 +534,20 @@ static int oem_name_read(char *page, char **start, off_t off, int count, int *eo
 	return len;
 }
 
+#if defined(OPT9600PRIMA)
 int opt9600_ts_detect(void)
 {
 	int ret;
 	unsigned char buf;
 
-	// DVB-tuner is at address 0x40 on I2C bus 1
+	// DVB-tuner is at address 0x40 on I2C bus 3
 	struct i2c_msg msg = { .addr = 0x40, I2C_M_RD, .buf = &buf, .len = 1 };
-	struct i2c_adapter *i2c_adap = i2c_get_adapter(1);
+	struct i2c_adapter *i2c_adap = i2c_get_adapter(3);
 
 	ret = i2c_transfer(i2c_adap, &msg, 1);
 	return ret;
 }
+#endif
 
 static int brand_name_read(char *page, char **start, off_t off, int count, int *eof, void *data_unused)
 {
@@ -532,8 +558,10 @@ static int brand_name_read(char *page, char **start, off_t off, int count, int *
 	{
 #if defined(ATEMIO520)
 		len = sprintf(page, "%s\n", "Atemio");
+#elif defined(SOGNO800)
+		len = sprintf(page, "%s\n", "Sogno");
 #else
-		len = sprintf(page, "%s\n", "Opticum/Orton");
+		len = sprintf(page, "%s\n", "Opticum/Orton/Globo");
 #endif
 	}
 	return len;
@@ -553,6 +581,8 @@ static int model_name_read(char *page, char **start, off_t off, int count, int *
 	{
 #if defined(ATEMIO520)
 		len = sprintf(page, "%s\n", "AM 520 HD");
+#elif defined(SOGNO800)
+		len = sprintf(page, "%s\n", "HD 800 V3");
 #elif defined(OPT9600MINI)
 		len = sprintf(page, "%s\n", "HD 9600 Mini");
 #else
@@ -578,7 +608,9 @@ struct fp_procs
 } fp_procs[] =
 {
 	{ "progress", progress_read, progress_write },
-#if defined(ATEMIO520)
+#if defined(ATEMIO520) \
+ || defined(OPT9600PRIMA) \
+ || defined(OPT9600MINI)
 	{ "stb/fp/resellerID", fp_reseller_read, NULL },
 #endif
 	{ "stb/fp/rtc", read_rtc, write_rtc },

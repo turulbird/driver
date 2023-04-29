@@ -10,8 +10,9 @@
  * Atemio AM 520 HD (Miniline B)
  * Sogno HD 800-V3 (Miniline B)
  * Opticum HD 9600 Mini (Miniline A)
- * Opticum HD 9600 PRIMA (?)
- * Opticum HD TS 9600 PRIMA (?)
+ * Opticum HD 9600 PRIMA (Flexline)
+ * Opticum HD TS 9600 PRIMA (Flexline)
+ * Xsarius Combo HD (Ecoline)
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -42,7 +43,7 @@
 /*
  */
 
-extern short paramDebug;  // debug print level is zero as default (0=nothing, 1= errors, 10=some detail, 20=more detail, 50=open/close functions, 100=all)
+extern short paramDebug;  // debug print level is zero as default (0=always, 1=errors, 10=some detail, 20=more detail, 50=open/close functions, 100=all)
 #define TAGDEBUG "[cn_micom] "
 #ifndef dprintk
 #define dprintk(level, x...) \
@@ -99,17 +100,12 @@ extern tFrontPanelOpen FrontPanelOpen[LASTMINOR];
 #define VFDSTANDBY           0xc0425afc
 #define VFDGETWAKEUPTIME     0xc0425b03  // simulated, not supported by hardware
 
-//#define MAX_MCOM_MSG         30
-
-//#define MCU_COMM_PORT        UART_1
-//#define MCU_COMM_TIMEOUT     1000
-
 // Command and response format is:
 //
 // ID LL DD DD DD DD
 //
 // ID: Identification byte
-// LL: number of ddata bytes DD that follow
+// LL: number of data bytes DD that follow
 // DD: data of the command
 
 // offsets into command/response string
@@ -123,9 +119,9 @@ extern tFrontPanelOpen FrontPanelOpen[LASTMINOR];
 #define FP_CMD_RESPONSE      0xC5  // N  send checksum over previous command (FP_CMD_BOOT only, triggers next response)
 #define FP_CMD_ICON          0xE1  // N  set icon, not used
 #define FP_CMD_STANDBY       0xE5  // Y  switch to standby
-#define FP_CMD_REBOOT        0xE6
-#define FP_CMD_PRIVATE       0xE7
-#define FP_CMD_KEYCODE       0xE9  // N  currently not used
+#define FP_CMD_REBOOT        0xE6  // Y  ?
+#define FP_CMD_PRIVATE       0xE7  // Y  set private data
+#define FP_CMD_KEYCODE       0xE9  // Y  set remote code key code
 #define FP_CMD_SETWAKEUPTIME 0xEA  // Y  set uC wake up time
 #define FP_CMD_BOOT          0xEB  // N  restart FP
 #define FP_CMD_SETTIME       0xEC  // Y  set FP time
@@ -134,7 +130,7 @@ extern tFrontPanelOpen FrontPanelOpen[LASTMINOR];
 // answer IDs sent by FP     ID    resp?
 #define FP_RSP_RESPONSE      0xC5  // N
 #define FP_RSP_VERSION       0xDB  // Y  report FP SW version
-#define FP_RSP_PRIVATE       0xE7  // N
+#define FP_RSP_PRIVATE       0xE7  // Y  return private data
 #define FP_RSP_KEYIN         0xF1  // N  front panel keys and RC keys, length 3 (incl. ID and length byte)
 #define FP_RSP_TIME          0xFC  // Y  report FP time
 
