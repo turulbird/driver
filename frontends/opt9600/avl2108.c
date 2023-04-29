@@ -2046,7 +2046,7 @@ static struct dvb_frontend_ops avl2108_ops =
 {
 	.info =
 	{
-		.name                = "Availink AVL2108 DVB-S2",
+		.name                = "Availink AVL2108",
 		.type                = FE_QPSK,
 		.frequency_min       =   950000,
 		.frequency_max       =  2150000,
@@ -2122,7 +2122,7 @@ void avl2108_register_frontend(struct dvb_adapter *dvb_adap)
 //	dprintk(70, "Initialize PIO 3.3 (DVB-S OE#) to 0 (enabled)\n");
 	pin = stpio_request_pin(3, 3, "DVBS2OE#", STPIO_OUT);
 	stpio_set_pin(pin, 0);  // data output from DVB-S(s) frontend
-#elif defined(OPT9600PRIMA)  // TODO: find PIO pins
+#elif defined(OPT9600PRIMA)
 	/* Opticum HD 9600 PRIMA uses three PIO pins to further control the front end:
 	 *
 	 * DVBTPWREN#  : PIO 10.0 (power enable for DVB-T part, active low) -> driver initializes this to high, does not bother any further
@@ -2131,15 +2131,17 @@ void avl2108_register_frontend(struct dvb_adapter *dvb_adap)
 	 *
 	 * Net result is that the tuner is always set to DVB-S(2), even on TS models
 	 */
-//	dprintk(70, "Initialize PIO ?.? (DVB-T power) to 1 (off)\n");
+	dprintk(70, "Initialize PIO 10.0 (DVB-T power) to 1 (off)\n");
 	pin = stpio_request_pin(10, 0, "DVBT_PWR", STPIO_OUT);
 	stpio_set_pin(pin, 1);  // switch DVB-T power off
-//	dprintk(70, "Initialize PIO ?.? (DVB-S(2) power) to 0 (on)\n");
+	dprintk(70, "Initialize PIO 10.1 (DVB-S(2) power) to 0 (on)\n");
 	pin = stpio_request_pin(10, 1, "DVBS_PWR", STPIO_OUT);
 	stpio_set_pin(pin, 0);  // switch DVB-S(2) power on
-//	dprintk(70, "Initialize PIO ?.? (DVB-S OE#) to 0 (enabled)\n");
+	dprintk(70, "Initialize PIO 15.3 (DVB-S OE#) to 0 (enabled)\n");
 	pin = stpio_request_pin(15, 3, "DVBS2OE#", STPIO_OUT);
+//	stpio_free_pin(pin);
 	stpio_set_pin(pin, 0);  // data output from DVB-S(s) frontend
+	dprintk(70, "Front end PIO's initialized\n");
 #endif
 	for (i = 0; i < numFrontends; i++)
 	{
@@ -2153,9 +2155,9 @@ void avl2108_register_frontend(struct dvb_adapter *dvb_adap)
 			return;
 		}
 		cfg->tuner_no = i + 1;
-//		dprintk(70, "Initialize PIO %1d.%1d for tuner enable\n", frontendList[i].tuner_enable[0], frontendList[i].tuner_enable[1]);
+		dprintk(70, "Initialize PIO %1d.%1d for tuner enable\n", frontendList[i].tuner_enable[0], frontendList[i].tuner_enable[1]);
 		cfg->tuner_enable_pin = stpio_request_pin(frontendList[i].tuner_enable[0], frontendList[i].tuner_enable[1], "FE_RESET", STPIO_OUT);
-//		dprintk(10, "tuner_enable_pin %p\n", cfg->tuner_enable_pin);
+		dprintk(10, "tuner_enable_pin %p\n", cfg->tuner_enable_pin);
 
 		if (cfg->tuner_enable_pin == NULL)
 		{

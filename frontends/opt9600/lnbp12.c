@@ -66,17 +66,18 @@ struct lnb_state
  * The LNBP12 LNB power controller as used in the Opticum HD 9600 and
  * HD 9600 PRIMA series is connected as follows:
  *
- * Vsel (pin 4): sets the LNB voltage to 13/14V or 18/19V -> PIO2.2 on opt9600
- * EN   (pin 5): switches LNB voltage on (H) or off (L)   -> PIO5.2 on opt9600
+ * Vsel (pin 4): sets the LNB voltage to 13/14V or 18/19V -> PIO 2.2 on opt9600, PIO 10.4 on opt9600prima
+ * EN   (pin 5): switches LNB voltage on (H) or off (L)   -> PIO 5.2 on opt9600, PIO 10.2 on opt9600prima
  *               when off, LNB voltage is that on the
  *               MI input (pin 10), that is grounded in
- *               the Opticum HD 9600 (PRIMA) series; EN acts
- *               therefore as LNB voltage on/off input
- * ENT  (pin 7): switch 22kHz tone on (H) or off (L)      -> PIO2.3 on opt9600
+ *               the Opticum HD 9600 (PRIMA) series; EN
+ *               therefore acts as LNB voltage on/off
+ *               input
+ * ENT  (pin 7): switch 22kHz tone on (H) or off (L)      -> PIO 2.3 on opt9600, PIO 10.5 on opt9600prima
  *               The driver initializes this pin to L
  *               (tone off) and does not bother with
  *               this pin any further
- * LLC  (pin 9): Elevates LNB voltage by 1V when high     -> PIO2.6 on opt9600
+ * LLC  (pin 9): Elevates LNB voltage by 1V when high     -> PIO 2.6 on opt9600, PIO 10.3 on opt9600prima
  *               The driver initializes this pin to L
  *               (+1V off) and does not bother with
  *               this pin any further
@@ -90,11 +91,11 @@ struct lnb_state
 #define LNBP12_ENT_PIN  3
 #define LNBP12_LLC_PORT 2
 #define LNBP12_LLC_PIN  6
-#elif defined(OPT9600PRIMA)  // TODO: find PIO pins
-#define LNBP12_ENT_PORT 2
-#define LNBP12_ENT_PIN  3
-#define LNBP12_LLC_PORT 2
-#define LNBP12_LLC_PIN  6
+#elif defined(OPT9600PRIMA)
+#define LNBP12_ENT_PORT 10
+#define LNBP12_ENT_PIN  5
+#define LNBP12_LLC_PORT 10
+#define LNBP12_LLC_PIN  3
 #endif
 
 u16 lnbp12_set_high_lnb_voltage(void *_state, struct dvb_frontend *fe, long arg)

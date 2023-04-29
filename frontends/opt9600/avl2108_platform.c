@@ -44,23 +44,28 @@ short paramDebug = 0;
 #define TAGDEBUG "[avl2108_platform] "
 
 /*
- * DVB-S(2) Frontend is a Sharp BS2F7VZ7700 (AVL2108 demodulator +
- * IX2470VA tuner), with optional LG TDFP-G16?? (Mediatek MT5133AN
- * DVB-T tuner/demodulator) connected as follows:
+ * DVB-S(2) Frontend is a Sharp BS2F7VZ7700 (AVL2108 demodulator + IX2470VA
+ * tuner), with optional frontend LG TDFP-G16?? (Mediatek MT5133AN DVB-T
+ * tuner/demodulator) connected as follows:
  *
  *               non-   PRIMA 
- * DVBTPWREN#  : PIO2.5 PIO10.0 pin 22 of frontend socket (power enable for DVB-T, active low)
- * DVBS2OE#    : PIO3.3 PIO15.3 (data output enable for DVB-S(2) active low, high is DVB-T enabled)
- * DVBS2PWREN# : PIO4.6 PIO10.1 pin 21 of frontend socket (power enable for DVB-S(2), active low)
- * Tuner RESET : PIO5.3 PIO3.2 pin 14 of frontend socket (active low)
+ * DVBTPWREN#  : PIO2.5 PIO10.0  pin 22 of frontend socket (power enable for DVB-T, active low)
+ * DVBS2OE#    : PIO3.3 PIO15.3  pin 29 of frontend socket (data output enable for DVB-S(2) active low, high is DVB-T enabled)
+ * DVBS2PWREN# : PIO4.6 PIO10.1  pin 21 of frontend socket (power enable for DVB-S(2), active low)
+ * Tuner RESET : PIO5.3 PIO3.2   pin 14 of frontend socket (active low)
  *  
  * LNB power driver is an STM LNBP12, connected as follows:
  *
  *                                               non-   PRIMA
  * Voltage select (pin 4, 13V = low)           : PIO2.2 PIO10.4 pin 19 of frontend socket
  * Enable/power off (pin 5, Enable = high)     : PIO5.2 PIO10.2 pin 17 of frontend socket
- * Tone enable (pin 7, high = tone on)         : PIO2.3 PIO10.5 pin 18 of frontend socket (currently not used by driver, initialized to 0)
+ * Tone enable (pin 7, high = Tone on)         : PIO2.3 PIO10.5 pin 18 of frontend socket
  * 1V Vout lift (pin 9, LLC input, high = +1V) : PIO2.6 PIO10.3 pin 20 of frontend socket
+ *
+ * Remark on LNB tone enable: The main board uses a PIO to control this signal. On the tuner board
+ * the signal is routed through RB20 to the LNBP12, but on some tuner boards RB20 is not mounted,
+ * leaving the LNBP12 input pin floating (is allowed in datasheet, leaves tone off). The driver
+ * initializes the PIO to 0, and does not use the PIO any further.
  *
  * Driver currently does not support the DVB-T frontend of TS models
  * and disables it in the driver initialization by powering it off.
@@ -101,10 +106,10 @@ static struct platform_frontend_s avl2108_config =
 			.tuner_enable = { 5, 3, 1 },  // group, bit, state for active
 			.lnb          = { 5, 2, 1, 2, 2, 0 },  // enable (group, bit, state for on), voltage select (group, bit, state for 13V)
 			.i2c_bus      = 1,
-#elif defined(OPT9600PRIMA)  // TODO: find PIO pins and I2C bus number
+#elif defined(OPT9600PRIMA)
 			.tuner_enable = { 3, 2, 1 },  // group, bit, state for active
 			.lnb          = { 10, 2, 1, 10, 4, 0 },  // enable (group, bit, state for on), voltage select (group, bit, state for 13V)
-			.i2c_bus      = 2,
+			.i2c_bus      = 3,
 #endif
 			.demod_i2c    = 0x0C, // 0x18 >> 1
 //			NOTE: I2C address used for the IX2470VA tuner determines the value of its ADR input
