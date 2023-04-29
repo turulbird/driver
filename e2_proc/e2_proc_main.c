@@ -1183,7 +1183,10 @@ struct ProcStructure_s e2Proc[] =
  || defined(HS7429) \
  || defined(HS7810A) \
  || defined(HS7819) \
- || defined(ATEMIO520)
+ || defined(ATEMIO520) \
+ || defined(OPT9600PRIMA) \
+ || defined(OPT9600MINI) \
+ || defined(SOGNO800)
 	{cProcEntry, "stb/fp/resellerID",                                                NULL, NULL, NULL, NULL, ""},
 #endif
 
