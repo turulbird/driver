@@ -29,6 +29,7 @@
  * --------------------------------------------------------------------------
  * 20210929 Audioniek       Initial version based on nuvoton_procfs.c.
  * 20211001 Audioniek       model_name: add detection of DVB-T tuner.
+ * 20230609 Audioniek       version is now reported correctly.
  * 
  ****************************************************************************/
 
@@ -492,7 +493,7 @@ static int fp_version_read(char *page, char **start, off_t off, int count, int *
 	int len = 0;
 
 	dprintk(20, "Version is %X.%02X\n", mcom_version[0], mcom_version[1]);
-	len = sprintf(page, "%d\n", (int)((mcom_version[0] & 0xff) * 100 + ((mcom_version[1] >> 4) * 16) + mcom_version[1] & 0x0f));
+	len = sprintf(page, "%d\n", (int)(((mcom_version[0] & 0xff) * 100) + ((mcom_version[1] >> 4) * 10) + (mcom_version[1] & 0x0f)));
 	return len;
 }
 

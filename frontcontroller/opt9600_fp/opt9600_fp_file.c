@@ -51,7 +51,7 @@
  * 20211002 Audioniek       UTF-8 support on HD (TS) 9600 models added.
  * 20211003 Audioniek       Deep standby/reboot at given time further
  *                          debugged and take prviously specified FP clock
- *                          and wake uptimes into account; also improved
+ *                          and wake up times into account; also improved
  *                          checking on valid/usable wake up times.
  *
  ****************************************************************************/
